@@ -141,13 +141,19 @@ async function fetchAlphaVantagePrice(ticker, targetMoneda) {
       if (!price || price <= 0) continue;
       console.log(`[AlphaVantage] ${sym} = ${price} raw → convirtiendo a ${targetMoneda}`);
       if (targetMoneda === 'MXN') {
-        if (sym.includes('.LON')) price = (price / 100) * gbpmxn;       // GBp → GBP → MXN
-        else if (sym.includes('.DEX') || sym.includes('.EPA') || sym.includes('.AMS')) price = price * eurmxn; // EUR → MXN
-        else price = price * tc;                                           // USD → MXN
+        if (sym.includes('.LON')) {
+          // Alpha Vantage puede devolver GBp (peniques >500 ej:6500) o GBP directo (<500 ej:65 o 131)
+          const gbpPrice = price > 500 ? price / 100 : price; // normalizar a GBP
+          price = gbpPrice * gbpmxn;
+        }
+        else if (sym.includes('.DEX') || sym.includes('.EPA') || sym.includes('.AMS')) price = price * eurmxn;
+        else price = price * tc;
       } else if (targetMoneda === 'USD') {
-        if (sym.includes('.LON')) price = (price / 100) / usdgbp;        // GBp → GBP → USD
-        else if (sym.includes('.DEX') || sym.includes('.EPA') || sym.includes('.AMS')) price = price / usdeur; // EUR → USD
-        // sin sufijo ya es USD
+        if (sym.includes('.LON')) {
+          const gbpPrice = price > 500 ? price / 100 : price;
+          price = gbpPrice / usdgbp;
+        }
+        else if (sym.includes('.DEX') || sym.includes('.EPA') || sym.includes('.AMS')) price = price / usdeur;
       }
       console.log(`[AlphaVantage] ${sym} = ${price} ${targetMoneda} ✅`);
       return price;
@@ -161,7 +167,8 @@ async function fetchAlphaVantagePrice(ticker, targetMoneda) {
 let _fxCache = null;
 async function fetchFX() {
   const cached = LS.get('fxCache');
-  if (cached && isCacheFresh(cached.ts)) { _fxCache = cached; return cached; }
+  // Si el caché no tiene gbpmxn (versión vieja), ignorarlo y refrescar
+  if (cached && isCacheFresh(cached.ts) && cached.gbpmxn) { _fxCache = cached; return cached; }
   try {
     const r = await fetch('https://api.frankfurter.app/latest?from=USD&to=MXN,EUR,GBP');
     if (!r.ok) throw new Error();
@@ -1823,9 +1830,9 @@ function renderAjustes(){
             const fx=_fxCache||LS.get('fxCache');
             const isLive=fx&&isCacheFresh(fx.ts);
             const ts=isLive?new Date(fx.ts).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}):'';
-            const vUSD=isLive?fx.usdmxn.toFixed(2):(settings.tipoCambio||20);
-            const vEUR=isLive?fx.eurmxn.toFixed(2):(settings.tipoEUR||21.5);
-            const vGBP=isLive?fx.gbpmxn.toFixed(2):(settings.tipoGBP||25.5);
+            const vUSD=isLive&&fx.usdmxn?fx.usdmxn.toFixed(2):(settings.tipoCambio||20);
+            const vEUR=isLive&&fx.eurmxn?fx.eurmxn.toFixed(2):(settings.tipoEUR||21.5);
+            const vGBP=isLive&&fx.gbpmxn?fx.gbpmxn.toFixed(2):(settings.tipoGBP||25.5);
             const statusBadge=isLive
               ? '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:var(--green)"><span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block"></span>En vivo \xb7 BCE \xb7 actualizado '+ts+'</div>'
               : '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:var(--orange)"><span style="width:7px;height:7px;border-radius:50%;background:var(--orange);display:inline-block"></span>Manual \xb7 presiona actualizar para valores en vivo</div>';
