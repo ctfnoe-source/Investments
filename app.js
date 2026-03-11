@@ -101,7 +101,7 @@ async function fetchAlphaVantagePrice(ticker, targetMoneda) {
   const fx = _fxCache || LS.get('fxCache');
   const tc = (fx?.usdmxn) || settings.tipoCambio || 20;
   const eurmxn = (fx?.eurmxn) || settings.tipoEUR || 21.5;
-  const gbpmxn = (fx?.gbpmxn) || (tc * 1.27);
+  const gbpmxn = (fx?.gbpmxn) || settings.tipoGBP || 25.5;
   const usdgbp = (fx?.usdgbp) || 0.79;
   const usdeur = (fx?.usdeur) || 0.92;
   console.log(`[AlphaVantage] FX listo — USD/MXN:${tc} EUR/MXN:${eurmxn} GBP/MXN:${gbpmxn}`);
@@ -156,11 +156,14 @@ async function updateFX() {
   if (fx && fx.usdmxn && fx.ts && isCacheFresh(fx.ts)) {
     settings.tipoCambio = Math.round(fx.usdmxn * 100) / 100;
     settings.tipoEUR = Math.round(fx.eurmxn * 100) / 100;
+    settings.tipoGBP = Math.round(fx.gbpmxn * 100) / 100;
     LS.set('settings', settings);
     const inpUSD = document.getElementById('inputTCUSD');
     const inpEUR = document.getElementById('inputTCEUR');
+    const inpGBP = document.getElementById('inputTCGBP');
     if (inpUSD) inpUSD.value = settings.tipoCambio;
     if (inpEUR) inpEUR.value = settings.tipoEUR;
+    if (inpGBP) inpGBP.value = settings.tipoGBP;
     updateNavFX();
     _recalcAndSaveSnapshot();
   }
@@ -333,7 +336,7 @@ const DEFAULT_GOALS=[
   {id:uid(),nombre:'Portafolio $100K USD',clase:'Todos',meta:100000,fechaLimite:'2027-12-31',descripcion:'Meta maestra inversión'},
   {id:uid(),nombre:'Cartera Crypto $20K',clase:'Crypto',meta:20000,fechaLimite:'2027-06-30',descripcion:'Alta volatilidad controlada'},
 ];
-const DEFAULT_SETTINGS={tipoCambio:20,tipoEUR:21.5,rendimientoEsperado:0.06,finnhubKey:''};
+const DEFAULT_SETTINGS={tipoCambio:20,tipoEUR:21.5,tipoGBP:25.5,rendimientoEsperado:0.06,finnhubKey:''};
 const DEFAULT_RECURRENTES=[
   {id:uid(),nombre:'Renta / Hipoteca',icon:'🏠',categoria:'vivienda',importe:8500,frecuencia:'Mensual',dia:1,activo:true,color:'#FF9F0A'},
   {id:uid(),nombre:'Luz',icon:'💡',categoria:'luz',importe:350,frecuencia:'Mensual',dia:1,activo:true,color:'#FFD60A'},
@@ -914,7 +917,7 @@ function renderDashboard(){
         </div>
       </div>
       <div style="padding:0 20px 0px">
-        <div class="chart-container" style="height:260px"><canvas id="chartEvo"></canvas></div>
+        <div class="chart-container" style="height:260px">${hist.length < 2 ? `<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text3)"><div style="font-size:32px">📈</div><div style="font-size:13px;font-weight:600;color:var(--text2)">La gráfica aparecerá mañana</div><div style="font-size:11px;text-align:center;max-width:220px;line-height:1.5">Necesitas al menos 2 días de datos.<br>Vuelve mañana y verás tu evolución.</div></div>` : `<canvas id="chartEvo"></canvas>`}</div>
       </div>
       <div style="padding:8px 28px 12px;display:flex;justify-content:flex-end">
         <button class="chart-toggle-btn" id="chartToggleBtn" onclick="toggleChartPanel()">▼ Controles</button>
@@ -1766,7 +1769,28 @@ function renderAjustes(){
       </div>
     </div>
     <div class="grid-2" style="margin-bottom:16px">
-      <div class="card"><div class="card-title">💱 Tipo de Cambio</div><div style="margin-top:10px;display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">1 USD =</span><input type="number" step="0.01" id="inputTCUSD" class="form-input" style="width:100px;font-size:18px;font-weight:700;text-align:center" value="${settings.tipoCambio||20}" onchange="settings.tipoCambio=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div><div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">1 EUR =</span><input type="number" step="0.01" id="inputTCEUR" class="form-input" style="width:100px;font-size:18px;font-weight:700;text-align:center" value="${settings.tipoEUR||21.5}" onchange="settings.tipoEUR=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div><button class="btn btn-secondary btn-sm" onclick="updateFX().then(()=>renderPage('ajustes'))">🔄 Actualizar automático</button></div></div>
+      <div class="card">
+        <div class="card-title">💱 Tipo de Cambio</div>
+        ${(()=>{const fx=_fxCache||LS.get('fxCache');const isLive=fx&&isCacheFresh(fx.ts);const ts=isLive?new Date(fx.ts).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}):'';return isLive?`<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:var(--green)"><span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block"></span>En vivo · BCE · actualizado ${ts}</div>`:`<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:var(--orange)"><span style="width:7px;height:7px;border-radius:50%;background:var(--orange);display:inline-block"></span>Manual · presiona actualizar para valores en vivo</div>`;})()}
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:12px;color:var(--text2);width:60px">🇺🇸 USD =</span>
+            <input type="number" step="0.01" id="inputTCUSD" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="${settings.tipoCambio||20}" onchange="settings.tipoCambio=Number(this.value);saveAll()">
+            <span style="font-size:12px;color:var(--text2)">MXN</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:12px;color:var(--text2);width:60px">🇪🇺 EUR =</span>
+            <input type="number" step="0.01" id="inputTCEUR" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="${settings.tipoEUR||21.5}" onchange="settings.tipoEUR=Number(this.value);saveAll()">
+            <span style="font-size:12px;color:var(--text2)">MXN</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:12px;color:var(--text2);width:60px">🇬🇧 GBP =</span>
+            <input type="number" step="0.01" id="inputTCGBP" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="${settings.tipoGBP||25.5}" onchange="settings.tipoGBP=Number(this.value);saveAll()">
+            <span style="font-size:12px;color:var(--text2)">MXN</span>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="updateFX().then(()=>renderPage('ajustes'))">🔄 Actualizar en vivo (BCE)</button>
+        </div>
+      </div>
       <div class="card"><div class="card-title">📈 Rendimiento Esperado Anual</div><div style="display:flex;align-items:center;gap:10px;margin-top:8px"><input type="number" step="0.5" class="form-input" style="width:80px;font-size:20px;font-weight:700;text-align:center" value="${((settings.rendimientoEsperado||0.06)*100)}" onchange="settings.rendimientoEsperado=Number(this.value)/100;saveAll()"><span style="font-size:14px;color:var(--text2)">% anual</span></div></div>
     </div>
     <div class="grid-2" style="margin-bottom:16px">
