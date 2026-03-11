@@ -895,10 +895,10 @@ function renderDashboard(){
             </div>
             <div style="width:1px;background:var(--border);align-self:stretch;margin:2px 0"></div>
             <div style="text-align:right">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--blue);margin-bottom:2px">Esperado en ${projInterval.label}</div>
-              <div style="font-size:26px;font-weight:800;letter-spacing:-0.03em;color:var(--blue);line-height:1">${fmt(patrimonioEsperado)}</div>
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--blue);margin-bottom:2px">Ganancia esperada en ${projInterval.label}</div>
+              <div style="font-size:26px;font-weight:800;letter-spacing:-0.03em;color:var(--blue);line-height:1">+${fmt(Math.round(capitalHoy * (Math.pow(1+re/12, projMonths) - 1)))}</div>
               <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:5px">
-                <span style="font-size:12px;color:var(--green);font-weight:700">+${fmt(gananciaProy)}</span>
+                <span style="font-size:12px;color:var(--text2);font-weight:700">sobre ${fmt(capitalHoy)} capital</span>
                 <span style="font-size:11px;color:var(--text3)">·</span>
                 <span style="font-size:11px;font-weight:700;color:var(--blue)">${(re*100).toFixed(0)}%/año</span>
               </div>
