@@ -50,6 +50,7 @@ function getPriceCache() { return LS.get(PRICE_CACHE_KEY) || {}; }
 function setPriceCache(c) { LS.set(PRICE_CACHE_KEY, c); }
 function isCacheFresh(ts) { if (!ts) return false; const n = new Date(), c = new Date(ts); return n.getFullYear()===c.getFullYear() && n.getMonth()===c.getMonth() && n.getDate()===c.getDate(); }
 function getCachedPrice(t) { const c=getPriceCache(); return c[t]||null; }
+let _fxCache = null;
 
 // Validar que un precio sea razonable según moneda y tipo
 function isPriceReasonable(price, cacheKey) {
@@ -86,15 +87,19 @@ function clearPriceCache(ticker, moneda) {
   const c = getPriceCache();
   let changed = false;
   Object.entries(c).forEach(([k, v]) => {
-    // No tocar crypto (coingecko) — pueden tener precios muy variables
     if (v.source === 'coingecko') return;
-    if (!isPriceReasonable(v.price, k)) {
-      delete c[k];
-      changed = true;
-      console.warn(`[Cache] Limpiado al arrancar — ${k}: ${v.price} (${v.source})`);
-    }
+    // Borrar TODOS los precios MXN de acciones/ETFs al arrancar — pueden tener conversión incorrecta
+    if (k.endsWith('_MXN')) { delete c[k]; changed = true; console.warn(`[Cache] MXN limpiado al arrancar — ${k}: ${v.price}`); return; }
+    if (!isPriceReasonable(v.price, k)) { delete c[k]; changed = true; console.warn(`[Cache] Inválido limpiado — ${k}: ${v.price}`); }
   });
   if (changed) setPriceCache(c);
+  // Limpiar fxCache si USD/MXN está fuera de rango razonable
+  const fx = LS.get('fxCache');
+  if (fx && (!fx.gbpmxn || fx.usdmxn < 15 || fx.usdmxn > 30)) {
+    console.warn(`[fxCache] Inválido limpiado — USD/MXN: ${fx.usdmxn}`);
+    LS.set('fxCache', null);
+    _fxCache = null;
+  }
 })();
 
 const CRYPTO_MAP = {
@@ -161,19 +166,23 @@ async function fetchAlphaVantagePrice(ticker, targetMoneda) {
 }
 
 
-let _fxCache = null;
 async function fetchFX() {
   const cached = LS.get('fxCache');
-  // Si el caché no tiene gbpmxn (versión vieja), ignorarlo y refrescar
-  if (cached && isCacheFresh(cached.ts) && cached.gbpmxn) { _fxCache = cached; return cached; }
+  // Validar que el caché sea fresco Y tenga valores razonables (USD/MXN entre 15 y 30)
+  const isValid = cached && isCacheFresh(cached.ts) && cached.gbpmxn && cached.usdmxn >= 15 && cached.usdmxn <= 30;
+  if (isValid) { _fxCache = cached; return cached; }
   try {
     const r = await fetch('https://api.frankfurter.app/latest?from=USD&to=MXN,EUR,GBP');
     if (!r.ok) throw new Error();
     const d = await r.json();
     const gbpmxn = d.rates.MXN / d.rates.GBP;
     const result = { usdmxn: d.rates.MXN, usdeur: d.rates.EUR, eurmxn: d.rates.MXN / d.rates.EUR, gbpmxn, usdgbp: d.rates.GBP, ts: Date.now() };
-    LS.set('fxCache', result);
-    _fxCache = result;
+    // Solo guardar si los valores son razonables
+    if (result.usdmxn >= 15 && result.usdmxn <= 30) {
+      LS.set('fxCache', result);
+      _fxCache = result;
+    }
+    return result;
     return result;
   } catch { return _fxCache || { usdmxn: settings.tipoCambio||20, usdeur: 0.92, eurmxn: (settings.tipoCambio||20)/0.92, gbpmxn: (settings.tipoCambio||20)*1.27, usdgbp: 0.79, ts: 0 }; }
 }
