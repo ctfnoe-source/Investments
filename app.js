@@ -93,6 +93,11 @@ function clearPriceCache(ticker, moneda) {
     if (!isPriceReasonable(v.price, k)) { delete c[k]; changed = true; console.warn(`[Cache] Inválido limpiado — ${k}: ${v.price}`); }
   });
   if (changed) setPriceCache(c);
+  // Limpiar snapshots sintéticos guardados anteriormente
+  const prevLen = patrimonioHistory.length;
+  patrimonioHistory = patrimonioHistory.filter(s => !s.synthetic);
+  if (patrimonioHistory.length !== prevLen) LS.set('patrimonioHistory', patrimonioHistory);
+
   // Limpiar fxCache si USD/MXN está fuera de rango razonable
   const fx = LS.get('fxCache');
   if (fx && (!fx.gbpmxn || fx.usdmxn < 15 || fx.usdmxn > 30)) {
@@ -520,8 +525,6 @@ function _recalcAndSaveSnapshot() {
   const capitalBase = capitalPlats + capitalInv;
 
   savePatrimonioSnapshot(patrimonioTotal, capitalBase);
-  // Rellenar historial pasado desde movimientos si faltan snapshots
-  buildHistoricalSnapshots();
 }
 
 function savePatrimonioSnapshot(value, capital) {
