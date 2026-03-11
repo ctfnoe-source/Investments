@@ -174,12 +174,12 @@ function switchTab(tab) {
 document.querySelectorAll('.nav-tab').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
 
 function renderPageInternal(tab) {
-  if (tab==='dashboard')    renderDashboard();
-  else if (tab==='movimientos') renderMovimientos();
-  else if (tab==='plataformas') renderPlataformas();
-  else if (tab==='gastos')      renderGastos();
-  else if (tab==='metas')       renderMetas();
-  else if (tab==='ajustes')     renderAjustes();
+  if (tab==='dashboard')    window.renderDashboard();
+  else if (tab==='movimientos') window.renderMovimientos();
+  else if (tab==='plataformas') window.renderPlataformas();
+  else if (tab==='gastos')      window.renderGastos();
+  else if (tab==='metas')       window.renderMetas();
+  else if (tab==='ajustes')     window.renderAjustes();
 }
 function renderPage(tab) { renderPageInternal(tab); }
 window.renderPage = renderPage;
