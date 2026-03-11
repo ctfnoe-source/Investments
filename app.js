@@ -6,6 +6,51 @@
 //       y renders.js (también cargado antes).
 // ============================================================
 
+// ── Toast notifications ─────────────────────────────────────
+function showToast(msg, type = 'info', duration = 3000) {
+  let container = document.getElementById('toastContainer');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toastContainer';
+    container.style.cssText = `
+      position:fixed; bottom:24px; right:24px; z-index:99999;
+      display:flex; flex-direction:column; gap:8px; pointer-events:none;
+    `;
+    document.body.appendChild(container);
+  }
+  const colors = {
+    success: {bg:'rgba(48,209,88,0.12)',  border:'rgba(48,209,88,0.35)',  color:'var(--green)'},
+    error:   {bg:'rgba(255,69,58,0.12)',  border:'rgba(255,69,58,0.35)',  color:'var(--red)'},
+    warn:    {bg:'rgba(255,159,10,0.12)', border:'rgba(255,159,10,0.35)', color:'var(--orange)'},
+    info:    {bg:'rgba(10,132,255,0.12)', border:'rgba(10,132,255,0.35)', color:'var(--blue)'},
+  };
+  const c = colors[type] || colors.info;
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    padding:12px 18px; border-radius:14px; font-size:14px; font-weight:600;
+    background:${c.bg}; border:1px solid ${c.border}; color:${c.color};
+    backdrop-filter:blur(12px); pointer-events:auto; cursor:default;
+    box-shadow:0 4px 20px rgba(0,0,0,0.15);
+    animation:toastIn 0.25s cubic-bezier(.34,1.56,.64,1) forwards;
+    max-width:320px; line-height:1.4;
+  `;
+  toast.innerHTML = msg;
+  container.appendChild(toast);
+  if (!document.getElementById('toastStyles')) {
+    const s = document.createElement('style');
+    s.id = 'toastStyles';
+    s.textContent = `
+      @keyframes toastIn  { from { opacity:0; transform:translateY(12px) scale(0.95); } to { opacity:1; transform:none; } }
+      @keyframes toastOut { from { opacity:1; transform:none; } to { opacity:0; transform:translateY(8px) scale(0.95); } }
+    `;
+    document.head.appendChild(s);
+  }
+  setTimeout(() => {
+    toast.style.animation = 'toastOut 0.2s ease forwards';
+    setTimeout(() => toast.remove(), 220);
+  }, duration);
+}
+
 // ── LocalStorage helper ─────────────────────────────────────
 const LS = {
   get(k) { try { const v = localStorage.getItem('fp_'+k); return v ? JSON.parse(v) : null; } catch { return null; } },
