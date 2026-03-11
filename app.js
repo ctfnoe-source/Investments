@@ -1818,38 +1818,26 @@ function renderAjustes(){
     <div class="grid-2" style="margin-bottom:16px">
       <div class="card">
         <div class="card-title">💱 Tipo de Cambio</div>
-        ${(()=>{
-          const fx=_fxCache||LS.get('fxCache');
-          const isLive=fx&&isCacheFresh(fx.ts);
-          const ts=isLive?new Date(fx.ts).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}):'';
-          // Usar valores del fxCache si están frescos, si no usar settings
-          const vUSD = isLive ? fx.usdmxn.toFixed(2) : (settings.tipoCambio||20);
-          const vEUR = isLive ? fx.eurmxn.toFixed(2) : (settings.tipoEUR||21.5);
-          const vGBP = isLive ? fx.gbpmxn.toFixed(2) : (settings.tipoGBP||25.5);
-          return `
-            ${isLive
-              ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:var(--green)"><span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block"></span>En vivo · BCE · actualizado ${ts}</div>`
-              : `<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:var(--orange)"><span style="width:7px;height:7px;border-radius:50%;background:var(--orange);display:inline-block"></span>Manual · presiona actualizar para valores en vivo</div>`
-            }
-            <div style="display:flex;flex-direction:column;gap:10px">
-              <div style="display:flex;align-items:center;gap:10px">
-                <span style="font-size:12px;color:var(--text2);width:60px">🇺🇸 USD =</span>
-                <input type="number" step="0.01" id="inputTCUSD" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="${vUSD}" onchange="settings.tipoCambio=Number(this.value);saveAll()">
-                <span style="font-size:12px;color:var(--text2)">MXN</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:10px">
-                <span style="font-size:12px;color:var(--text2);width:60px">🇪🇺 EUR =</span>
-                <input type="number" step="0.01" id="inputTCEUR" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="${vEUR}" onchange="settings.tipoEUR=Number(this.value);saveAll()">
-                <span style="font-size:12px;color:var(--text2)">MXN</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:10px">
-                <span style="font-size:12px;color:var(--text2);width:60px">🇬🇧 GBP =</span>
-                <input type="number" step="0.01" id="inputTCGBP" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="${vGBP}" onchange="settings.tipoGBP=Number(this.value);saveAll()">
-                <span style="font-size:12px;color:var(--text2)">MXN</span>
-              </div>
-              <button class="btn btn-secondary btn-sm" onclick="updateFX().then(()=>renderPage('ajustes'))">🔄 Actualizar en vivo (BCE)</button>
-            </div>`;
-        })()}
+        <div id="tcCardContent">
+          ${(()=>{
+            const fx=_fxCache||LS.get('fxCache');
+            const isLive=fx&&isCacheFresh(fx.ts);
+            const ts=isLive?new Date(fx.ts).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}):'';
+            const vUSD=isLive?fx.usdmxn.toFixed(2):(settings.tipoCambio||20);
+            const vEUR=isLive?fx.eurmxn.toFixed(2):(settings.tipoEUR||21.5);
+            const vGBP=isLive?fx.gbpmxn.toFixed(2):(settings.tipoGBP||25.5);
+            const statusBadge=isLive
+              ? '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:var(--green)"><span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block"></span>En vivo \xb7 BCE \xb7 actualizado '+ts+'</div>'
+              : '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:var(--orange)"><span style="width:7px;height:7px;border-radius:50%;background:var(--orange);display:inline-block"></span>Manual \xb7 presiona actualizar para valores en vivo</div>';
+            return statusBadge
+              + '<div style="display:flex;flex-direction:column;gap:10px">'
+              + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">\ud83c\uddfa\ud83c\uddf8 USD =</span><input type="number" step="0.01" id="inputTCUSD" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vUSD+'" onchange="settings.tipoCambio=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
+              + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">\ud83c\uddea\ud83c\uddfa EUR =</span><input type="number" step="0.01" id="inputTCEUR" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vEUR+'" onchange="settings.tipoEUR=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
+              + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">\ud83c\uddec\ud83c\udde7 GBP =</span><input type="number" step="0.01" id="inputTCGBP" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vGBP+'" onchange="settings.tipoGBP=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
+              + '<button class="btn btn-secondary btn-sm" onclick="updateFX().then(()=>renderPage(\'ajustes\'))">🔄 Actualizar en vivo (BCE)</button>'
+              + '</div>';
+          })()}
+        </div>
       </div>
       <div class="card"><div class="card-title">📈 Rendimiento Esperado Anual</div><div style="display:flex;align-items:center;gap:10px;margin-top:8px"><input type="number" step="0.5" class="form-input" style="width:80px;font-size:20px;font-weight:700;text-align:center" value="${((settings.rendimientoEsperado||0.06)*100)}" onchange="settings.rendimientoEsperado=Number(this.value)/100;saveAll()"><span style="font-size:14px;color:var(--text2)">% anual</span></div></div>
     </div>
