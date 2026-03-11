@@ -11,6 +11,9 @@
 </head>
 <body>
 
+<!-- Toast para feedback visual -->
+<div id="toastMessage" class="toast"></div>
+
 <div class="offline-banner" id="offlineBanner">
   <span id="offlineIcon">📴</span>
   <span id="offlineText">Sin internet — cambios guardados localmente</span>
@@ -55,6 +58,7 @@
       <button class="nav-tab" data-tab="plataformas">🏦 Plataformas</button>
       <button class="nav-tab" data-tab="gastos">💳 Gastos</button>
       <button class="nav-tab" data-tab="metas">🎯 Metas</button>
+      <button class="nav-tab" data-tab="reporte">📅 Reporte</button>
       <button class="nav-tab" data-tab="ajustes">⚙️ Ajustes</button>
     </div>
     <div class="nav-user" id="navUser">
@@ -71,6 +75,8 @@
   <button class="mobile-nav-item" data-tab="movimientos" onclick="switchTab('movimientos')"><span class="mob-icon">📋</span><span class="mob-label">Movimientos</span></button>
   <button class="mobile-nav-item" data-tab="plataformas" onclick="switchTab('plataformas')"><span class="mob-icon">🏦</span><span class="mob-label">Plataformas</span></button>
   <button class="mobile-nav-item" data-tab="gastos" onclick="switchTab('gastos')"><span class="mob-icon">💳</span><span class="mob-label">Gastos</span></button>
+  <button class="mobile-nav-item" data-tab="metas" onclick="switchTab('metas')"><span class="mob-icon">🎯</span><span class="mob-label">Metas</span></button>
+  <button class="mobile-nav-item" data-tab="reporte" onclick="switchTab('reporte')"><span class="mob-icon">📅</span><span class="mob-label">Reporte</span></button>
   <button class="mobile-nav-item" data-tab="ajustes" onclick="switchTab('ajustes')"><span class="mob-icon">⚙️</span><span class="mob-label">Ajustes</span></button>
 </nav>
 
@@ -80,6 +86,7 @@
   <div class="page" id="page-plataformas"></div>
   <div class="page" id="page-gastos"></div>
   <div class="page" id="page-metas"></div>
+  <div class="page" id="page-reporte"></div>
   <div class="page" id="page-ajustes"></div>
 </div>
 
