@@ -142,18 +142,15 @@ async function fetchAlphaVantagePrice(ticker, targetMoneda) {
       console.log(`[AlphaVantage] ${sym} = ${price} raw → convirtiendo a ${targetMoneda}`);
       if (targetMoneda === 'MXN') {
         if (sym.includes('.LON')) {
-          // Alpha Vantage puede devolver GBp (peniques >500 ej:6500) o GBP directo (<500 ej:65 o 131)
-          const gbpPrice = price > 500 ? price / 100 : price; // normalizar a GBP
-          price = gbpPrice * gbpmxn;
+          // Alpha Vantage para .LON devuelve el precio en USD (no GBp ni GBP)
+          // VUAA.LON = 131 USD → × tipoCambio = MXN
+          price = price * tc;
         }
         else if (sym.includes('.DEX') || sym.includes('.EPA') || sym.includes('.AMS')) price = price * eurmxn;
         else price = price * tc;
       } else if (targetMoneda === 'USD') {
-        if (sym.includes('.LON')) {
-          const gbpPrice = price > 500 ? price / 100 : price;
-          price = gbpPrice / usdgbp;
-        }
-        else if (sym.includes('.DEX') || sym.includes('.EPA') || sym.includes('.AMS')) price = price / usdeur;
+        // .LON ya viene en USD según Alpha Vantage — no convertir
+        if (sym.includes('.DEX') || sym.includes('.EPA') || sym.includes('.AMS')) price = price / usdeur;
       }
       console.log(`[AlphaVantage] ${sym} = ${price} ${targetMoneda} ✅`);
       return price;
