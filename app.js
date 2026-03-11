@@ -50,7 +50,23 @@ function getPriceCache() { return LS.get(PRICE_CACHE_KEY) || {}; }
 function setPriceCache(c) { LS.set(PRICE_CACHE_KEY, c); }
 function isCacheFresh(ts) { if (!ts) return false; const n = new Date(), c = new Date(ts); return n.getFullYear()===c.getFullYear() && n.getMonth()===c.getMonth() && n.getDate()===c.getDate(); }
 function getCachedPrice(t) { const c=getPriceCache(); return c[t]||null; }
-function setCachedPrice(t,p,s) { const c=getPriceCache(); c[t]={price:p,ts:Date.now(),source:s}; setPriceCache(c); }
+function setCachedPrice(t,p,s) {
+  // Sanity check: precio MXN nunca debería ser < 1 para acciones/ETFs reales
+  if (t.endsWith('_MXN') && p < 1) { console.warn(`Precio MXN sospechoso para ${t}: ${p} — descartado`); return; }
+  const c=getPriceCache(); c[t]={price:p,ts:Date.now(),source:s}; setPriceCache(c);
+}
+function clearPriceCache(ticker, moneda) {
+  const c=getPriceCache();
+  const key = (moneda||'').toUpperCase()==='MXN' ? ticker.toUpperCase()+'_MXN' : ticker.toUpperCase();
+  delete c[key]; setPriceCache(c);
+}
+// Limpiar precios MXN corruptos (< 1) que pudieran haber quedado en caché
+(function cleanCorruptedPrices(){
+  const c=getPriceCache();
+  let changed=false;
+  Object.entries(c).forEach(([k,v])=>{ if(k.endsWith('_MXN')&&v.price<1){delete c[k];changed=true;console.warn('Cache corrupto eliminado:',k,v.price);} });
+  if(changed) setPriceCache(c);
+})();
 
 const CRYPTO_MAP = {
   'BTC':'bitcoin','ETH':'ethereum','SOL':'solana','ADA':'cardano','DOT':'polkadot','DOGE':'dogecoin',
@@ -88,14 +104,21 @@ async function fetchAlphaVantagePrice(ticker, targetMoneda) {
       let price = parseFloat(q['05. price']);
       if (!price || price <= 0) continue;
       console.log(`Alpha Vantage: ${sym} = ${price} (targetMoneda: ${targetMoneda})`);
+      const fx = _fxCache || LS.get('fxCache');
+      const tc = settings.tipoCambio || 20;
+      const eurmxn = (fx?.eurmxn) || settings.tipoEUR || 21.5;
+      const gbpmxn = (fx?.gbpmxn) || eurmxn * 1.17;
+      const usdgbp = (fx?.usdgbp) || 0.79;
+      const usdeur = (fx?.usdeur) || 0.92;
       if (targetMoneda === 'MXN') {
-        const fx = _fxCache || LS.get('fxCache');
-        const tc = settings.tipoCambio || 20;
-        const eurmxn = (fx?.eurmxn) || settings.tipoEUR || 21.5;
-        const gbpmxn = (fx?.gbpmxn) || eurmxn * 1.17; // GBP/MXN real o aproximado
         if (sym.includes('.LON')) price = (price / 100) * gbpmxn; // GBp → GBP → MXN
         else if (sym.includes('.DEX') || sym.includes('.EPA') || sym.includes('.AMS')) price = price * eurmxn;
         else price = price * tc; // USD → MXN
+      } else if (targetMoneda === 'USD') {
+        // Convertir a USD: bolsas europeas no son USD directo
+        if (sym.includes('.LON')) price = (price / 100) / usdgbp; // GBp → GBP → USD
+        else if (sym.includes('.DEX') || sym.includes('.EPA') || sym.includes('.AMS')) price = price / usdeur; // EUR → USD
+        // sym sin sufijo ya es USD, no convertir
       }
       return price;
     } catch {}
@@ -165,8 +188,17 @@ async function fetchPrice(ticker, type, moneda) {
   else if ((type === 'Acción' || type === 'ETF') && moneda === 'MXN') {
     // 1. Alpha Vantage — soporta ETFs europeos y convierte a MXN
     if (settings.alphaVantageKey) { price = await fetchAlphaVantagePrice(ticker, 'MXN'); if (price !== null) source = 'alphavantage-mxn'; }
-    // 2. Finnhub — solo acciones USD, convertir a MXN
-    if (price === null) { price = await fetchStockPrice(ticker); if (price !== null) { price = price * (settings.tipoCambio||20); source = 'finnhub-converted'; } }
+    // 2. Obtener precio USD (Finnhub o Alpha Vantage USD) y convertir a MXN con tipo de cambio en vivo
+    if (price === null) {
+      let priceUSD = await fetchStockPrice(ticker);
+      if (priceUSD === null && settings.alphaVantageKey) { priceUSD = await fetchAlphaVantagePrice(ticker, 'USD'); }
+      if (priceUSD !== null) {
+        const fx = _fxCache || LS.get('fxCache');
+        const tcLive = (fx?.usdmxn) || settings.tipoCambio || 20;
+        price = priceUSD * tcLive;
+        source = 'usd-converted';
+      }
+    }
   }
   else if (type === 'Acción' || type === 'ETF') {
     price = await fetchStockPrice(ticker);
@@ -908,14 +940,28 @@ function renderDashboard(){
         </div>
       </div>
       <div class="card">
-        <div class="card-title">📈 Rendimiento Real</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
-          ${[
-            ['G/P No Realizada', (gpNoRealizadaTotal>=0?'+':'')+fmt(gpNoRealizadaTotal), pctCol(gpNoRealizadaTotal)],
-            ['G/P Realizada', (gpRealizadaTotal>=0?'+':'')+fmt(gpRealizadaTotal), pctCol(gpRealizadaTotal)],
-            ['CAGR Real', rendAnualReal!==null ? (rendAnualReal>=0?'+':'')+(rendAnualReal*100).toFixed(1)+'%' : '—', rendAnualReal!==null?pctCol(rendAnualReal):'var(--text3)'],
-            ['Delta Hoy', (deltaHoy>=0?'▲ ':' ▼ ')+fmt(Math.abs(deltaHoy)), pctCol(deltaHoy)]
-          ].map(([l,v,c])=>`<div style="background:var(--card2);border-radius:10px;padding:10px;text-align:center"><div style="font-size:9px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:0.06em">${l}</div><div style="font-size:15px;font-weight:800;color:${c};margin-top:2px">${v}</div></div>`).join('')}
+        <div class="card-title">💼 Inversiones por Tipo</div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="chart-container" style="height:140px;width:140px;flex-shrink:0"><canvas id="chartInvTipo"></canvas></div>
+          <div style="flex:1">
+            ${(()=>{
+              const inv={};
+              tickerList.forEach(t=>{
+                if(t.cantActual>0){
+                  const v=(t.valorActual||t.costoPosicion)*(t.moneda==='MXN'?1:tc);
+                  inv[t.type]=(inv[t.type]||0)+v;
+                }
+              });
+              // También incluir plataformas agrupadas como "Plataformas"
+              const totalPlats=totalMXN;
+              if(totalPlats>0) inv['Plataformas']=totalPlats;
+              const sorted=Object.entries(inv).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+              const total=sorted.reduce((s,[,v])=>s+v,0)||1;
+              const gpTotal=gpNoRealizadaTotal+gpRealizadaTotal;
+              const gpRow=`<div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border)"><div style="font-size:10px;color:var(--text2)">G/P Total</div><div style="font-size:14px;font-weight:800;color:${pctCol(gpTotal)}">${gpTotal>=0?'+':''}${fmt(gpTotal)}</div></div>`;
+              return sorted.map(([k,v],i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0"><span style="display:flex;align-items:center;gap:5px;font-size:11px"><span style="width:7px;height:7px;border-radius:2px;background:${COLORS[i%COLORS.length]};display:inline-block;flex-shrink:0"></span>${k}</span><span style="font-size:11px;font-weight:700">${((v/total)*100).toFixed(1)}%</span></div>`).join('')+gpRow;
+            })()}
+          </div>
         </div>
       </div>
       <div class="card">
@@ -966,9 +1012,9 @@ function renderDashboard(){
 
     <div class="grid-4">
       ${statCard('Patrimonio Total',fmt(patrimonio),'MXN + inversiones',null,'var(--blue)')}
-      ${statCard('Rend. Esperado',(re*100).toFixed(0)+'% anual','≈ '+fmt(patrimonio*re)+' / año',null,'var(--green)')}
+      ${statCard('CAGR Real', rendAnualReal!==null?(rendAnualReal>=0?'+':'')+(rendAnualReal*100).toFixed(1)+'%':'Sin historial', rendAnualReal!==null?'rentabilidad anualizada':'necesitas +30 días de datos', rendAnualReal!==null?pctCol(rendAnualReal):null, 'var(--green)')}
       ${statCard('Balance Mes '+curLabel,fmtD(balMes),salud,pctCol(balMes),'var(--orange)')}
-      ${statCard('Total Movimientos',movements.length+'','registrados',null,'var(--purple)')}
+      ${statCard('G/P Inversiones',(gpNoRealizadaTotal>=0?'+':'')+fmt(gpNoRealizadaTotal),'no realizada · '+((gpNoRealizadaTotal>=0?'+':'')+fmt(gpRealizadaTotal))+' realizada',pctCol(gpNoRealizadaTotal),'var(--purple)')}
     </div>
   `;
 
@@ -1133,6 +1179,14 @@ function renderDashboard(){
     const de=Object.entries(at).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
     const ctxD=document.getElementById('chartDistro');
     if(ctxD&&de.length>0){chartInstances.chartDistro=new Chart(ctxD,{type:'doughnut',data:{labels:de.map(([k])=>k),datasets:[{data:de.map(([,v])=>v),backgroundColor:de.map((_,i)=>COLORS[i%COLORS.length]),borderWidth:2,borderColor:isDark?'#1C1C1E':'#fff',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',cornerRadius:12,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>' '+ctx.label+': '+((ctx.parsed/de.reduce((s,[,v])=>s+v,0)*100)).toFixed(1)+'%'}}}}});}
+
+    // Dona: inversiones por tipo de activo
+    const inv={};
+    tickerList.forEach(t=>{if(t.cantActual>0){const v=(t.valorActual||t.costoPosicion)*(t.moneda==='MXN'?1:tc);inv[t.type]=(inv[t.type]||0)+v;}});
+    if(totalMXN>0) inv['Plataformas']=totalMXN;
+    const invE=Object.entries(inv).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+    const ctxI=document.getElementById('chartInvTipo');
+    if(ctxI&&invE.length>0){chartInstances.chartInvTipo=new Chart(ctxI,{type:'doughnut',data:{labels:invE.map(([k])=>k),datasets:[{data:invE.map(([,v])=>v),backgroundColor:invE.map((_,i)=>COLORS[i%COLORS.length]),borderWidth:2,borderColor:isDark?'#1C1C1E':'#fff',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',cornerRadius:12,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>{const total=invE.reduce((s,[,v])=>s+v,0);return ' '+ctx.label+': '+((ctx.parsed/total)*100).toFixed(1)+'% ('+fmt(ctx.parsed)+')';}}}}}});}
   },50);
 }
 
