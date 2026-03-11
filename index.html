@@ -5,11 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Finanzas Pro — Dashboard Financiero</title>
   <meta name="theme-color" content="#0A84FF">
+  <!-- CSP para permitir eval (necesario para Chart.js) -->
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval' https://cdnjs.cloudflare.com https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com;">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+
+<!-- Contenedor para toasts (se llena dinámicamente) -->
+<div id="toastContainer" style="position: fixed; bottom: 20px; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; z-index: 10000;"></div>
 
 <div class="offline-banner" id="offlineBanner">
   <span id="offlineIcon">📴</span>
@@ -85,20 +90,6 @@
 
 <div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
   <div class="modal wide" id="modalContent"></div>
-</div>
-
-<!-- Confirm dialog -->
-<div class="modal-overlay" id="confirmOverlay">
-  <div class="modal" id="confirmDialog" style="max-width:420px">
-    <div class="modal-header" style="margin-bottom:12px">
-      <div class="modal-title" id="confirmTitle" style="font-size:17px"></div>
-    </div>
-    <p id="confirmBody" style="font-size:14px;color:var(--text2);line-height:1.55;margin-bottom:24px"></p>
-    <div style="display:flex;gap:10px;justify-content:flex-end">
-      <button id="confirmCancel" class="btn btn-secondary">Cancelar</button>
-      <button id="confirmOk" class="btn btn-danger">Eliminar</button>
-    </div>
-  </div>
 </div>
 
 <script type="module" src="app.js"></script>
