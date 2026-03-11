@@ -51,8 +51,8 @@ function setPriceCache(c) { LS.set(PRICE_CACHE_KEY, c); }
 function isCacheFresh(ts) { if (!ts) return false; const n = new Date(), c = new Date(ts); return n.getFullYear()===c.getFullYear() && n.getMonth()===c.getMonth() && n.getDate()===c.getDate(); }
 function getCachedPrice(t) { const c=getPriceCache(); return c[t]||null; }
 function setCachedPrice(t,p,s) {
-  // Sanity check: precio MXN nunca debería ser < 1 para acciones/ETFs reales
-  if (t.endsWith('_MXN') && p < 1) { console.warn(`Precio MXN sospechoso para ${t}: ${p} — descartado`); return; }
+  // Precio MXN de acción/ETF nunca debería ser menor a $50 (ni VUAA barato vale menos)
+  if (t.endsWith('_MXN') && p < 50) { console.warn(`Precio MXN inválido para ${t}: ${p} — descartado`); return; }
   const c=getPriceCache(); c[t]={price:p,ts:Date.now(),source:s}; setPriceCache(c);
 }
 function clearPriceCache(ticker, moneda) {
@@ -60,11 +60,17 @@ function clearPriceCache(ticker, moneda) {
   const key = (moneda||'').toUpperCase()==='MXN' ? ticker.toUpperCase()+'_MXN' : ticker.toUpperCase();
   delete c[key]; setPriceCache(c);
 }
-// Limpiar precios MXN corruptos (< 1) que pudieran haber quedado en caché
+// Al arrancar: borrar TODOS los precios MXN de acciones/ETFs (no crypto)
+// Los precios en GBp sin convertir quedan como 30, 50, etc. — se limpian aquí
 (function cleanCorruptedPrices(){
   const c=getPriceCache();
   let changed=false;
-  Object.entries(c).forEach(([k,v])=>{ if(k.endsWith('_MXN')&&v.price<1){delete c[k];changed=true;console.warn('Cache corrupto eliminado:',k,v.price);} });
+  Object.entries(c).forEach(([k,v])=>{
+    if(k.endsWith('_MXN') && v.price < 500){
+      // Crypto MXN puede ser bajo (PEPE, SHIB) — solo limpiar si source no es coingecko
+      if(v.source !== 'coingecko') { delete c[k]; changed=true; console.warn('Cache MXN inválido limpiado:',k,v.price,v.source); }
+    }
+  });
   if(changed) setPriceCache(c);
 })();
 
@@ -86,42 +92,43 @@ async function fetchStockPrice(ticker) {
 async function fetchAlphaVantagePrice(ticker, targetMoneda) {
   const k = settings.alphaVantageKey || ''; if (!k) return null;
   const base = ticker.toUpperCase().replace(/\.(L|DE|AS|PA|MI|SW|LON|DEX)$/i, '');
-  // Solo bolsas europeas primero — si ninguna funciona, intentar sin sufijo (NYSE/NASDAQ)
   const symbols = [base+'.LON', base+'.DEX', base+'.EPA', base+'.AMS'];
-  // Si ninguna bolsa europea devuelve precio, intentar directo (solo para acciones USD)
   const symbolsUSD = [base];
   const allSymbols = targetMoneda === 'MXN' ? symbols : [...symbols, ...symbolsUSD];
+
+  // Asegurar que tengamos tipos de cambio frescos ANTES de convertir
+  if (!_fxCache || !_fxCache.gbpmxn) await fetchFX();
+  const fx = _fxCache || LS.get('fxCache');
+  const tc = (fx?.usdmxn) || settings.tipoCambio || 20;
+  const eurmxn = (fx?.eurmxn) || settings.tipoEUR || 21.5;
+  const gbpmxn = (fx?.gbpmxn) || (tc * 1.27);
+  const usdgbp = (fx?.usdgbp) || 0.79;
+  const usdeur = (fx?.usdeur) || 0.92;
+  console.log(`[AlphaVantage] FX listo — USD/MXN:${tc} EUR/MXN:${eurmxn} GBP/MXN:${gbpmxn}`);
+
   for (const sym of allSymbols) {
     try {
       const r = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(sym)}&apikey=${k}`);
       if (!r.ok) continue;
       const d = await r.json();
-      // Si hay mensaje de límite de API, parar
       if (d.Note || d.Information) { console.warn('Alpha Vantage limit:', d.Note||d.Information); return null; }
       const q = d['Global Quote'];
-      // Alpha Vantage devuelve objeto vacío {} cuando no encuentra el símbolo
       if (!q || !q['01. symbol'] || !q['05. price']) continue;
       let price = parseFloat(q['05. price']);
       if (!price || price <= 0) continue;
-      console.log(`Alpha Vantage: ${sym} = ${price} (targetMoneda: ${targetMoneda})`);
-      const fx = _fxCache || LS.get('fxCache');
-      const tc = settings.tipoCambio || 20;
-      const eurmxn = (fx?.eurmxn) || settings.tipoEUR || 21.5;
-      const gbpmxn = (fx?.gbpmxn) || eurmxn * 1.17;
-      const usdgbp = (fx?.usdgbp) || 0.79;
-      const usdeur = (fx?.usdeur) || 0.92;
+      console.log(`[AlphaVantage] ${sym} = ${price} raw → convirtiendo a ${targetMoneda}`);
       if (targetMoneda === 'MXN') {
-        if (sym.includes('.LON')) price = (price / 100) * gbpmxn; // GBp → GBP → MXN
-        else if (sym.includes('.DEX') || sym.includes('.EPA') || sym.includes('.AMS')) price = price * eurmxn;
-        else price = price * tc; // USD → MXN
+        if (sym.includes('.LON')) price = (price / 100) * gbpmxn;       // GBp → GBP → MXN
+        else if (sym.includes('.DEX') || sym.includes('.EPA') || sym.includes('.AMS')) price = price * eurmxn; // EUR → MXN
+        else price = price * tc;                                           // USD → MXN
       } else if (targetMoneda === 'USD') {
-        // Convertir a USD: bolsas europeas no son USD directo
-        if (sym.includes('.LON')) price = (price / 100) / usdgbp; // GBp → GBP → USD
+        if (sym.includes('.LON')) price = (price / 100) / usdgbp;        // GBp → GBP → USD
         else if (sym.includes('.DEX') || sym.includes('.EPA') || sym.includes('.AMS')) price = price / usdeur; // EUR → USD
-        // sym sin sufijo ya es USD, no convertir
+        // sin sufijo ya es USD
       }
+      console.log(`[AlphaVantage] ${sym} = ${price} ${targetMoneda} ✅`);
       return price;
-    } catch {}
+    } catch(e) { console.warn('[AlphaVantage] error:', sym, e); }
     await new Promise(r => setTimeout(r, 300));
   }
   return null;
