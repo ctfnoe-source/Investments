@@ -534,8 +534,9 @@ function savePatrimonioSnapshot(value, capital) {
 }
 
 // Reconstruye snapshots históricos desde movimientos pasados
-// Para cada fecha relevante calcula: capital = lo aportado hasta esa fecha, value = capital (sin precio de mercado)
-// Así la línea verde parte de 0 en el inicio y la proyección arranca del capital inicial real
+// Para cada fecha calcula el capital aportado hasta ese día.
+// La ganancia se interpola linealmente entre 0 y la ganancia real de hoy
+// para evitar el salto vertical al no tener precios históricos.
 function buildHistoricalSnapshots() {
   const tc = settings.tipoCambio || 20;
   const eurmxn = getEurMxn();
@@ -547,53 +548,60 @@ function buildHistoricalSnapshots() {
   platforms.forEach(p => { if (p.fechaInicio && p.fechaInicio < todayStr) fechas.add(p.fechaInicio); });
   if (fechas.size === 0) return;
 
+  // Eliminar todos los sintéticos anteriores — siempre se recalculan frescos
+  patrimonioHistory = patrimonioHistory.filter(s => !s.synthetic);
+
   const fechasOrdenadas = [...fechas].sort();
 
+  // Calcular capital por fecha
+  const capitalPorFecha = [];
   fechasOrdenadas.forEach(fecha => {
-    // Si ya hay un snapshot real para esta fecha, no sobreescribir
-    if (patrimonioHistory.find(s => s.date === fecha)) return;
+    if (patrimonioHistory.find(s => s.date === fecha)) return; // hay snapshot real, no tocar
 
-    // Capital de plataformas hasta esta fecha
     let capitalPlats = 0;
     platforms.forEach(p => {
-      if (p.fechaInicio && p.fechaInicio > fecha) return; // plataforma no existía aún
+      if (p.fechaInicio && p.fechaInicio > fecha) return;
       const toMXN = v => p.moneda === 'USD' ? v*tc : p.moneda === 'EUR' ? v*eurmxn : v;
-      // Saldo inicial siempre cuenta si la plataforma ya existía
       capitalPlats += toMXN(p.saldoInicial || 0);
-      // Aportaciones y retiros solo los anteriores a esta fecha
       movements.filter(m => m.seccion === 'plataformas' && m.plataforma === p.name && m.fecha <= fecha).forEach(m => {
         if (m.tipo === 'Aportación') capitalPlats += toMXN(m.monto || 0);
         if (m.tipo === 'Retiro') capitalPlats -= toMXN(m.monto || 0);
       });
     });
 
-    // Capital de inversiones hasta esta fecha (costo de compras - ventas)
     let capitalInv = 0;
-    const compras = movements.filter(m => m.seccion === 'inversiones' && m.tipo === 'Compra' && m.fecha <= fecha);
-    const ventas = movements.filter(m => m.seccion === 'inversiones' && m.tipo === 'Venta' && m.fecha <= fecha);
-    compras.forEach(m => {
-      const monto = (m.cantidad || 0) * (m.precio || 0);
-      capitalInv += m.moneda === 'MXN' ? monto : monto * tc;
-    });
-    ventas.forEach(m => {
-      const monto = (m.cantidad || 0) * (m.precio || 0);
-      capitalInv -= m.moneda === 'MXN' ? monto : monto * tc;
-    });
+    movements.filter(m => m.seccion === 'inversiones' && m.tipo === 'Compra' && m.fecha <= fecha)
+      .forEach(m => { const monto = (m.cantidad||0)*(m.precio||0); capitalInv += m.moneda==='MXN' ? monto : monto*tc; });
+    movements.filter(m => m.seccion === 'inversiones' && m.tipo === 'Venta' && m.fecha <= fecha)
+      .forEach(m => { const monto = (m.cantidad||0)*(m.precio||0); capitalInv -= m.moneda==='MXN' ? monto : monto*tc; });
 
     const capital = Math.round(capitalPlats + Math.max(0, capitalInv));
-    if (capital > 0) {
-      // value = capital (sin ganancias de mercado — no sabemos el precio histórico)
-      patrimonioHistory.push({ date: fecha, value: capital, capital, synthetic: true });
-    }
+    if (capital > 0) capitalPorFecha.push({ date: fecha, capital });
   });
 
-  // Ordenar y limpiar duplicados
-  patrimonioHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
-  // Dedup: quedarse con el real si hay dos del mismo día
-  const seen = new Map();
-  patrimonioHistory.forEach(s => {
-    if (!seen.has(s.date) || !s.synthetic) seen.set(s.date, s);
+  if (capitalPorFecha.length === 0) return;
+
+  // Ganancia real de hoy (del snapshot de hoy si existe)
+  const todaySnap = patrimonioHistory.find(s => s.date === todayStr && !s.synthetic);
+  const gananciaHoy = todaySnap ? todaySnap.value - (todaySnap.capital || todaySnap.value) : 0;
+
+  // Rango de tiempo para interpolación
+  const fechaInicio = new Date(capitalPorFecha[0].date);
+  const fechaHoy = new Date(todayStr);
+  const diasTotal = Math.max(1, (fechaHoy - fechaInicio) / (1000*60*60*24));
+
+  // Crear snapshots sintéticos con ganancia interpolada
+  capitalPorFecha.forEach(({ date, capital }) => {
+    const diasDesdeInicio = (new Date(date) - fechaInicio) / (1000*60*60*24);
+    const progreso = diasDesdeInicio / diasTotal;
+    const gananciaInterpolada = Math.round(gananciaHoy * progreso);
+    patrimonioHistory.push({ date, value: capital + gananciaInterpolada, capital, synthetic: true });
   });
+
+  // Ordenar y limpiar duplicados (reales tienen prioridad sobre sintéticos)
+  patrimonioHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
+  const seen = new Map();
+  patrimonioHistory.forEach(s => { if (!seen.has(s.date) || !s.synthetic) seen.set(s.date, s); });
   patrimonioHistory = [...seen.values()];
   LS.set('patrimonioHistory', patrimonioHistory);
 }
