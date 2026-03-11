@@ -520,6 +520,8 @@ function _recalcAndSaveSnapshot() {
   const capitalBase = capitalPlats + capitalInv;
 
   savePatrimonioSnapshot(patrimonioTotal, capitalBase);
+  // Rellenar historial pasado desde movimientos si faltan snapshots
+  buildHistoricalSnapshots();
 }
 
 function savePatrimonioSnapshot(value, capital) {
@@ -528,6 +530,71 @@ function savePatrimonioSnapshot(value, capital) {
   const newSnapshot = { date: todayStr, value: Math.round(value), capital: Math.round(capital || value) };
   if (existingIndex === -1) { patrimonioHistory.push(newSnapshot); if (patrimonioHistory.length > 365) patrimonioHistory = patrimonioHistory.slice(-365); }
   else { patrimonioHistory[existingIndex] = newSnapshot; }
+  LS.set('patrimonioHistory', patrimonioHistory);
+}
+
+// Reconstruye snapshots históricos desde movimientos pasados
+// Para cada fecha relevante calcula: capital = lo aportado hasta esa fecha, value = capital (sin precio de mercado)
+// Así la línea verde parte de 0 en el inicio y la proyección arranca del capital inicial real
+function buildHistoricalSnapshots() {
+  const tc = settings.tipoCambio || 20;
+  const eurmxn = getEurMxn();
+  const todayStr = today();
+
+  // Recopilar todas las fechas relevantes de movimientos pasados
+  const fechas = new Set();
+  movements.forEach(m => { if (m.fecha && m.fecha < todayStr) fechas.add(m.fecha); });
+  platforms.forEach(p => { if (p.fechaInicio && p.fechaInicio < todayStr) fechas.add(p.fechaInicio); });
+  if (fechas.size === 0) return;
+
+  const fechasOrdenadas = [...fechas].sort();
+
+  fechasOrdenadas.forEach(fecha => {
+    // Si ya hay un snapshot real para esta fecha, no sobreescribir
+    if (patrimonioHistory.find(s => s.date === fecha)) return;
+
+    // Capital de plataformas hasta esta fecha
+    let capitalPlats = 0;
+    platforms.forEach(p => {
+      if (p.fechaInicio && p.fechaInicio > fecha) return; // plataforma no existía aún
+      const toMXN = v => p.moneda === 'USD' ? v*tc : p.moneda === 'EUR' ? v*eurmxn : v;
+      // Saldo inicial siempre cuenta si la plataforma ya existía
+      capitalPlats += toMXN(p.saldoInicial || 0);
+      // Aportaciones y retiros solo los anteriores a esta fecha
+      movements.filter(m => m.seccion === 'plataformas' && m.plataforma === p.name && m.fecha <= fecha).forEach(m => {
+        if (m.tipo === 'Aportación') capitalPlats += toMXN(m.monto || 0);
+        if (m.tipo === 'Retiro') capitalPlats -= toMXN(m.monto || 0);
+      });
+    });
+
+    // Capital de inversiones hasta esta fecha (costo de compras - ventas)
+    let capitalInv = 0;
+    const compras = movements.filter(m => m.seccion === 'inversiones' && m.tipo === 'Compra' && m.fecha <= fecha);
+    const ventas = movements.filter(m => m.seccion === 'inversiones' && m.tipo === 'Venta' && m.fecha <= fecha);
+    compras.forEach(m => {
+      const monto = (m.cantidad || 0) * (m.precio || 0);
+      capitalInv += m.moneda === 'MXN' ? monto : monto * tc;
+    });
+    ventas.forEach(m => {
+      const monto = (m.cantidad || 0) * (m.precio || 0);
+      capitalInv -= m.moneda === 'MXN' ? monto : monto * tc;
+    });
+
+    const capital = Math.round(capitalPlats + Math.max(0, capitalInv));
+    if (capital > 0) {
+      // value = capital (sin ganancias de mercado — no sabemos el precio histórico)
+      patrimonioHistory.push({ date: fecha, value: capital, capital, synthetic: true });
+    }
+  });
+
+  // Ordenar y limpiar duplicados
+  patrimonioHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
+  // Dedup: quedarse con el real si hay dos del mismo día
+  const seen = new Map();
+  patrimonioHistory.forEach(s => {
+    if (!seen.has(s.date) || !s.synthetic) seen.set(s.date, s);
+  });
+  patrimonioHistory = [...seen.values()];
   LS.set('patrimonioHistory', patrimonioHistory);
 }
 
