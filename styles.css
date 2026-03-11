@@ -274,6 +274,7 @@ tr:hover td { background: var(--table-row-hover); }
   border-radius: 12px; padding: 10px 16px; margin-bottom: 16px; font-size: 12px;
 }
 .snapshot-banner .snap-dot { width: 8px; height: 8px; border-radius: 4px; background: var(--green); flex-shrink: 0; animation: pulse 2s infinite; }
+/* Chart controls panel */
 .chart-controls-panel {
   border-top: 0.5px solid var(--border);
   overflow: hidden;
@@ -306,6 +307,7 @@ tr:hover td { background: var(--table-row-hover); }
 }
 .chart-toggle-btn:hover { border-color: var(--blue); color: var(--blue); }
 .chart-toggle-btn.open-state { color: var(--blue); border-color: var(--blue); background: rgba(10,132,255,0.06); }
+/* MONEDA FLAG */
 .moneda-flag { font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 6px; }
 .moneda-MXN { background: rgba(48,209,88,0.12); color: var(--green); }
 .moneda-USD { background: rgba(10,132,255,0.12); color: var(--blue); }
@@ -315,16 +317,16 @@ tr:hover td { background: var(--table-row-hover); }
   .mobile-nav {
     display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
     background: var(--nav-bg); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
-    border-top: 0.5px solid var(--border); padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+    border-top: 0.5px solid var(--border); padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
   }
   .mobile-nav-item {
-    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
-    padding: 4px; background: none; border: none; cursor: pointer; font-family: var(--font);
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px;
+    padding: 2px 1px; background: none; border: none; cursor: pointer; font-family: var(--font);
     transition: all 0.2s; color: var(--text2);
   }
   .mobile-nav-item.active { color: var(--blue); }
-  .mobile-nav-item .mob-icon { font-size: 20px; line-height: 1; }
-  .mobile-nav-item .mob-label { font-size: 9px; font-weight: 600; }
+  .mobile-nav-item .mob-icon { font-size: 18px; line-height: 1; }
+  .mobile-nav-item .mob-label { font-size: 8px; font-weight: 600; }
   .container { padding-bottom: 90px; }
 }
 @media(min-width:769px){ .mobile-nav { display: none; } }
