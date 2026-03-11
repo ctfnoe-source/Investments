@@ -8,17 +8,6 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <link rel="stylesheet" href="styles.css">
-
-  <!--
-    ORDEN DE CARGA DE SCRIPTS (importante):
-    1. data.js    → constantes, datos demo, helpers de formato, showToast
-    2. renders.js → funciones renderDashboard, renderGastos, etc.
-    3. app.js     → lógica principal, Firebase, modales, exportar CSV
-    Los 3 son type="module" para soportar los imports de Firebase.
-  -->
-  <script src="data.js"></script>
-  <script src="renders.js"></script>
-  <script type="module" src="app.js"></script>
 </head>
 <body>
 
@@ -77,13 +66,13 @@
   </div>
 </nav>
 
-<!-- Barra de navegación inferior para móvil -->
 <nav class="mobile-nav" id="mobileNav" style="display:none">
-  <button class="mobile-nav-item active" data-tab="dashboard"   onclick="switchTab('dashboard')">  <span class="mob-icon">📊</span><span class="mob-label">Dashboard</span>  </button>
-  <button class="mobile-nav-item" data-tab="movimientos"        onclick="switchTab('movimientos')"><span class="mob-icon">📋</span><span class="mob-label">Movimientos</span></button>
-  <button class="mobile-nav-item" data-tab="plataformas"        onclick="switchTab('plataformas')"><span class="mob-icon">🏦</span><span class="mob-label">Plataformas</span></button>
-  <button class="mobile-nav-item" data-tab="gastos"             onclick="switchTab('gastos')">     <span class="mob-icon">💳</span><span class="mob-label">Gastos</span>      </button>
-  <button class="mobile-nav-item" data-tab="ajustes"            onclick="switchTab('ajustes')">    <span class="mob-icon">⚙️</span><span class="mob-label">Ajustes</span>     </button>
+  <button class="mobile-nav-item active" data-tab="dashboard" onclick="switchTab('dashboard')"><span class="mob-icon">📊</span><span class="mob-label">Dashboard</span></button>
+  <button class="mobile-nav-item" data-tab="movimientos" onclick="switchTab('movimientos')"><span class="mob-icon">📋</span><span class="mob-label">Movimientos</span></button>
+  <button class="mobile-nav-item" data-tab="plataformas" onclick="switchTab('plataformas')"><span class="mob-icon">🏦</span><span class="mob-label">Plataformas</span></button>
+  <button class="mobile-nav-item" data-tab="gastos" onclick="switchTab('gastos')"><span class="mob-icon">💳</span><span class="mob-label">Gastos</span></button>
+  <button class="mobile-nav-item" data-tab="metas" onclick="switchTab('metas')"><span class="mob-icon">🎯</span><span class="mob-label">Metas</span></button>
+  <button class="mobile-nav-item" data-tab="ajustes" onclick="switchTab('ajustes')"><span class="mob-icon">⚙️</span><span class="mob-label">Ajustes</span></button>
 </nav>
 
 <div class="container" id="mainContainer" style="display:none">
@@ -99,5 +88,6 @@
   <div class="modal wide" id="modalContent"></div>
 </div>
 
+<script type="module" src="app.js"></script>
 </body>
 </html>
