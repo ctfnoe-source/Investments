@@ -731,18 +731,22 @@ function renderDashboard(){
   const todaySnap = hist.find(s => s.date === todayStr);
   const prevSnap = hist.filter(s => s.date < todayStr).slice(-1)[0];
 
-  // Rendimiento puro: patrimonio - capital aportado + capital del primer snapshot
-  // Así las aportaciones/retiros no afectan la línea verde, solo el crecimiento real
+  // RENDIMIENTO PURO: valor - capital en ese snapshot
+  // = cuánto has ganado/perdido sobre lo que tenías invertido en ese momento
+  // Cuando aportas más capital, la línea verde NO salta — solo sube si ganas
   function pureYield(snap) {
     if (!snap) return 0;
-    const firstSnap = hist[0];
-    const baseCapital = firstSnap ? (firstSnap.capital || firstSnap.value) : (snap.capital || snap.value);
-    const snapCapital = snap.capital || snap.value;
-    // rendimiento = valor actual - capital metido + capital inicial (para anclar la línea al origen)
-    return snap.value - snapCapital + baseCapital;
+    const cap = snap.capital || snap.value;
+    return snap.value - cap; // ganancia neta sobre capital aportado
   }
 
-  // Rendimiento puro actual (para la proyección)
+  // Para la GRÁFICA anclamos la línea verde en 0 al inicio y mostramos ganancia acumulada
+  // Así aportaciones no hacen saltar la línea — solo las ganancias la mueven
+  function pureYieldAnchored(snap) {
+    return snap.value - (snap.capital || snap.value);
+  }
+
+  // Rendimiento puro actual
   const tc2 = settings.tipoCambio || 20;
   const eurmxn2 = getEurMxn();
   const plats2 = calcPlatforms();
@@ -753,9 +757,7 @@ function renderDashboard(){
   const tickers2 = getTickerPositions();
   const capitalInvHoy = tickers2.reduce((s,t) => s + (t.moneda==='MXN' ? t.costoTotal : t.costoTotal*tc2), 0);
   const capitalHoy = capitalPlatsHoy + capitalInvHoy;
-  const firstHist = hist[0];
-  const baseCapitalHoy = firstHist ? (firstHist.capital || firstHist.value) : capitalHoy;
-  const patrimonioRendPuro = patrimonio - capitalHoy + baseCapitalHoy;
+  const patrimonioRendPuro = patrimonio - capitalHoy; // ganancia neta total hoy
 
   function getChangeForMonths(months) {
     if (hist.length < 2) return null;
@@ -764,7 +766,8 @@ function renderDashboard(){
     const cutoffStr = cutoff.toISOString().split('T')[0];
     const ref = hist.filter(s => s.date <= cutoffStr).slice(-1)[0];
     if (!ref) return null;
-    return pureYield(todaySnap || hist[hist.length-1]) - pureYield(ref);
+    const now = todaySnap || hist[hist.length-1];
+    return pureYieldAnchored(now) - pureYieldAnchored(ref);
   }
 
   let histFiltered = hist;
@@ -777,19 +780,14 @@ function renderDashboard(){
     if (histFiltered.length === 0) histFiltered = hist.slice(-2);
   }
   const realDatesFiltered = histFiltered.map(s => s.date);
-  // Valores de rendimiento puro para la gráfica (sin efecto de aportaciones)
-  const realValsFiltered = histFiltered.map(s => pureYield(s));
+  // Línea verde = ganancia neta acumulada (valor - capital aportado en ese momento)
+  // Aportaciones NO la mueven, solo las ganancias reales sí
+  const realValsFiltered = histFiltered.map(s => pureYieldAnchored(s));
 
   const curLabel = salaryIsEUR ? '🇪🇺 EUR' : '🇲🇽 MXN';
 
   const projInterval = CHART_INTERVALS.find(i => i.key === _projKey) || CHART_INTERVALS[3];
   const projMonths = projInterval.months;
-  // La proyección parte del PATRIMONIO real para calcular ganancia esperada
-  // pero la gráfica la ancla al rendimiento puro (mismo punto de arranque que la línea verde)
-  const patrimonioEsperado = Math.round(patrimonio * Math.pow(1 + re/12, projMonths));
-  const gananciaProy = patrimonioEsperado - patrimonio;
-  // Factor de escala para proyección sobre rendimiento puro
-  const projScale = patrimonio > 0 ? patrimonioRendPuro / patrimonio : 1;
 
   const periodOptions = [
     ...CHART_INTERVALS,
@@ -808,8 +806,8 @@ function renderDashboard(){
   }).join('');
 
   const projButtonsHTML = CHART_INTERVALS.map(r => {
-    const pv = Math.round(patrimonio * Math.pow(1 + re/12, r.months));
-    const gain = pv - patrimonio;
+    const pv = Math.round(capitalHoy * Math.pow(1 + re/12, r.months));
+    const gain = pv - capitalHoy;
     const isActive = _projKey === r.key;
     return `<button class="chart-ctrl-btn proj-btn ${isActive ? 'active' : ''}" onclick="setChartProj('${r.key}')">
       <span>${r.label}</span>
@@ -1028,20 +1026,20 @@ function renderDashboard(){
     const realDates = realDatesFiltered;
     const realVals = realValsFiltered;
 
-    // Proyección: arranca desde el último punto real (rendimiento puro) para conectar visualmente
+    // Proyección azul: ganancia esperada sobre el capital actual al % esperado
+    // Mismo eje que la línea verde (ganancia neta) — si verde está encima = vas mejor ✅
     const now = new Date();
     const lastRealDate = realDates.length > 0 ? realDates[realDates.length - 1] : now.toISOString().split('T')[0];
     const lastRealVal = realVals.length > 0 ? realVals[realVals.length - 1] : patrimonioRendPuro;
     const projDates=[];
     const projVals=[];
-    // Punto de anclaje: último dato real en escala de rendimiento puro
     projDates.push(lastRealDate);
     projVals.push(lastRealVal);
+    // Ganancia esperada = capital actual × ((1+re)^i - 1) — crece con el capital pero no con ganancias
     for(let i=1; i<=projMonths; i++){
       const d=new Date(now.getFullYear(), now.getMonth()+i, 1);
       projDates.push(d.toISOString().split('T')[0]);
-      // Proyección sobre el patrimonio real escalada al espacio de rendimiento puro
-      projVals.push(Math.round(patrimonio * Math.pow(1+re/12, i) * projScale));
+      projVals.push(Math.round(capitalHoy * (Math.pow(1+re/12, i) - 1) + patrimonioRendPuro));
     }
 
     // Calcular cambio del período para badge en la cabecera
