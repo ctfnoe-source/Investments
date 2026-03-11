@@ -50,28 +50,51 @@ function getPriceCache() { return LS.get(PRICE_CACHE_KEY) || {}; }
 function setPriceCache(c) { LS.set(PRICE_CACHE_KEY, c); }
 function isCacheFresh(ts) { if (!ts) return false; const n = new Date(), c = new Date(ts); return n.getFullYear()===c.getFullYear() && n.getMonth()===c.getMonth() && n.getDate()===c.getDate(); }
 function getCachedPrice(t) { const c=getPriceCache(); return c[t]||null; }
-function setCachedPrice(t,p,s) {
-  // Precio MXN de acción/ETF nunca debería ser menor a $50 (ni VUAA barato vale menos)
-  if (t.endsWith('_MXN') && p < 50) { console.warn(`Precio MXN inválido para ${t}: ${p} — descartado`); return; }
-  const c=getPriceCache(); c[t]={price:p,ts:Date.now(),source:s}; setPriceCache(c);
+
+// Validar que un precio sea razonable según moneda y tipo
+function isPriceReasonable(price, cacheKey) {
+  if (!price || price <= 0 || !isFinite(price)) return false;
+  if (cacheKey.endsWith('_MXN')) {
+    // ETF/acción en MXN: mínimo $100, máximo $5,000,000
+    // (VUAA~$2600, VOO~$100k, acciones baratas ~$100)
+    return price >= 100 && price <= 5000000;
+  } else {
+    // ETF/acción en USD: mínimo $0.50, máximo $100,000
+    // (VUAA~$131, VOO~$550, BRK.A~$700k — pero no tenemos esos)
+    return price >= 0.5 && price <= 100000;
+  }
 }
+
+function setCachedPrice(t, p, s) {
+  if (!isPriceReasonable(p, t)) {
+    console.warn(`[Cache] Precio inválido descartado — ${t}: ${p} (source: ${s})`);
+    return;
+  }
+  const c = getPriceCache();
+  c[t] = {price: p, ts: Date.now(), source: s};
+  setPriceCache(c);
+}
+
 function clearPriceCache(ticker, moneda) {
-  const c=getPriceCache();
+  const c = getPriceCache();
   const key = (moneda||'').toUpperCase()==='MXN' ? ticker.toUpperCase()+'_MXN' : ticker.toUpperCase();
   delete c[key]; setPriceCache(c);
 }
-// Al arrancar: borrar TODOS los precios MXN de acciones/ETFs (no crypto)
-// Los precios en GBp sin convertir quedan como 30, 50, etc. — se limpian aquí
+
+// Al arrancar: limpiar cualquier precio que no pase la validación
 (function cleanCorruptedPrices(){
-  const c=getPriceCache();
-  let changed=false;
-  Object.entries(c).forEach(([k,v])=>{
-    if(k.endsWith('_MXN') && v.price < 500){
-      // Crypto MXN puede ser bajo (PEPE, SHIB) — solo limpiar si source no es coingecko
-      if(v.source !== 'coingecko') { delete c[k]; changed=true; console.warn('Cache MXN inválido limpiado:',k,v.price,v.source); }
+  const c = getPriceCache();
+  let changed = false;
+  Object.entries(c).forEach(([k, v]) => {
+    // No tocar crypto (coingecko) — pueden tener precios muy variables
+    if (v.source === 'coingecko') return;
+    if (!isPriceReasonable(v.price, k)) {
+      delete c[k];
+      changed = true;
+      console.warn(`[Cache] Limpiado al arrancar — ${k}: ${v.price} (${v.source})`);
     }
   });
-  if(changed) setPriceCache(c);
+  if (changed) setPriceCache(c);
 })();
 
 const CRYPTO_MAP = {
@@ -196,9 +219,19 @@ async function fetchPrice(ticker, type, moneda) {
     if (price !== null) source = 'coingecko';
   }
   else if ((type === 'Acción' || type === 'ETF') && moneda === 'MXN') {
-    // 1. Alpha Vantage — soporta ETFs europeos y convierte a MXN
+    // 1. Alpha Vantage directo a MXN — VUAA.LON GBp→MXN, o VUAA.DEX EUR→MXN (más preciso)
     if (settings.alphaVantageKey) { price = await fetchAlphaVantagePrice(ticker, 'MXN'); if (price !== null) source = 'alphavantage-mxn'; }
-    // 2. Obtener precio USD (Finnhub o Alpha Vantage USD) y convertir a MXN con tipo de cambio en vivo
+    // 2. Fallback: usar caché USD del mismo ticker × tipoCambio (no gasta llamada API)
+    if (price === null) {
+      const cachedUSD = getCachedPrice(ticker.toUpperCase());
+      if (cachedUSD && isCacheFresh(cachedUSD.ts) && isPriceReasonable(cachedUSD.price, ticker.toUpperCase())) {
+        const fx = _fxCache || LS.get('fxCache');
+        const tcLive = (fx?.usdmxn) || settings.tipoCambio || 20;
+        const derived = cachedUSD.price * tcLive;
+        if (isPriceReasonable(derived, ticker.toUpperCase()+'_MXN')) { price = derived; source = 'usd-cache-converted'; }
+      }
+    }
+    // 3. Último recurso: obtener precio USD en vivo y convertir
     if (price === null) {
       let priceUSD = await fetchStockPrice(ticker);
       if (priceUSD === null && settings.alphaVantageKey) { priceUSD = await fetchAlphaVantagePrice(ticker, 'USD'); }
@@ -211,8 +244,15 @@ async function fetchPrice(ticker, type, moneda) {
     }
   }
   else if (type === 'Acción' || type === 'ETF') {
-    price = await fetchStockPrice(ticker);
-    if (price !== null) source = 'finnhub';
+    // 0. Si ya tenemos precio MXN en caché hoy, derivar USD sin gastar llamada API
+    const cachedMXN = getCachedPrice(ticker.toUpperCase() + '_MXN');
+    if (cachedMXN && isCacheFresh(cachedMXN.ts) && isPriceReasonable(cachedMXN.price, ticker.toUpperCase()+'_MXN')) {
+      const fx = _fxCache || LS.get('fxCache');
+      const tcLive = (fx?.usdmxn) || settings.tipoCambio || 20;
+      const derived = cachedMXN.price / tcLive;
+      if (isPriceReasonable(derived, ticker.toUpperCase())) { price = derived; source = 'mxn-cache-converted'; }
+    }
+    if (price === null) { price = await fetchStockPrice(ticker); if (price !== null) source = 'finnhub'; }
     // Alpha Vantage para ETFs europeos (VUAA, etc.) que Finnhub no tiene
     if (price === null && settings.alphaVantageKey) { price = await fetchAlphaVantagePrice(ticker, moneda); if (price !== null) source = 'alphavantage'; }
   }
@@ -230,7 +270,13 @@ async function updateAllPrices(forceRefresh=false) {
   const tickerSet = new Map();
   movements.forEach(m => { if (m.seccion === 'inversiones' && m.ticker) { const key = (m.moneda === 'MXN' ? m.ticker.toUpperCase() + '_MXN' : m.ticker.toUpperCase()); tickerSet.set(key, {type: m.tipoActivo, moneda: m.moneda||'USD', ticker: m.ticker.toUpperCase()}); } });
   if (forceRefresh) { const c = getPriceCache(); tickerSet.forEach((_, k) => { delete c[k]; }); setPriceCache(c); }
-  for (const [key, info] of tickerSet) { const b = document.getElementById('btnUpdate'); if (b) b.innerHTML = `<span class="spinner"></span> ${info.ticker}...`; await fetchPrice(info.ticker, info.type, info.moneda); await new Promise(r => setTimeout(r, 300)); }
+  // Ordenar: USD primero, MXN después — así el cross-cache siempre encuentra el precio USD listo
+  const tickerArr = [...tickerSet.entries()].sort((a, b) => {
+    const aIsMXN = a[1].moneda === 'MXN' ? 1 : 0;
+    const bIsMXN = b[1].moneda === 'MXN' ? 1 : 0;
+    return aIsMXN - bIsMXN;
+  });
+  for (const [key, info] of tickerArr) { const b = document.getElementById('btnUpdate'); if (b) b.innerHTML = `<span class="spinner"></span> ${info.ticker}...`; await fetchPrice(info.ticker, info.type, info.moneda); await new Promise(r => setTimeout(r, 300)); }
   priceUpdateState.loading = false;
   priceUpdateState.lastUpdate = new Date();
   _recalcAndSaveSnapshot();
@@ -349,7 +395,7 @@ const DEFAULT_RECURRENTES=[
 let platforms = LS.get('platforms') || DEFAULT_PLATFORMS;
 let movements = LS.get('movements') || DEFAULT_MOVS;
 let goals = LS.get('goals') || DEFAULT_GOALS;
-let settings = LS.get('settings') || DEFAULT_SETTINGS;
+let settings = {...DEFAULT_SETTINGS, ...(LS.get('settings') || {})};
 let recurrentes = LS.get('recurrentes') || DEFAULT_RECURRENTES;
 let patrimonioHistory = LS.get('patrimonioHistory') || [];
 
@@ -544,7 +590,8 @@ function loadFromRemote(remote){
   if(remote.platforms)platforms=remote.platforms.map(p=>({tasaAnual:0,fechaInicio:'2026-02-01',moneda:'MXN',...p}));
   if(remote.movements)movements=remote.movements;
   if(remote.goals)goals=remote.goals;
-  if(remote.settings)settings=remote.settings;
+  // Merge con defaults para que campos nuevos (tipoGBP, etc.) nunca se pierdan al cargar de Firebase
+  if(remote.settings)settings={...DEFAULT_SETTINGS,...remote.settings};
   if(remote.recurrentes)recurrentes=remote.recurrentes;
   if(remote.patrimonioHistory)patrimonioHistory=remote.patrimonioHistory;
   LS.set('platforms',platforms);LS.set('movements',movements);LS.set('goals',goals);LS.set('settings',settings);
@@ -1771,25 +1818,38 @@ function renderAjustes(){
     <div class="grid-2" style="margin-bottom:16px">
       <div class="card">
         <div class="card-title">💱 Tipo de Cambio</div>
-        ${(()=>{const fx=_fxCache||LS.get('fxCache');const isLive=fx&&isCacheFresh(fx.ts);const ts=isLive?new Date(fx.ts).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}):'';return isLive?`<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:var(--green)"><span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block"></span>En vivo · BCE · actualizado ${ts}</div>`:`<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:var(--orange)"><span style="width:7px;height:7px;border-radius:50%;background:var(--orange);display:inline-block"></span>Manual · presiona actualizar para valores en vivo</div>`;})()}
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div style="display:flex;align-items:center;gap:10px">
-            <span style="font-size:12px;color:var(--text2);width:60px">🇺🇸 USD =</span>
-            <input type="number" step="0.01" id="inputTCUSD" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="${settings.tipoCambio||20}" onchange="settings.tipoCambio=Number(this.value);saveAll()">
-            <span style="font-size:12px;color:var(--text2)">MXN</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <span style="font-size:12px;color:var(--text2);width:60px">🇪🇺 EUR =</span>
-            <input type="number" step="0.01" id="inputTCEUR" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="${settings.tipoEUR||21.5}" onchange="settings.tipoEUR=Number(this.value);saveAll()">
-            <span style="font-size:12px;color:var(--text2)">MXN</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <span style="font-size:12px;color:var(--text2);width:60px">🇬🇧 GBP =</span>
-            <input type="number" step="0.01" id="inputTCGBP" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="${settings.tipoGBP||25.5}" onchange="settings.tipoGBP=Number(this.value);saveAll()">
-            <span style="font-size:12px;color:var(--text2)">MXN</span>
-          </div>
-          <button class="btn btn-secondary btn-sm" onclick="updateFX().then(()=>renderPage('ajustes'))">🔄 Actualizar en vivo (BCE)</button>
-        </div>
+        ${(()=>{
+          const fx=_fxCache||LS.get('fxCache');
+          const isLive=fx&&isCacheFresh(fx.ts);
+          const ts=isLive?new Date(fx.ts).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}):'';
+          // Usar valores del fxCache si están frescos, si no usar settings
+          const vUSD = isLive ? fx.usdmxn.toFixed(2) : (settings.tipoCambio||20);
+          const vEUR = isLive ? fx.eurmxn.toFixed(2) : (settings.tipoEUR||21.5);
+          const vGBP = isLive ? fx.gbpmxn.toFixed(2) : (settings.tipoGBP||25.5);
+          return `
+            ${isLive
+              ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:var(--green)"><span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block"></span>En vivo · BCE · actualizado ${ts}</div>`
+              : `<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:var(--orange)"><span style="width:7px;height:7px;border-radius:50%;background:var(--orange);display:inline-block"></span>Manual · presiona actualizar para valores en vivo</div>`
+            }
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:12px;color:var(--text2);width:60px">🇺🇸 USD =</span>
+                <input type="number" step="0.01" id="inputTCUSD" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="${vUSD}" onchange="settings.tipoCambio=Number(this.value);saveAll()">
+                <span style="font-size:12px;color:var(--text2)">MXN</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:12px;color:var(--text2);width:60px">🇪🇺 EUR =</span>
+                <input type="number" step="0.01" id="inputTCEUR" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="${vEUR}" onchange="settings.tipoEUR=Number(this.value);saveAll()">
+                <span style="font-size:12px;color:var(--text2)">MXN</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:12px;color:var(--text2);width:60px">🇬🇧 GBP =</span>
+                <input type="number" step="0.01" id="inputTCGBP" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="${vGBP}" onchange="settings.tipoGBP=Number(this.value);saveAll()">
+                <span style="font-size:12px;color:var(--text2)">MXN</span>
+              </div>
+              <button class="btn btn-secondary btn-sm" onclick="updateFX().then(()=>renderPage('ajustes'))">🔄 Actualizar en vivo (BCE)</button>
+            </div>`;
+        })()}
       </div>
       <div class="card"><div class="card-title">📈 Rendimiento Esperado Anual</div><div style="display:flex;align-items:center;gap:10px;margin-top:8px"><input type="number" step="0.5" class="form-input" style="width:80px;font-size:20px;font-weight:700;text-align:center" value="${((settings.rendimientoEsperado||0.06)*100)}" onchange="settings.rendimientoEsperado=Number(this.value)/100;saveAll()"><span style="font-size:14px;color:var(--text2)">% anual</span></div></div>
     </div>
