@@ -140,15 +140,7 @@ async function updateAllPrices(forceRefresh=false) {
   const tickerSet = new Map();
   movements.forEach(m => { if (m.seccion === 'inversiones' && m.ticker) { const key = (m.moneda === 'MXN' ? m.ticker.toUpperCase() + '_MXN' : m.ticker.toUpperCase()); tickerSet.set(key, {type: m.tipoActivo, moneda: m.moneda || 'USD', ticker: m.ticker.toUpperCase()}); } });
   if (forceRefresh) { const c = getPriceCache(); tickerSet.forEach((_, k) => { delete c[k]; }); setPriceCache(c); }
-  // Fetch in parallel batches of 3 to avoid rate limits
-  const entries = [...tickerSet.entries()];
-  for (let i = 0; i < entries.length; i += 3) {
-    const batch = entries.slice(i, i + 3);
-    const b = document.getElementById('btnUpdate');
-    if (b) b.innerHTML = `<span class="spinner"></span> ${batch.map(([,info])=>info.ticker).join(', ')}...`;
-    await Promise.allSettled(batch.map(([, info]) => fetchPrice(info.ticker, info.type, info.moneda)));
-    if (i + 3 < entries.length) await new Promise(r => setTimeout(r, 400));
-  }
+  for (const [key, info] of tickerSet) { const b = document.getElementById('btnUpdate'); if (b) b.innerHTML = `<span class="spinner"></span> ${info.ticker}...`; await fetchPrice(info.ticker, info.type, info.moneda); await new Promise(r => setTimeout(r, 300)); }
   priceUpdateState.loading = false;
   priceUpdateState.lastUpdate = new Date();
   _recalcAndSaveSnapshot();
@@ -174,11 +166,6 @@ function getPriceSummary() {
 
 const COLORS=['#0A84FF','#30D158','#FF9F0A','#BF5AF2','#FF375F','#64D2FF','#FFD60A','#AC8E68','#5E5CE6','#FF6482','#32D74B','#00C7BE','#FF453A','#5856D6','#AF52DE','#FF2D55','#A2845E','#30B0C7'];
 const MONTHS=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-
-function escHtml(str) {
-  if (str == null) return '';
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
 const EXPENSE_CATS=[
   {id:'vivienda',name:'Vivienda',icon:'🏠'},{id:'alimentacion',name:'Alimentación',icon:'🍔'},{id:'luz',name:'Luz',icon:'💡'},{id:'agua',name:'Agua',icon:'🚰'},
   {id:'celular',name:'Celular',icon:'📱'},{id:'salud',name:'Salud',icon:'💊'},{id:'seguro',name:'Seguro',icon:'🛡'},{id:'ocio',name:'Ocio',icon:'🎮'},
@@ -193,6 +180,24 @@ const FRECUENCIAS=['Mensual','Quincenal','Semanal','Anual','Trimestral'];
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 const today = () => new Date().toISOString().split('T')[0];
+
+// ── Seguridad: escapar HTML para evitar XSS ──────────────────────────────────
+function escHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ── Debounce: evitar renders excesivos en búsquedas ──────────────────────────
+function debounce(fn, ms) {
+  let timer;
+  return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
+}
+const debouncedRenderMovimientos = debounce(() => renderMovimientos(), 220);
 
 function fmt(n, cur) {
   if (n == null || isNaN(n)) {
@@ -447,10 +452,7 @@ function applyRecurrentes() {
       count++;
     }
   });
-  if(!settings.recurrentesApplied)settings.recurrentesApplied={};
-  settings.recurrentesApplied[key]=true;
-  if(count>0){ LS.set('movements',movements); }
-  LS.set('settings',settings);
+  if(count>0){ if(!settings.recurrentesApplied)settings.recurrentesApplied={}; settings.recurrentesApplied[key]=true; LS.set('movements',movements);LS.set('settings',settings); }
   return count;
 }
 
@@ -497,8 +499,6 @@ function switchTab(tab){
 document.querySelectorAll('.nav-tab').forEach(btn=>btn.addEventListener('click',()=>switchTab(btn.dataset.tab)));
 function openModal(html){document.getElementById('modalContent').innerHTML=html;document.getElementById('modalOverlay').classList.add('open');}
 function closeModal(){document.getElementById('modalOverlay').classList.remove('open');}
-// Close modal on Escape key
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
 function typeBadge(type){const map={'SOFIPO':'badge-green','BANCO':'badge-blue','BOLSA/ETFs':'badge-orange','CUENTA DIGITAL':'badge-purple','FONDOS':'badge-purple','FONDOS RETIRO':'badge-purple','DEUDA/CETES':'badge-blue'};return`<span class="badge ${map[type]||'badge-blue'}">${type}</span>`;}
 function monedaBadge(moneda){return`<span class="moneda-flag moneda-${moneda||'MXN'}">${moneda==='USD'?'🇺🇸 USD':moneda==='EUR'?'🇪🇺 EUR':'🇲🇽 MXN'}</span>`;}
@@ -578,6 +578,44 @@ function platSaldoToMXN(p) {
   if (p.moneda === 'EUR') return saldo * eurmxn;
   return saldo;
 }
+
+// ============================================
+// TOAST & CONFIRM — Sistema de notificaciones
+// ============================================
+function showToast(msg, type='success', duration=3000) {
+  let container = document.getElementById('toastContainer');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toastContainer';
+    document.body.appendChild(container);
+  }
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = msg;
+  container.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('show'));
+  setTimeout(() => {
+    toast.classList.remove('show');
+    toast.addEventListener('transitionend', () => toast.remove(), {once:true});
+  }, duration);
+}
+
+function showConfirm(title, body, onConfirm) {
+  const overlay = document.getElementById('confirmOverlay');
+  const titleEl = document.getElementById('confirmTitle');
+  const bodyEl  = document.getElementById('confirmBody');
+  const btnOk   = document.getElementById('confirmOk');
+  const btnCx   = document.getElementById('confirmCancel');
+  if (!overlay) return; // fallback si el DOM aún no cargó
+  titleEl.innerHTML = title;
+  bodyEl.textContent = body;
+  overlay.classList.add('open');
+  const close = () => overlay.classList.remove('open');
+  btnOk.onclick  = () => { close(); onConfirm(); };
+  btnCx.onclick  = close;
+}
+window.showToast   = showToast;
+window.showConfirm = showConfirm;
 
 // ============================================
 // RENDER DASHBOARD
@@ -902,7 +940,6 @@ function renderDashboard(){
       },options:{
         responsive:true,maintainAspectRatio:false,
         interaction:{intersect:false,mode:'index'},
-        events:['touchstart','touchmove','mousemove','mouseout','click'],
         plugins:{
           legend:{display:false},
           tooltip:{ backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)', cornerRadius:14,padding:14, bodyFont:{size:13,family:'DM Sans'}, callbacks:{label:ctx=>' '+ctx.dataset.label+': '+fmtFull(ctx.parsed.y)} }
@@ -942,7 +979,7 @@ function renderMovimientos(){
     </div>
     <div class="filter-pills">
       ${['todas','plataformas','inversiones','gastos'].map(s=>`<button class="pill ${movFilter.seccion===s?'active':''}" onclick="movFilter.seccion='${s}';renderMovimientos()">${s==='todas'?'Todas':s==='plataformas'?'🏦 Plataformas':s==='inversiones'?'📈 Inversiones':'💳 Gastos'}</button>`).join('')}
-      <input class="pill-search" placeholder="Buscar..." value="${movFilter.search}" oninput="movFilter.search=this.value;renderMovimientos()">
+      <input class="pill-search" placeholder="Buscar..." value="${escHtml(movFilter.search)}" oninput="movFilter.search=this.value;debouncedRenderMovimientos()">
       <span style="font-size:12px;color:var(--text2);margin-left:4px">${filtered.length} movimientos</span>
     </div>
     <div class="card-flat"><div class="table-wrap"><table>
@@ -951,11 +988,11 @@ function renderMovimientos(){
         ${filtered.slice(0,100).map(m=>{
           let det='',tipo='',monto='',extra='';const notas=m.notas||m.desc||'';let rowClass='';
           if(m.seccion==='plataformas'){
-            if(m.tipoPlat==='Transferencia salida'&&m.transferId){const grp=transferGroups[m.transferId]||[];const entrada=grp.find(x=>x.tipoPlat==='Transferencia entrada');det=`<strong>${m.platform}</strong> → <strong>${entrada?.platform||'?'}</strong>`;tipo=`↔ Transferencia`;monto=fmt(m.monto);rowClass='transfer-row';}
-            else{det=m.platform;tipo=m.tipoPlat;monto=fmt(m.monto);}
-          } else if(m.seccion==='inversiones'){det=`<strong>${m.ticker}</strong> · ${m.broker}`;tipo=m.tipoMov+' · '+m.tipoActivo+' · '+(m.moneda||'USD');monto=fmt(m.montoTotal,m.moneda);extra=m.cantidad+'×'+fmtFull(m.precioUnit);}
-          else{det=catName(m.categoria);tipo=m.tipo+(m.esRecurrente?' 🔄':'');monto=fmt(m.importe);}
-          return`<tr class="${rowClass}"><td style="color:var(--text2);font-size:12px">${m.fecha}</td><td>${m.tipoPlat==='Transferencia salida'&&m.transferId?`<span class="badge badge-teal">↔ TRANSFER</span>`:secBadge(m.seccion)}</td><td>${det}</td><td style="color:var(--text2);font-size:12px">${tipo}</td><td style="font-weight:700">${monto}</td><td style="color:var(--text2);font-size:11px">${extra}</td><td style="color:var(--text2);font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${notas||'—'}</td><td style="white-space:nowrap"><button class="edit-btn" onclick="openEditMovModal('${m.id}')" title="Editar">✏️</button><button class="del-btn" onclick="deleteMovement('${m.id}')" title="Eliminar">×</button></td></tr>`;
+            if(m.tipoPlat==='Transferencia salida'&&m.transferId){const grp=transferGroups[m.transferId]||[];const entrada=grp.find(x=>x.tipoPlat==='Transferencia entrada');det=`<strong>${escHtml(m.platform)}</strong> → <strong>${escHtml(entrada?.platform||'?')}</strong>`;tipo=`↔ Transferencia`;monto=fmt(m.monto);rowClass='transfer-row';}
+            else{det=escHtml(m.platform);tipo=escHtml(m.tipoPlat);monto=fmt(m.monto);}
+          } else if(m.seccion==='inversiones'){det=`<strong>${escHtml(m.ticker)}</strong> · ${escHtml(m.broker)}`;tipo=escHtml(m.tipoMov)+' · '+escHtml(m.tipoActivo)+' · '+(m.moneda||'USD');monto=fmt(m.montoTotal,m.moneda);extra=m.cantidad+'×'+fmtFull(m.precioUnit);}
+          else{det=catName(m.categoria);tipo=escHtml(m.tipo)+(m.esRecurrente?' 🔄':'');monto=fmt(m.importe);}
+          return`<tr class="${rowClass}"><td style="color:var(--text2);font-size:12px">${escHtml(m.fecha)}</td><td>${m.tipoPlat==='Transferencia salida'&&m.transferId?`<span class="badge badge-teal">↔ TRANSFER</span>`:secBadge(m.seccion)}</td><td>${det}</td><td style="color:var(--text2);font-size:12px">${tipo}</td><td style="font-weight:700">${monto}</td><td style="color:var(--text2);font-size:11px">${extra}</td><td style="color:var(--text2);font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(notas)||'—'}</td><td style="white-space:nowrap"><button class="edit-btn" onclick="openEditMovModal('${escHtml(m.id)}')" title="Editar">✏️</button><button class="del-btn" onclick="deleteMovement('${escHtml(m.id)}')" title="Eliminar">×</button></td></tr>`;
         }).join('')}
         ${filtered.length===0?'<tr><td colspan="8" style="text-align:center;color:var(--text2);padding:32px">Sin movimientos</td></tr>':''}
       </tbody>
@@ -1045,7 +1082,23 @@ function saveMovement(sec){
   movements=[mov,...movements];saveAll();closeModal();
 }
 
-function deleteMovement(id){const mov=movements.find(m=>m.id===id);if(mov&&mov.transferId){if(confirm('¿Eliminar la transferencia completa?')){movements=movements.filter(m=>m.transferId!==mov.transferId);}else return;}else{movements=movements.filter(m=>m.id!==id);}saveAll();}
+function deleteMovement(id){
+  const mov=movements.find(m=>m.id===id);
+  if(!mov) return;
+  if(mov.transferId){
+    showConfirm(
+      '¿Eliminar transferencia completa?',
+      'Se eliminarán los dos registros de la transferencia (origen y destino).',
+      ()=>{ movements=movements.filter(m=>m.transferId!==mov.transferId); saveAll(); showToast('🗑 Transferencia eliminada','info'); }
+    );
+  } else {
+    showConfirm(
+      '¿Eliminar este movimiento?',
+      'Esta acción no se puede deshacer.',
+      ()=>{ movements=movements.filter(m=>m.id!==id); saveAll(); showToast('🗑 Movimiento eliminado','info'); }
+    );
+  }
+}
 
 function openEditMovModal(id){
   const m=movements.find(x=>x.id===id);if(!m)return;const sec=m.seccion;
@@ -1135,11 +1188,24 @@ function editPlatField(id,field,el,inputType){
   }
   else{input=document.createElement('input');input.type='number';input.step='any';input.value=p[field]||0;input.className='form-input';input.style.cssText='width:110px;padding:4px 8px;font-size:12px';}
   const finish=()=>{const raw=input.value;let val=inputType==='date'||inputType==='moneda'?raw:(Number(raw)||0);platforms=platforms.map(x=>x.id!==id?x:{...x,[field]:val});saveAll();};
-  input.onblur=finish;input.onkeydown=e=>{if(e.key==='Enter')input.blur();if(e.key==='Escape')saveAll();};
+  let _cancelled=false;
+  input.onblur=()=>{ if(!_cancelled) finish(); };
+  input.onkeydown=e=>{
+    if(e.key==='Enter'){ e.preventDefault(); input.blur(); }
+    if(e.key==='Escape'){ _cancelled=true; saveAll(); } // restaura vista sin guardar cambio
+  };
   if(inputType==='moneda')input.onchange=finish;
   el.replaceWith(input);input.focus();
 }
-function deletePlatform(id){platforms=platforms.filter(p=>p.id!==id);saveAll();}
+function deletePlatform(id){
+  const p=platforms.find(x=>x.id===id);
+  if(!p) return;
+  showConfirm(
+    '¿Eliminar <strong>'+escHtml(p.name)+'</strong>?',
+    'Se borrará también su historial de movimientos. Esta acción no se puede deshacer.',
+    ()=>{ platforms=platforms.filter(x=>x.id!==id); movements=movements.filter(m=>!(m.seccion==='plataformas'&&m.platform===p.name)); saveAll(); showToast('🗑 '+p.name+' eliminada','info'); }
+  );
+}
 function openAddPlatformModal(){
   openModal(`<div class="modal-header"><div class="modal-title">Nueva Plataforma</div><button class="modal-close" onclick="closeModal()">✕</button></div>
     <form onsubmit="addPlatform();return false">
@@ -1383,7 +1449,15 @@ function renderMetas(){
 }
 function openGoalModal(){openModal(`<div class="modal-header"><div class="modal-title">Nueva Meta</div><button class="modal-close" onclick="closeModal()">✕</button></div><form onsubmit="addGoal();return false"><div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="gName" required></div><div class="form-row form-row-2"><div class="form-group"><label class="form-label">Clase</label><select class="form-select" id="gClase"><option>Patrimonio Total</option><option>Plataformas</option><option>Inversiones</option><option>Ingreso Mensual</option></select></div><div class="form-group"><label class="form-label">Meta</label><input type="number" class="form-input" id="gMeta" required></div></div><div class="form-group"><label class="form-label">Fecha Límite</label><input type="date" class="form-input" id="gFecha"></div><div class="form-group"><label class="form-label">Descripción</label><input class="form-input" id="gDesc"></div><button type="submit" class="btn btn-primary" style="width:100%;margin-top:16px">Crear Meta</button></form>`);}
 function addGoal(){const nombre=document.getElementById('gName').value,meta=Number(document.getElementById('gMeta').value);if(!nombre||!meta)return;goals.push({id:uid(),nombre,clase:document.getElementById('gClase').value,meta,fechaLimite:document.getElementById('gFecha').value,descripcion:document.getElementById('gDesc').value});saveAll();closeModal();}
-function deleteGoal(id){goals=goals.filter(g=>g.id!==id);saveAll();}
+function deleteGoal(id){
+  const g=goals.find(x=>x.id===id);
+  if(!g) return;
+  showConfirm(
+    '¿Eliminar la meta <strong>'+escHtml(g.nombre)+'</strong>?',
+    'Esta acción no se puede deshacer.',
+    ()=>{ goals=goals.filter(x=>x.id!==id); saveAll(); showToast('🎯 Meta eliminada','info'); }
+  );
+}
 
 // ============================================
 // AJUSTES
@@ -1416,19 +1490,16 @@ function renderAjustes(){
       <div class="card"><div class="card-title">⚠️ Zona de Peligro</div><button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="if(confirm('¿Borrar TODOS los datos?'))resetAll()">🗑 Resetear Todo</button></div>
     </div>
     <div class="card" style="margin-top:16px;padding:16px 20px">
-      <div class="card-title">🔐 Reglas Firebase — Doble seguridad</div>
-      <div style="font-size:11px;color:var(--text2);margin-bottom:8px;line-height:1.5">Copia y pega estas reglas en tu consola de Firebase → Firestore → Reglas. Solo TÚ podrás leer y escribir.</div>
+      <div class="card-title">🔐 Reglas Firebase</div>
       <div class="uid-box" onclick="navigator.clipboard.writeText(this.textContent.trim()).then(()=>this.style.borderColor='var(--green)')" title="Clic para copiar" style="margin-top:6px;font-size:11px;white-space:pre">rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /finanzas/main {
       allow read, write: if request.auth != null
-        && request.auth.uid == '${escHtml(currentUser?.uid||'TU_UID_AQUI')}';
+        && request.auth.uid == '${currentUser?.uid||'TU_UID_AQUI'}';
     }
   }
 }</div>
-      <div style="margin-top:8px;font-size:11px;color:var(--text2)">Tu UID: <code style="background:var(--card2);padding:2px 6px;border-radius:6px;font-size:11px;user-select:all">${escHtml(currentUser?.uid||'Inicia sesión para ver tu UID')}</code></div>
-      <div style="margin-top:4px;font-size:11px;color:var(--text2)">Tu email: <code style="background:var(--card2);padding:2px 6px;border-radius:6px;font-size:11px">${escHtml(currentUser?.email||'')}</code> ✅ Verificado en app</div>
     </div>
   `;
 }
@@ -1468,14 +1539,6 @@ const firebaseConfig={apiKey:"AIzaSyDUAOlDXmkBRQNoYgmax9KOMjQrZd061Q8",authDomai
 const app=initializeApp(firebaseConfig),db=getFirestore(app),auth=getAuth(app);
 const DOC_REF=doc(db,"finanzas","main");
 
-// ⚠️ ACCESO RESTRINGIDO: solo estos emails pueden entrar
-const ALLOWED_EMAILS = ['tu@correo.com']; // <-- cambia esto por tu email real
-
-function isAllowed(user) {
-  if (!user || !user.email) return false;
-  return ALLOWED_EMAILS.map(e => e.toLowerCase()).includes(user.email.toLowerCase());
-}
-
 function setFbStatus(s){let el=document.getElementById('fbStatus');if(!el){el=document.createElement('div');el.id='fbStatus';el.style.cssText='font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;white-space:nowrap;transition:all 0.3s;flex-shrink:0';const nav=document.querySelector('.nav-inner');if(nav)nav.appendChild(el);}const map={syncing:['⏳ Sync...','rgba(10,132,255,0.1)','#0A84FF'],ok:['☁️ Sincronizado','rgba(48,209,88,0.1)','#30D158'],error:['⚠️ Sin conexión','rgba(255,69,58,0.1)','#FF453A'],offline:['📴 Offline','rgba(0,0,0,0.06)','#86868B']};const[text,bg,color]=map[s]||map.offline;el.textContent=text;el.style.background=bg;el.style.color=color;}
 function showApp(){document.getElementById('loginOverlay').classList.add('hidden');document.getElementById('mainNav').style.display='';document.getElementById('mainContainer').style.display='';document.getElementById('mobileNav').style.display='';document.getElementById('accessDenied').classList.remove('show');}
 function showLogin(msg){document.getElementById('loginOverlay').classList.remove('hidden');document.getElementById('mainNav').style.display='none';document.getElementById('mainContainer').style.display='none';document.getElementById('mobileNav').style.display='none';document.getElementById('accessDenied').classList.remove('show');if(msg){const el=document.getElementById('loginError');el.textContent=msg;el.style.display='block';}}
@@ -1494,9 +1557,9 @@ window.saveToFirebase=async(forceImmediate=false)=>{
   const doSave=async()=>{
     setFbStatus('syncing');
     try{
+      _ignoreSnap=true;
       const d=window.getAppData?window.getAppData():{};
       await setDoc(DOC_REF,{platforms:d.platforms||[],movements:d.movements||[],goals:d.goals||[],settings:d.settings||{},recurrentes:d.recurrentes||[],patrimonioHistory:d.patrimonioHistory||[],updatedAt:serverTimestamp(),device:navigator.userAgent.substring(0,60)});
-      _ignoreSnap=true;
       setFbStatus('ok');
     }catch(e){setFbStatus('error');console.error(e);if(!navigator.onLine){window.queueSave&&window.queueSave(window.getAppData&&window.getAppData());}throw e;}
   };
@@ -1504,20 +1567,9 @@ window.saveToFirebase=async(forceImmediate=false)=>{
   clearTimeout(_saveTimeout);_saveTimeout=setTimeout(doSave,1500);
 };
 
-onAuthStateChanged(auth,async user=>{
+onAuthStateChanged(auth,user=>{
   if(user){
     window._currentUser=user;
-    if(!isAllowed(user)){
-      // Sign out silently and show access denied
-      await signOut(auth);
-      window._currentUser=null;
-      document.getElementById('loginOverlay').classList.add('hidden');
-      const denied=document.getElementById('accessDenied');
-      denied.classList.add('show');
-      const deniedEmail=document.getElementById('deniedEmail');
-      if(deniedEmail)deniedEmail.textContent=user.email;
-      return;
-    }
     if(typeof updateNavUser==='function')updateNavUser(user);
     showApp();setupFirestore();
     if(window.renderPage)window.renderPage(window.currentTab||'dashboard');
@@ -1534,6 +1586,7 @@ window.addEventListener('offline',()=>setFbStatus('offline'));
 
 // Exportar funciones al ámbito global
 window.toggleDark = toggleDark;
+window.debouncedRenderMovimientos = debouncedRenderMovimientos;
 window.switchTab = switchTab;
 window.openModal = openModal;
 window.closeModal = closeModal;
