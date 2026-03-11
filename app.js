@@ -992,13 +992,11 @@ function renderDashboard(){
       </div>
     </div>
 
-    <div class="grid-4" style="margin-bottom:10px">
+    <div class="grid-8" style="margin-bottom:16px">
       <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">🏦 Valor Plataformas</div><div class="stat-value">${fmt(totalMXN)}</div><div class="stat-sub"><span style="color:${pctCol(totalRend)};font-weight:700">${fmtPct(invInicial?totalRend/invInicial:0)}</span> rendimiento</div></div>
       <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">🏦 Rend. Plataformas</div><div class="stat-value" style="color:${pctCol(totalRend)}">${fmt(totalRend)}</div><div class="stat-sub">${platsConTasa>0?`<span style="color:var(--teal)">⚡${fmt(totalRendAuto)} auto</span>`:'rendimiento total'}</div></div>
       <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">🏦 Concentración</div><div class="stat-value" style="font-size:14px">${topPlat?.name||'—'}</div><div class="stat-sub"><span style="color:var(--orange);font-weight:700">${(maxConc*100).toFixed(1)}%</span> · ${riskLvl}</div></div>
       <div class="card stat" style="border-top:3px solid var(--green)"><div class="stat-label">📈 G/P No Realizada</div><div class="stat-value" style="color:${pctCol(gpNoRealizadaTotal)}">${fmt(gpNoRealizadaTotal)}</div><div class="stat-sub">${fmtPct(totalInvertidoUSD?gpNoRealizadaTotal/(totalInvertidoUSD*tc):0)} · ${tickerList.length} posiciones</div></div>
-    </div>
-    <div class="grid-4" style="margin-bottom:16px">
       <div class="card stat" style="border-top:3px solid var(--green)"><div class="stat-label">📈 CAGR Real</div><div class="stat-value" style="color:${rendAnualReal!==null?pctCol(rendAnualReal):'var(--text2)'}">${rendAnualReal!==null?(rendAnualReal>=0?'+':'')+(rendAnualReal*100).toFixed(1)+'%':'—'}</div><div class="stat-sub">${rendAnualReal!==null?'rentabilidad anualizada':'sin historial aún'}</div></div>
       <div class="card stat" style="border-top:3px solid var(--orange)"><div class="stat-label">💳 Ingresos Mes ${curLabel}</div><div class="stat-value">${fmtD(totIngMes>0?totIngMes:ingresoMensualEUR)}</div><div class="stat-sub">${totIngMes>0?`registrado ${MONTHS[cm-1]}`:ingresoMensualEUR>0?`<span style="color:var(--text3)">planeado</span>`:`<span style="color:var(--text3)">config. en Gastos</span>`}</div></div>
       <div class="card stat" style="border-top:3px solid var(--orange)"><div class="stat-label">💳 Gastos Mes ${curLabel}</div><div class="stat-value" style="color:${totGastoMes>0?'var(--red)':'var(--text)'}">${fmtD(totGastoMes)}</div><div class="stat-sub">${totalPresupuesto>0?(pctPresUsado*100).toFixed(0)+'% presupuesto':''}</div></div>

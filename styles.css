@@ -123,10 +123,12 @@ body {
 .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
 .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
 .grid-6 { display: grid; grid-template-columns: repeat(6,1fr); gap: 12px; }
+.grid-8 { display: grid; grid-template-columns: repeat(8,1fr); gap: 10px; }
 .grid-1-1-1 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
-@media(max-width:1100px){.grid-6{grid-template-columns:repeat(3,1fr)}.grid-1-1-1{grid-template-columns:1fr}}
+@media(max-width:1100px){.grid-6{grid-template-columns:repeat(3,1fr)}.grid-8{grid-template-columns:repeat(4,1fr)}.grid-1-1-1{grid-template-columns:1fr}}
 @media(max-width:768px){
   .grid-4{grid-template-columns:1fr 1fr}
+  .grid-8{grid-template-columns:repeat(2,1fr)}
   .grid-3,.grid-2{grid-template-columns:1fr}
   .container{padding:12px 12px 80px}
   .nav-inner{padding:0 12px;gap:4px}
