@@ -196,6 +196,11 @@ tr:hover td { background: var(--table-row-hover); }
 .modal-overlay.open { display: flex; }
 .modal { background: var(--card); border-radius: 24px; padding: 32px; max-width: 580px; width: 92%; max-height: 88vh; overflow-y: auto; box-shadow: var(--shadow-modal); animation: slideUp 0.3s ease; border: 0.5px solid var(--border); }
 .modal.wide { max-width: 720px; }
+/* MEJORA: modal en móvil más compacto */
+@media (max-width: 480px) {
+  .modal { padding: 20px 16px; width: 95%; max-height: 90vh; }
+  .modal.wide { max-width: 95%; }
+}
 .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
 .modal-title { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
 .modal-close { background: var(--card2); border: none; border-radius: 20px; width: 36px; height: 36px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; color: var(--text2); transition: all 0.15s; }
@@ -240,9 +245,9 @@ tr:hover td { background: var(--table-row-hover); }
 .editable:hover { border-color:var(--blue) }
 .section-title { font-size:24px;font-weight:800;letter-spacing:-0.03em }
 .section-sub { font-size:13px;color:var(--text2);margin-top:2px }
-.del-btn { background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;opacity:0.3;transition:opacity 0.15s }
+.del-btn { background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;opacity:0.3;transition:opacity 0.15s; padding:8px; /* MEJORA: área táctil */ }
 .del-btn:hover { opacity:0.8 }
-.edit-btn { background:none;border:none;color:var(--blue);cursor:pointer;font-size:13px;opacity:0.4;transition:opacity 0.15s;padding:2px 5px;border-radius:6px; }
+.edit-btn { background:none;border:none;color:var(--blue);cursor:pointer;font-size:13px;opacity:0.4;transition:opacity 0.15s;padding:8px;border-radius:6px; } /* MEJORA: área táctil */
 .edit-btn:hover { opacity:0.9;background:rgba(10,132,255,0.08); }
 .rank { width:22px;height:22px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:800;flex-shrink:0 }
 .uid-box { background:var(--card2);border-radius:10px;padding:10px 14px;font-family:monospace;font-size:11px;color:var(--text);word-break:break-all;cursor:pointer;border:1.5px solid transparent;transition:border-color 0.2s }
@@ -312,6 +317,52 @@ tr:hover td { background: var(--table-row-hover); }
 .moneda-MXN { background: rgba(48,209,88,0.12); color: var(--green); }
 .moneda-USD { background: rgba(10,132,255,0.12); color: var(--blue); }
 .moneda-EUR { background: rgba(191,90,242,0.12); color: var(--purple); }
+/* MEJORA: tarjetas para móvil */
+.mobile-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.mobile-mov-card, .mobile-plat-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 16px;
+  border: 0.5px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.mobile-mov-card { display: flex; flex-direction: column; gap: 8px; }
+.mobile-plat-card { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; }
+.mobile-only { display: none; }
+@media (max-width: 768px) {
+  .desktop-table { display: none; }
+  .mobile-only { display: block; }
+  .del-btn, .edit-btn { padding: 10px; } /* Área táctil aumentada */
+}
+/* Toast */
+.toast {
+  background: var(--card2);
+  color: var(--text);
+  padding: 12px 20px;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  border: 0.5px solid var(--border);
+  backdrop-filter: blur(10px);
+  animation: slideInRight 0.2s ease, fadeOut 0.2s ease 2.8s forwards;
+  pointer-events: auto;
+  max-width: 300px;
+}
+.toast-success { background: rgba(48,209,88,0.95); color: white; border: none; }
+.toast-error { background: rgba(255,69,58,0.95); color: white; border: none; }
+.toast-info { background: rgba(10,132,255,0.95); color: white; border: none; }
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes fadeOut {
+  to { opacity: 0; transform: translateX(100%); }
+}
 @media(max-width:768px){
   .nav-tabs { display: none; }
   .mobile-nav {
@@ -321,7 +372,8 @@ tr:hover td { background: var(--table-row-hover); }
   }
   .mobile-nav-item {
     flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
-    padding: 4px; background: none; border: none; cursor: pointer; font-family: var(--font);
+    padding: 8px 4px; /* MEJORA: área táctil */
+    background: none; border: none; cursor: pointer; font-family: var(--font);
     transition: all 0.2s; color: var(--text2);
   }
   .mobile-nav-item.active { color: var(--blue); }
@@ -330,30 +382,3 @@ tr:hover td { background: var(--table-row-hover); }
   .container { padding-bottom: 90px; }
 }
 @media(min-width:769px){ .mobile-nav { display: none; } }
-
-/* ── Toast notifications ─────────────────────────────────────────── */
-#toastContainer {
-  position: fixed; bottom: 28px; right: 24px; z-index: 9000;
-  display: flex; flex-direction: column; gap: 10px; pointer-events: none;
-}
-.toast {
-  padding: 12px 20px; border-radius: 14px; font-size: 13px; font-weight: 600;
-  color: #fff; box-shadow: 0 8px 28px rgba(0,0,0,0.22);
-  opacity: 0; transform: translateY(12px) scale(0.95);
-  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(.34,1.56,.64,1);
-  pointer-events: auto; max-width: 320px; line-height: 1.4;
-}
-.toast.show { opacity: 1; transform: translateY(0) scale(1); }
-.toast-success { background: var(--green); }
-.toast-error   { background: var(--red); }
-.toast-info    { background: rgba(134,134,139,0.92); backdrop-filter:blur(8px); }
-.toast-warn    { background: var(--orange); }
-@media(max-width:768px){
-  #toastContainer { bottom: 88px; right: 12px; left: 12px; align-items: center; }
-  .toast { width: 100%; text-align: center; }
-}
-
-/* ── Confirm dialog ──────────────────────────────────────────────── */
-#confirmOverlay { pointer-events: none; }
-#confirmOverlay.open { pointer-events: auto; }
-#confirmDialog { animation: slideUp 0.25s ease; }
