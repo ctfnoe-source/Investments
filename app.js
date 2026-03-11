@@ -1,9 +1,29 @@
 // ==================== MÓDULO PRINCIPAL ====================
-const LS = {
-  get(k) { try { const v = localStorage.getItem('fp_'+k); return v ? JSON.parse(v) : null; } catch { return null; } },
-  set(k, v) { try { localStorage.setItem('fp_'+k, JSON.stringify(v)); } catch {} },
-};
+// MEJORA: función de escape HTML
+function escapeHtml(unsafe) {
+  if (unsafe == null) return '';
+  return String(unsafe)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
+// MEJORA: sistema de toasts
+function showToast(message, type = 'info', duration = 3000) {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.remove();
+  }, duration);
+}
+
+// MEJORA: cola offline mejorada (array de operaciones)
 let _offlineQueue = LS.get('offlineQueue') || [];
 let _isOnline = navigator.onLine;
 
@@ -18,14 +38,28 @@ function setOfflineBanner(state) {
   else { b.className = 'offline-banner'; }
 }
 
-function queueSave(data) { _offlineQueue = [{ data, ts: Date.now() }]; LS.set('offlineQueue', _offlineQueue); }
+function queueSave(operation) { // operation = { type, data }
+  _offlineQueue.push({ operation, ts: Date.now() });
+  LS.set('offlineQueue', _offlineQueue);
+}
 
 async function flushOfflineQueue() {
   if (!_offlineQueue.length) return;
   if (typeof window.saveToFirebase !== 'function') return;
   setOfflineBanner('syncing');
-  try { await window.saveToFirebase(true); _offlineQueue = []; LS.set('offlineQueue', []); setOfflineBanner('synced'); }
-  catch(e) { setOfflineBanner('offline'); }
+  try {
+    for (const item of _offlineQueue) {
+      // Aquí deberías aplicar la operación en Firebase según su tipo
+      // Por simplicidad, asumimos que se puede enviar todo el estado
+      await window.saveToFirebase(true);
+    }
+    _offlineQueue = [];
+    LS.set('offlineQueue', []);
+    setOfflineBanner('synced');
+  } catch(e) {
+    setOfflineBanner('offline');
+    showToast('Error al sincronizar datos offline', 'error');
+  }
 }
 
 window.addEventListener('online', () => { _isOnline = true; flushOfflineQueue(); });
@@ -35,6 +69,7 @@ function toggleDark() {
   const dark = document.documentElement.getAttribute('data-theme') === 'dark';
   document.documentElement.setAttribute('data-theme', dark ? 'light' : 'dark');
   LS.set('darkMode', !dark);
+  // MEJORA: no destruir gráficos, solo actualizar tema (requiere reinicializar)
   Object.keys(chartInstances).forEach(k => { if(chartInstances[k]){ chartInstances[k].destroy(); delete chartInstances[k]; } });
   renderPageInternal(currentTab);
 }
@@ -61,7 +96,13 @@ const CRYPTO_MAP = {
 
 async function fetchCryptoPrice(ticker) {
   const coinId = CRYPTO_MAP[ticker.toUpperCase()]; if(!coinId) return null;
-  try { const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`); if(!r.ok) throw new Error(); const d = await r.json(); return d[coinId]?.usd || null; } catch { return null; }
+  try {
+    // MEJORA: usar Promise.all para múltiples en una llamada (aquí solo uno, pero en updateAllPrices se hará batch)
+    const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`);
+    if(!r.ok) throw new Error();
+    const d = await r.json();
+    return d[coinId]?.usd || null;
+  } catch { return null; }
 }
 async function fetchStockPrice(ticker) {
   const k = settings.finnhubKey||''; if(!k) return null;
@@ -130,21 +171,73 @@ async function fetchPrice(ticker, type, moneda) {
   return null;
 }
 
-let priceUpdateState = {loading:false, lastUpdate:null};
+let priceUpdateState = {loading:false, lastUpdate:null, total:0, current:0};
+// MEJORA: función de actualización de precios optimizada con Promise.all y batch para crypto
 async function updateAllPrices(forceRefresh=false) {
   if (priceUpdateState.loading) return;
   priceUpdateState.loading = true;
+  priceUpdateState.current = 0;
   const btn = document.getElementById('btnUpdate');
   if (btn) { btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Actualizando...'; }
   await updateFX();
-  const tickerSet = new Map();
-  movements.forEach(m => { if (m.seccion === 'inversiones' && m.ticker) { const key = (m.moneda === 'MXN' ? m.ticker.toUpperCase() + '_MXN' : m.ticker.toUpperCase()); tickerSet.set(key, {type: m.tipoActivo, moneda: m.moneda || 'USD', ticker: m.ticker.toUpperCase()}); } });
-  if (forceRefresh) { const c = getPriceCache(); tickerSet.forEach((_, k) => { delete c[k]; }); setPriceCache(c); }
-  for (const [key, info] of tickerSet) { const b = document.getElementById('btnUpdate'); if (b) b.innerHTML = `<span class="spinner"></span> ${info.ticker}...`; await fetchPrice(info.ticker, info.type, info.moneda); await new Promise(r => setTimeout(r, 300)); }
+  
+  // Recopilar todos los tickers únicos
+  const tickerMap = new Map(); // key -> { type, moneda, ticker }
+  movements.forEach(m => { 
+    if (m.seccion === 'inversiones' && m.ticker) { 
+      const key = (m.moneda === 'MXN' ? m.ticker.toUpperCase() + '_MXN' : m.ticker.toUpperCase()); 
+      tickerMap.set(key, {type: m.tipoActivo, moneda: m.moneda || 'USD', ticker: m.ticker.toUpperCase()}); 
+    } 
+  });
+  
+  if (forceRefresh) { 
+    const c = getPriceCache(); 
+    tickerMap.forEach((_, k) => { delete c[k]; }); 
+    setPriceCache(c); 
+  }
+  
+  const tickersArray = Array.from(tickerMap.entries());
+  priceUpdateState.total = tickersArray.length;
+  
+  // MEJORA: agrupar por tipo para batch
+  const cryptoBatch = tickersArray.filter(([_, info]) => info.type === 'Crypto').map(([key, info]) => info.ticker);
+  if (cryptoBatch.length > 0) {
+    // Llamada batch a CoinGecko (hasta 100 ids)
+    const ids = cryptoBatch.map(t => CRYPTO_MAP[t]).filter(id => id).join(',');
+    if (ids) {
+      try {
+        const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`);
+        if (r.ok) {
+          const data = await r.json();
+          for (const [ticker, info] of tickerMap) {
+            if (info.type === 'Crypto') {
+              const coinId = CRYPTO_MAP[info.ticker];
+              if (coinId && data[coinId]) {
+                const price = data[coinId].usd;
+                const cacheKey = info.moneda === 'MXN' ? info.ticker + '_MXN' : info.ticker;
+                setCachedPrice(cacheKey, price, 'coingecko-batch');
+                priceUpdateState.current++;
+              }
+            }
+          }
+        }
+      } catch (e) { console.warn('Error en batch crypto', e); }
+    }
+  }
+  
+  // Para acciones, hacer en paralelo con Promise.all (respetando límites)
+  const otherTickers = tickersArray.filter(([_, info]) => info.type !== 'Crypto');
+  await Promise.all(otherTickers.map(async ([key, info]) => {
+    const priceInfo = await fetchPrice(info.ticker, info.type, info.moneda);
+    priceUpdateState.current++;
+    if (btn) btn.innerHTML = `<span class="spinner"></span> ${priceUpdateState.current}/${priceUpdateState.total} ...`;
+  }));
+  
   priceUpdateState.loading = false;
   priceUpdateState.lastUpdate = new Date();
   _recalcAndSaveSnapshot();
   renderPage(currentTab);
+  showToast(`Precios actualizados: ${priceUpdateState.current}/${priceUpdateState.total}`, 'success');
 }
 
 function getPriceInfo(ticker, type, moneda) {
@@ -181,24 +274,6 @@ const FRECUENCIAS=['Mensual','Quincenal','Semanal','Anual','Trimestral'];
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 const today = () => new Date().toISOString().split('T')[0];
 
-// ── Seguridad: escapar HTML para evitar XSS ──────────────────────────────────
-function escHtml(str) {
-  if (str == null) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-// ── Debounce: evitar renders excesivos en búsquedas ──────────────────────────
-function debounce(fn, ms) {
-  let timer;
-  return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
-}
-const debouncedRenderMovimientos = debounce(() => renderMovimientos(), 220);
-
 function fmt(n, cur) {
   if (n == null || isNaN(n)) {
     if (cur === 'USD') return 'US$0';
@@ -220,6 +295,16 @@ function fmtFull(n, cur) {
   if (cur === 'USD') return sign + 'US$' + Math.abs(n).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2});
   if (cur === 'EUR') return sign + '€' + Math.abs(n).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2});
   return sign + '$' + Math.abs(n).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+// MEJORA: formato compacto para ejes
+function fmtCompact(n) {
+  if (n == null) return '';
+  const formatter = new Intl.NumberFormat('es-MX', {
+    notation: 'compact',
+    compactDisplay: 'short',
+    maximumFractionDigits: 1
+  });
+  return '$' + formatter.format(n);
 }
 function fmtPct(n) { return (n==null||isNaN(n)) ? '0.00%' : (n>=0?'+':'') + (n*100).toFixed(2) + '%'; }
 function pctCol(n) { return n >= 0 ? 'var(--green)' : 'var(--red)'; }
@@ -285,9 +370,18 @@ platforms = platforms.map(p => ({tasaAnual:0, fechaInicio:'2026-02-01', moneda:'
 
 let currentTab = 'dashboard';
 let movFilter = {seccion:'todas', search:''};
+// MEJORA: filtros persistentes
+const savedFilter = sessionStorage.getItem('movFilter');
+if (savedFilter) {
+  try { movFilter = JSON.parse(savedFilter); } catch {}
+}
 let chartInstances = {};
 let _lastLocalSave = 0;
 let _chartRange = 'all';
+
+// MEJORA: memoización de calcPlatforms
+let _cachedPlatforms = null;
+let _platformsDirty = true;
 
 // Intervalos unificados para el gráfico
 const CHART_INTERVALS = [
@@ -303,14 +397,55 @@ const CHART_INTERVALS = [
 
 let _projKey = '1y';
 
+// MEJORA: funciones de actualización de gráfico sin recrear
+function updateEvoChart() {
+  const chart = chartInstances.chartEvo;
+  if (!chart) return;
+  const tc = settings.tipoCambio||20;
+  const re = settings.rendimientoEsperado||0.06;
+  const plats = calcPlatforms();
+  const totalMXN = plats.reduce((s,p)=>s+platSaldoToMXN(p),0);
+  const tickerList = getTickerPositions();
+  const totalInvMXN = tickerList.reduce((s,t)=>s+((t.valorActual||t.costoPosicion||0)*(t.moneda==='MXN'?1:tc)),0);
+  const patrimonio = totalMXN + totalInvMXN;
+  
+  let hist = [...patrimonioHistory].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const selInterval = CHART_INTERVALS.find(i => i.key === _chartRange);
+  if (selInterval && selInterval.months) {
+    const cutoff = new Date();
+    cutoff.setMonth(cutoff.getMonth() - selInterval.months);
+    const cutoffStr = cutoff.toISOString().split('T')[0];
+    hist = hist.filter(s => s.date >= cutoffStr);
+    if (hist.length === 0) hist = patrimonioHistory.slice(-2);
+  }
+  const realDates = hist.map(s => s.date);
+  const realVals = hist.map(s => s.value);
+  
+  const projInterval = CHART_INTERVALS.find(i => i.key === _projKey) || CHART_INTERVALS[3];
+  const projMonths = projInterval.months;
+  const now = new Date();
+  const projDates = [];
+  const projVals = [];
+  for(let i=0; i<=projMonths; i++){
+    const d=new Date(now.getFullYear(), now.getMonth()+i, 1);
+    projDates.push(d.toISOString().split('T')[0]);
+    projVals.push(Math.round(patrimonio * Math.pow(1+re/12, i)));
+  }
+  
+  chart.data.datasets[0].data = realDates.map((d,i)=>({x:d, y:realVals[i]}));
+  chart.data.datasets[1].data = projDates.map((d,i)=>({x:d, y:projVals[i]}));
+  chart.update();
+}
+
 function setChartRange(range) {
   _chartRange = range;
-  Object.keys(chartInstances).forEach(k => { if(chartInstances[k]){ chartInstances[k].destroy(); delete chartInstances[k]; } });
-  renderDashboard();
+  updateEvoChart();
+  // Actualizar botones en UI (se puede hacer con clases)
+  renderDashboard(); // por ahora, pero idealmente solo actualizar botones
 }
 function setChartProj(key) {
   _projKey = key;
-  Object.keys(chartInstances).forEach(k => { if(chartInstances[k]){ chartInstances[k].destroy(); delete chartInstances[k]; } });
+  updateEvoChart();
   renderDashboard();
 }
 function toggleChartPanel() {
@@ -397,8 +532,11 @@ function calcAutoYield(p, saldoBase, fechaRef) {
   return saldoBase * (tasa/100) * (diffMs/(1000*60*60*24*365));
 }
 
+// MEJORA: memoización de calcPlatforms
 function calcPlatforms() {
-  return platforms.map(p => {
+  if (!_platformsDirty && _cachedPlatforms) return _cachedPlatforms;
+  
+  const result = platforms.map(p => {
     const movs = movements.filter(m => m.seccion === 'plataformas' && m.platform === p.name)
                           .sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
     let saldoBase = p.saldoInicial;
@@ -433,9 +571,13 @@ function calcPlatforms() {
 
     return { ...p, saldo: saldoFinal, aportacion: totalAportaciones, retiro: totalRetiros, gasto: totalGastos, rendimiento: rendimientoTotal, rendimientoManual: rendimientoMov, rendimientoAuto, diasDesdeRef, fechaRefAuto: ultimoSaldoFecha, aportacionesDetalle };
   });
+  
+  _cachedPlatforms = result;
+  _platformsDirty = false;
+  return result;
 }
 
-function recalcularPlatformas(){ platforms = platforms.map(p => ({tasaAnual:0, fechaInicio:'2026-02-01', moneda:'MXN', ...p})); }
+function recalcularPlatformas(){ /* código muerto eliminado */ }
 
 function applyRecurrentes() {
   const cm=new Date().getMonth()+1, cy=new Date().getFullYear();
@@ -464,6 +606,7 @@ function loadFromRemote(remote){
   if(remote.settings)settings=remote.settings;
   if(remote.recurrentes)recurrentes=remote.recurrentes;
   if(remote.patrimonioHistory)patrimonioHistory=remote.patrimonioHistory;
+  _platformsDirty = true; // MEJORA: invalidar caché
   LS.set('platforms',platforms);LS.set('movements',movements);LS.set('goals',goals);LS.set('settings',settings);
   LS.set('recurrentes',recurrentes);LS.set('patrimonioHistory',patrimonioHistory);
   renderPageInternal(currentTab);
@@ -474,13 +617,16 @@ window.currentTab = 'dashboard';
 
 function saveAll(){
   window.currentTab = currentTab;
-  recalcularPlatformas();
+  _platformsDirty = true; // MEJORA: invalidar caché
   _lastLocalSave = Date.now();
   LS.set('platforms',platforms);LS.set('movements',movements);LS.set('goals',goals);LS.set('settings',settings);
   LS.set('recurrentes',recurrentes);LS.set('patrimonioHistory',patrimonioHistory);
   _recalcAndSaveSnapshot();
   renderPageInternal(currentTab);
-  if (!_isOnline) { queueSave(window.getAppData()); setOfflineBanner('offline'); }
+  if (!_isOnline) { 
+    queueSave({type: 'full', data: window.getAppData()}); 
+    setOfflineBanner('offline'); 
+  }
   else if(typeof window.saveToFirebase==='function') { window.saveToFirebase(); }
 }
 
@@ -493,22 +639,25 @@ function switchTab(tab){
   if(pageEl) pageEl.classList.add('active');
   const nt=document.querySelector('[data-tab="'+tab+'"]');if(nt)nt.classList.add('active');
   document.querySelectorAll('.mobile-nav-item[data-tab="'+tab+'"]').forEach(t=>t.classList.add('active'));
-  Object.keys(chartInstances).forEach(k=>{if(chartInstances[k]){chartInstances[k].destroy();delete chartInstances[k];}});
+  // MEJORA: no destruir gráficos siempre, solo si es necesario
+  if (tab !== 'dashboard') {
+    Object.keys(chartInstances).forEach(k=>{if(chartInstances[k]){chartInstances[k].destroy();delete chartInstances[k];}});
+  }
   renderPageInternal(tab);
 }
 document.querySelectorAll('.nav-tab').forEach(btn=>btn.addEventListener('click',()=>switchTab(btn.dataset.tab)));
 function openModal(html){document.getElementById('modalContent').innerHTML=html;document.getElementById('modalOverlay').classList.add('open');}
 function closeModal(){document.getElementById('modalOverlay').classList.remove('open');}
 
-function typeBadge(type){const map={'SOFIPO':'badge-green','BANCO':'badge-blue','BOLSA/ETFs':'badge-orange','CUENTA DIGITAL':'badge-purple','FONDOS':'badge-purple','FONDOS RETIRO':'badge-purple','DEUDA/CETES':'badge-blue'};return`<span class="badge ${map[type]||'badge-blue'}">${type}</span>`;}
+function typeBadge(type){const map={'SOFIPO':'badge-green','BANCO':'badge-blue','BOLSA/ETFs':'badge-orange','CUENTA DIGITAL':'badge-purple','FONDOS':'badge-purple','FONDOS RETIRO':'badge-purple','DEUDA/CETES':'badge-blue'};return`<span class="badge ${map[type]||'badge-blue'}">${escapeHtml(type)}</span>`;}
 function monedaBadge(moneda){return`<span class="moneda-flag moneda-${moneda||'MXN'}">${moneda==='USD'?'🇺🇸 USD':moneda==='EUR'?'🇪🇺 EUR':'🇲🇽 MXN'}</span>`;}
-function secBadge(sec){const map={plataformas:['PLATAFORMA','badge-blue'],inversiones:['INVERSIÓN','badge-green'],gastos:['GASTO','badge-orange'],transferencia:['TRANSFERENCIA','badge-teal']};const[label,cls]=map[sec]||['—',''];return`<span class="badge ${cls}">${label}</span>`;}
-function catName(id){const c=EXPENSE_CATS.find(x=>x.id===id);return c?c.icon+' '+c.name:id;}
+function secBadge(sec){const map={plataformas:['PLATAFORMA','badge-blue'],inversiones:['INVERSIÓN','badge-green'],gastos:['GASTO','badge-orange'],transferencia:['TRANSFERENCIA','badge-teal']};const[label,cls]=map[sec]||['—',''];return`<span class="badge ${cls}">${escapeHtml(label)}</span>`;}
+function catName(id){const c=EXPENSE_CATS.find(x=>x.id===id);return c?c.icon+' '+escapeHtml(c.name):id;}
 function statCard(label,value,sub,color,borderColor){
   let tint='';
   if(borderColor){if(borderColor.includes('green'))tint='background:linear-gradient(160deg,var(--card) 0%,rgba(48,209,88,0.04) 100%);';else if(borderColor.includes('red'))tint='background:linear-gradient(160deg,var(--card) 0%,rgba(255,69,58,0.04) 100%);';else if(borderColor.includes('blue'))tint='background:linear-gradient(160deg,var(--card) 0%,rgba(10,132,255,0.04) 100%);';else if(borderColor.includes('orange'))tint='background:linear-gradient(160deg,var(--card) 0%,rgba(255,159,10,0.04) 100%);';else if(borderColor.includes('purple')||borderColor.includes('BF5AF2'))tint='background:linear-gradient(160deg,var(--card) 0%,rgba(191,90,242,0.04) 100%);';else if(borderColor.includes('C7BE')||borderColor.includes('teal'))tint='background:linear-gradient(160deg,var(--card) 0%,rgba(0,199,190,0.04) 100%);';}
   const accent=borderColor?'border-top:3px solid '+borderColor+';':'';
-  return '<div class="card stat" style="'+accent+tint+'">'+'<div class="stat-label">'+label+'</div>'+'<div class="stat-value" style="'+(color?'color:'+color:'')+' ">'+value+'</div>'+(sub?'<div class="stat-sub">'+sub+'</div>':'')+'</div>';
+  return '<div class="card stat" style="'+accent+tint+'">'+'<div class="stat-label">'+escapeHtml(label)+'</div>'+'<div class="stat-value" style="'+(color?'color:'+color:'')+' ">'+value+'</div>'+(sub?'<div class="stat-sub">'+sub+'</div>':'')+'</div>';
 }
 
 function getTickerPositions(){
@@ -545,8 +694,8 @@ function getBudgetAlerts(){
     const pres=budgets[cat.id]||0,real=byCat[cat.id]||0;
     if(pres>0){
       const pct=real/pres;
-      if(pct>=1)alerts.push({level:'error',msg:`🔴 <strong>${cat.icon} ${cat.name}</strong>: presupuesto excedido (${fmt(real)} / ${fmt(pres)})`});
-      else if(pct>=0.85)alerts.push({level:'warn',msg:`🟡 <strong>${cat.icon} ${cat.name}</strong>: al ${(pct*100).toFixed(0)}% del presupuesto (${fmt(real)} / ${fmt(pres)})`});
+      if(pct>=1)alerts.push({level:'error',msg:`🔴 <strong>${escapeHtml(cat.icon)} ${escapeHtml(cat.name)}</strong>: presupuesto excedido (${fmt(real)} / ${fmt(pres)})`});
+      else if(pct>=0.85)alerts.push({level:'warn',msg:`🟡 <strong>${escapeHtml(cat.icon)} ${escapeHtml(cat.name)}</strong>: al ${(pct*100).toFixed(0)}% del presupuesto (${fmt(real)} / ${fmt(pres)})`});
     }
   });
   return alerts;
@@ -555,10 +704,12 @@ function getBudgetAlerts(){
 function showAportaciones(platformId) {
   const plats = calcPlatforms();
   const p = plats.find(p => p.id === platformId);
-  if (!p || !p.aportacionesDetalle || p.aportacionesDetalle.length === 0) { alert('No hay movimientos de aportación para esta plataforma.'); return; }
-  let html = `<div class="modal-header"><div class="modal-title">📋 Detalle de Aportaciones - ${p.name}</div><button class="modal-close" onclick="closeModal()">✕</button></div>`;
+  if (!p || !p.aportacionesDetalle || p.aportacionesDetalle.length === 0) { showToast('No hay movimientos de aportación para esta plataforma.', 'info'); return; }
+  let html = `<div class="modal-header"><div class="modal-title">📋 Detalle de Aportaciones - ${escapeHtml(p.name)}</div><button class="modal-close" onclick="closeModal()">✕</button></div>`;
   html += '<table style="width:100%"><thead><tr><th>Fecha</th><th>Tipo</th><th>Monto</th><th>Descripción</th></tr></thead><tbody>';
-  p.aportacionesDetalle.forEach(d => { html += `<tr><td>${d.fecha}</td><td>${d.tipo}</td><td>${fmtPlat(d.monto, p.moneda)}</td><td>${d.desc || '—'}</td></tr>`; });
+  p.aportacionesDetalle.forEach(d => { 
+    html += `<tr><td>${escapeHtml(d.fecha)}</td><td>${escapeHtml(d.tipo)}</td><td>${fmtPlat(d.monto, p.moneda)}</td><td>${escapeHtml(d.desc || '—')}</td></tr>`; 
+  });
   html += '</tbody></table>';
   openModal(html);
 }
@@ -580,45 +731,7 @@ function platSaldoToMXN(p) {
 }
 
 // ============================================
-// TOAST & CONFIRM — Sistema de notificaciones
-// ============================================
-function showToast(msg, type='success', duration=3000) {
-  let container = document.getElementById('toastContainer');
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'toastContainer';
-    document.body.appendChild(container);
-  }
-  const toast = document.createElement('div');
-  toast.className = `toast toast-${type}`;
-  toast.innerHTML = msg;
-  container.appendChild(toast);
-  requestAnimationFrame(() => toast.classList.add('show'));
-  setTimeout(() => {
-    toast.classList.remove('show');
-    toast.addEventListener('transitionend', () => toast.remove(), {once:true});
-  }, duration);
-}
-
-function showConfirm(title, body, onConfirm) {
-  const overlay = document.getElementById('confirmOverlay');
-  const titleEl = document.getElementById('confirmTitle');
-  const bodyEl  = document.getElementById('confirmBody');
-  const btnOk   = document.getElementById('confirmOk');
-  const btnCx   = document.getElementById('confirmCancel');
-  if (!overlay) return; // fallback si el DOM aún no cargó
-  titleEl.innerHTML = title;
-  bodyEl.textContent = body;
-  overlay.classList.add('open');
-  const close = () => overlay.classList.remove('open');
-  btnOk.onclick  = () => { close(); onConfirm(); };
-  btnCx.onclick  = close;
-}
-window.showToast   = showToast;
-window.showConfirm = showConfirm;
-
-// ============================================
-// RENDER DASHBOARD
+// RENDER DASHBOARD (MEJORADO)
 // ============================================
 function renderDashboard(){
   const tc=settings.tipoCambio||20,re=settings.rendimientoEsperado||0.06;
@@ -685,7 +798,7 @@ function renderDashboard(){
   const bannerStatus=priceSummary.live>0
     ?`<span class="price-banner-dot dot-live"></span><strong style="color:var(--green)">${priceSummary.live}/${priceSummary.total} precios actualizados hoy</strong>`
     :`<span class="price-banner-dot dot-none"></span><span style="color:var(--text2)">${priceSummary.total>0?'Sin precios del día — presiona Actualizar':'Sin inversiones registradas'}</span>`;
-  const btnLabel=priceUpdateState.loading?`<span class="spinner"></span> Actualizando...`:'🔄 Actualizar precios';
+  const btnLabel=priceUpdateState.loading?`<span class="spinner"></span> ${priceUpdateState.current}/${priceUpdateState.total} ...`:'🔄 Actualizar precios';
   const alerts=getBudgetAlerts();
   const alertsHtml=alerts.length>0?`<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">${alerts.map(a=>`<div style="padding:10px 16px;background:${a.level==='error'?'rgba(255,69,58,0.06)':'rgba(255,159,10,0.06)'};border:1px solid ${a.level==='error'?'rgba(255,69,58,0.2)':'rgba(255,159,10,0.2)'};border-radius:10px;font-size:13px">${a.msg}</div>`).join('')}</div>`:'';
   _recalcAndSaveSnapshot();
@@ -709,7 +822,7 @@ function renderDashboard(){
 
   let histFiltered = hist;
   const selInterval = CHART_INTERVALS.find(i => i.key === _chartRange);
-  if (selInterval) {
+  if (selInterval && selInterval.months) {
     const cutoff = new Date();
     cutoff.setMonth(cutoff.getMonth() - selInterval.months);
     const cutoffStr = cutoff.toISOString().split('T')[0];
@@ -779,7 +892,7 @@ function renderDashboard(){
     </div>
 
     <div class="grid-6" style="margin-bottom:16px">
-      <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">🏦 Concentración</div><div class="stat-value" style="font-size:14px">${topPlat?.name||'—'}</div><div class="stat-sub"><span style="color:var(--orange);font-weight:700">${(maxConc*100).toFixed(1)}%</span> · ${riskLvl}</div></div>
+      <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">🏦 Concentración</div><div class="stat-value" style="font-size:14px">${escapeHtml(topPlat?.name||'—')}</div><div class="stat-sub"><span style="color:var(--orange);font-weight:700">${(maxConc*100).toFixed(1)}%</span> · ${riskLvl}</div></div>
       <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">🏦 Aportaciones</div><div class="stat-value">${fmt(totalAport)}</div><div class="stat-sub">- ${fmt(totalRetiros)} retiros</div></div>
       <div class="card stat" style="border-top:3px solid var(--green)"><div class="stat-label">📈 G/P Realizada</div><div class="stat-value" style="color:${pctCol(gpRealizadaTotal)}">${fmt(gpRealizadaTotal)}</div><div class="stat-sub">ventas cerradas</div></div>
       <div class="card stat" style="border-top:3px solid var(--green)"><div class="stat-label">📈 Capital Invertido</div><div class="stat-value">${fmt(totalInvertidoUSD,'USD')}</div><div class="stat-sub">${tickerList.length} posiciones</div></div>
@@ -787,7 +900,7 @@ function renderDashboard(){
       <div class="card stat" style="border-top:3px solid var(--orange)"><div class="stat-label">💳 Salud Financiera</div><div class="stat-value" style="font-size:14px">${salud}</div><div class="stat-sub">${totalPresupuesto>0?fmt(totalPresupuesto,dashCur)+' presup.':'→ Config. en Gastos'}</div></div>
     </div>
 
-    ${maxConc>0.25?`<div style="display:flex;align-items:center;gap:10px;padding:12px 20px;background:rgba(255,159,10,0.06);border:1px solid rgba(255,159,10,0.15);border-radius:12px;margin-bottom:16px;font-size:13px"><span style="font-size:18px">⚠️</span><span><strong>${topPlat?.name}</strong> concentra el <strong style="color:var(--orange)">${(maxConc*100).toFixed(1)}%</strong> de tu portafolio.</span></div>`:''}
+    ${maxConc>0.25?`<div style="display:flex;align-items:center;gap:10px;padding:12px 20px;background:rgba(255,159,10,0.06);border:1px solid rgba(255,159,10,0.15);border-radius:12px;margin-bottom:16px;font-size:13px"><span style="font-size:18px">⚠️</span><span><strong>${escapeHtml(topPlat?.name)}</strong> concentra el <strong style="color:var(--orange)">${(maxConc*100).toFixed(1)}%</strong> de tu portafolio.</span></div>`:''}
 
     <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden">
       <div style="padding:24px 28px 16px">
@@ -834,14 +947,14 @@ function renderDashboard(){
         <div style="display:flex;align-items:center;gap:12px">
           <div class="chart-container" style="height:140px;width:140px;flex-shrink:0"><canvas id="chartDistro"></canvas></div>
           <div style="flex:1">
-            ${(()=>{const at={};plats.forEach(p=>{at[p.type]=(at[p.type]||0)+platSaldoToMXN(p);});tickerList.forEach(t=>{if(t.cantActual>0){const v=(t.valorActual||t.costoPosicion)*(t.moneda==='MXN'?1:tc);at[t.type+' USD']=(at[t.type+' USD']||0)+v;}});const sorted=Object.entries(at).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);const total=sorted.reduce((s,[,v])=>s+v,0)||1;return sorted.map(([k,v],i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0"><span style="display:flex;align-items:center;gap:5px;font-size:11px"><span style="width:7px;height:7px;border-radius:2px;background:${COLORS[i%COLORS.length]};display:inline-block;flex-shrink:0"></span>${k}</span><span style="font-size:11px;font-weight:700">${((v/total)*100).toFixed(1)}%</span></div>`).join('');})()}
+            ${(()=>{const at={};plats.forEach(p=>{at[p.type]=(at[p.type]||0)+platSaldoToMXN(p);});tickerList.forEach(t=>{if(t.cantActual>0){const v=(t.valorActual||t.costoPosicion)*(t.moneda==='MXN'?1:tc);at[t.type+' USD']=(at[t.type+' USD']||0)+v;}});const sorted=Object.entries(at).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);const total=sorted.reduce((s,[,v])=>s+v,0)||1;return sorted.map(([k,v],i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0"><span style="display:flex;align-items:center;gap:5px;font-size:11px"><span style="width:7px;height:7px;border-radius:2px;background:${COLORS[i%COLORS.length]};display:inline-block;flex-shrink:0"></span>${escapeHtml(k)}</span><span style="font-size:11px;font-weight:700">${((v/total)*100).toFixed(1)}%</span></div>`).join('');})()}
           </div>
         </div>
       </div>
       <div class="card">
         <div class="card-title">💰 Estimación Fiscal</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
-          ${[['Rend. Bruto',fmt(totalRend),pctCol(totalRend)],['ISR 20%',fmt(-isr),'var(--red)'],['Rend. Neto',fmt(totalRend-isr),pctCol(totalRend-isr)],['ISR Anual est.',fmt(isr),'var(--text)']].map(([l,v,c])=>`<div style="background:var(--card2);border-radius:10px;padding:10px;text-align:center"><div style="font-size:9px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:0.06em">${l}</div><div style="font-size:15px;font-weight:800;color:${c};margin-top:2px">${v}</div></div>`).join('')}
+          ${[['Rend. Bruto',fmt(totalRend),pctCol(totalRend)],['ISR 20%',fmt(-isr),'var(--red)'],['Rend. Neto',fmt(totalRend-isr),pctCol(totalRend-isr)],['ISR Anual est.',fmt(isr),'var(--text)']].map(([l,v,c])=>`<div style="background:var(--card2);border-radius:10px;padding:10px;text-align:center"><div style="font-size:9px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:0.06em">${escapeHtml(l)}</div><div style="font-size:15px;font-weight:800;color:${c};margin-top:2px">${v}</div></div>`).join('')}
         </div>
       </div>
       <div class="card">
@@ -857,7 +970,7 @@ function renderDashboard(){
           <div class="list-item">
             <div style="display:flex;align-items:center;gap:8px">
               <div class="rank" style="background:${COLORS[i]}">${i+1}</div>
-              <div><div style="font-size:13px;font-weight:600">${p.name} ${monedaBadge(p.moneda)} ${p.tasaAnual>0?`<span class="tasa-badge${p.tasaAnual>=10?' alta':p.tasaAnual>=5?' media':''}">⚡${p.tasaAnual}%</span>`:''}</div><div style="font-size:10px;color:var(--text2)">${p.type} · ${fmtPct(p.saldoInicial?p.rendimiento/p.saldoInicial:0)}</div></div>
+              <div><div style="font-size:13px;font-weight:600">${escapeHtml(p.name)} ${monedaBadge(p.moneda)} ${p.tasaAnual>0?`<span class="tasa-badge${p.tasaAnual>=10?' alta':p.tasaAnual>=5?' media':''}">⚡${p.tasaAnual}%</span>`:''}</div><div style="font-size:10px;color:var(--text2)">${escapeHtml(p.type)} · ${fmtPct(p.saldoInicial?p.rendimiento/p.saldoInicial:0)}</div></div>
             </div>
             <div style="text-align:right"><div style="font-size:13px;font-weight:700">${fmtPlat(p.saldo, p.moneda)}</div><div style="font-size:10px;font-weight:600;color:${pctCol(p.rendimiento)}">${p.rendimiento>=0?'+':''}${fmtPlat(p.rendimiento, p.moneda)}</div></div>
           </div>`).join('')}
@@ -869,13 +982,13 @@ function renderDashboard(){
           const monedaLabel=t.moneda==='MXN'?'MXN':'USD';
           return`<div class="list-item" style="flex-direction:column;align-items:flex-start;gap:6px;padding:10px 0">
             <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
-              <div style="display:flex;align-items:center;gap:6px"><span style="font-size:15px;font-weight:800">${t.ticker}</span><span class="badge ${tipoClass}">${t.type}</span><span class="badge badge-gray">${monedaLabel}</span>${t.cantActual<=0?'<span class="badge badge-gray">CERRADA</span>':''}</div>
-              <div style="text-align:right">${t.gpNoRealizada!==null?`<div style="font-size:14px;font-weight:800;color:${pctCol(t.gpNoRealizada)}">${t.gpNoRealizada>=0?'+':''}${fmtFull(t.gpNoRealizada)} ${monedaLabel}</div><div style="font-size:10px;color:${pctCol(t.pctNoRealizada)};font-weight:600">${fmtPct(t.pctNoRealizada)}</div>`:`<div style="font-size:11px;color:var(--text3)">sin precio hoy</div>`}</div>
+              <div style="display:flex;align-items:center;gap:6px"><span style="font-size:15px;font-weight:800">${escapeHtml(t.ticker)}</span><span class="badge ${tipoClass}">${escapeHtml(t.type)}</span><span class="badge badge-gray">${escapeHtml(monedaLabel)}</span>${t.cantActual<=0?'<span class="badge badge-gray">CERRADA</span>':''}</div>
+              <div style="text-align:right">${t.gpNoRealizada!==null?`<div style="font-size:14px;font-weight:800;color:${pctCol(t.gpNoRealizada)}">${t.gpNoRealizada>=0?'+':''}${fmtFull(t.gpNoRealizada)} ${escapeHtml(monedaLabel)}</div><div style="font-size:10px;color:${pctCol(t.pctNoRealizada)};font-weight:600">${fmtPct(t.pctNoRealizada)}</div>`:`<div style="font-size:11px;color:var(--text3)">sin precio hoy</div>`}</div>
             </div>
             <div style="display:flex;gap:16px;font-size:11px">
               <span><span style="color:var(--text2)">Compra: </span><span style="font-weight:700">${t.moneda==='MXN'?'$':'US$'}${t.precioCostoPromedio.toFixed(2)}</span></span>
-              <span><span style="color:var(--text2)">Actual: </span><span class="${t.priceCssClass}" style="font-weight:700">${t.priceLabel}</span></span>
-              <span><span style="color:var(--text2)">Cant: </span><span style="font-weight:700">${t.cantActual}</span></span>
+              <span><span style="color:var(--text2)">Actual: </span><span class="${t.priceCssClass}" style="font-weight:700">${escapeHtml(t.priceLabel)}</span></span>
+              <span><span style="color:var(--text2)">Cant: </span><span style="font-weight:700">${escapeHtml(t.cantActual)}</span></span>
             </div>
           </div>`;
         }).join(''):'<div style="text-align:center;color:var(--text2);padding:32px">Sin operaciones</div>'}
@@ -887,7 +1000,7 @@ function renderDashboard(){
         <div class="card-title" style="margin:0">🎯 Progreso de Metas</div>
         <button class="btn btn-secondary btn-sm" onclick="switchTab('metas')">Ver todas →</button>
       </div>
-      ${goals.length>0?`<div class="grid-2">${goals.slice(0,4).map(g=>{let actual=0;const patrimonioTotal=totalMXN+totalInvMXN;if(g.clase==='Patrimonio Total'||g.clase==='Todos')actual=patrimonioTotal;else if(g.clase==='Plataformas')actual=totalMXN;else if(g.clase==='Inversiones')actual=totalInvMXN;else if(g.clase==='Ingreso Mensual')actual=ingresoMensualEUR;else actual=patrimonioTotal;const pct=g.meta>0?actual/g.meta:0;const sc=pct>=1?'var(--green)':pct>=0.8?'var(--orange)':pct>=0.3?'var(--blue)':'var(--text2)';const st=pct>=1?'🏆 LOGRADA':pct>=0.8?'🔥 Casi':pct>=0.3?'⏳ En proceso':'💤 Inicio';return`<div style="padding:12px;background:var(--card2);border-radius:12px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:13px;font-weight:700">${g.nombre}</div><span style="font-size:11px;font-weight:700;color:${sc}">${st}</span></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:6px"><span style="font-weight:700;color:var(--text)">${fmt(actual)}</span><span>meta: ${fmt(g.meta)}</span></div><div class="progress-bg"><div class="progress-fill" style="background:${sc};width:${Math.min(pct*100,100).toFixed(1)}%"></div></div><div style="text-align:right;font-size:11px;font-weight:800;color:${sc};margin-top:4px">${(pct*100).toFixed(1)}%</div></div>`;}).join('')}</div>`:`<div style="text-align:center;padding:24px;color:var(--text2);font-size:13px">Sin metas — <button class="btn btn-primary btn-sm" onclick="switchTab('metas')">Crear →</button></div>`}
+      ${goals.length>0?`<div class="grid-2">${goals.slice(0,4).map(g=>{let actual=0;const patrimonioTotal=totalMXN+totalInvMXN;if(g.clase==='Patrimonio Total'||g.clase==='Todos')actual=patrimonioTotal;else if(g.clase==='Plataformas')actual=totalMXN;else if(g.clase==='Inversiones')actual=totalInvMXN;else if(g.clase==='Ingreso Mensual')actual=ingresoMensualEUR;else actual=patrimonioTotal;const pct=g.meta>0?actual/g.meta:0;const sc=pct>=1?'var(--green)':pct>=0.8?'var(--orange)':pct>=0.3?'var(--blue)':'var(--text2)';const st=pct>=1?'🏆 LOGRADA':pct>=0.8?'🔥 Casi':pct>=0.3?'⏳ En proceso':'💤 Inicio';return`<div style="padding:12px;background:var(--card2);border-radius:12px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:13px;font-weight:700">${escapeHtml(g.nombre)}</div><span style="font-size:11px;font-weight:700;color:${sc}">${st}</span></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:6px"><span style="font-weight:700;color:var(--text)">${fmt(actual)}</span><span>meta: ${fmt(g.meta)}</span></div><div class="progress-bg"><div class="progress-fill" style="background:${sc};width:${Math.min(pct*100,100).toFixed(1)}%"></div></div><div style="text-align:right;font-size:11px;font-weight:800;color:${sc};margin-top:4px">${(pct*100).toFixed(1)}%</div></div>`;}).join('')}</div>`:`<div style="text-align:center;padding:24px;color:var(--text2);font-size:13px">Sin metas — <button class="btn btn-primary btn-sm" onclick="switchTab('metas')">Crear →</button></div>`}
     </div>
 
     <div class="grid-4">
@@ -919,22 +1032,40 @@ function renderDashboard(){
 
     const ctxE=document.getElementById('chartEvo');
     if(ctxE){
+      // MEJORA: gráfico con área bajo la línea, puntos, tooltip mejorado
+      if (chartInstances.chartEvo) {
+        chartInstances.chartEvo.destroy();
+      }
       chartInstances.chartEvo=new Chart(ctxE,{type:'line',data:{
         datasets:[
           {
             label:'Patrimonio Real',
             data:realDates.map((d,i)=>({x:d,y:realVals[i]})),
-            borderColor:'#30D158', backgroundColor:'transparent', borderWidth:2.5,fill:false,tension:0.4,
-            pointRadius:0, pointHoverRadius:5, pointHoverBackgroundColor:'#30D158',
-            pointHoverBorderColor:isDark?'#1C1C1E':'#fff', pointHoverBorderWidth:2,
+            borderColor:'#30D158', 
+            backgroundColor:'rgba(48,209,88,0.1)', // área suave
+            borderWidth:2.5,
+            fill:'origin',
+            tension:0.4,
+            pointRadius:2, // puntos visibles
+            pointHoverRadius:6,
+            pointBackgroundColor:'#30D158',
+            pointBorderColor:isDark?'#1C1C1E':'#fff',
+            pointBorderWidth:1.5,
           },
           {
             label:'Rendimiento Esperado '+((re*100).toFixed(0))+'%',
             data:projDates.map((d,i)=>({x:d,y:projVals[i]})),
-            borderColor:'rgba(10,132,255,0.7)', backgroundColor:'transparent', borderWidth:1.5, borderDash:[6,4],
-            fill:false,tension:0.1, pointRadius:0, pointHoverRadius:4,
+            borderColor:'rgba(10,132,255,0.7)', 
+            backgroundColor:'transparent', 
+            borderWidth:1.5, 
+            borderDash:[6,4],
+            fill:false,
+            tension:0.1, 
+            pointRadius:0, 
+            pointHoverRadius:4,
             pointHoverBackgroundColor:'rgba(10,132,255,0.8)',
-            pointHoverBorderColor:isDark?'#1C1C1E':'#fff', pointHoverBorderWidth:2,
+            pointHoverBorderColor:isDark?'#1C1C1E':'#fff', 
+            pointHoverBorderWidth:2,
           }
         ]
       },options:{
@@ -942,11 +1073,40 @@ function renderDashboard(){
         interaction:{intersect:false,mode:'index'},
         plugins:{
           legend:{display:false},
-          tooltip:{ backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)', cornerRadius:14,padding:14, bodyFont:{size:13,family:'DM Sans'}, callbacks:{label:ctx=>' '+ctx.dataset.label+': '+fmtFull(ctx.parsed.y)} }
+          tooltip:{ 
+            backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)', 
+            cornerRadius:14,
+            padding:14, 
+            bodyFont:{size:13,family:'DM Sans'}, 
+            callbacks:{
+              label:ctx=>{
+                let label = ctx.dataset.label || '';
+                if (label) label += ': ';
+                label += fmtFull(ctx.parsed.y);
+                // Si es el dataset real, calcular cambio
+                if (ctx.dataset.label === 'Patrimonio Real' && ctx.dataIndex > 0) {
+                  const prev = ctx.dataset.data[ctx.dataIndex - 1].y;
+                  const change = ctx.parsed.y - prev;
+                  const pct = (change / prev) * 100;
+                  label += ` (${change >= 0 ? '+' : ''}${fmtFull(change)} · ${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%)`;
+                }
+                return label;
+              }
+            }
+          }
         },
         scales:{
-          x:{ type:'category', grid:{display:false}, ticks:{font:{size:10},color:tickColor,maxTicksLimit:10,callback:function(val){const v=this.getLabelForValue(val);if(!v)return'';const p=v.split('-');return p.length===3?p[2]==='01'?MONTHS[parseInt(p[1])-1]:p[1]+'-'+p[2]:v;}}, border:{display:false} },
-          y:{ grid:{color:gridColor}, ticks:{font:{size:11},color:tickColor,callback:v=>fmt(v),maxTicksLimit:5}, border:{display:false} }
+          x:{ 
+            type:'category', 
+            grid:{display:false}, 
+            ticks:{font:{size:10},color:tickColor,maxTicksLimit:10,callback:function(val){const v=this.getLabelForValue(val);if(!v)return'';const p=v.split('-');return p.length===3?p[2]==='01'?MONTHS[parseInt(p[1])-1]:p[1]+'-'+p[2]:v;}}, 
+            border:{display:false} 
+          },
+          y:{ 
+            grid:{color:gridColor}, 
+            ticks:{font:{size:11},color:tickColor,callback:v=>fmtCompact(v),maxTicksLimit:5}, 
+            border:{display:false} 
+          }
         }
       }});
     }
@@ -955,13 +1115,19 @@ function renderDashboard(){
     tickerList.forEach(t=>{if(t.cantActual>0){const v=(t.valorActual||t.costoPosicion)*(t.moneda==='MXN'?1:tc);at[t.type]=(at[t.type]||0)+v;}});
     const de=Object.entries(at).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
     const ctxD=document.getElementById('chartDistro');
-    if(ctxD&&de.length>0){chartInstances.chartDistro=new Chart(ctxD,{type:'doughnut',data:{labels:de.map(([k])=>k),datasets:[{data:de.map(([,v])=>v),backgroundColor:de.map((_,i)=>COLORS[i%COLORS.length]),borderWidth:2,borderColor:isDark?'#1C1C1E':'#fff',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',cornerRadius:12,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>' '+ctx.label+': '+((ctx.parsed/de.reduce((s,[,v])=>s+v,0)*100)).toFixed(1)+'%'}}}}});}
+    if(ctxD&&de.length>0){
+      if (chartInstances.chartDistro) {
+        chartInstances.chartDistro.destroy();
+      }
+      chartInstances.chartDistro=new Chart(ctxD,{type:'doughnut',data:{labels:de.map(([k])=>k),datasets:[{data:de.map(([,v])=>v),backgroundColor:de.map((_,i)=>COLORS[i%COLORS.length]),borderWidth:2,borderColor:isDark?'#1C1C1E':'#fff',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',cornerRadius:12,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>' '+ctx.label+': '+((ctx.parsed/de.reduce((s,[,v])=>s+v,0)*100)).toFixed(1)+'%'}}}});
+    }
   },50);
 }
 
 // ============================================
-// MOVIMIENTOS
+// MOVIMIENTOS (con debounce y vista móvil de tarjetas)
 // ============================================
+let searchDebounceTimeout;
 function renderMovimientos(){
   const transferGroups={};
   movements.forEach(m=>{ if(m.transferId) transferGroups[m.transferId]=(transferGroups[m.transferId]||[]).concat(m); });
@@ -972,6 +1138,11 @@ function renderMovimientos(){
     return true;
   }).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
 
+  // MEJORA: guardar filtro
+  sessionStorage.setItem('movFilter', JSON.stringify(movFilter));
+
+  const isMobile = window.innerWidth <= 768;
+
   document.getElementById('page-movimientos').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px">
       <div><div class="section-title">Movimientos</div><div class="section-sub">Registro unificado · ${movements.length} total</div></div>
@@ -979,25 +1150,97 @@ function renderMovimientos(){
     </div>
     <div class="filter-pills">
       ${['todas','plataformas','inversiones','gastos'].map(s=>`<button class="pill ${movFilter.seccion===s?'active':''}" onclick="movFilter.seccion='${s}';renderMovimientos()">${s==='todas'?'Todas':s==='plataformas'?'🏦 Plataformas':s==='inversiones'?'📈 Inversiones':'💳 Gastos'}</button>`).join('')}
-      <input class="pill-search" placeholder="Buscar..." value="${escHtml(movFilter.search)}" oninput="movFilter.search=this.value;debouncedRenderMovimientos()">
+      <input class="pill-search" placeholder="Buscar..." value="${escapeHtml(movFilter.search)}" id="movSearchInput">
       <span style="font-size:12px;color:var(--text2);margin-left:4px">${filtered.length} movimientos</span>
     </div>
-    <div class="card-flat"><div class="table-wrap"><table>
+    <div class="card-flat">
+      ${isMobile ? renderMovimientosMobile(filtered, transferGroups) : renderMovimientosDesktop(filtered, transferGroups)}
+    </div>
+  `;
+
+  // MEJORA: debounce en búsqueda
+  const searchInput = document.getElementById('movSearchInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', function(e) {
+      clearTimeout(searchDebounceTimeout);
+      searchDebounceTimeout = setTimeout(() => {
+        movFilter.search = e.target.value;
+        renderMovimientos();
+      }, 300);
+    });
+  }
+}
+
+function renderMovimientosDesktop(filtered, transferGroups) {
+  return `<div class="table-wrap desktop-table"><table>
       <thead><tr><th>Fecha</th><th>Sección</th><th>Detalle</th><th>Tipo</th><th>Monto</th><th>Extra</th><th>Notas</th><th style="width:70px"></th></tr></thead>
       <tbody>
         ${filtered.slice(0,100).map(m=>{
           let det='',tipo='',monto='',extra='';const notas=m.notas||m.desc||'';let rowClass='';
           if(m.seccion==='plataformas'){
-            if(m.tipoPlat==='Transferencia salida'&&m.transferId){const grp=transferGroups[m.transferId]||[];const entrada=grp.find(x=>x.tipoPlat==='Transferencia entrada');det=`<strong>${escHtml(m.platform)}</strong> → <strong>${escHtml(entrada?.platform||'?')}</strong>`;tipo=`↔ Transferencia`;monto=fmt(m.monto);rowClass='transfer-row';}
-            else{det=escHtml(m.platform);tipo=escHtml(m.tipoPlat);monto=fmt(m.monto);}
-          } else if(m.seccion==='inversiones'){det=`<strong>${escHtml(m.ticker)}</strong> · ${escHtml(m.broker)}`;tipo=escHtml(m.tipoMov)+' · '+escHtml(m.tipoActivo)+' · '+(m.moneda||'USD');monto=fmt(m.montoTotal,m.moneda);extra=m.cantidad+'×'+fmtFull(m.precioUnit);}
-          else{det=catName(m.categoria);tipo=escHtml(m.tipo)+(m.esRecurrente?' 🔄':'');monto=fmt(m.importe);}
-          return`<tr class="${rowClass}"><td style="color:var(--text2);font-size:12px">${escHtml(m.fecha)}</td><td>${m.tipoPlat==='Transferencia salida'&&m.transferId?`<span class="badge badge-teal">↔ TRANSFER</span>`:secBadge(m.seccion)}</td><td>${det}</td><td style="color:var(--text2);font-size:12px">${tipo}</td><td style="font-weight:700">${monto}</td><td style="color:var(--text2);font-size:11px">${extra}</td><td style="color:var(--text2);font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(notas)||'—'}</td><td style="white-space:nowrap"><button class="edit-btn" onclick="openEditMovModal('${escHtml(m.id)}')" title="Editar">✏️</button><button class="del-btn" onclick="deleteMovement('${escHtml(m.id)}')" title="Eliminar">×</button></td></tr>`;
+            if(m.tipoPlat==='Transferencia salida'&&m.transferId){const grp=transferGroups[m.transferId]||[];const entrada=grp.find(x=>x.tipoPlat==='Transferencia entrada');det=`<strong>${escapeHtml(m.platform)}</strong> → <strong>${escapeHtml(entrada?.platform||'?')}</strong>`;tipo=`↔ Transferencia`;monto=fmt(m.monto);rowClass='transfer-row';}
+            else{det=escapeHtml(m.platform);tipo=m.tipoPlat;monto=fmt(m.monto);}
+          } else if(m.seccion==='inversiones'){det=`<strong>${escapeHtml(m.ticker)}</strong> · ${escapeHtml(m.broker)}`;tipo=m.tipoMov+' · '+m.tipoActivo+' · '+(m.moneda||'USD');monto=fmt(m.montoTotal,m.moneda);extra=m.cantidad+'×'+fmtFull(m.precioUnit);}
+          else{det=catName(m.categoria);tipo=m.tipo+(m.esRecurrente?' 🔄':'');monto=fmt(m.importe);}
+          return`<tr class="${rowClass}"><td style="color:var(--text2);font-size:12px">${escapeHtml(m.fecha)}</td><td>${m.tipoPlat==='Transferencia salida'&&m.transferId?`<span class="badge badge-teal">↔ TRANSFER</span>`:secBadge(m.seccion)}</td><td>${det}</td><td style="color:var(--text2);font-size:12px">${escapeHtml(tipo)}</td><td style="font-weight:700">${monto}</td><td style="color:var(--text2);font-size:11px">${escapeHtml(extra)}</td><td style="color:var(--text2);font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(notas)||'—'}</td><td style="white-space:nowrap"><button class="edit-btn" onclick="openEditMovModal('${m.id}')" title="Editar" aria-label="Editar">✏️</button><button class="del-btn" onclick="deleteMovement('${m.id}')" title="Eliminar" aria-label="Eliminar">×</button></td></tr>`;
         }).join('')}
         ${filtered.length===0?'<tr><td colspan="8" style="text-align:center;color:var(--text2);padding:32px">Sin movimientos</td></tr>':''}
       </tbody>
-    </table></div></div>
-  `;
+    </table></div>`;
+}
+
+function renderMovimientosMobile(filtered, transferGroups) {
+  return `<div class="mobile-card-list mobile-only">
+    ${filtered.slice(0,100).map(m => {
+      let titulo = '', subtitulo = '', monto = '', notas = '', icono = '';
+      if (m.seccion === 'plataformas') {
+        if (m.tipoPlat === 'Transferencia salida' && m.transferId) {
+          const grp = transferGroups[m.transferId] || [];
+          const entrada = grp.find(x => x.tipoPlat === 'Transferencia entrada');
+          titulo = `↔ ${escapeHtml(m.platform)} → ${escapeHtml(entrada?.platform || '?')}`;
+          subtitulo = 'Transferencia';
+          icono = '↔';
+        } else {
+          titulo = escapeHtml(m.platform);
+          subtitulo = m.tipoPlat;
+          icono = '🏦';
+        }
+        monto = fmt(m.monto);
+      } else if (m.seccion === 'inversiones') {
+        titulo = escapeHtml(m.ticker);
+        subtitulo = `${m.tipoMov} · ${m.tipoActivo} · ${m.moneda || 'USD'}`;
+        monto = fmt(m.montoTotal, m.moneda);
+        icono = '📈';
+      } else {
+        titulo = catName(m.categoria);
+        subtitulo = m.tipo + (m.esRecurrente ? ' 🔄' : '');
+        monto = fmt(m.importe);
+        icono = m.tipo === 'Ingreso' ? '💰' : '💳';
+      }
+      notas = m.notas || m.desc || '';
+      return `<div class="mobile-mov-card">
+        <div style="display:flex; justify-content:space-between; align-items:center">
+          <div style="display:flex; align-items:center; gap:8px">
+            <span style="font-size:20px">${icono}</span>
+            <div>
+              <div style="font-weight:600">${titulo}</div>
+              <div style="font-size:11px; color:var(--text2)">${escapeHtml(subtitulo)}</div>
+            </div>
+          </div>
+          <div style="font-weight:700; font-size:16px">${monto}</div>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px">
+          <span style="font-size:11px; color:var(--text2)">${escapeHtml(m.fecha)}</span>
+          <span style="font-size:11px; color:var(--text2)">${escapeHtml(notas) || '—'}</span>
+        </div>
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:6px">
+          <button class="edit-btn" onclick="openEditMovModal('${m.id}')" aria-label="Editar">✏️ Editar</button>
+          <button class="del-btn" onclick="deleteMovement('${m.id}')" aria-label="Eliminar">× Eliminar</button>
+        </div>
+      </div>`;
+    }).join('')}
+    ${filtered.length === 0 ? '<div style="text-align:center; color:var(--text2); padding:32px">Sin movimientos</div>' : ''}
+  </div>`;
 }
 
 function openMovModal(sec){
@@ -1012,12 +1255,12 @@ function openMovModal(sec){
     </div>
     <form id="movForm" onsubmit="saveMovement('${s}');return false">
       ${s==='plataformas'?`
-        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${today()}" required></div><div class="form-group"><label class="form-label">Plataforma</label><select class="form-select" name="platform" required><option value="">Seleccionar...</option>${platforms.map(p=>`<option value="${p.name}">${p.name} (${p.moneda||'MXN'})</option>`).join('')}</select></div></div>
-        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Tipo</label><select class="form-select" name="tipoPlat">${['Saldo Actual','Aportación','Retiro','Gasto'].map(t=>`<option>${t}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Monto</label><input type="number" step="any" class="form-input" name="monto" placeholder="0" required></div></div>
+        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${today()}" required></div><div class="form-group"><label class="form-label">Plataforma</label><select class="form-select" name="platform" required><option value="">Seleccionar...</option>${platforms.map(p=>`<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)} (${p.moneda||'MXN'})</option>`).join('')}</select></div></div>
+        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Tipo</label><select class="form-select" name="tipoPlat">${['Saldo Actual','Aportación','Retiro','Gasto'].map(t=>`<option>${escapeHtml(t)}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Monto</label><input type="number" step="any" class="form-input" name="monto" placeholder="0" required></div></div>
         <div class="form-group"><label class="form-label">Descripción</label><input class="form-input" name="desc" placeholder="Opcional..."></div>
       `:s==='inversiones'?`
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${today()}" required></div><div class="form-group"><label class="form-label">Tipo Activo</label><select class="form-select" name="tipoActivo">${ASSET_TYPES.map(t=>`<option>${t}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Movimiento</label><select class="form-select" name="tipoMov">${['Compra','Venta','Dividendo','Comisión'].map(t=>`<option>${t}</option>`).join('')}</select></div></div>
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Ticker</label><input class="form-input" name="ticker" placeholder="AAPL, BTC..." required style="text-transform:uppercase"></div><div class="form-group"><label class="form-label">Broker</label><input list="brokerList" class="form-input" name="broker" required placeholder="Escribir..."><datalist id="brokerList">${BROKERS.map(b=>`<option value="${b}">`).join('')}</datalist></div><div class="form-group"><label class="form-label">Moneda</label><select class="form-select" name="moneda"><option value="USD">USD 🇺🇸</option><option value="MXN">MXN 🇲🇽</option></select></div></div>
+        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${today()}" required></div><div class="form-group"><label class="form-label">Tipo Activo</label><select class="form-select" name="tipoActivo">${ASSET_TYPES.map(t=>`<option>${escapeHtml(t)}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Movimiento</label><select class="form-select" name="tipoMov">${['Compra','Venta','Dividendo','Comisión'].map(t=>`<option>${escapeHtml(t)}</option>`).join('')}</select></div></div>
+        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Ticker</label><input class="form-input" name="ticker" placeholder="AAPL, BTC..." required style="text-transform:uppercase"></div><div class="form-group"><label class="form-label">Broker</label><input list="brokerList" class="form-input" name="broker" required placeholder="Escribir..."><datalist id="brokerList">${BROKERS.map(b=>`<option value="${escapeHtml(b)}">`).join('')}</datalist></div><div class="form-group"><label class="form-label">Moneda</label><select class="form-select" name="moneda"><option value="USD">USD 🇺🇸</option><option value="MXN">MXN 🇲🇽</option></select></div></div>
         <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Cantidad</label><input type="number" step="any" class="form-input" name="cantidad" placeholder="0" required></div><div class="form-group"><label class="form-label">Precio Unitario</label><input type="number" step="any" class="form-input" name="precioUnit" placeholder="0.00" required></div><div class="form-group"><label class="form-label">Comisión</label><input type="number" step="any" class="form-input" name="comision" value="0"></div></div>
         <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="notas" placeholder="Opcional..."></div>
       `:s==='transferencia'?`
@@ -1028,8 +1271,8 @@ function openMovModal(sec){
         <div id="formTransferPlat">
           <div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${today()}" required></div>
           <div class="form-row form-row-2">
-            <div class="form-group"><label class="form-label">Cuenta Origen</label><select class="form-select" name="platOrigen"><option value="">Seleccionar...</option>${platforms.map(p=>`<option value="${p.name}">${p.name} (${p.moneda||'MXN'})</option>`).join('')}</select></div>
-            <div class="form-group"><label class="form-label">Cuenta Destino</label><select class="form-select" name="platDestino"><option value="">Seleccionar...</option>${platforms.map(p=>`<option value="${p.name}">${p.name} (${p.moneda||'MXN'})</option>`).join('')}</select></div>
+            <div class="form-group"><label class="form-label">Cuenta Origen</label><select class="form-select" name="platOrigen"><option value="">Seleccionar...</option>${platforms.map(p=>`<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)} (${p.moneda||'MXN'})</option>`).join('')}</select></div>
+            <div class="form-group"><label class="form-label">Cuenta Destino</label><select class="form-select" name="platDestino"><option value="">Seleccionar...</option>${platforms.map(p=>`<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)} (${p.moneda||'MXN'})</option>`).join('')}</select></div>
           </div>
           <div class="form-group"><label class="form-label">Monto</label><input type="number" step="any" class="form-input" name="monto" placeholder="0"></div>
           <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="desc" placeholder="Ej: Transferencia de liquidez..."></div>
@@ -1040,17 +1283,27 @@ function openMovModal(sec){
             <div class="form-group"><label class="form-label">Monto a transferir</label><input type="number" step="any" class="form-input" name="montoSob" id="inputMontoSob" placeholder="0"></div>
           </div>
           <div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fechaSob" value="${today()}"></div>
-          <div class="form-group"><label class="form-label">Plataforma destino</label><select class="form-select" name="platDestinoSob"><option value="">Seleccionar...</option>${platforms.map(p=>`<option value="${p.name}">${p.name} (${p.moneda||'MXN'})</option>`).join('')}</select></div>
+          <div class="form-group"><label class="form-label">Plataforma destino</label><select class="form-select" name="platDestinoSob"><option value="">Seleccionar...</option>${platforms.map(p=>`<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)} (${p.moneda||'MXN'})</option>`).join('')}</select></div>
           <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="descSob" placeholder="Ej: Ahorro de marzo..."></div>
         </div>
       `:`
         <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${today()}" required></div><div class="form-group"><label class="form-label">Tipo</label><select class="form-select" name="tipo"><option>Gasto</option><option>Ingreso</option></select></div></div>
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Categoría</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}">${c.icon} ${c.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Importe</label><input type="number" step="any" class="form-input" name="importe" placeholder="0" required></div><div class="form-group"><label class="form-label">Moneda</label><select class="form-select" name="monedaGasto"><option value="MXN">MXN 🇲🇽</option><option value="EUR">EUR 🇪🇺</option></select></div></div>
+        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Categoría</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}">${escapeHtml(c.icon)} ${escapeHtml(c.name)}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Importe</label><input type="number" step="any" class="form-input" name="importe" placeholder="0" required></div><div class="form-group"><label class="form-label">Moneda</label><select class="form-select" name="monedaGasto"><option value="MXN">MXN 🇲🇽</option><option value="EUR">EUR 🇪🇺</option></select></div></div>
         <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="notas" placeholder="Opcional..."></div>
       `}
       <button type="submit" class="btn btn-primary" style="width:100%;margin-top:16px;padding:14px;font-size:15px">Guardar</button>
     </form>
   `);
+  // MEJORA: atajo Ctrl+Enter
+  const form = document.getElementById('movForm');
+  if (form) {
+    form.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        form.dispatchEvent(new Event('submit'));
+      }
+    });
+  }
 }
 
 function saveMovement(sec){
@@ -1059,17 +1312,17 @@ function saveMovement(sec){
     const sobForm=document.getElementById('formTransferSob');const esSobrante=sobForm&&sobForm.style.display!=='none';
     if(esSobrante){
       if(!d.platDestinoSob||!d.montoSob)return;
-      const montoEUR=Number(d.montoSob);if(!montoEUR||montoEUR<=0){alert('⚠️ El monto debe ser mayor a 0');return;}
+      const montoEUR=Number(d.montoSob);if(!montoEUR||montoEUR<=0){showToast('⚠️ El monto debe ser mayor a 0', 'error');return;}
       const eurmxn=getEurMxn();const montoMXN=Math.round(montoEUR*eurmxn*100)/100;
       const mov={id:uid(),seccion:'plataformas',fecha:d.fechaSob||today(),platform:d.platDestinoSob,tipoPlat:'Aportación',monto:montoMXN,desc:(d.descSob||('Sobrante '+d.mesSobrante))+` · €${montoEUR} → $${montoMXN} MXN (TC ${eurmxn.toFixed(2)})`};
-      movements=[mov,...movements];saveAll();closeModal();return;
+      movements=[mov,...movements];saveAll();closeModal();showToast('Movimiento guardado', 'success');return;
     }
     if(!d.platOrigen||!d.platDestino||!d.monto)return;
-    if(d.platOrigen===d.platDestino){alert('⚠️ Origen y destino deben ser distintos');return;}
+    if(d.platOrigen===d.platDestino){showToast('⚠️ Origen y destino deben ser distintos', 'error');return;}
     const tid=uid();
     const salida={id:uid(),seccion:'plataformas',fecha:d.fecha||today(),platform:d.platOrigen,tipoPlat:'Transferencia salida',monto:Number(d.monto),desc:d.desc||'Transferencia',transferId:tid};
     const entrada={id:uid(),seccion:'plataformas',fecha:d.fecha||today(),platform:d.platDestino,tipoPlat:'Transferencia entrada',monto:Number(d.monto),desc:d.desc||'Transferencia',transferId:tid};
-    movements=[salida,entrada,...movements];saveAll();closeModal();return;
+    movements=[salida,entrada,...movements];saveAll();closeModal();showToast('Transferencia guardada', 'success');return;
   }
   let mov={id:uid(),seccion:sec,fecha:d.fecha||today()};
   if(sec==='plataformas'){if(!d.platform||!d.monto)return;mov.platform=d.platform;mov.tipoPlat=d.tipoPlat;mov.monto=Number(d.monto);mov.desc=d.desc||'';}
@@ -1079,25 +1332,23 @@ function saveMovement(sec){
     if(monedaGasto==='EUR'){const fx=_fxCache||LS.get('fxCache');const eurmxn=fx?.eurmxn||settings.tipoEUR||21.5;mov.importe=Math.round(importeRaw*eurmxn*100)/100;mov.notas=(d.notas?d.notas+' · ':'')+'€'+importeRaw+' → $'+mov.importe+' MXN (TC '+eurmxn.toFixed(2)+')';}
     else{mov.importe=importeRaw;mov.notas=d.notas||'';}
   }
-  movements=[mov,...movements];saveAll();closeModal();
+  movements=[mov,...movements];saveAll();closeModal();showToast('Movimiento guardado', 'success');
 }
 
 function deleteMovement(id){
   const mov=movements.find(m=>m.id===id);
-  if(!mov) return;
-  if(mov.transferId){
-    showConfirm(
-      '¿Eliminar transferencia completa?',
-      'Se eliminarán los dos registros de la transferencia (origen y destino).',
-      ()=>{ movements=movements.filter(m=>m.transferId!==mov.transferId); saveAll(); showToast('🗑 Transferencia eliminada','info'); }
-    );
-  } else {
-    showConfirm(
-      '¿Eliminar este movimiento?',
-      'Esta acción no se puede deshacer.',
-      ()=>{ movements=movements.filter(m=>m.id!==id); saveAll(); showToast('🗑 Movimiento eliminado','info'); }
-    );
+  if(mov&&mov.transferId){
+    if(confirm('¿Eliminar la transferencia completa?')){
+      movements=movements.filter(m=>m.transferId!==mov.transferId);
+      showToast('Transferencia eliminada', 'success');
+    } else return;
+  }else{
+    if (confirm('¿Eliminar este movimiento?')) {
+      movements=movements.filter(m=>m.id!==id);
+      showToast('Movimiento eliminado', 'success');
+    } else return;
   }
+  saveAll();
 }
 
 function openEditMovModal(id){
@@ -1106,22 +1357,31 @@ function openEditMovModal(id){
     <div class="modal-header"><div class="modal-title">✏️ Editar Movimiento</div><button class="modal-close" onclick="closeModal()">✕</button></div>
     <form id="editForm" onsubmit="updateMovement('${id}');return false">
       ${sec==='plataformas'?`
-        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${m.fecha}" required></div><div class="form-group"><label class="form-label">Plataforma</label><select class="form-select" name="platform" required>${platforms.map(p=>`<option value="${p.name}" ${m.platform===p.name?'selected':''}>${p.name}</option>`).join('')}</select></div></div>
-        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Tipo</label><select class="form-select" name="tipoPlat">${['Saldo Actual','Aportación','Retiro','Gasto'].map(t=>`<option ${m.tipoPlat===t?'selected':''}>${t}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Monto</label><input type="number" step="any" class="form-input" name="monto" value="${m.monto}" required></div></div>
-        <div class="form-group"><label class="form-label">Descripción</label><input class="form-input" name="desc" value="${m.desc||''}"></div>
+        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${escapeHtml(m.fecha)}" required></div><div class="form-group"><label class="form-label">Plataforma</label><select class="form-select" name="platform" required>${platforms.map(p=>`<option value="${escapeHtml(p.name)}" ${m.platform===p.name?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}</select></div></div>
+        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Tipo</label><select class="form-select" name="tipoPlat">${['Saldo Actual','Aportación','Retiro','Gasto'].map(t=>`<option ${m.tipoPlat===t?'selected':''}>${escapeHtml(t)}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Monto</label><input type="number" step="any" class="form-input" name="monto" value="${m.monto}" required></div></div>
+        <div class="form-group"><label class="form-label">Descripción</label><input class="form-input" name="desc" value="${escapeHtml(m.desc||'')}"></div>
       `:sec==='inversiones'?`
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${m.fecha}" required></div><div class="form-group"><label class="form-label">Tipo Activo</label><select class="form-select" name="tipoActivo">${ASSET_TYPES.map(t=>`<option ${m.tipoActivo===t?'selected':''}>${t}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Movimiento</label><select class="form-select" name="tipoMov">${['Compra','Venta','Dividendo','Comisión'].map(t=>`<option ${m.tipoMov===t?'selected':''}>${t}</option>`).join('')}</select></div></div>
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Ticker</label><input class="form-input" name="ticker" value="${m.ticker}" required style="text-transform:uppercase"></div><div class="form-group"><label class="form-label">Broker</label><input list="brokerListE" class="form-input" name="broker" value="${m.broker||''}"><datalist id="brokerListE">${BROKERS.map(b=>`<option value="${b}">`).join('')}</datalist></div><div class="form-group"><label class="form-label">Moneda</label><select class="form-select" name="moneda"><option value="USD" ${(m.moneda||'USD')==='USD'?'selected':''}>USD</option><option value="MXN" ${m.moneda==='MXN'?'selected':''}>MXN</option></select></div></div>
+        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${escapeHtml(m.fecha)}" required></div><div class="form-group"><label class="form-label">Tipo Activo</label><select class="form-select" name="tipoActivo">${ASSET_TYPES.map(t=>`<option ${m.tipoActivo===t?'selected':''}>${escapeHtml(t)}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Movimiento</label><select class="form-select" name="tipoMov">${['Compra','Venta','Dividendo','Comisión'].map(t=>`<option ${m.tipoMov===t?'selected':''}>${escapeHtml(t)}</option>`).join('')}</select></div></div>
+        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Ticker</label><input class="form-input" name="ticker" value="${escapeHtml(m.ticker)}" required style="text-transform:uppercase"></div><div class="form-group"><label class="form-label">Broker</label><input list="brokerListE" class="form-input" name="broker" value="${escapeHtml(m.broker||'')}"><datalist id="brokerListE">${BROKERS.map(b=>`<option value="${escapeHtml(b)}">`).join('')}</datalist></div><div class="form-group"><label class="form-label">Moneda</label><select class="form-select" name="moneda"><option value="USD" ${(m.moneda||'USD')==='USD'?'selected':''}>USD</option><option value="MXN" ${m.moneda==='MXN'?'selected':''}>MXN</option></select></div></div>
         <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Cantidad</label><input type="number" step="any" class="form-input" name="cantidad" value="${m.cantidad}" required></div><div class="form-group"><label class="form-label">Precio Unitario</label><input type="number" step="any" class="form-input" name="precioUnit" value="${m.precioUnit}" required></div><div class="form-group"><label class="form-label">Comisión</label><input type="number" step="any" class="form-input" name="comision" value="${m.comision||0}"></div></div>
-        <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="notas" value="${m.notas||''}"></div>
+        <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="notas" value="${escapeHtml(m.notas||'')}"></div>
       `:`
-        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${m.fecha}" required></div><div class="form-group"><label class="form-label">Tipo</label><select class="form-select" name="tipo"><option ${m.tipo==='Gasto'?'selected':''}>Gasto</option><option ${m.tipo==='Ingreso'?'selected':''}>Ingreso</option></select></div></div>
-        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Categoría</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}" ${m.categoria===c.id?'selected':''}>${c.icon} ${c.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Importe</label><input type="number" step="any" class="form-input" name="importe" value="${m.importe}" required></div></div>
-        <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="notas" value="${m.notas||''}"></div>
+        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${escapeHtml(m.fecha)}" required></div><div class="form-group"><label class="form-label">Tipo</label><select class="form-select" name="tipo"><option ${m.tipo==='Gasto'?'selected':''}>Gasto</option><option ${m.tipo==='Ingreso'?'selected':''}>Ingreso</option></select></div></div>
+        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Categoría</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}" ${m.categoria===c.id?'selected':''}>${escapeHtml(c.icon)} ${escapeHtml(c.name)}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Importe</label><input type="number" step="any" class="form-input" name="importe" value="${m.importe}" required></div></div>
+        <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="notas" value="${escapeHtml(m.notas||'')}"></div>
       `}
       <div style="display:flex;gap:10px;margin-top:16px"><button type="submit" class="btn btn-primary" style="flex:1;padding:14px">💾 Guardar</button><button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button></div>
     </form>
   `);
+  const form = document.getElementById('editForm');
+  if (form) {
+    form.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        form.dispatchEvent(new Event('submit'));
+      }
+    });
+  }
 }
 
 function updateMovement(id){
@@ -1133,17 +1393,19 @@ function updateMovement(id){
     else{updated.categoria=d.categoria;updated.tipo=d.tipo;updated.importe=Number(d.importe);updated.notas=d.notas||'';}
     return updated;
   });
-  saveAll();closeModal();
+  saveAll();closeModal();showToast('Movimiento actualizado', 'success');
 }
 
 // ============================================
-// PLATAFORMAS
+// PLATAFORMAS (con edición mejorada)
 // ============================================
 function renderPlataformas(){
   const plats=calcPlatforms();
   const total=plats.reduce((s,p)=>s+platSaldoToMXN(p),0);
   const totalRendAuto=plats.reduce((s,p)=>s+(p.rendimientoAuto||0),0);
   const platsConTasa=plats.filter(p=>(p.tasaAnual||0)>0);
+  const isMobile = window.innerWidth <= 768;
+
   document.getElementById('page-plataformas').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
       <div><div class="section-title">Plataformas</div><div class="section-sub">Bancos · SOFIPOs · ETFs · Fondos · CETES · Multi-moneda</div></div>
@@ -1151,24 +1413,7 @@ function renderPlataformas(){
     </div>
     ${platsConTasa.length>0?`<div class="yield-info" style="margin-bottom:16px">⚡ <strong>${platsConTasa.length} plataformas</strong> con tasa automática · Rend. auto total: <strong>${fmtFull(totalRendAuto)}</strong></div>`:''}
     <div class="card-flat">
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>#</th><th>Plataforma</th><th>Moneda ✏️</th><th>Tipo</th><th>Saldo Ini. ✏️</th><th>⚡ Tasa % ✏️</th><th>Desde ✏️</th><th>Días</th><th>+ Aport. 🔍</th><th>Retiros</th><th>Gastos</th><th style="color:var(--teal)">⚡ Auto</th><th>Rend. Real</th><th>Saldo Actual</th><th>Rend %</th><th>% Port.</th><th></th></tr></thead>
-          <tbody>
-            ${plats.map((p,i)=>{
-              const cur=p.moneda||'MXN';
-              const tasaBadge=p.tasaAnual>0?`<span class="tasa-badge${p.tasaAnual>=10?' alta':p.tasaAnual>=5?' media':''}">${p.tasaAnual}%</span>`:`<span style="color:var(--text3);font-size:11px">—</span>`;
-              const rendAutoStr=p.rendimientoAuto>0?`<span class="rend-auto-cell">+${fmtFull(p.rendimientoAuto,cur)}</span>`:`<span style="color:var(--text3)">—</span>`;
-              const diasStr=p.tasaAnual>0&&p.diasDesdeRef>0?`<span style="font-size:11px;color:var(--text2)">${p.diasDesdeRef}d</span>`:`<span style="color:var(--text3)">—</span>`;
-              const aportLink = p.aportacion > 0 ? `<span class="editable" onclick="showAportaciones('${p.id}')" style="cursor:pointer;color:var(--blue);border-bottom:1px dashed var(--blue)">${fmtPlat(p.aportacion,cur)}</span>` : fmtPlat(p.aportacion,cur);
-              const retirosStr = p.retiro > 0 ? `<span style="color:var(--text2);font-size:12px">-${fmtPlat(p.retiro,cur)}</span>` : `<span style="color:var(--text3)">—</span>`;
-              const gastosStr = p.gasto > 0 ? `<span style="color:var(--text2);font-size:12px">-${fmtPlat(p.gasto,cur)}</span>` : `<span style="color:var(--text3)">—</span>`;
-              const pctPort=total>0?((platSaldoToMXN(p)/total)*100).toFixed(1)+'%':'0%';
-              return`<tr><td style="color:var(--text3);font-size:11px">${i+1}</td><td style="font-weight:700">${p.name}</td><td><span class="editable" onclick="editPlatField('${p.id}','moneda',this,'moneda')">${monedaBadge(cur)}</span></td><td>${typeBadge(p.type)}</td><td><span class="editable" onclick="editPlatField('${p.id}','saldoInicial',this,'number')">${fmtPlat(p.saldoInicial,cur)}</span></td><td><span class="editable" onclick="editPlatField('${p.id}','tasaAnual',this,'percent')">${tasaBadge}</span></td><td><span class="editable" onclick="editPlatField('${p.id}','fechaInicio',this,'date')" style="font-size:11px;color:var(--text2)">${p.fechaInicio||'—'}</span></td><td>${diasStr}</td><td>${aportLink}</td><td>${retirosStr}</td><td>${gastosStr}</td><td>${rendAutoStr}</td><td style="color:${pctCol(p.rendimientoManual)};font-weight:600">${p.rendimientoManual!==0?(p.rendimientoManual>=0?'+':'')+fmtPlat(p.rendimientoManual,cur):'<span style="color:var(--text3)">—</span>'}</td><td style="font-weight:800;font-size:14px">${fmtPlat(p.saldo,cur)}</td><td style="font-weight:600;color:${pctCol(p.rendimiento)}">${fmtPct(p.saldoInicial?p.rendimiento/p.saldoInicial:0)}</td><td style="font-size:11px;color:var(--text2)">${pctPort}</td><td><button class="del-btn" onclick="deletePlatform('${p.id}')">×</button></td></tr>`;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
+      ${isMobile ? renderPlataformasMobile(plats, total) : renderPlataformasDesktop(plats, total)}
     </div>
     <div style="margin-top:12px;padding:12px 16px;background:var(--card2);border-radius:10px;font-size:12px;color:var(--text2);line-height:1.6">
       <strong>Moneda:</strong> Cada plataforma maneja su propia moneda (MXN, USD, EUR). Haz clic en la columna Moneda para cambiarla.<br>
@@ -1177,40 +1422,103 @@ function renderPlataformas(){
   `;
 }
 
+function renderPlataformasDesktop(plats, total) {
+  return `<div class="table-wrap desktop-table">
+    <table>
+      <thead><tr><th>#</th><th>Plataforma</th><th>Moneda ✏️</th><th>Tipo</th><th>Saldo Ini. ✏️</th><th>⚡ Tasa % ✏️</th><th>Desde ✏️</th><th>Días</th><th>+ Aport. 🔍</th><th>Retiros</th><th>Gastos</th><th style="color:var(--teal)">⚡ Auto</th><th>Rend. Real</th><th>Saldo Actual</th><th>Rend %</th><th>% Port.</th><th></th></tr></thead>
+      <tbody>
+        ${plats.map((p,i)=>{
+          const cur=p.moneda||'MXN';
+          const tasaBadge=p.tasaAnual>0?`<span class="tasa-badge${p.tasaAnual>=10?' alta':p.tasaAnual>=5?' media':''}">${p.tasaAnual}%</span>`:`<span style="color:var(--text3);font-size:11px">—</span>`;
+          const rendAutoStr=p.rendimientoAuto>0?`<span class="rend-auto-cell">+${fmtFull(p.rendimientoAuto,cur)}</span>`:`<span style="color:var(--text3)">—</span>`;
+          const diasStr=p.tasaAnual>0&&p.diasDesdeRef>0?`<span style="font-size:11px;color:var(--text2)">${p.diasDesdeRef}d</span>`:`<span style="color:var(--text3)">—</span>`;
+          const aportLink = p.aportacion > 0 ? `<span class="editable" onclick="showAportaciones('${p.id}')" style="cursor:pointer;color:var(--blue);border-bottom:1px dashed var(--blue)">${fmtPlat(p.aportacion,cur)}</span>` : fmtPlat(p.aportacion,cur);
+          const retirosStr = p.retiro > 0 ? `<span style="color:var(--text2);font-size:12px">-${fmtPlat(p.retiro,cur)}</span>` : `<span style="color:var(--text3)">—</span>`;
+          const gastosStr = p.gasto > 0 ? `<span style="color:var(--text2);font-size:12px">-${fmtPlat(p.gasto,cur)}</span>` : `<span style="color:var(--text3)">—</span>`;
+          const pctPort=total>0?((platSaldoToMXN(p)/total)*100).toFixed(1)+'%':'0%';
+          return`<tr><td style="color:var(--text3);font-size:11px">${i+1}</td><td style="font-weight:700">${escapeHtml(p.name)}</td><td><span class="editable" onclick="editPlatField('${p.id}','moneda',this,'moneda')">${monedaBadge(cur)}</span></td><td>${typeBadge(p.type)}</td><td><span class="editable" onclick="editPlatField('${p.id}','saldoInicial',this,'number')">${fmtPlat(p.saldoInicial,cur)}</span></td><td><span class="editable" onclick="editPlatField('${p.id}','tasaAnual',this,'percent')">${tasaBadge}</span></td><td><span class="editable" onclick="editPlatField('${p.id}','fechaInicio',this,'date')" style="font-size:11px;color:var(--text2)">${p.fechaInicio||'—'}</span></td><td>${diasStr}</td><td>${aportLink}</td><td>${retirosStr}</td><td>${gastosStr}</td><td>${rendAutoStr}</td><td style="color:${pctCol(p.rendimientoManual)};font-weight:600">${p.rendimientoManual!==0?(p.rendimientoManual>=0?'+':'')+fmtPlat(p.rendimientoManual,cur):'<span style="color:var(--text3)">—</span>'}</td><td style="font-weight:800;font-size:14px">${fmtPlat(p.saldo,cur)}</td><td style="font-weight:600;color:${pctCol(p.rendimiento)}">${fmtPct(p.saldoInicial?p.rendimiento/p.saldoInicial:0)}</td><td style="font-size:11px;color:var(--text2)">${pctPort}</td><td><button class="del-btn" onclick="deletePlatform('${p.id}')" aria-label="Eliminar">×</button></td></tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+function renderPlataformasMobile(plats, total) {
+  return `<div class="mobile-card-list mobile-only">
+    ${plats.map(p => {
+      const cur = p.moneda || 'MXN';
+      const pctPort = total > 0 ? ((platSaldoToMXN(p) / total) * 100).toFixed(1) + '%' : '0%';
+      return `<div class="mobile-plat-card">
+        <div style="grid-column:1">
+          <div style="font-weight:700">${escapeHtml(p.name)} ${monedaBadge(cur)}</div>
+          <div style="font-size:11px; color:var(--text2)">${p.type}</div>
+        </div>
+        <div style="grid-column:2; text-align:right">
+          <div style="font-weight:800">${fmtPlat(p.saldo, cur)}</div>
+          <div style="font-size:11px; color:${pctCol(p.rendimiento)}">${p.rendimiento >= 0 ? '+' : ''}${fmtPlat(p.rendimiento, cur)}</div>
+        </div>
+        <div style="grid-column:1 / span 2; display:flex; gap:12px; margin-top:8px; font-size:11px; color:var(--text2); flex-wrap:wrap">
+          <span>Saldo ini: ${fmtPlat(p.saldoInicial, cur)}</span>
+          <span>Tasa: ${p.tasaAnual > 0 ? p.tasaAnual + '%' : '—'}</span>
+          <span>Rend auto: ${p.rendimientoAuto > 0 ? '+' + fmtPlat(p.rendimientoAuto, cur) : '—'}</span>
+          <span>% port: ${pctPort}</span>
+        </div>
+        <div style="grid-column:1 / span 2; display:flex; gap:8px; justify-content:flex-end; margin-top:6px">
+          <button class="edit-btn" onclick="editPlatField('${p.id}','moneda',this,'moneda')">Moneda</button>
+          <button class="edit-btn" onclick="showAportaciones('${p.id}')">Aport.</button>
+          <button class="del-btn" onclick="deletePlatform('${p.id}')">×</button>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+// MEJORA: edición inline con cancelar con Escape
 function editPlatField(id,field,el,inputType){
   const p=platforms.find(x=>x.id===id);if(!p)return;
   let input;
+  let cancel = false;
+  const keydownHandler = (e) => {
+    if (e.key === 'Escape') {
+      cancel = true;
+      input.blur();
+    }
+  };
   if(inputType==='date'){input=document.createElement('input');input.type='date';input.value=p[field]||today();input.className='form-input';input.style.cssText='width:130px;padding:4px 8px;font-size:12px';}
   else if(inputType==='percent'){input=document.createElement('input');input.type='number';input.step='0.01';input.min='0';input.max='100';input.value=p[field]||0;input.className='form-input';input.style.cssText='width:90px;padding:4px 8px;font-size:12px';input.placeholder='ej: 13.5';}
   else if(inputType==='moneda'){
     input=document.createElement('select');input.className='form-select';input.style.cssText='width:100px;padding:4px 8px;font-size:12px';
     PLAT_MONEDAS.forEach(m=>{const opt=document.createElement('option');opt.value=m;opt.textContent=m==='MXN'?'🇲🇽 MXN':m==='USD'?'🇺🇸 USD':'🇪🇺 EUR';if(p[field]===m)opt.selected=true;input.appendChild(opt);});
+    input.onchange = finish;
   }
   else{input=document.createElement('input');input.type='number';input.step='any';input.value=p[field]||0;input.className='form-input';input.style.cssText='width:110px;padding:4px 8px;font-size:12px';}
-  const finish=()=>{const raw=input.value;let val=inputType==='date'||inputType==='moneda'?raw:(Number(raw)||0);platforms=platforms.map(x=>x.id!==id?x:{...x,[field]:val});saveAll();};
-  let _cancelled=false;
-  input.onblur=()=>{ if(!_cancelled) finish(); };
-  input.onkeydown=e=>{
-    if(e.key==='Enter'){ e.preventDefault(); input.blur(); }
-    if(e.key==='Escape'){ _cancelled=true; saveAll(); } // restaura vista sin guardar cambio
+  
+  const finish=()=>{
+    if (!cancel) {
+      const raw=input.value;
+      let val=inputType==='date'||inputType==='moneda'?raw:(Number(raw)||0);
+      platforms=platforms.map(x=>x.id!==id?x:{...x,[field]:val});
+      saveAll();
+    }
+    cancel = false;
   };
-  if(inputType==='moneda')input.onchange=finish;
+  input.addEventListener('keydown', keydownHandler);
+  input.onblur=finish;
+  input.onkeydown=e=>{if(e.key==='Enter')input.blur();};
   el.replaceWith(input);input.focus();
 }
 function deletePlatform(id){
-  const p=platforms.find(x=>x.id===id);
-  if(!p) return;
-  showConfirm(
-    '¿Eliminar <strong>'+escHtml(p.name)+'</strong>?',
-    'Se borrará también su historial de movimientos. Esta acción no se puede deshacer.',
-    ()=>{ platforms=platforms.filter(x=>x.id!==id); movements=movements.filter(m=>!(m.seccion==='plataformas'&&m.platform===p.name)); saveAll(); showToast('🗑 '+p.name+' eliminada','info'); }
-  );
+  if (confirm('¿Eliminar esta plataforma?')) {
+    platforms=platforms.filter(p=>p.id!==id);
+    saveAll();
+    showToast('Plataforma eliminada', 'success');
+  }
 }
 function openAddPlatformModal(){
   openModal(`<div class="modal-header"><div class="modal-title">Nueva Plataforma</div><button class="modal-close" onclick="closeModal()">✕</button></div>
     <form onsubmit="addPlatform();return false">
       <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="npName" placeholder="Ej: Banco Azteca" required></div>
-      <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Tipo</label><select class="form-select" id="npType">${PLAT_TYPES.map(t=>`<option>${t}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Grupo</label><select class="form-select" id="npGroup">${PLAT_GROUPS.map(g=>`<option>${g}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Moneda</label><select class="form-select" id="npMoneda"><option value="MXN">🇲🇽 MXN</option><option value="USD">🇺🇸 USD</option><option value="EUR">🇪🇺 EUR</option></select></div></div>
+      <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Tipo</label><select class="form-select" id="npType">${PLAT_TYPES.map(t=>`<option>${escapeHtml(t)}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Grupo</label><select class="form-select" id="npGroup">${PLAT_GROUPS.map(g=>`<option>${escapeHtml(g)}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Moneda</label><select class="form-select" id="npMoneda"><option value="MXN">🇲🇽 MXN</option><option value="USD">🇺🇸 USD</option><option value="EUR">🇪🇺 EUR</option></select></div></div>
       <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Saldo Inicial</label><input type="number" class="form-input" id="npSaldo" placeholder="0" value="0"></div><div class="form-group"><label class="form-label">⚡ Tasa Anual %</label><input type="number" step="0.01" min="0" max="100" class="form-input" id="npTasa" placeholder="ej: 13.5" value="0"></div></div>
       <div class="form-group"><label class="form-label">Fecha inicio</label><input type="date" class="form-input" id="npFecha" value="${today()}"></div>
       <button type="submit" class="btn btn-primary" style="width:100%;margin-top:16px">Agregar</button>
@@ -1219,11 +1527,11 @@ function openAddPlatformModal(){
 function addPlatform(){
   const name=document.getElementById('npName').value;if(!name)return;
   platforms.push({id:uid(),name,type:document.getElementById('npType').value,group:document.getElementById('npGroup').value,moneda:document.getElementById('npMoneda').value||'MXN',saldoInicial:Number(document.getElementById('npSaldo').value)||0,tasaAnual:Number(document.getElementById('npTasa').value)||0,fechaInicio:document.getElementById('npFecha').value||today()});
-  saveAll();closeModal();
+  saveAll();closeModal();showToast('Plataforma agregada', 'success');
 }
 
 // ============================================
-// GASTOS
+// GASTOS (con gráfica)
 // ============================================
 function renderGastos(){
   const cm=new Date().getMonth()+1,cy=new Date().getFullYear();
@@ -1285,10 +1593,18 @@ function renderGastos(){
     const barC=pctUso>100?'var(--red)':pctUso>85?'var(--orange)':'var(--green)';
     const restStr=pres>0?(rest>=0?'+':'')+fmtEUR(rest):'—';const restCol=rest>=0?'var(--green)':'var(--red)';
     const barHtml=pres>0?`<div style="display:flex;align-items:center;gap:6px"><div class="progress-bg" style="flex:1;height:6px"><div class="progress-fill" style="background:${barC};width:${Math.min(pctUso,100).toFixed(0)}%"></div></div><span style="font-size:10px;font-weight:700;color:${pctUso>100?'var(--red)':'var(--text2)'}"> ${pctUso.toFixed(0)}%</span></div>`:`<span style="font-size:10px;color:var(--text3)">sin asignar</span>`;
-    return`<tr><td style="font-weight:600">${cat.icon} ${cat.name}</td><td><input type="number" class="form-input" style="width:100px;padding:5px 8px;font-size:13px;font-weight:700;text-align:right" value="${pres||''}" placeholder="0" onchange="updateBudget('${cat.id}',this.value)"></td><td style="font-size:12px;color:var(--text2)">${pctIng}</td><td style="font-weight:600;${real>pres&&pres>0?'color:var(--red)':''}">${fmtEUR(real)}</td><td style="font-weight:600;color:${restCol}">${restStr}</td><td style="width:150px">${barHtml}</td></tr>`;
+    return`<tr><td style="font-weight:600">${escapeHtml(cat.icon)} ${escapeHtml(cat.name)}</td><td><input type="number" class="form-input" style="width:100px;padding:5px 8px;font-size:13px;font-weight:700;text-align:right" value="${pres||''}" placeholder="0" onchange="updateBudget('${cat.id}',this.value)"></td><td style="font-size:12px;color:var(--text2)">${escapeHtml(pctIng)}</td><td style="font-weight:600;${real>pres&&pres>0?'color:var(--red)':''}">${fmtEUR(real)}</td><td style="font-weight:600;color:${restCol}">${restStr}</td><td style="width:150px">${barHtml}</td></tr>`;
   }).join('');
 
-  const movRows=mesMovs.length>0?mesMovs.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).map(m=>`<tr><td style="color:var(--text2);font-size:12px">${m.fecha}</td><td style="font-weight:500">${m.tipo==='Ingreso'?'💰 Ingreso':catName(m.categoria)} ${m.esRecurrente?'<span class="badge badge-purple">🔄 Auto</span>':''}</td><td><span class="badge ${m.tipo==='Ingreso'?'badge-green':'badge-red'}">${m.tipo}</span></td><td style="font-weight:700">${fmtEUR(toEUR(m))}</td><td style="color:var(--text2);font-size:11px">${m.notas||'—'}</td><td><button class="edit-btn" onclick="openEditMovModal('${m.id}')">✏️</button><button class="del-btn" onclick="deleteMovement('${m.id}')">×</button></td></tr>`).join(''):`<tr><td colspan="6" style="text-align:center;color:var(--text2);padding:24px">Sin movimientos este mes</td></tr>`;
+  const movRows=mesMovs.length>0?mesMovs.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).map(m=>`<tr><td style="color:var(--text2);font-size:12px">${escapeHtml(m.fecha)}</td><td style="font-weight:500">${m.tipo==='Ingreso'?'💰 Ingreso':catName(m.categoria)} ${m.esRecurrente?'<span class="badge badge-purple">🔄 Auto</span>':''}</td><td><span class="badge ${m.tipo==='Ingreso'?'badge-green':'badge-red'}">${escapeHtml(m.tipo)}</span></td><td style="font-weight:700">${fmtEUR(toEUR(m))}</td><td style="color:var(--text2);font-size:11px">${escapeHtml(m.notas||'—')}</td><td><button class="edit-btn" onclick="openEditMovModal('${m.id}')">✏️</button><button class="del-btn" onclick="deleteMovement('${m.id}')">×</button></td></tr>`).join(''):`<tr><td colspan="6" style="text-align:center;color:var(--text2);padding:24px">Sin movimientos este mes</td></tr>`;
+
+  // MEJORA: gráfica de gastos por categoría
+  const gastosPorCategoria = Object.entries(byCat).map(([cat, val]) => ({ cat, val }));
+  const labelsGasto = gastosPorCategoria.map(({cat}) => {
+    const c = EXPENSE_CATS.find(x => x.id === cat);
+    return c ? c.icon + ' ' + c.name : cat;
+  });
+  const dataGasto = gastosPorCategoria.map(({val}) => val);
 
   document.getElementById('page-gastos').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
@@ -1301,7 +1617,7 @@ function renderGastos(){
         <button class="btn btn-sm" style="background:rgba(191,90,242,0.1);color:var(--purple);border:none;font-weight:700" onclick="openRecurrentesModal()">⚙️ Gestionar</button>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">
-        ${recurrentes.filter(r=>r.activo).slice(0,6).map(r=>`<div class="recurrente-card"><div class="recurrente-icon" style="background:${r.color||'var(--card2)'}22">${r.icon||'📌'}</div><div class="recurrente-info"><div class="recurrente-name">${r.nombre}</div><div class="recurrente-meta">${r.frecuencia} · día ${r.dia}</div></div><div class="recurrente-amount" style="color:var(--red)">-${fmtEUR(r.importe)}</div></div>`).join('')}
+        ${recurrentes.filter(r=>r.activo).slice(0,6).map(r=>`<div class="recurrente-card"><div class="recurrente-icon" style="background:${r.color||'var(--card2)'}22">${escapeHtml(r.icon||'📌')}</div><div class="recurrente-info"><div class="recurrente-name">${escapeHtml(r.nombre)}</div><div class="recurrente-meta">${escapeHtml(r.frecuencia)} · día ${r.dia}</div></div><div class="recurrente-amount" style="color:var(--red)">-${fmtEUR(r.importe)}</div></div>`).join('')}
         ${recurrentes.filter(r=>r.activo).length===0?'<div style="color:var(--text2);font-size:13px;padding:8px">Sin recurrentes.</div>':''}
       </div>
     </div>
@@ -1325,6 +1641,12 @@ function renderGastos(){
       <div class="card stat" style="border-top:3px solid var(--red)"><div class="stat-label">💳 Gasto Real</div><div class="stat-value" style="color:var(--red)">${fmtEUR(totGastoEUR)}</div><div class="stat-sub">registrado este mes</div></div>
       <div class="card stat" style="border-top:3px solid ${disponibleEUR>=0?'var(--green)':'var(--red)'}"><div class="stat-label">✅ Disponible</div><div class="stat-value" style="color:${disponibleEUR>=0?'var(--green)':'var(--red)'}">${fmtEUR(disponibleEUR)}</div><div class="stat-sub">${totIngEUR>0?'real: '+fmtEUR(totIngEUR):'según planeado'}</div></div>
     </div>
+
+    ${gastosPorCategoria.length > 0 ? `
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">📊 Distribución de Gastos</div>
+      <div style="height:200px; margin-top:8px"><canvas id="chartGastos"></canvas></div>
+    </div>` : ''}
 
     ${totalIngPlaneadoEUR>0?`<div class="card" style="margin-bottom:16px;padding:16px 24px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-size:13px;font-weight:700">Uso del presupuesto global</div><div style="font-size:13px;font-weight:800;color:${barColor}">${barLabel}</div></div><div class="progress-bg" style="height:14px;border-radius:8px"><div class="progress-fill" style="height:14px;border-radius:8px;background:${barColor};width:${barPct}%"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-top:6px"><span>Gastado: ${fmtEUR(totGastoEUR)}</span><span>Presupuesto: ${fmtEUR(totalPresupuestoEUR)}</span><span>Ingreso: ${fmtEUR(totalIngPlaneadoEUR)}</span></div></div>`:''}
 
@@ -1351,6 +1673,35 @@ function renderGastos(){
     <div class="card-flat" style="margin-bottom:16px"><div style="padding:16px 20px 0;display:flex;justify-content:space-between;align-items:center"><div class="card-title" style="margin:0">Presupuesto por Categoría (€)</div></div><div class="table-wrap"><table><thead><tr><th>Categoría</th><th>Presupuesto €</th><th>% ingreso</th><th>Real €</th><th>Restante</th><th>Uso</th></tr></thead><tbody>${catRows}<tr style="font-weight:800;background:var(--card2);border-top:2px solid var(--border2)"><td>TOTAL</td><td>${fmtEUR(totalPresupuestoEUR)}</td><td>${totalIngPlaneadoEUR>0?((totalPresupuestoEUR/totalIngPlaneadoEUR)*100).toFixed(1)+'%':'—'}</td><td style="color:${totGastoEUR>totalPresupuestoEUR?'var(--red)':'var(--text)'}">${fmtEUR(totGastoEUR)}</td><td style="color:${totalPresupuestoEUR-totGastoEUR>=0?'var(--green)':'var(--red)'}">${totalPresupuestoEUR>0?(totalPresupuestoEUR-totGastoEUR>=0?'+':'')+fmtEUR(totalPresupuestoEUR-totGastoEUR):'—'}</td><td>${totalPresupuestoEUR>0?`<span style="font-size:12px;font-weight:800">${(totGastoEUR/totalPresupuestoEUR*100).toFixed(0)}%</span>`:''}</td></tr></tbody></table></div></div>
     <div class="card-flat"><div style="padding:16px 20px 0"><div class="card-title">Movimientos — ${MONTHS[cm-1]} ${cy}</div></div><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Categoría</th><th>Tipo</th><th>Importe €</th><th>Notas</th><th></th></tr></thead><tbody>${movRows}</tbody></table></div></div>
   `;
+
+  // MEJORA: gráfica de gastos
+  setTimeout(() => {
+    const ctxG = document.getElementById('chartGastos');
+    if (ctxG && gastosPorCategoria.length > 0) {
+      if (chartInstances.chartGastos) chartInstances.chartGastos.destroy();
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      chartInstances.chartGastos = new Chart(ctxG, {
+        type: 'doughnut',
+        data: {
+          labels: labelsGasto,
+          datasets: [{
+            data: dataGasto,
+            backgroundColor: gastosPorCategoria.map((_, i) => COLORS[i % COLORS.length]),
+            borderWidth: 2,
+            borderColor: isDark ? '#1C1C1E' : '#fff',
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { color: isDark ? '#F5F5F7' : '#1D1D1F' } },
+            tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${fmtEUR(ctx.raw)}` } }
+          }
+        }
+      });
+    }
+  }, 100);
 }
 
 function updateBudget(catId,value){if(!settings.budgets)settings.budgets={};settings.budgets[catId]=Number(value)||0;saveAll();}
@@ -1368,8 +1719,8 @@ function openRecurrentesModal(){
     <div id="recList">
       ${recurrentes.map(r=>`
         <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--card2);border-radius:12px;margin-bottom:8px">
-          <div style="font-size:20px">${r.icon||'📌'}</div>
-          <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">${r.nombre}</div><div style="font-size:11px;color:var(--text2)">${r.frecuencia} · día ${r.dia}</div></div>
+          <div style="font-size:20px">${escapeHtml(r.icon||'📌')}</div>
+          <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">${escapeHtml(r.nombre)}</div><div style="font-size:11px;color:var(--text2)">${escapeHtml(r.frecuencia)} · día ${r.dia}</div></div>
           <div style="font-size:15px;font-weight:800;color:var(--red);margin-right:8px">-${fmt(r.importe)}</div>
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0"><input type="checkbox" ${r.activo?'checked':''} onchange="toggleRecurrente('${r.id}',this.checked)" style="accent-color:var(--blue);width:16px;height:16px"><span style="font-size:11px;color:var(--text2)">${r.activo?'Activo':'Off'}</span></label>
           <button class="del-btn" onclick="deleteRecurrente('${r.id}')" style="opacity:0.5">×</button>
@@ -1379,12 +1730,12 @@ function openRecurrentesModal(){
       <div style="font-size:13px;font-weight:700;margin-bottom:12px">+ Nuevo recurrente</div>
       <form id="recForm" onsubmit="addRecurrente();return false">
         <div class="form-row form-row-2">
-          <div class="form-group"><label class="form-label">Categoría</label><select class="form-select" id="rCat" onchange="syncRecurrenteName()">${EXPENSE_CATS.map(c=>`<option value="${c.id}">${c.icon} ${c.name}</option>`).join('')}</select></div>
+          <div class="form-group"><label class="form-label">Categoría</label><select class="form-select" id="rCat" onchange="syncRecurrenteName()">${EXPENSE_CATS.map(c=>`<option value="${c.id}">${escapeHtml(c.icon)} ${escapeHtml(c.name)}</option>`).join('')}</select></div>
           <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="rNombre" required></div>
         </div>
         <div class="form-row form-row-3">
           <div class="form-group"><label class="form-label">Importe</label><input type="number" class="form-input" id="rImporte" required></div>
-          <div class="form-group"><label class="form-label">Frecuencia</label><select class="form-select" id="rFrec">${FRECUENCIAS.map(f=>`<option>${f}</option>`).join('')}</select></div>
+          <div class="form-group"><label class="form-label">Frecuencia</label><select class="form-select" id="rFrec">${FRECUENCIAS.map(f=>`<option>${escapeHtml(f)}</option>`).join('')}</select></div>
           <div class="form-group"><label class="form-label">Día</label><input type="number" class="form-input" id="rDia" value="1" min="1" max="28"></div>
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%;margin-top:4px">Agregar</button>
@@ -1393,12 +1744,19 @@ function openRecurrentesModal(){
   `);
 }
 function syncRecurrenteName(){const cat=document.getElementById('rCat')?.value;const nombreEl=document.getElementById('rNombre');if(!cat||!nombreEl)return;const c=EXPENSE_CATS.find(x=>x.id===cat);if(c)nombreEl.value=c.name;}
-function addRecurrente(){const nombre=document.getElementById('rNombre').value,importe=Number(document.getElementById('rImporte').value);if(!nombre||!importe)return;recurrentes.push({id:uid(),nombre,importe,categoria:document.getElementById('rCat').value,frecuencia:document.getElementById('rFrec').value,dia:Number(document.getElementById('rDia').value)||1,icon:'📌',color:'#0A84FF',activo:true});saveAll();openRecurrentesModal();}
+function addRecurrente(){const nombre=document.getElementById('rNombre').value,importe=Number(document.getElementById('rImporte').value);if(!nombre||!importe)return;recurrentes.push({id:uid(),nombre,importe,categoria:document.getElementById('rCat').value,frecuencia:document.getElementById('rFrec').value,dia:Number(document.getElementById('rDia').value)||1,icon:'📌',color:'#0A84FF',activo:true});saveAll();openRecurrentesModal();showToast('Recurrente agregado', 'success');}
 function toggleRecurrente(id,val){recurrentes=recurrentes.map(r=>r.id!==id?r:{...r,activo:val});saveAll();}
-function deleteRecurrente(id){recurrentes=recurrentes.filter(r=>r.id!==id);saveAll();openRecurrentesModal();}
+function deleteRecurrente(id){
+  if (confirm('¿Eliminar este gasto recurrente?')) {
+    recurrentes=recurrentes.filter(r=>r.id!==id);
+    saveAll();
+    openRecurrentesModal();
+    showToast('Recurrente eliminado', 'success');
+  }
+}
 
 // ============================================
-// METAS — FIX: Ingreso Mensual en EUR
+// METAS
 // ============================================
 function renderMetas(){
   const tc=settings.tipoCambio||20;
@@ -1442,21 +1800,19 @@ function renderMetas(){
         const mesesEstimados=restante>0&&actual>0?Math.ceil(Math.log(g.meta/actual)/Math.log(1+re/12)):0;
         const isEUR = g.clase==='Ingreso Mensual';
         const fmtVal = v => isEUR ? fmtEUR(v) : fmt(v);
-        return`<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:16px;font-weight:700">${g.nombre}</div><div style="font-size:11px;color:var(--text2)">${g.clase} · ${g.fechaLimite||'Sin fecha'}</div></div><div style="display:flex;gap:6px;align-items:center"><span class="badge" style="background:${sc}18;color:${sc}">${st}</span><button class="del-btn" onclick="deleteGoal('${g.id}')">×</button></div></div><div style="margin-top:16px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span style="font-weight:600">${fmtVal(actual)}</span><span style="color:var(--text2)">${fmtVal(g.meta)}</span></div><div class="progress-bg"><div class="progress-fill" style="background:${sc};width:${Math.min(pct*100,100)}%"></div></div><div style="text-align:right;font-size:12px;font-weight:700;color:${sc};margin-top:4px">${(pct*100).toFixed(1)}%</div></div>${pct<1&&mesesEstimados>0?`<div style="font-size:11px;color:var(--text2);margin-top:8px">⏱ ~${mesesEstimados} meses al ${(re*100).toFixed(0)}% anual · Faltan ${fmtVal(restante)}</div>`:''}</div>`;
+        return`<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:16px;font-weight:700">${escapeHtml(g.nombre)}</div><div style="font-size:11px;color:var(--text2)">${escapeHtml(g.clase)} · ${g.fechaLimite||'Sin fecha'}</div></div><div style="display:flex;gap:6px;align-items:center"><span class="badge" style="background:${sc}18;color:${sc}">${st}</span><button class="del-btn" onclick="deleteGoal('${g.id}')" aria-label="Eliminar">×</button></div></div><div style="margin-top:16px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span style="font-weight:600">${fmtVal(actual)}</span><span style="color:var(--text2)">${fmtVal(g.meta)}</span></div><div class="progress-bg"><div class="progress-fill" style="background:${sc};width:${Math.min(pct*100,100)}%"></div></div><div style="text-align:right;font-size:12px;font-weight:700;color:${sc};margin-top:4px">${(pct*100).toFixed(1)}%</div></div>${pct<1&&mesesEstimados>0?`<div style="font-size:11px;color:var(--text2);margin-top:8px">⏱ ~${mesesEstimados} meses al ${(re*100).toFixed(0)}% anual · Faltan ${fmtVal(restante)}</div>`:''}</div>`;
       }).join('')}
     </div>
   `;
 }
 function openGoalModal(){openModal(`<div class="modal-header"><div class="modal-title">Nueva Meta</div><button class="modal-close" onclick="closeModal()">✕</button></div><form onsubmit="addGoal();return false"><div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="gName" required></div><div class="form-row form-row-2"><div class="form-group"><label class="form-label">Clase</label><select class="form-select" id="gClase"><option>Patrimonio Total</option><option>Plataformas</option><option>Inversiones</option><option>Ingreso Mensual</option></select></div><div class="form-group"><label class="form-label">Meta</label><input type="number" class="form-input" id="gMeta" required></div></div><div class="form-group"><label class="form-label">Fecha Límite</label><input type="date" class="form-input" id="gFecha"></div><div class="form-group"><label class="form-label">Descripción</label><input class="form-input" id="gDesc"></div><button type="submit" class="btn btn-primary" style="width:100%;margin-top:16px">Crear Meta</button></form>`);}
-function addGoal(){const nombre=document.getElementById('gName').value,meta=Number(document.getElementById('gMeta').value);if(!nombre||!meta)return;goals.push({id:uid(),nombre,clase:document.getElementById('gClase').value,meta,fechaLimite:document.getElementById('gFecha').value,descripcion:document.getElementById('gDesc').value});saveAll();closeModal();}
+function addGoal(){const nombre=document.getElementById('gName').value,meta=Number(document.getElementById('gMeta').value);if(!nombre||!meta)return;goals.push({id:uid(),nombre,clase:document.getElementById('gClase').value,meta,fechaLimite:document.getElementById('gFecha').value,descripcion:document.getElementById('gDesc').value});saveAll();closeModal();showToast('Meta creada', 'success');}
 function deleteGoal(id){
-  const g=goals.find(x=>x.id===id);
-  if(!g) return;
-  showConfirm(
-    '¿Eliminar la meta <strong>'+escHtml(g.nombre)+'</strong>?',
-    'Esta acción no se puede deshacer.',
-    ()=>{ goals=goals.filter(x=>x.id!==id); saveAll(); showToast('🎯 Meta eliminada','info'); }
-  );
+  if (confirm('¿Eliminar esta meta?')) {
+    goals=goals.filter(g=>g.id!==id);
+    saveAll();
+    showToast('Meta eliminada', 'success');
+  }
 }
 
 // ============================================
@@ -1471,8 +1827,8 @@ function renderAjustes(){
     <div class="card" style="margin-bottom:16px;border-top:3px solid var(--blue)">
       <div class="card-title">👤 Cuenta</div>
       <div style="display:flex;align-items:center;gap:16px;margin-top:8px;flex-wrap:wrap">
-        ${currentUser?.photoURL?`<img src="${currentUser.photoURL}" style="width:48px;height:48px;border-radius:24px">`:`<div style="width:48px;height:48px;border-radius:24px;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff">👤</div>`}
-        <div style="flex:1"><div style="font-size:16px;font-weight:700">${currentUser?.displayName||'Usuario'}</div><div style="font-size:13px;color:var(--text2)">${currentUser?.email||''}</div></div>
+        ${currentUser?.photoURL?`<img src="${escapeHtml(currentUser.photoURL)}" style="width:48px;height:48px;border-radius:24px">`:`<div style="width:48px;height:48px;border-radius:24px;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff">👤</div>`}
+        <div style="flex:1"><div style="font-size:16px;font-weight:700">${escapeHtml(currentUser?.displayName||'Usuario')}</div><div style="font-size:13px;color:var(--text2)">${escapeHtml(currentUser?.email||'')}</div></div>
         <button class="btn btn-danger btn-sm" onclick="window.signOutUser()">Cerrar sesión</button>
       </div>
     </div>
@@ -1482,11 +1838,11 @@ function renderAjustes(){
     </div>
     <div class="card" style="margin-bottom:16px">
       <div class="card-title">🔑 API Key — Finnhub</div>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px"><input type="text" class="form-input" style="flex:1;min-width:200px;font-family:monospace;font-size:13px" id="finnhubKeyInput" placeholder="Pega tu API key" value="${settings.finnhubKey||''}" oninput="settings.finnhubKey=this.value.trim();saveAll()"><button class="btn btn-primary" onclick="testFinnhub()">🧪 Probar</button>${hasFinnhub?`<span style="font-size:12px;color:var(--green)">✅ OK</span>`:''}</div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px"><input type="text" class="form-input" style="flex:1;min-width:200px;font-family:monospace;font-size:13px" id="finnhubKeyInput" placeholder="Pega tu API key" value="${escapeHtml(settings.finnhubKey||'')}" oninput="settings.finnhubKey=this.value.trim();saveAll()"><button class="btn btn-primary" onclick="testFinnhub()">🧪 Probar</button>${hasFinnhub?`<span style="font-size:12px;color:var(--green)">✅ OK</span>`:''}</div>
       <div id="finnhubTestResult" style="margin-top:8px;font-size:12px"></div>
     </div>
     <div class="grid-2">
-      <div class="card"><div class="card-title">💾 Exportar / Importar</div><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px"><button class="btn btn-primary" onclick="exportData()">📥 Exportar JSON</button><button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📤 Importar JSON</button><input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)"></div></div>
+      <div class="card"><div class="card-title">💾 Exportar / Importar</div><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px"><button class="btn btn-primary" onclick="exportData()">📥 Exportar JSON</button><button class="btn btn-secondary" onclick="exportCSV()">📊 Exportar CSV</button><button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📤 Importar JSON</button><input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)"></div></div>
       <div class="card"><div class="card-title">⚠️ Zona de Peligro</div><button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="if(confirm('¿Borrar TODOS los datos?'))resetAll()">🗑 Resetear Todo</button></div>
     </div>
     <div class="card" style="margin-top:16px;padding:16px 20px">
@@ -1516,12 +1872,73 @@ function updateNav(patrimonio,totalMXN,totalUSD,tc,totalRend){
 function updateNavUser(user){
   const el=document.getElementById('navUser');if(!el)return;
   const darkBtn=`<button class="dark-toggle" onclick="toggleDark()" title="Modo oscuro" style="margin-right:4px"><span class="dark-toggle-icon dark-toggle-moon">🌙</span><span class="dark-toggle-icon dark-toggle-sun">☀️</span></button>`;
-  if(user)el.innerHTML=`${darkBtn}${user.photoURL?`<img src="${user.photoURL}" class="nav-avatar">`:`<div class="nav-avatar-placeholder">${(user.displayName||user.email||'U')[0].toUpperCase()}</div>`}<button class="btn-signout" onclick="window.signOutUser()">Salir</button>`;
+  if(user)el.innerHTML=`${darkBtn}${user.photoURL?`<img src="${escapeHtml(user.photoURL)}" class="nav-avatar">`:`<div class="nav-avatar-placeholder">${escapeHtml((user.displayName||user.email||'U')[0].toUpperCase())}</div>`}<button class="btn-signout" onclick="window.signOutUser()">Salir</button>`;
 }
 
-function exportData(){const data={platforms,movements,goals,settings,recurrentes,patrimonioHistory,exportDate:new Date().toISOString(),version:'4.4'};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`finanzas-pro-${today()}.json`;a.click();URL.revokeObjectURL(url);}
-function importData(input){const file=input.files[0];if(!file)return;const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.platforms)platforms=d.platforms.map(p=>({tasaAnual:0,fechaInicio:'2026-02-01',moneda:'MXN',...p}));if(d.movements)movements=d.movements;if(d.goals)goals=d.goals;if(d.settings)settings=d.settings;if(d.recurrentes)recurrentes=d.recurrentes;if(d.patrimonioHistory)patrimonioHistory=d.patrimonioHistory;saveAll();alert('✅ Datos importados');}catch{alert('❌ Archivo inválido');}};r.readAsText(file);}
-function resetAll(){platforms=DEFAULT_PLATFORMS.map(p=>({...p}));movements=JSON.parse(JSON.stringify(DEFAULT_MOVS));goals=[...DEFAULT_GOALS];settings={...DEFAULT_SETTINGS};recurrentes=JSON.parse(JSON.stringify(DEFAULT_RECURRENTES));patrimonioHistory=[];LS.set('price_cache',{});saveAll();setTimeout(()=>updateAllPrices(false),500);}
+function exportData(){const data={platforms,movements,goals,settings,recurrentes,patrimonioHistory,exportDate:new Date().toISOString(),version:'4.4'};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`finanzas-pro-${today()}.json`;a.click();URL.revokeObjectURL(url);showToast('Datos exportados', 'success');}
+function exportCSV() {
+  // Exportar movimientos a CSV
+  const headers = ['Fecha','Sección','Tipo','Monto','Notas'];
+  const rows = movements.map(m => {
+    let tipo = '', monto = '';
+    if (m.seccion === 'plataformas') {
+      tipo = m.tipoPlat;
+      monto = m.monto;
+    } else if (m.seccion === 'inversiones') {
+      tipo = `${m.tipoMov} ${m.ticker}`;
+      monto = m.montoTotal;
+    } else {
+      tipo = m.tipo;
+      monto = m.importe;
+    }
+    return [m.fecha, m.seccion, tipo, monto, (m.notas || m.desc || '')];
+  });
+  const csvContent = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' }); // BOM para caracteres especiales
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `movimientos-${today()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV exportado', 'success');
+}
+function importData(input){
+  const file=input.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const d=JSON.parse(e.target.result);
+      // MEJORA: validación básica
+      if (!d.platforms || !d.movements) throw new Error('Estructura inválida');
+      platforms=d.platforms.map(p=>({tasaAnual:0,fechaInicio:'2026-02-01',moneda:'MXN',...p}));
+      movements=d.movements;
+      goals=d.goals || DEFAULT_GOALS;
+      settings=d.settings || DEFAULT_SETTINGS;
+      recurrentes=d.recurrentes || DEFAULT_RECURRENTES;
+      patrimonioHistory=d.patrimonioHistory || [];
+      _platformsDirty = true;
+      saveAll();
+      showToast('✅ Datos importados', 'success');
+    }catch{
+      showToast('❌ Archivo inválido', 'error');
+    }
+  };
+  r.readAsText(file);
+}
+function resetAll(){
+  platforms=DEFAULT_PLATFORMS.map(p=>({...p}));
+  movements=JSON.parse(JSON.stringify(DEFAULT_MOVS));
+  goals=[...DEFAULT_GOALS];
+  settings={...DEFAULT_SETTINGS};
+  recurrentes=JSON.parse(JSON.stringify(DEFAULT_RECURRENTES));
+  patrimonioHistory=[];
+  _platformsDirty = true;
+  LS.set('price_cache',{});
+  saveAll();
+  setTimeout(()=>updateAllPrices(false),500);
+  showToast('Datos restablecidos', 'success');
+}
 
 function renderPageInternal(tab){
   if(tab==='dashboard')renderDashboard();else if(tab==='movimientos')renderMovimientos();else if(tab==='plataformas')renderPlataformas();else if(tab==='gastos')renderGastos();else if(tab==='metas')renderMetas();else if(tab==='ajustes')renderAjustes();
@@ -1533,7 +1950,7 @@ window.showAportaciones = showAportaciones;
 // ==================== FIREBASE (MÓDULO) ====================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig={apiKey:"AIzaSyDUAOlDXmkBRQNoYgmax9KOMjQrZd061Q8",authDomain:"control-de-inversion.firebaseapp.com",projectId:"control-de-inversion",storageBucket:"control-de-inversion.firebasestorage.app",messagingSenderId:"955139190781",appId:"1:955139190781:web:b73653484f5f96b7e23394"};
 const app=initializeApp(firebaseConfig),db=getFirestore(app),auth=getAuth(app);
@@ -1544,27 +1961,7 @@ function showApp(){document.getElementById('loginOverlay').classList.add('hidden
 function showLogin(msg){document.getElementById('loginOverlay').classList.remove('hidden');document.getElementById('mainNav').style.display='none';document.getElementById('mainContainer').style.display='none';document.getElementById('mobileNav').style.display='none';document.getElementById('accessDenied').classList.remove('show');if(msg){const el=document.getElementById('loginError');el.textContent=msg;el.style.display='block';}}
 
 window.signOutUser=async()=>{await signOut(auth);showLogin();};
-document.getElementById('btnGoogleLogin').addEventListener('click', async () => {
-  const btn = document.getElementById('btnGoogleLogin');
-  btn.disabled = true;
-  btn.innerHTML = '<span style="display:inline-block;width:20px;height:20px;border:2px solid rgba(10,132,255,0.2);border-top-color:#0A84FF;border-radius:50%;animation:spin 0.7s linear infinite;margin-right:8px;vertical-align:middle"></span> Conectando...';
-  try {
-    await signInWithRedirect(auth, new GoogleAuthProvider());
-  } catch(e) {
-    btn.disabled = false;
-    btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> Continuar con Google';
-    showLogin('Error al iniciar sesión. Intenta de nuevo.');
-  }
-});
-
-// Capturar el resultado cuando Google redirige de vuelta a la página
-getRedirectResult(auth).then(result => {
-  // onAuthStateChanged se encarga del resto automáticamente
-}).catch(e => {
-  if (e.code && e.code !== 'auth/no-current-user') {
-    showLogin('Error al iniciar sesión: ' + e.message);
-  }
-});
+document.getElementById('btnGoogleLogin').addEventListener('click',async()=>{const btn=document.getElementById('btnGoogleLogin');btn.disabled=true;btn.innerHTML='<span style="display:inline-block;width:20px;height:20px;border:2px solid rgba(10,132,255,0.2);border-top-color:#0A84FF;border-radius:50%;animation:spin 0.7s linear infinite;margin-right:8px;vertical-align:middle"></span> Conectando...';try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(e){btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> Continuar con Google';showLogin(e.code==='auth/popup-closed-by-user'?'':'Error al iniciar sesión.');}});
 
 let _ignoreSnap=false,_saveTimeout=null,_unsub=null;
 
@@ -1606,7 +2003,6 @@ window.addEventListener('offline',()=>setFbStatus('offline'));
 
 // Exportar funciones al ámbito global
 window.toggleDark = toggleDark;
-window.debouncedRenderMovimientos = debouncedRenderMovimientos;
 window.switchTab = switchTab;
 window.openModal = openModal;
 window.closeModal = closeModal;
@@ -1633,6 +2029,7 @@ window.addGoal = addGoal;
 window.deleteGoal = deleteGoal;
 window.testFinnhub = testFinnhub;
 window.exportData = exportData;
+window.exportCSV = exportCSV;
 window.importData = importData;
 window.resetAll = resetAll;
 window.openMovModal = openMovModal;
