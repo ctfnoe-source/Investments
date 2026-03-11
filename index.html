@@ -2,7 +2,7 @@
 <html lang="es" data-theme="light">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
   <title>Finanzas Pro — Dashboard Financiero</title>
   <meta name="theme-color" content="#0A84FF">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&display=swap" rel="stylesheet">
@@ -10,6 +10,9 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+
+<!-- Toast container -->
+<div id="toastContainer" style="position:fixed; top:20px; right:20px; z-index:10000; display:flex; flex-direction:column; gap:10px; pointer-events:none;"></div>
 
 <div class="offline-banner" id="offlineBanner">
   <span id="offlineIcon">📴</span>
@@ -71,7 +74,6 @@
   <button class="mobile-nav-item" data-tab="movimientos" onclick="switchTab('movimientos')"><span class="mob-icon">📋</span><span class="mob-label">Movimientos</span></button>
   <button class="mobile-nav-item" data-tab="plataformas" onclick="switchTab('plataformas')"><span class="mob-icon">🏦</span><span class="mob-label">Plataformas</span></button>
   <button class="mobile-nav-item" data-tab="gastos" onclick="switchTab('gastos')"><span class="mob-icon">💳</span><span class="mob-label">Gastos</span></button>
-  <button class="mobile-nav-item" data-tab="metas" onclick="switchTab('metas')"><span class="mob-icon">🎯</span><span class="mob-label">Metas</span></button>
   <button class="mobile-nav-item" data-tab="ajustes" onclick="switchTab('ajustes')"><span class="mob-icon">⚙️</span><span class="mob-label">Ajustes</span></button>
 </nav>
 
