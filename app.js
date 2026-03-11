@@ -67,26 +67,58 @@ async function fetchStockPrice(ticker) {
   const k = settings.finnhubKey||''; if(!k) return null;
   try { const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker.toUpperCase()}&token=${k}`); if(!r.ok) throw new Error(); const d = await r.json(); return (d.c && d.c > 0) ? d.c : null; } catch { return null; }
 }
-async function fetchMXPrice(ticker) {
-  const baseTicker = ticker.toUpperCase().replace(/\.MX$/i, '');
-  const variations = [baseTicker + '.MX', baseTicker];
-  const proxies = ['https://query1.finance.yahoo.com/v8/finance/chart/', 'https://query2.finance.yahoo.com/v8/finance/chart/'];
-  for (const sym of variations) { for (const proxyBase of proxies) { const url = `${proxyBase}${sym}?interval=1d&range=1d`; try { const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } }); if (!r.ok) continue; const d = await r.json(); const price = d?.chart?.result?.[0]?.meta?.regularMarketPrice; if (price && price > 0) return price; } catch { } await new Promise(r => setTimeout(r, 200)); } } return null;
+async function fetchAlphaVantagePrice(ticker, targetMoneda) {
+  const k = settings.alphaVantageKey || ''; if (!k) return null;
+  const base = ticker.toUpperCase().replace(/\.(L|DE|AS|PA|MI|SW|LON|DEX)$/i, '');
+  // Solo bolsas europeas primero — si ninguna funciona, intentar sin sufijo (NYSE/NASDAQ)
+  const symbols = [base+'.LON', base+'.DEX', base+'.EPA', base+'.AMS'];
+  // Si ninguna bolsa europea devuelve precio, intentar directo (solo para acciones USD)
+  const symbolsUSD = [base];
+  const allSymbols = targetMoneda === 'MXN' ? symbols : [...symbols, ...symbolsUSD];
+  for (const sym of allSymbols) {
+    try {
+      const r = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(sym)}&apikey=${k}`);
+      if (!r.ok) continue;
+      const d = await r.json();
+      // Si hay mensaje de límite de API, parar
+      if (d.Note || d.Information) { console.warn('Alpha Vantage limit:', d.Note||d.Information); return null; }
+      const q = d['Global Quote'];
+      // Alpha Vantage devuelve objeto vacío {} cuando no encuentra el símbolo
+      if (!q || !q['01. symbol'] || !q['05. price']) continue;
+      let price = parseFloat(q['05. price']);
+      if (!price || price <= 0) continue;
+      console.log(`Alpha Vantage: ${sym} = ${price} (targetMoneda: ${targetMoneda})`);
+      if (targetMoneda === 'MXN') {
+        const fx = _fxCache || LS.get('fxCache');
+        const tc = settings.tipoCambio || 20;
+        const eurmxn = (fx?.eurmxn) || settings.tipoEUR || 21.5;
+        const gbpmxn = (fx?.gbpmxn) || eurmxn * 1.17; // GBP/MXN real o aproximado
+        if (sym.includes('.LON')) price = (price / 100) * gbpmxn; // GBp → GBP → MXN
+        else if (sym.includes('.DEX') || sym.includes('.EPA') || sym.includes('.AMS')) price = price * eurmxn;
+        else price = price * tc; // USD → MXN
+      }
+      return price;
+    } catch {}
+    await new Promise(r => setTimeout(r, 300));
+  }
+  return null;
 }
+
 
 let _fxCache = null;
 async function fetchFX() {
   const cached = LS.get('fxCache');
   if (cached && isCacheFresh(cached.ts)) { _fxCache = cached; return cached; }
   try {
-    const r = await fetch('https://api.frankfurter.app/latest?from=USD&to=MXN,EUR');
+    const r = await fetch('https://api.frankfurter.app/latest?from=USD&to=MXN,EUR,GBP');
     if (!r.ok) throw new Error();
     const d = await r.json();
-    const result = { usdmxn: d.rates.MXN, usdeur: d.rates.EUR, eurmxn: d.rates.MXN / d.rates.EUR, ts: Date.now() };
+    const gbpmxn = d.rates.MXN / d.rates.GBP;
+    const result = { usdmxn: d.rates.MXN, usdeur: d.rates.EUR, eurmxn: d.rates.MXN / d.rates.EUR, gbpmxn, usdgbp: d.rates.GBP, ts: Date.now() };
     LS.set('fxCache', result);
     _fxCache = result;
     return result;
-  } catch { return _fxCache || { usdmxn: settings.tipoCambio||20, usdeur: 0.92, eurmxn: (settings.tipoCambio||20)/0.92, ts: 0 }; }
+  } catch { return _fxCache || { usdmxn: settings.tipoCambio||20, usdeur: 0.92, eurmxn: (settings.tipoCambio||20)/0.92, gbpmxn: (settings.tipoCambio||20)*1.27, usdgbp: 0.79, ts: 0 }; }
 }
 
 async function updateFX() {
@@ -111,7 +143,10 @@ function updateNavFX() {
   const fx = _fxCache || LS.get('fxCache');
   const usd = fx?.usdmxn ? `<span>USD $${fx.usdmxn.toFixed(2)}</span>` : '';
   const eur = fx?.eurmxn ? `<span>EUR $${fx.eurmxn.toFixed(2)}</span>` : '';
-  if (usd || eur) sub.innerHTML = usd + (usd && eur ? '<span style="opacity:0.3">·</span>' : '') + eur;
+  const gbp = fx?.gbpmxn ? `<span>GBP $${fx.gbpmxn.toFixed(2)}</span>` : '';
+  const sep = '<span style="opacity:0.3">·</span>';
+  const parts = [usd, eur, gbp].filter(Boolean);
+  if (parts.length) sub.innerHTML = parts.join(sep);
 }
 
 async function fetchPrice(ticker, type, moneda) {
@@ -121,11 +156,24 @@ async function fetchPrice(ticker, type, moneda) {
   const cacheKey = moneda === 'MXN' ? ticker + '_MXN' : ticker;
   const cached = getCachedPrice(cacheKey);
   if (cached && isCacheFresh(cached.ts)) return {...cached, cached:true};
+
   let price = null, source = 'none';
-  if (type === 'Crypto') { price = await fetchCryptoPrice(ticker); if (price !== null) source = 'coingecko'; }
-  else if ((type === 'Acción' || type === 'ETF') && moneda === 'MXN') { price = await fetchMXPrice(ticker); if (price !== null) source = 'yahoo-bmv-mxn'; else { price = await fetchStockPrice(ticker); if (price !== null) { price = price * (settings.tipoCambio||20); source = 'finnhub-converted'; } } }
-  else if (type === 'Acción' || type === 'ETF') { price = await fetchStockPrice(ticker); if (price !== null) source = 'finnhub'; }
-  else if (type === 'Acción MX' || type === 'ETF MX') { price = await fetchMXPrice(ticker); if (price !== null) source = 'yahoo-bmv'; }
+  if (type === 'Crypto') {
+    price = await fetchCryptoPrice(ticker);
+    if (price !== null) source = 'coingecko';
+  }
+  else if ((type === 'Acción' || type === 'ETF') && moneda === 'MXN') {
+    // 1. Alpha Vantage — soporta ETFs europeos y convierte a MXN
+    if (settings.alphaVantageKey) { price = await fetchAlphaVantagePrice(ticker, 'MXN'); if (price !== null) source = 'alphavantage-mxn'; }
+    // 2. Finnhub — solo acciones USD, convertir a MXN
+    if (price === null) { price = await fetchStockPrice(ticker); if (price !== null) { price = price * (settings.tipoCambio||20); source = 'finnhub-converted'; } }
+  }
+  else if (type === 'Acción' || type === 'ETF') {
+    price = await fetchStockPrice(ticker);
+    if (price !== null) source = 'finnhub';
+    // Alpha Vantage para ETFs europeos (VUAA, etc.) que Finnhub no tiene
+    if (price === null && settings.alphaVantageKey) { price = await fetchAlphaVantagePrice(ticker, moneda); if (price !== null) source = 'alphavantage'; }
+  }
   if (price !== null) { setCachedPrice(cacheKey, price, source); return {price, source, cached:false, ts:Date.now()}; }
   return null;
 }
@@ -138,7 +186,7 @@ async function updateAllPrices(forceRefresh=false) {
   if (btn) { btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Actualizando...'; }
   await updateFX();
   const tickerSet = new Map();
-  movements.forEach(m => { if (m.seccion === 'inversiones' && m.ticker) { const key = (m.moneda === 'MXN' ? m.ticker.toUpperCase() + '_MXN' : m.ticker.toUpperCase()); tickerSet.set(key, {type: m.tipoActivo, moneda: m.moneda || 'USD', ticker: m.ticker.toUpperCase()}); } });
+  movements.forEach(m => { if (m.seccion === 'inversiones' && m.ticker) { const key = (m.moneda === 'MXN' ? m.ticker.toUpperCase() + '_MXN' : m.ticker.toUpperCase()); tickerSet.set(key, {type: m.tipoActivo, moneda: m.moneda||'USD', ticker: m.ticker.toUpperCase()}); } });
   if (forceRefresh) { const c = getPriceCache(); tickerSet.forEach((_, k) => { delete c[k]; }); setPriceCache(c); }
   for (const [key, info] of tickerSet) { const b = document.getElementById('btnUpdate'); if (b) b.innerHTML = `<span class="spinner"></span> ${info.ticker}...`; await fetchPrice(info.ticker, info.type, info.moneda); await new Promise(r => setTimeout(r, 300)); }
   priceUpdateState.loading = false;
@@ -171,7 +219,7 @@ const EXPENSE_CATS=[
   {id:'celular',name:'Celular',icon:'📱'},{id:'salud',name:'Salud',icon:'💊'},{id:'seguro',name:'Seguro',icon:'🛡'},{id:'ocio',name:'Ocio',icon:'🎮'},
   {id:'suscripciones',name:'Suscripciones',icon:'📲'},{id:'transporte',name:'Transporte',icon:'🚗'},{id:'educacion',name:'Educación',icon:'🎓'},{id:'otros',name:'Otros',icon:'📦'},
 ];
-const ASSET_TYPES=['Acción','ETF','Crypto','Efectivo USD','Acción MX','ETF MX'];
+const ASSET_TYPES=['Acción','ETF','Crypto','Efectivo USD'];
 const BROKERS=['Interactive Brokers','Fidelity','Binance','Robinhood','Bitso','GBM','OKX','Kraken','Coinbase','Actinver','Charles Schwab','BBVA Bancomer','Bursanet'];
 const PLAT_TYPES=['BANCO','SOFIPO','CUENTA DIGITAL','BOLSA/ETFs','FONDOS','FONDOS RETIRO','DEUDA/CETES'];
 const PLAT_GROUPS=['Ahorro/Liquidez','Cuenta Digital','Bolsa/ETFs','Fondos','Deuda/CETES'];
@@ -359,13 +407,24 @@ function _recalcAndSaveSnapshot() {
     const val = t.valorActual !== null ? t.valorActual : t.costoPosicion;
     return s + (t.moneda === 'MXN' ? val : val * tc);
   }, 0);
-  savePatrimonioSnapshot(totalMXN + totalInvMXN);
+  const patrimonioTotal = totalMXN + totalInvMXN;
+
+  // Capital base = dinero que el usuario HA METIDO (saldos iniciales + aportaciones - retiros)
+  // No incluye rendimientos — solo movimientos de capital propios
+  const capitalPlats = plats.reduce((s,p) => {
+    const toMXN = v => p.moneda === 'USD' ? v*tc : p.moneda === 'EUR' ? v*eurmxn : v;
+    return s + toMXN(p.saldoInicial||0) + toMXN(p.aportacion||0) - toMXN(p.retiro||0);
+  }, 0);
+  const capitalInv = tickers.reduce((s,t) => s + (t.moneda === 'MXN' ? t.costoTotal : t.costoTotal * tc), 0);
+  const capitalBase = capitalPlats + capitalInv;
+
+  savePatrimonioSnapshot(patrimonioTotal, capitalBase);
 }
 
-function savePatrimonioSnapshot(value) {
+function savePatrimonioSnapshot(value, capital) {
   const todayStr = today();
   const existingIndex = patrimonioHistory.findIndex(s => s.date === todayStr);
-  const newSnapshot = { date: todayStr, value: Math.round(value) };
+  const newSnapshot = { date: todayStr, value: Math.round(value), capital: Math.round(capital || value) };
   if (existingIndex === -1) { patrimonioHistory.push(newSnapshot); if (patrimonioHistory.length > 365) patrimonioHistory = patrimonioHistory.slice(-365); }
   else { patrimonioHistory[existingIndex] = newSnapshot; }
   LS.set('patrimonioHistory', patrimonioHistory);
@@ -620,7 +679,6 @@ function renderDashboard(){
   const topCats=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,5);
   const totalInvMXN=tickerListUSD.reduce((s,t)=>s+(t.valorActual||t.costoPosicion||0)*tc,0)+totalMXNCurrent;
   const patrimonio=totalMXN+totalInvMXN;
-  const isr=totalRend>0?totalRend*0.2:0;
   const budgets=settings.budgets||{};
   const totalPresupuesto=EXPENSE_CATS.reduce((s,c)=>s+(budgets[c.id]||0),0);
   const pctPresUsado=totalPresupuesto>0?totGastoMes/totalPresupuesto:0;
@@ -641,6 +699,32 @@ function renderDashboard(){
   const todaySnap = hist.find(s => s.date === todayStr);
   const prevSnap = hist.filter(s => s.date < todayStr).slice(-1)[0];
 
+  // Rendimiento puro: patrimonio - capital aportado + capital del primer snapshot
+  // Así las aportaciones/retiros no afectan la línea verde, solo el crecimiento real
+  function pureYield(snap) {
+    if (!snap) return 0;
+    const firstSnap = hist[0];
+    const baseCapital = firstSnap ? (firstSnap.capital || firstSnap.value) : (snap.capital || snap.value);
+    const snapCapital = snap.capital || snap.value;
+    // rendimiento = valor actual - capital metido + capital inicial (para anclar la línea al origen)
+    return snap.value - snapCapital + baseCapital;
+  }
+
+  // Rendimiento puro actual (para la proyección)
+  const tc2 = settings.tipoCambio || 20;
+  const eurmxn2 = getEurMxn();
+  const plats2 = calcPlatforms();
+  const capitalPlatsHoy = plats2.reduce((s,p) => {
+    const toMXN = v => p.moneda==='USD' ? v*tc2 : p.moneda==='EUR' ? v*eurmxn2 : v;
+    return s + toMXN(p.saldoInicial||0) + toMXN(p.aportacion||0) - toMXN(p.retiro||0);
+  }, 0);
+  const tickers2 = getTickerPositions();
+  const capitalInvHoy = tickers2.reduce((s,t) => s + (t.moneda==='MXN' ? t.costoTotal : t.costoTotal*tc2), 0);
+  const capitalHoy = capitalPlatsHoy + capitalInvHoy;
+  const firstHist = hist[0];
+  const baseCapitalHoy = firstHist ? (firstHist.capital || firstHist.value) : capitalHoy;
+  const patrimonioRendPuro = patrimonio - capitalHoy + baseCapitalHoy;
+
   function getChangeForMonths(months) {
     if (hist.length < 2) return null;
     const cutoff = new Date();
@@ -648,7 +732,7 @@ function renderDashboard(){
     const cutoffStr = cutoff.toISOString().split('T')[0];
     const ref = hist.filter(s => s.date <= cutoffStr).slice(-1)[0];
     if (!ref) return null;
-    return patrimonio - ref.value;
+    return pureYield(todaySnap || hist[hist.length-1]) - pureYield(ref);
   }
 
   let histFiltered = hist;
@@ -661,14 +745,19 @@ function renderDashboard(){
     if (histFiltered.length === 0) histFiltered = hist.slice(-2);
   }
   const realDatesFiltered = histFiltered.map(s => s.date);
-  const realValsFiltered = histFiltered.map(s => s.value);
+  // Valores de rendimiento puro para la gráfica (sin efecto de aportaciones)
+  const realValsFiltered = histFiltered.map(s => pureYield(s));
 
   const curLabel = salaryIsEUR ? '🇪🇺 EUR' : '🇲🇽 MXN';
 
   const projInterval = CHART_INTERVALS.find(i => i.key === _projKey) || CHART_INTERVALS[3];
   const projMonths = projInterval.months;
+  // La proyección parte del PATRIMONIO real para calcular ganancia esperada
+  // pero la gráfica la ancla al rendimiento puro (mismo punto de arranque que la línea verde)
   const patrimonioEsperado = Math.round(patrimonio * Math.pow(1 + re/12, projMonths));
   const gananciaProy = patrimonioEsperado - patrimonio;
+  // Factor de escala para proyección sobre rendimiento puro
+  const projScale = patrimonio > 0 ? patrimonioRendPuro / patrimonio : 1;
 
   const periodOptions = [
     ...CHART_INTERVALS,
@@ -676,7 +765,7 @@ function renderDashboard(){
   ];
 
   const rangeButtonsHTML = periodOptions.map(r => {
-    const change = r.months !== null ? getChangeForMonths(r.months) : (hist.length>=2 ? patrimonio - hist[0].value : null);
+    const change = r.months !== null ? getChangeForMonths(r.months) : (hist.length>=2 ? pureYield(hist[hist.length-1]) - pureYield(hist[0]) : null);
     const col = change === null ? 'var(--text3)' : pctCol(change);
     const val = change !== null ? (change >= 0 ? '+' : '') + fmt(change) : '—';
     const isActive = _chartRange === r.key;
@@ -695,6 +784,21 @@ function renderDashboard(){
       <span class="btn-val" style="color:${isActive ? 'inherit' : 'var(--blue)'}">+${fmt(gain)}</span>
     </button>`;
   }).join('');
+
+  // Rentabilidad anualizada real (CAGR) usando snapshots históricos
+  let rendAnualReal = null;
+  if (hist.length >= 2) {
+    const first = hist[0], last = hist[hist.length - 1];
+    const diasTotal = (new Date(last.date) - new Date(first.date)) / (1000*60*60*24);
+    if (diasTotal > 30 && first.value > 0) {
+      const cagr = Math.pow(last.value / first.value, 365 / diasTotal) - 1;
+      rendAnualReal = cagr;
+    }
+  }
+  // Delta del patrimonio vs ayer
+  const ayerSnap = hist.filter(s => s.date < todayStr).slice(-1)[0];
+  const deltaHoy = ayerSnap ? patrimonio - ayerSnap.value : 0;
+  const deltaHoyPct = ayerSnap && ayerSnap.value > 0 ? deltaHoy / ayerSnap.value : 0;
 
   document.getElementById('page-dashboard').innerHTML=`
     ${applied>0?`<div class="snapshot-banner" style="background:rgba(191,90,242,0.06);border-color:rgba(191,90,242,0.2);margin-bottom:16px"><span class="snap-dot" style="background:var(--purple)"></span><span style="color:var(--purple)">✅ Se aplicaron <strong>${applied} gastos recurrentes</strong> automáticamente este mes</span></div>`:''}
@@ -738,21 +842,42 @@ function renderDashboard(){
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
           <div>
             <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2);margin-bottom:4px">📈 Evolución del Patrimonio</div>
-            <div style="font-size:28px;font-weight:800;letter-spacing:-0.03em;color:var(--green);line-height:1">${fmt(patrimonio)}</div>
-            <div style="display:flex;gap:14px;margin-top:8px;flex-wrap:wrap">
-              <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:16px;height:2.5px;background:#30D158;border-radius:2px"></span>Real</span>
-              <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:16px;height:2px;background:rgba(10,132,255,0.6);border-radius:2px"></span>Proyectado</span>
+            <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+              <div style="font-size:28px;font-weight:800;letter-spacing:-0.03em;color:${pctCol(patrimonio - capitalHoy)};line-height:1">${fmt(patrimonio - capitalHoy)}</div>
+              <span style="font-size:12px;color:var(--text2)">ganancia · ${fmt(capitalHoy)} invertidos</span>
+              <span id="chartPeriodChange" style="display:inline-flex;align-items:center;gap:5px;font-size:13px;padding:3px 10px;border-radius:20px;background:var(--card2)"></span>
+            </div>
+            <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap">
+              <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px">
+                <span style="display:inline-block;width:18px;height:3px;background:linear-gradient(90deg,#30D158,#34D35A);border-radius:2px;box-shadow:0 0 6px rgba(48,209,88,0.4)"></span>
+                Ganancia real
+              </span>
+              <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px">
+                <span style="display:inline-flex;gap:2px;align-items:center"><span style="width:4px;height:2px;background:rgba(10,132,255,0.65);border-radius:1px"></span><span style="width:4px;height:2px;background:rgba(10,132,255,0.65);border-radius:1px"></span><span style="width:4px;height:2px;background:rgba(10,132,255,0.65);border-radius:1px"></span></span>
+                Proyección ${(re*100).toFixed(0)}%/año
+              </span>
             </div>
           </div>
-          <div style="text-align:right">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--blue);margin-bottom:4px">Esperado en ${projInterval.label}</div>
-            <div style="font-size:28px;font-weight:800;letter-spacing:-0.03em;color:var(--blue);line-height:1">${fmt(patrimonioEsperado)}</div>
-            <div style="font-size:12px;color:var(--text2);margin-top:4px">+${fmt(gananciaProy)} · <span style="font-weight:700;color:var(--blue)">${(re*100).toFixed(0)}%/año</span></div>
+          <div style="display:flex;gap:24px;align-items:flex-start">
+            <div style="text-align:right">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2);margin-bottom:2px">Patrimonio Total</div>
+              <div style="font-size:26px;font-weight:800;letter-spacing:-0.03em;color:var(--text);line-height:1">${fmt(patrimonio)}</div>
+            </div>
+            <div style="width:1px;background:var(--border);align-self:stretch;margin:2px 0"></div>
+            <div style="text-align:right">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--blue);margin-bottom:2px">Esperado en ${projInterval.label}</div>
+              <div style="font-size:26px;font-weight:800;letter-spacing:-0.03em;color:var(--blue);line-height:1">${fmt(patrimonioEsperado)}</div>
+              <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:5px">
+                <span style="font-size:12px;color:var(--green);font-weight:700">+${fmt(gananciaProy)}</span>
+                <span style="font-size:11px;color:var(--text3)">·</span>
+                <span style="font-size:11px;font-weight:700;color:var(--blue)">${(re*100).toFixed(0)}%/año</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      <div style="padding:0 28px 0px">
-        <div class="chart-container" style="height:240px"><canvas id="chartEvo"></canvas></div>
+      <div style="padding:0 20px 0px">
+        <div class="chart-container" style="height:260px"><canvas id="chartEvo"></canvas></div>
       </div>
       <div style="padding:8px 28px 12px;display:flex;justify-content:flex-end">
         <button class="chart-toggle-btn" id="chartToggleBtn" onclick="toggleChartPanel()">▼ Controles</button>
@@ -783,9 +908,14 @@ function renderDashboard(){
         </div>
       </div>
       <div class="card">
-        <div class="card-title">💰 Estimación Fiscal</div>
+        <div class="card-title">📈 Rendimiento Real</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
-          ${[['Rend. Bruto',fmt(totalRend),pctCol(totalRend)],['ISR 20%',fmt(-isr),'var(--red)'],['Rend. Neto',fmt(totalRend-isr),pctCol(totalRend-isr)],['ISR Anual est.',fmt(isr),'var(--text)']].map(([l,v,c])=>`<div style="background:var(--card2);border-radius:10px;padding:10px;text-align:center"><div style="font-size:9px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:0.06em">${l}</div><div style="font-size:15px;font-weight:800;color:${c};margin-top:2px">${v}</div></div>`).join('')}
+          ${[
+            ['G/P No Realizada', (gpNoRealizadaTotal>=0?'+':'')+fmt(gpNoRealizadaTotal), pctCol(gpNoRealizadaTotal)],
+            ['G/P Realizada', (gpRealizadaTotal>=0?'+':'')+fmt(gpRealizadaTotal), pctCol(gpRealizadaTotal)],
+            ['CAGR Real', rendAnualReal!==null ? (rendAnualReal>=0?'+':'')+(rendAnualReal*100).toFixed(1)+'%' : '—', rendAnualReal!==null?pctCol(rendAnualReal):'var(--text3)'],
+            ['Delta Hoy', (deltaHoy>=0?'▲ ':' ▼ ')+fmt(Math.abs(deltaHoy)), pctCol(deltaHoy)]
+          ].map(([l,v,c])=>`<div style="background:var(--card2);border-radius:10px;padding:10px;text-align:center"><div style="font-size:9px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:0.06em">${l}</div><div style="font-size:15px;font-weight:800;color:${c};margin-top:2px">${v}</div></div>`).join('')}
         </div>
       </div>
       <div class="card">
@@ -842,7 +972,7 @@ function renderDashboard(){
     </div>
   `;
 
-  updateNav(patrimonio,totalMXN,totalUSDCurrent,tc,totalRend);
+  updateNav(patrimonio,totalMXN,totalUSDCurrent,tc,totalRend,deltaHoy,deltaHoyPct);
 
   setTimeout(()=>{
     const isDark=document.documentElement.getAttribute('data-theme')==='dark';
@@ -852,45 +982,148 @@ function renderDashboard(){
     const realDates = realDatesFiltered;
     const realVals = realValsFiltered;
 
+    // Proyección: arranca desde el último punto real (rendimiento puro) para conectar visualmente
     const now = new Date();
+    const lastRealDate = realDates.length > 0 ? realDates[realDates.length - 1] : now.toISOString().split('T')[0];
+    const lastRealVal = realVals.length > 0 ? realVals[realVals.length - 1] : patrimonioRendPuro;
     const projDates=[];
     const projVals=[];
-    for(let i=0; i<=projMonths; i++){
+    // Punto de anclaje: último dato real en escala de rendimiento puro
+    projDates.push(lastRealDate);
+    projVals.push(lastRealVal);
+    for(let i=1; i<=projMonths; i++){
       const d=new Date(now.getFullYear(), now.getMonth()+i, 1);
       projDates.push(d.toISOString().split('T')[0]);
-      projVals.push(Math.round(patrimonio * Math.pow(1+re/12, i)));
+      // Proyección sobre el patrimonio real escalada al espacio de rendimiento puro
+      projVals.push(Math.round(patrimonio * Math.pow(1+re/12, i) * projScale));
+    }
+
+    // Calcular cambio del período para badge en la cabecera
+    const periodChange = realVals.length >= 2 ? realVals[realVals.length-1] - realVals[0] : null;
+    const periodChangePct = (realVals.length >= 2 && realVals[0] > 0) ? (realVals[realVals.length-1] - realVals[0]) / realVals[0] : null;
+    const changeEl = document.getElementById('chartPeriodChange');
+    if(changeEl && periodChange !== null){
+      const sign = periodChange >= 0 ? '+' : '';
+      const col = periodChange >= 0 ? 'var(--green)' : 'var(--red)';
+      changeEl.innerHTML = `<span style="color:${col};font-weight:800">${sign}${fmt(periodChange)}</span> <span style="color:var(--text3);font-size:10px">${sign}${(periodChangePct*100).toFixed(2)}%</span>`;
+      changeEl.style.display = 'inline-flex';
+    } else if(changeEl){
+      changeEl.style.display = 'none';
     }
 
     const ctxE=document.getElementById('chartEvo');
     if(ctxE){
+      // Gradiente bajo la curva real
+      const ctx2d = ctxE.getContext('2d');
+      const gradReal = ctx2d.createLinearGradient(0, 0, 0, ctxE.offsetHeight || 240);
+      gradReal.addColorStop(0, isDark ? 'rgba(48,209,88,0.18)' : 'rgba(48,209,88,0.13)');
+      gradReal.addColorStop(0.7, isDark ? 'rgba(48,209,88,0.04)' : 'rgba(48,209,88,0.02)');
+      gradReal.addColorStop(1, 'rgba(48,209,88,0)');
+
+      // pointRadius dinámico: visible si pocos puntos
+      const dynRadius = realDates.length <= 12 ? 3 : realDates.length <= 30 ? 2 : 0;
+      const dynLastRadius = realDates.length > 0 ? 5 : 0;
+
       chartInstances.chartEvo=new Chart(ctxE,{type:'line',data:{
         datasets:[
           {
             label:'Patrimonio Real',
             data:realDates.map((d,i)=>({x:d,y:realVals[i]})),
-            borderColor:'#30D158', backgroundColor:'transparent', borderWidth:2.5,fill:false,tension:0.4,
-            pointRadius:0, pointHoverRadius:5, pointHoverBackgroundColor:'#30D158',
-            pointHoverBorderColor:isDark?'#1C1C1E':'#fff', pointHoverBorderWidth:2,
+            borderColor:'#30D158',
+            backgroundColor: gradReal,
+            borderWidth:2.5,
+            fill:true,
+            tension:0.4,
+            pointRadius: realDates.map((_,i) => i === realDates.length-1 ? dynLastRadius : dynRadius),
+            pointBackgroundColor:'#30D158',
+            pointBorderColor: isDark?'#1C1C1E':'#fff',
+            pointBorderWidth:2,
+            pointHoverRadius:6,
+            pointHoverBackgroundColor:'#30D158',
+            pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
+            pointHoverBorderWidth:2,
           },
           {
-            label:'Rendimiento Esperado '+((re*100).toFixed(0))+'%',
+            label:'Proyección '+((re*100).toFixed(0))+'% anual',
             data:projDates.map((d,i)=>({x:d,y:projVals[i]})),
-            borderColor:'rgba(10,132,255,0.7)', backgroundColor:'transparent', borderWidth:1.5, borderDash:[6,4],
-            fill:false,tension:0.1, pointRadius:0, pointHoverRadius:4,
+            borderColor:'rgba(10,132,255,0.65)',
+            backgroundColor:'transparent',
+            borderWidth:1.5,
+            borderDash:[6,4],
+            fill:false,
+            tension:0.1,
+            pointRadius:0,
+            pointHoverRadius:4,
             pointHoverBackgroundColor:'rgba(10,132,255,0.8)',
-            pointHoverBorderColor:isDark?'#1C1C1E':'#fff', pointHoverBorderWidth:2,
+            pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
+            pointHoverBorderWidth:2,
           }
         ]
       },options:{
-        responsive:true,maintainAspectRatio:false,
+        responsive:true,
+        maintainAspectRatio:false,
         interaction:{intersect:false,mode:'index'},
         plugins:{
           legend:{display:false},
-          tooltip:{ backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)', cornerRadius:14,padding:14, bodyFont:{size:13,family:'DM Sans'}, callbacks:{label:ctx=>' '+ctx.dataset.label+': '+fmtFull(ctx.parsed.y)} }
+          tooltip:{
+            backgroundColor:isDark?'rgba(28,28,30,0.98)':'rgba(29,29,31,0.95)',
+            borderColor: isDark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.1)',
+            borderWidth:1,
+            cornerRadius:14,
+            padding:{top:12,bottom:12,left:16,right:16},
+            titleFont:{size:11,family:'DM Sans',weight:'600'},
+            bodyFont:{size:13,family:'DM Sans'},
+            titleColor:isDark?'#98989D':'#86868B',
+            callbacks:{
+              title: items => {
+                if(!items.length) return '';
+                const raw = items[0].label || items[0].raw?.x || '';
+                const p = raw.split('-');
+                if(p.length===3){ const d=new Date(raw+'T12:00:00'); return d.toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'}); }
+                return raw;
+              },
+              label: ctx => {
+                const val = ctx.parsed.y;
+                const isReal = ctx.datasetIndex === 0;
+                const icon = isReal ? '🟢' : '🔵';
+                return ` ${icon} ${ctx.dataset.label}: ${fmtFull(val)}`;
+              },
+              afterBody: items => {
+                if(items.length < 2) return [];
+                const real = items.find(i=>i.datasetIndex===0);
+                const proj = items.find(i=>i.datasetIndex===1);
+                if(!real||!proj) return [];
+                const diff = proj.parsed.y - real.parsed.y;
+                if(diff === 0) return [];
+                const sign = diff > 0 ? '+' : '';
+                return ['', ` Potencial: ${sign}${fmtFull(diff)}`];
+              }
+            }
+          }
         },
         scales:{
-          x:{ type:'category', grid:{display:false}, ticks:{font:{size:10},color:tickColor,maxTicksLimit:10,callback:function(val){const v=this.getLabelForValue(val);if(!v)return'';const p=v.split('-');return p.length===3?p[2]==='01'?MONTHS[parseInt(p[1])-1]:p[1]+'-'+p[2]:v;}}, border:{display:false} },
-          y:{ grid:{color:gridColor}, ticks:{font:{size:11},color:tickColor,callback:v=>fmt(v),maxTicksLimit:5}, border:{display:false} }
+          x:{
+            type:'time',
+            time:{
+              unit:'month',
+              displayFormats:{ month:'MMM yy', day:'d MMM' },
+              tooltipFormat:'yyyy-MM-dd'
+            },
+            adapters:{ date:{} },
+            grid:{display:false},
+            ticks:{
+              font:{size:10},
+              color:tickColor,
+              maxTicksLimit:10,
+              maxRotation:0,
+            },
+            border:{display:false}
+          },
+          y:{
+            grid:{color:gridColor},
+            ticks:{font:{size:11},color:tickColor,callback:v=>fmt(v),maxTicksLimit:5},
+            border:{display:false}
+          }
         }
       }});
     }
@@ -906,44 +1139,134 @@ function renderDashboard(){
 // ============================================
 // MOVIMIENTOS
 // ============================================
+let _movPage = 1;
+const MOV_PAGE_SIZE = 30;
+let _movFiltered = [];
+
+function _buildMovRow(m, transferGroups) {
+  let det='',tipo='',monto='',extra='';
+  const notas=m.notas||m.desc||'';
+  let rowClass='';
+  if(m.seccion==='plataformas'){
+    if(m.tipoPlat==='Transferencia salida'&&m.transferId){
+      const grp=transferGroups[m.transferId]||[];
+      const entrada=grp.find(x=>x.tipoPlat==='Transferencia entrada');
+      det=`<strong>${m.platform}</strong> → <strong>${entrada?.platform||'?'}</strong>`;
+      tipo='↔ Transferencia'; monto=fmt(m.monto); rowClass='transfer-row';
+    } else { det=m.platform; tipo=m.tipoPlat; monto=fmt(m.monto); }
+  } else if(m.seccion==='inversiones'){
+    det=`<strong>${m.ticker}</strong> · ${m.broker}`;
+    tipo=m.tipoMov+' · '+m.tipoActivo+' · '+(m.moneda||'USD');
+    monto=fmt(m.montoTotal,m.moneda);
+    extra=m.cantidad+'×'+fmtFull(m.precioUnit);
+  } else {
+    det=catName(m.categoria);
+    tipo=m.tipo+(m.esRecurrente?' 🔄':'');
+    monto=fmt(m.importe);
+  }
+  const secCell = m.tipoPlat==='Transferencia salida'&&m.transferId
+    ? `<span class="badge badge-teal">↔ TRANSFER</span>`
+    : secBadge(m.seccion);
+  return `<tr class="${rowClass}">
+    <td style="color:var(--text2);font-size:12px">${m.fecha}</td>
+    <td>${secCell}</td>
+    <td>${det}</td>
+    <td style="color:var(--text2);font-size:12px">${tipo}</td>
+    <td style="font-weight:700">${monto}</td>
+    <td style="color:var(--text2);font-size:11px">${extra}</td>
+    <td style="color:var(--text2);font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${notas||'—'}</td>
+    <td style="white-space:nowrap">
+      <button class="edit-btn" onclick="openEditMovModal('${m.id}')" title="Editar">✏️</button>
+      <button class="del-btn" onclick="deleteMovement('${m.id}')" title="Eliminar">×</button>
+    </td>
+  </tr>`;
+}
+
+function _appendMovRows() {
+  const tbody = document.getElementById('movTbody');
+  const sentinel = document.getElementById('movSentinel');
+  if (!tbody) return;
+  const transferGroups = {};
+  movements.forEach(m => { if(m.transferId) transferGroups[m.transferId]=(transferGroups[m.transferId]||[]).concat(m); });
+  const start = (_movPage - 1) * MOV_PAGE_SIZE;
+  const chunk = _movFiltered.slice(start, start + MOV_PAGE_SIZE);
+  if (chunk.length === 0) { if (sentinel) sentinel.style.display='none'; return; }
+  chunk.forEach(m => { tbody.insertAdjacentHTML('beforeend', _buildMovRow(m, transferGroups)); });
+  _movPage++;
+  const counter = document.getElementById('movCounter');
+  const loaded = Math.min((_movPage-1)*MOV_PAGE_SIZE, _movFiltered.length);
+  if (counter) counter.textContent = `${loaded} de ${_movFiltered.length}`;
+  if (loaded >= _movFiltered.length) { if (sentinel) sentinel.style.display='none'; }
+}
+
+function _setupMovScroll() {
+  const sentinel = document.getElementById('movSentinel');
+  if (!sentinel) return;
+  if (window._movObserver) window._movObserver.disconnect();
+  window._movObserver = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) _appendMovRows();
+  }, { rootMargin: '200px' });
+  window._movObserver.observe(sentinel);
+}
+
 function renderMovimientos(){
   const transferGroups={};
   movements.forEach(m=>{ if(m.transferId) transferGroups[m.transferId]=(transferGroups[m.transferId]||[]).concat(m); });
-  const filtered=movements.filter(m=>{
+  _movFiltered=movements.filter(m=>{
     if(movFilter.seccion!=='todas'&&m.seccion!==movFilter.seccion) return false;
     if(m.tipoPlat==='Transferencia entrada'&&m.transferId&&movFilter.seccion==='todas') return false;
     if(movFilter.search){const s=movFilter.search.toLowerCase();const text=[m.platform,m.ticker,m.broker,m.tipoPlat,m.tipoMov,m.tipo,m.notas,m.desc,m.categoria].filter(Boolean).join(' ').toLowerCase();if(!text.includes(s))return false;}
     return true;
   }).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  _movPage=1;
+
+  const isEmpty = _movFiltered.length===0;
+  const noMovsAtAll = movements.length===0;
+  const emptyHtml = isEmpty ? `
+    <tr><td colspan="8">
+      <div style="text-align:center;padding:56px 24px">
+        <div style="font-size:44px;margin-bottom:14px">${noMovsAtAll?'📋':movFilter.search?'🔍':'📭'}</div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">
+          ${movFilter.search?'Sin resultados para "'+movFilter.search+'"':noMovsAtAll?'Aún no tienes movimientos':'Sin movimientos en esta sección'}
+        </div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:24px">
+          ${movFilter.search?'Prueba con otro término':'Registra plataformas, inversiones o gastos para llevar el control'}
+        </div>
+        ${!movFilter.search?`<button class="btn btn-primary" onclick="openMovModal()">+ Agregar primer movimiento</button>`:''}
+      </div>
+    </td></tr>` : '';
 
   document.getElementById('page-movimientos').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px">
-      <div><div class="section-title">Movimientos</div><div class="section-sub">Registro unificado · ${movements.length} total</div></div>
+      <div>
+        <div class="section-title">Movimientos</div>
+        <div class="section-sub">Registro unificado · ${movements.length} total</div>
+      </div>
       <button class="btn btn-primary" onclick="openMovModal()">+ Nuevo</button>
     </div>
     <div class="filter-pills">
       ${['todas','plataformas','inversiones','gastos'].map(s=>`<button class="pill ${movFilter.seccion===s?'active':''}" onclick="movFilter.seccion='${s}';renderMovimientos()">${s==='todas'?'Todas':s==='plataformas'?'🏦 Plataformas':s==='inversiones'?'📈 Inversiones':'💳 Gastos'}</button>`).join('')}
       <input class="pill-search" placeholder="Buscar..." value="${movFilter.search}" oninput="movFilter.search=this.value;renderMovimientos()">
-      <span style="font-size:12px;color:var(--text2);margin-left:4px">${filtered.length} movimientos</span>
+      <span style="font-size:12px;color:var(--text2);margin-left:4px">
+        ${_movFiltered.length>0?`<span id="movCounter">0 de ${_movFiltered.length}</span> movimientos`:`0 movimientos`}
+      </span>
     </div>
-    <div class="card-flat"><div class="table-wrap"><table>
-      <thead><tr><th>Fecha</th><th>Sección</th><th>Detalle</th><th>Tipo</th><th>Monto</th><th>Extra</th><th>Notas</th><th style="width:70px"></th></tr></thead>
-      <tbody>
-        ${filtered.slice(0,100).map(m=>{
-          let det='',tipo='',monto='',extra='';const notas=m.notas||m.desc||'';let rowClass='';
-          if(m.seccion==='plataformas'){
-            if(m.tipoPlat==='Transferencia salida'&&m.transferId){const grp=transferGroups[m.transferId]||[];const entrada=grp.find(x=>x.tipoPlat==='Transferencia entrada');det=`<strong>${m.platform}</strong> → <strong>${entrada?.platform||'?'}</strong>`;tipo=`↔ Transferencia`;monto=fmt(m.monto);rowClass='transfer-row';}
-            else{det=m.platform;tipo=m.tipoPlat;monto=fmt(m.monto);}
-          } else if(m.seccion==='inversiones'){det=`<strong>${m.ticker}</strong> · ${m.broker}`;tipo=m.tipoMov+' · '+m.tipoActivo+' · '+(m.moneda||'USD');monto=fmt(m.montoTotal,m.moneda);extra=m.cantidad+'×'+fmtFull(m.precioUnit);}
-          else{det=catName(m.categoria);tipo=m.tipo+(m.esRecurrente?' 🔄':'');monto=fmt(m.importe);}
-          return`<tr class="${rowClass}"><td style="color:var(--text2);font-size:12px">${m.fecha}</td><td>${m.tipoPlat==='Transferencia salida'&&m.transferId?`<span class="badge badge-teal">↔ TRANSFER</span>`:secBadge(m.seccion)}</td><td>${det}</td><td style="color:var(--text2);font-size:12px">${tipo}</td><td style="font-weight:700">${monto}</td><td style="color:var(--text2);font-size:11px">${extra}</td><td style="color:var(--text2);font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${notas||'—'}</td><td style="white-space:nowrap"><button class="edit-btn" onclick="openEditMovModal('${m.id}')" title="Editar">✏️</button><button class="del-btn" onclick="deleteMovement('${m.id}')" title="Eliminar">×</button></td></tr>`;
-        }).join('')}
-        ${filtered.length===0?'<tr><td colspan="8" style="text-align:center;color:var(--text2);padding:32px">Sin movimientos</td></tr>':''}
-      </tbody>
-    </table></div></div>
+    <div class="card-flat">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Fecha</th><th>Sección</th><th>Detalle</th><th>Tipo</th><th>Monto</th><th>Extra</th><th>Notas</th><th style="width:70px"></th></tr></thead>
+          <tbody id="movTbody">${emptyHtml}</tbody>
+        </table>
+        <div id="movSentinel" style="height:4px"></div>
+      </div>
+    </div>
   `;
-}
 
+  if (!isEmpty) {
+    _appendMovRows();
+    setTimeout(_setupMovScroll, 60);
+  }
+}
 function openMovModal(sec){
   const s=sec||'plataformas';
   openModal(`
@@ -1387,10 +1710,20 @@ function renderAjustes(){
       <div class="card"><div class="card-title">💱 Tipo de Cambio</div><div style="margin-top:10px;display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">1 USD =</span><input type="number" step="0.01" id="inputTCUSD" class="form-input" style="width:100px;font-size:18px;font-weight:700;text-align:center" value="${settings.tipoCambio||20}" onchange="settings.tipoCambio=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div><div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">1 EUR =</span><input type="number" step="0.01" id="inputTCEUR" class="form-input" style="width:100px;font-size:18px;font-weight:700;text-align:center" value="${settings.tipoEUR||21.5}" onchange="settings.tipoEUR=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div><button class="btn btn-secondary btn-sm" onclick="updateFX().then(()=>renderPage('ajustes'))">🔄 Actualizar automático</button></div></div>
       <div class="card"><div class="card-title">📈 Rendimiento Esperado Anual</div><div style="display:flex;align-items:center;gap:10px;margin-top:8px"><input type="number" step="0.5" class="form-input" style="width:80px;font-size:20px;font-weight:700;text-align:center" value="${((settings.rendimientoEsperado||0.06)*100)}" onchange="settings.rendimientoEsperado=Number(this.value)/100;saveAll()"><span style="font-size:14px;color:var(--text2)">% anual</span></div></div>
     </div>
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-title">🔑 API Key — Finnhub</div>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px"><input type="text" class="form-input" style="flex:1;min-width:200px;font-family:monospace;font-size:13px" id="finnhubKeyInput" placeholder="Pega tu API key" value="${settings.finnhubKey||''}" oninput="settings.finnhubKey=this.value.trim();saveAll()"><button class="btn btn-primary" onclick="testFinnhub()">🧪 Probar</button>${hasFinnhub?`<span style="font-size:12px;color:var(--green)">✅ OK</span>`:''}</div>
-      <div id="finnhubTestResult" style="margin-top:8px;font-size:12px"></div>
+    <div class="grid-2" style="margin-bottom:16px">
+      <div class="card">
+        <div class="card-title">🔑 API Key — Finnhub <span style="font-weight:400;color:var(--text3)">(acciones USA)</span></div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px"><input type="text" class="form-input" style="flex:1;min-width:200px;font-family:monospace;font-size:13px" id="finnhubKeyInput" placeholder="Pega tu API key" value="${settings.finnhubKey||''}" oninput="settings.finnhubKey=this.value.trim();LS.set('settings',settings)"><button class="btn btn-primary" onclick="testFinnhub()">🧪 Probar</button>${hasFinnhub?`<span style="font-size:12px;color:var(--green)">✅</span>`:''}</div>
+        <div id="finnhubTestResult" style="margin-top:8px;font-size:12px"></div>
+        <div style="margin-top:8px;font-size:11px;color:var(--text3)">Gratis en <a href="https://finnhub.io" target="_blank" style="color:var(--blue)">finnhub.io</a></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🔑 API Key — Alpha Vantage <span style="font-weight:400;color:var(--text3)">(VUAA.LON, ETFs Londres/Xetra)</span></div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px"><input type="text" class="form-input" style="flex:1;min-width:200px;font-family:monospace;font-size:13px" id="alphaVantageKeyInput" placeholder="Pega tu API key" value="${settings.alphaVantageKey||''}" oninput="settings.alphaVantageKey=this.value.trim();LS.set('settings',settings)"><button class="btn btn-primary" onclick="testAlphaVantage()">🧪 Probar</button>${settings.alphaVantageKey?`<span style="font-size:12px;color:var(--green)">✅</span>`:''}</div>
+        <div id="alphaVantageTestResult" style="margin-top:8px;font-size:12px"></div>
+        <div style="margin-top:8px;font-size:11px;color:var(--text3)">Gratis en <a href="https://alphavantage.co" target="_blank" style="color:var(--blue)">alphavantage.co</a> · 25 req/día</div>
+      </div>
     </div>
     <div class="grid-2">
       <div class="card"><div class="card-title">💾 Exportar / Importar</div><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px"><button class="btn btn-primary" onclick="exportData()">📥 Exportar JSON</button><button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📤 Importar JSON</button><input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)"></div></div>
@@ -1411,14 +1744,37 @@ service cloud.firestore {
   `;
 }
 
-async function testFinnhub(){const k=settings.finnhubKey,el=document.getElementById('finnhubTestResult');if(!k){el.innerHTML='<span style="color:var(--red)">⚠️ Ingresa tu API key</span>';return;}el.innerHTML='<span class="spinner"></span> Probando...';try{const r=await fetch(`https://finnhub.io/api/v1/quote?symbol=AAPL&token=${k}`),d=await r.json();if(d.c&&d.c>0)el.innerHTML=`<span style="color:var(--green)">✅ AAPL: $${d.c.toFixed(2)}</span>`;else el.innerHTML='<span style="color:var(--orange)">⚠️ Respuesta inesperada</span>';}catch(e){el.innerHTML=`<span style="color:var(--red)">❌ ${e.message}</span>`;}}
+async function testAlphaVantage(){
+  const inputEl=document.getElementById('alphaVantageKeyInput');
+  const k=(inputEl?inputEl.value.trim():'')||settings.alphaVantageKey||'';
+  if(k){settings.alphaVantageKey=k;LS.set('settings',settings);if(typeof window.saveToFirebase==='function')window.saveToFirebase();}
+  const el=document.getElementById('alphaVantageTestResult');
+  if(!el)return;
+  if(!k){el.innerHTML='<span style="color:var(--red)">⚠️ Ingresa tu API key</span>';return;}
+  el.innerHTML='<span class="spinner"></span> Probando con VUAA.LON...';
+  try {
+    const r=await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=VUAA.LON&apikey=${k}`);
+    const d=await r.json();
+    const q=d['Global Quote'];
+    if(q&&q['05. price']&&parseFloat(q['05. price'])>0){
+      el.innerHTML=`<span style="color:var(--green)">✅ VUAA.LON: ${parseFloat(q['05. price']).toFixed(2)} GBp</span>`;
+    } else if(d.Note){
+      el.innerHTML=`<span style="color:var(--orange)">⚠️ Límite de requests alcanzado (25/día)</span>`;
+    } else {
+      el.innerHTML=`<span style="color:var(--orange)">⚠️ ${d.Information||d.message||'Respuesta inesperada'}</span>`;
+    }
+  } catch(e){el.innerHTML=`<span style="color:var(--red)">❌ ${e.message}</span>`;}
+}
 
-function updateNav(patrimonio,totalMXN,totalUSD,tc,totalRend){
+async function testFinnhub(){const finEl=document.getElementById('finnhubKeyInput');const k=(finEl?finEl.value.trim():'')||settings.finnhubKey||'';if(k){settings.finnhubKey=k;saveAll();}const el=document.getElementById('finnhubTestResult');if(!k){el.innerHTML='<span style="color:var(--red)">⚠️ Ingresa tu API key</span>';return;}el.innerHTML='<span class="spinner"></span> Probando...';try{const r=await fetch(`https://finnhub.io/api/v1/quote?symbol=AAPL&token=${k}`),d=await r.json();if(d.c&&d.c>0)el.innerHTML=`<span style="color:var(--green)">✅ AAPL: $${d.c.toFixed(2)}</span>`;else el.innerHTML='<span style="color:var(--orange)">⚠️ Respuesta inesperada</span>';}catch(e){el.innerHTML=`<span style="color:var(--red)">❌ ${e.message}</span>`;}}
+
+function updateNav(patrimonio,totalMXN,totalUSD,tc,totalRend,deltaHoy,deltaHoyPct){
   const el1=document.getElementById('navTotal'),el2=document.getElementById('navSub');
   if(el1)el1.textContent=fmt(patrimonio);
   const fx=_fxCache||LS.get('fxCache');
   const eurStr=fx?.eurmxn?`<span>EUR $${fx.eurmxn.toFixed(2)}</span>`:'';
-  if(el2)el2.innerHTML=`<span>🇲🇽 ${fmt(totalMXN)}</span><span>🇺🇸 ${fmt(totalUSD,'USD')}</span><span>💱 $${tc}</span>${eurStr}<span style="color:${pctCol(totalRend)};font-weight:600">${totalRend>=0?'▲':'▼'} ${fmt(totalRend)}</span>`;
+  const deltaStr=deltaHoy!==0&&deltaHoy!=null?`<span style="color:${pctCol(deltaHoy)};font-weight:700;background:${deltaHoy>=0?'rgba(48,209,88,0.12)':'rgba(255,69,58,0.10)'};padding:1px 6px;border-radius:6px">${deltaHoy>=0?'▲':'▼'} ${fmt(Math.abs(deltaHoy))} hoy</span>`:'';
+  if(el2)el2.innerHTML=`<span>🇲🇽 ${fmt(totalMXN)}</span><span>🇺🇸 ${fmt(totalUSD,'USD')}</span><span>💱 $${tc}</span>${eurStr}${deltaStr}`;
 }
 function updateNavUser(user){
   const el=document.getElementById('navUser');if(!el)return;
@@ -1518,6 +1874,7 @@ window.openGoalModal = openGoalModal;
 window.addGoal = addGoal;
 window.deleteGoal = deleteGoal;
 window.testFinnhub = testFinnhub;
+window.testAlphaVantage = testAlphaVantage;
 window.exportData = exportData;
 window.importData = importData;
 window.resetAll = resetAll;
