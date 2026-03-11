@@ -93,11 +93,6 @@ function clearPriceCache(ticker, moneda) {
     if (!isPriceReasonable(v.price, k)) { delete c[k]; changed = true; console.warn(`[Cache] Inválido limpiado — ${k}: ${v.price}`); }
   });
   if (changed) setPriceCache(c);
-  // Limpiar snapshots sintéticos guardados anteriormente
-  const prevLen = patrimonioHistory.length;
-  patrimonioHistory = patrimonioHistory.filter(s => !s.synthetic);
-  if (patrimonioHistory.length !== prevLen) LS.set('patrimonioHistory', patrimonioHistory);
-
   // Limpiar fxCache si USD/MXN está fuera de rango razonable
   const fx = LS.get('fxCache');
   if (fx && (!fx.gbpmxn || fx.usdmxn < 15 || fx.usdmxn > 30)) {
@@ -416,6 +411,8 @@ let goals = LS.get('goals') || DEFAULT_GOALS;
 let settings = {...DEFAULT_SETTINGS, ...(LS.get('settings') || {})};
 let recurrentes = LS.get('recurrentes') || DEFAULT_RECURRENTES;
 let patrimonioHistory = LS.get('patrimonioHistory') || [];
+// Limpiar snapshots sintéticos de versiones anteriores
+(function(){ const f=patrimonioHistory.filter(s=>!s.synthetic); if(f.length!==patrimonioHistory.length){patrimonioHistory=f;LS.set('patrimonioHistory',patrimonioHistory);} })();
 
 platforms = platforms.map(p => ({tasaAnual:0, fechaInicio:'2026-02-01', moneda:'MXN', ...p}));
 
