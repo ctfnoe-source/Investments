@@ -63,19 +63,6 @@ async function fetchCryptoPrice(ticker) {
   const coinId = CRYPTO_MAP[ticker.toUpperCase()]; if(!coinId) return null;
   try { const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`); if(!r.ok) throw new Error(); const d = await r.json(); return d[coinId]?.usd || null; } catch { return null; }
 }
-async function fetchCryptoBatch(tickers) {
-  const pairs=tickers.map(t=>({ticker:t.toUpperCase(),id:CRYPTO_MAP[t.toUpperCase()]})).filter(p=>p.id);
-  if(!pairs.length) return {};
-  try {
-    const ids=[...new Set(pairs.map(p=>p.id))].join(',');
-    const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`);
-    if(!r.ok) throw new Error();
-    const d=await r.json();
-    const result={};
-    pairs.forEach(p=>{if(d[p.id]?.usd) result[p.ticker]=d[p.id].usd;});
-    return result;
-  } catch { return {}; }
-}
 async function fetchStockPrice(ticker) {
   const k = settings.finnhubKey||''; if(!k) return null;
   try { const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker.toUpperCase()}&token=${k}`); if(!r.ok) throw new Error(); const d = await r.json(); return (d.c && d.c > 0) ? d.c : null; } catch { return null; }
@@ -153,23 +140,11 @@ async function updateAllPrices(forceRefresh=false) {
   const tickerSet = new Map();
   movements.forEach(m => { if (m.seccion === 'inversiones' && m.ticker) { const key = (m.moneda === 'MXN' ? m.ticker.toUpperCase() + '_MXN' : m.ticker.toUpperCase()); tickerSet.set(key, {type: m.tipoActivo, moneda: m.moneda || 'USD', ticker: m.ticker.toUpperCase()}); } });
   if (forceRefresh) { const c = getPriceCache(); tickerSet.forEach((_, k) => { delete c[k]; }); setPriceCache(c); }
-  const cryptoTickers=[], otherInfos=[];
-  tickerSet.forEach((info)=>{ if(info.type==='Crypto') cryptoTickers.push(info.ticker); else otherInfos.push(info); });
-  if(cryptoTickers.length>0){
-    if(btn) btn.innerHTML='<span class="spinner"></span> Crypto...';
-    const batch=await fetchCryptoBatch(cryptoTickers);
-    Object.entries(batch).forEach(([ticker,price])=>setCachedPrice(ticker,price,'coingecko-batch'));
-  }
-  if(otherInfos.length>0){
-    if(btn) btn.innerHTML='<span class="spinner"></span> Acciones/ETFs...';
-    await Promise.all(otherInfos.map(info=>fetchPrice(info.ticker,info.type,info.moneda)));
-  }
+  for (const [key, info] of tickerSet) { const b = document.getElementById('btnUpdate'); if (b) b.innerHTML = `<span class="spinner"></span> ${info.ticker}...`; await fetchPrice(info.ticker, info.type, info.moneda); await new Promise(r => setTimeout(r, 300)); }
   priceUpdateState.loading = false;
   priceUpdateState.lastUpdate = new Date();
-  invalidateMemo();
   _recalcAndSaveSnapshot();
   renderPage(currentTab);
-  if(btn){btn.disabled=false;btn.innerHTML='🔄 Actualizar precios';}
 }
 
 function getPriceInfo(ticker, type, moneda) {
@@ -205,18 +180,6 @@ const FRECUENCIAS=['Mensual','Quincenal','Semanal','Anual','Trimestral'];
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 const today = () => new Date().toISOString().split('T')[0];
-
-// ── Seguridad XSS
-function escHtml(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-
-// ── Debounce
-function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
-const debouncedRenderMovimientos = debounce(()=>renderMovimientos(), 220);
-
-// ── Memoize (se invalida en saveAll)
-const _memo = new Map();
-function memoize(key,fn){if(_memo.has(key))return _memo.get(key);const v=fn();_memo.set(key,v);return v;}
-function invalidateMemo(){_memo.clear();}
 
 function fmt(n, cur) {
   if (n == null || isNaN(n)) {
@@ -304,8 +267,6 @@ platforms = platforms.map(p => ({tasaAnual:0, fechaInicio:'2026-02-01', moneda:'
 
 let currentTab = 'dashboard';
 let movFilter = {seccion:'todas', search:''};
-let movPage = 0;
-const MOV_PAGE_SIZE = 50;
 let chartInstances = {};
 let _lastLocalSave = 0;
 let _chartRange = 'all';
@@ -418,8 +379,7 @@ function calcAutoYield(p, saldoBase, fechaRef) {
   return saldoBase * (tasa/100) * (diffMs/(1000*60*60*24*365));
 }
 
-function calcPlatforms(){return memoize('calcPlatforms',_calcPlatforms);}
-function _calcPlatforms() {
+function calcPlatforms() {
   return platforms.map(p => {
     const movs = movements.filter(m => m.seccion === 'plataformas' && m.platform === p.name)
                           .sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
@@ -495,7 +455,6 @@ window.getAppData = () => ({platforms,movements,goals,settings,recurrentes,patri
 window.currentTab = 'dashboard';
 
 function saveAll(){
-  invalidateMemo();
   window.currentTab = currentTab;
   recalcularPlatformas();
   _lastLocalSave = Date.now();
@@ -534,8 +493,7 @@ function statCard(label,value,sub,color,borderColor){
   return '<div class="card stat" style="'+accent+tint+'">'+'<div class="stat-label">'+label+'</div>'+'<div class="stat-value" style="'+(color?'color:'+color:'')+' ">'+value+'</div>'+(sub?'<div class="stat-sub">'+sub+'</div>':'')+'</div>';
 }
 
-function getTickerPositions(){return memoize('getTickerPositions',_getTickerPositions);}
-function _getTickerPositions(){
+function getTickerPositions(){
   const tickers={};
   movements.filter(m=>m.seccion==='inversiones').forEach(m=>{
     const t=m.ticker.toUpperCase();
@@ -602,29 +560,6 @@ function platSaldoToMXN(p) {
   if (p.moneda === 'EUR') return saldo * eurmxn;
   return saldo;
 }
-
-// ============================================
-// TOAST & CONFIRM
-// ============================================
-function showToast(msg, type='success', duration=3000){
-  let c=document.getElementById('toastContainer');
-  if(!c){c=document.createElement('div');c.id='toastContainer';document.body.appendChild(c);}
-  const t=document.createElement('div');
-  t.className=`toast toast-${type}`;t.innerHTML=msg;c.appendChild(t);
-  requestAnimationFrame(()=>t.classList.add('show'));
-  setTimeout(()=>{t.classList.remove('show');t.addEventListener('transitionend',()=>t.remove(),{once:true});},duration);
-}
-function showConfirm(title, body, onConfirm){
-  const ov=document.getElementById('confirmOverlay');if(!ov)return;
-  document.getElementById('confirmTitle').innerHTML=title;
-  document.getElementById('confirmBody').textContent=body;
-  ov.classList.add('open');
-  const close=()=>ov.classList.remove('open');
-  document.getElementById('confirmOk').onclick=()=>{close();onConfirm();};
-  document.getElementById('confirmCancel').onclick=close;
-}
-window.showToast=showToast;
-window.showConfirm=showConfirm;
 
 // ============================================
 // RENDER DASHBOARD
@@ -928,7 +863,6 @@ function renderDashboard(){
 
     const ctxE=document.getElementById('chartEvo');
     if(ctxE){
-      if(chartInstances.chartEvo){chartInstances.chartEvo.destroy();delete chartInstances.chartEvo;}
       chartInstances.chartEvo=new Chart(ctxE,{type:'line',data:{
         datasets:[
           {
@@ -965,7 +899,7 @@ function renderDashboard(){
     tickerList.forEach(t=>{if(t.cantActual>0){const v=(t.valorActual||t.costoPosicion)*(t.moneda==='MXN'?1:tc);at[t.type]=(at[t.type]||0)+v;}});
     const de=Object.entries(at).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
     const ctxD=document.getElementById('chartDistro');
-    if(ctxD&&de.length>0){if(chartInstances.chartDistro){chartInstances.chartDistro.destroy();delete chartInstances.chartDistro;} chartInstances.chartDistro=new Chart(ctxD,{type:'doughnut',data:{labels:de.map(([k])=>k),datasets:[{data:de.map(([,v])=>v),backgroundColor:de.map((_,i)=>COLORS[i%COLORS.length]),borderWidth:2,borderColor:isDark?'#1C1C1E':'#fff',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',cornerRadius:12,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>' '+ctx.label+': '+((ctx.parsed/de.reduce((s,[,v])=>s+v,0)*100)).toFixed(1)+'%'}}}}});}
+    if(ctxD&&de.length>0){chartInstances.chartDistro=new Chart(ctxD,{type:'doughnut',data:{labels:de.map(([k])=>k),datasets:[{data:de.map(([,v])=>v),backgroundColor:de.map((_,i)=>COLORS[i%COLORS.length]),borderWidth:2,borderColor:isDark?'#1C1C1E':'#fff',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',cornerRadius:12,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>' '+ctx.label+': '+((ctx.parsed/de.reduce((s,[,v])=>s+v,0)*100)).toFixed(1)+'%'}}}}});}
   },50);
 }
 
@@ -988,677 +922,14 @@ function renderMovimientos(){
       <button class="btn btn-primary" onclick="openMovModal()">+ Nuevo</button>
     </div>
     <div class="filter-pills">
-      ${['todas','plataformas','inversiones','gastos'].map(s=>`<button class="pill ${movFilter.seccion===s?'active':''}" onclick="movFilter.seccion='${s}';movPage=0;renderMovimientos()">${s==='todas'?'Todas':s==='plataformas'?'🏦 Plataformas':s==='inversiones'?'📈 Inversiones':'💳 Gastos'}</button>`).join('')}
-      <input class="pill-search" placeholder="Buscar..." value="${movFilter.search}" oninput="movFilter.search=this.value;movPage=0;debouncedRenderMovimientos()">
+      ${['todas','plataformas','inversiones','gastos'].map(s=>`<button class="pill ${movFilter.seccion===s?'active':''}" onclick="movFilter.seccion='${s}';renderMovimientos()">${s==='todas'?'Todas':s==='plataformas'?'🏦 Plataformas':s==='inversiones'?'📈 Inversiones':'💳 Gastos'}</button>`).join('')}
+      <input class="pill-search" placeholder="Buscar..." value="${movFilter.search}" oninput="movFilter.search=this.value;renderMovimientos()">
       <span style="font-size:12px;color:var(--text2);margin-left:4px">${filtered.length} movimientos</span>
     </div>
-    <div class="card-flat mob-table-wrap"><div class="table-wrap"><table class="desktop-table">
+    <div class="card-flat"><div class="table-wrap"><table>
       <thead><tr><th>Fecha</th><th>Sección</th><th>Detalle</th><th>Tipo</th><th>Monto</th><th>Extra</th><th>Notas</th><th style="width:70px"></th></tr></thead>
       <tbody>
-        ${filtered.slice(movPage*MOV_PAGE_SIZE,(movPage+1)*MOV_PAGE_SIZE).map(m=>{
+        ${filtered.slice(0,100).map(m=>{
           let det='',tipo='',monto='',extra='';const notas=m.notas||m.desc||'';let rowClass='';
           if(m.seccion==='plataformas'){
-            if(m.tipoPlat==='Transferencia salida'&&m.transferId){const grp=transferGroups[m.transferId]||[];const entrada=grp.find(x=>x.tipoPlat==='Transferencia entrada');det=`<strong>${m.platform}</strong> → <strong>${entrada?.platform||'?'}</strong>`;tipo=`↔ Transferencia`;monto=fmt(m.monto);rowClass='transfer-row';}
-            else{det=escHtml(m.platform);tipo=escHtml(m.tipoPlat);monto=fmt(m.monto);}
-          } else if(m.seccion==='inversiones'){det=`<strong>${escHtml(m.ticker)}</strong> · ${escHtml(m.broker)}`;tipo=m.tipoMov+' · '+m.tipoActivo+' · '+(m.moneda||'USD');monto=fmt(m.montoTotal,m.moneda);extra=m.cantidad+'×'+fmtFull(m.precioUnit);}
-          else{det=catName(m.categoria);tipo=m.tipo+(m.esRecurrente?' 🔄':'');monto=fmt(m.importe);}
-          return`<tr class="${rowClass}"><td style="color:var(--text2);font-size:12px">${m.fecha}</td><td>${m.tipoPlat==='Transferencia salida'&&m.transferId?`<span class="badge badge-teal">↔ TRANSFER</span>`:secBadge(m.seccion)}</td><td>${det}</td><td style="color:var(--text2);font-size:12px">${tipo}</td><td style="font-weight:700">${monto}</td><td style="color:var(--text2);font-size:11px">${extra}</td><td style="color:var(--text2);font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(notas)||'—'}</td><td style="white-space:nowrap"><button class="edit-btn" onclick="openEditMovModal('${escHtml(m.id)}')" title="Editar">✏️</button><button class="del-btn" onclick="deleteMovement('${m.id}')" title="Eliminar">×</button></td></tr>`;
-        }).join('')}
-        ${filtered.length===0?'<tr><td colspan="8" style="text-align:center;color:var(--text2);padding:32px">Sin movimientos</td></tr>':''}
-      </tbody>
-    </table></div></div>
-    ${filtered.length > MOV_PAGE_SIZE ? `<div style="display:flex;justify-content:center;align-items:center;gap:12px;padding:16px"><button class="btn btn-secondary btn-sm" onclick="if(movPage>0){movPage--;renderMovimientos();}" ${movPage===0?'disabled':''}>← Anterior</button><span style="font-size:13px;color:var(--text2)">Página ${movPage+1} de ${Math.ceil(filtered.length/MOV_PAGE_SIZE)} · ${filtered.length} total</span><button class="btn btn-secondary btn-sm" onclick="if((movPage+1)*MOV_PAGE_SIZE<filtered.length){movPage++;renderMovimientos();}" ${(movPage+1)*MOV_PAGE_SIZE>=filtered.length?'disabled':''}>Siguiente →</button></div>` : ''}
-  `;
-}
-
-function openMovModal(sec){
-  const s=sec||'plataformas';
-  openModal(`
-    <div class="modal-header"><div class="modal-title">Nuevo Movimiento</div><button class="modal-close" onclick="closeModal()">✕</button></div>
-    <div class="sec-tabs">
-      <button class="sec-tab ${s==='plataformas'?'active-plat':''}" onclick="closeModal();openMovModal('plataformas')">🏦 Plataforma</button>
-      <button class="sec-tab ${s==='inversiones'?'active-inv':''}" onclick="closeModal();openMovModal('inversiones')">📈 Inversión</button>
-      <button class="sec-tab ${s==='gastos'?'active-gasto':''}" onclick="closeModal();openMovModal('gastos')">💳 Gasto</button>
-      <button class="sec-tab ${s==='transferencia'?'active-transfer':''}" onclick="closeModal();openMovModal('transferencia')">↔ Transferencia</button>
-    </div>
-    <form id="movForm" onsubmit="saveMovement('${s}');return false">
-      ${s==='plataformas'?`
-        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${today()}" required></div><div class="form-group"><label class="form-label">Plataforma</label><select class="form-select" name="platform" required><option value="">Seleccionar...</option>${platforms.map(p=>`<option value="${p.name}">${p.name} (${p.moneda||'MXN'})</option>`).join('')}</select></div></div>
-        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Tipo</label><select class="form-select" name="tipoPlat">${['Saldo Actual','Aportación','Retiro','Gasto'].map(t=>`<option>${t}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Monto</label><input type="number" step="any" class="form-input" name="monto" placeholder="0" required></div></div>
-        <div class="form-group"><label class="form-label">Descripción</label><input class="form-input" name="desc" placeholder="Opcional..."></div>
-      `:s==='inversiones'?`
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${today()}" required></div><div class="form-group"><label class="form-label">Tipo Activo</label><select class="form-select" name="tipoActivo">${ASSET_TYPES.map(t=>`<option>${t}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Movimiento</label><select class="form-select" name="tipoMov">${['Compra','Venta','Dividendo','Comisión'].map(t=>`<option>${t}</option>`).join('')}</select></div></div>
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Ticker</label><input class="form-input" name="ticker" placeholder="AAPL, BTC..." required style="text-transform:uppercase"></div><div class="form-group"><label class="form-label">Broker</label><input list="brokerList" class="form-input" name="broker" required placeholder="Escribir..."><datalist id="brokerList">${BROKERS.map(b=>`<option value="${b}">`).join('')}</datalist></div><div class="form-group"><label class="form-label">Moneda</label><select class="form-select" name="moneda"><option value="USD">USD 🇺🇸</option><option value="MXN">MXN 🇲🇽</option></select></div></div>
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Cantidad</label><input type="number" step="any" class="form-input" name="cantidad" placeholder="0" required></div><div class="form-group"><label class="form-label">Precio Unitario</label><input type="number" step="any" class="form-input" name="precioUnit" placeholder="0.00" required></div><div class="form-group"><label class="form-label">Comisión</label><input type="number" step="any" class="form-input" name="comision" value="0"></div></div>
-        <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="notas" placeholder="Opcional..."></div>
-      `:s==='transferencia'?`
-        <div class="form-group" style="margin-bottom:12px"><div style="display:flex;gap:8px">
-          <button type="button" id="btnTipoPlat" onclick="setTipoTransfer('plat')" style="flex:1;padding:10px;border-radius:10px;border:2px solid var(--cyan);background:rgba(100,210,255,0.12);color:var(--cyan);font-weight:700;font-size:12px;cursor:pointer;font-family:var(--font)">🏦 Entre plataformas</button>
-          <button type="button" id="btnTipoSob" onclick="setTipoTransfer('sob')" style="flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:var(--text2);font-weight:700;font-size:12px;cursor:pointer;font-family:var(--font)">💰 Capital sobrante → Plataforma</button>
-        </div></div>
-        <div id="formTransferPlat">
-          <div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${today()}" required></div>
-          <div class="form-row form-row-2">
-            <div class="form-group"><label class="form-label">Cuenta Origen</label><select class="form-select" name="platOrigen"><option value="">Seleccionar...</option>${platforms.map(p=>`<option value="${p.name}">${p.name} (${p.moneda||'MXN'})</option>`).join('')}</select></div>
-            <div class="form-group"><label class="form-label">Cuenta Destino</label><select class="form-select" name="platDestino"><option value="">Seleccionar...</option>${platforms.map(p=>`<option value="${p.name}">${p.name} (${p.moneda||'MXN'})</option>`).join('')}</select></div>
-          </div>
-          <div class="form-group"><label class="form-label">Monto</label><input type="number" step="any" class="form-input" name="monto" placeholder="0"></div>
-          <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="desc" placeholder="Ej: Transferencia de liquidez..."></div>
-        </div>
-        <div id="formTransferSob" style="display:none">
-          <div class="form-row form-row-2">
-            <div class="form-group"><label class="form-label">Mes del sobrante</label><select class="form-select" name="mesSobrante" onchange="actualizarMontoSobrante(this.value)">${(()=>{const opts=[];const now=new Date();for(let i=0;i<6;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');opts.push('<option value="'+key+'">'+MONTHS[d.getMonth()]+' '+d.getFullYear()+'</option>');}return opts.join('');})()}</select></div>
-            <div class="form-group"><label class="form-label">Monto a transferir</label><input type="number" step="any" class="form-input" name="montoSob" id="inputMontoSob" placeholder="0"></div>
-          </div>
-          <div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fechaSob" value="${today()}"></div>
-          <div class="form-group"><label class="form-label">Plataforma destino</label><select class="form-select" name="platDestinoSob"><option value="">Seleccionar...</option>${platforms.map(p=>`<option value="${p.name}">${p.name} (${p.moneda||'MXN'})</option>`).join('')}</select></div>
-          <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="descSob" placeholder="Ej: Ahorro de marzo..."></div>
-        </div>
-      `:`
-        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${today()}" required></div><div class="form-group"><label class="form-label">Tipo</label><select class="form-select" name="tipo"><option>Gasto</option><option>Ingreso</option></select></div></div>
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Categoría</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}">${c.icon} ${c.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Importe</label><input type="number" step="any" class="form-input" name="importe" placeholder="0" required></div><div class="form-group"><label class="form-label">Moneda</label><select class="form-select" name="monedaGasto"><option value="MXN">MXN 🇲🇽</option><option value="EUR">EUR 🇪🇺</option></select></div></div>
-        <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="notas" placeholder="Opcional..."></div>
-      `}
-      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:16px;padding:14px;font-size:15px">Guardar</button>
-    </form>
-  `);
-}
-
-function saveMovement(sec){
-  const f=document.getElementById('movForm');const d=Object.fromEntries(new FormData(f));
-  if(sec==='transferencia'){
-    const sobForm=document.getElementById('formTransferSob');const esSobrante=sobForm&&sobForm.style.display!=='none';
-    if(esSobrante){
-      if(!d.platDestinoSob||!d.montoSob)return;
-      const montoEUR=Number(d.montoSob);if(!montoEUR||montoEUR<=0){alert('⚠️ El monto debe ser mayor a 0');return;}
-      const eurmxn=getEurMxn();const montoMXN=Math.round(montoEUR*eurmxn*100)/100;
-      const mov={id:uid(),seccion:'plataformas',fecha:d.fechaSob||today(),platform:d.platDestinoSob,tipoPlat:'Aportación',monto:montoMXN,desc:(d.descSob||('Sobrante '+d.mesSobrante))+` · €${montoEUR} → $${montoMXN} MXN (TC ${eurmxn.toFixed(2)})`};
-      movements=[mov,...movements];saveAll();closeModal();return;
-    }
-    if(!d.platOrigen||!d.platDestino||!d.monto)return;
-    if(d.platOrigen===d.platDestino){alert('⚠️ Origen y destino deben ser distintos');return;}
-    const tid=uid();
-    const salida={id:uid(),seccion:'plataformas',fecha:d.fecha||today(),platform:d.platOrigen,tipoPlat:'Transferencia salida',monto:Number(d.monto),desc:d.desc||'Transferencia',transferId:tid};
-    const entrada={id:uid(),seccion:'plataformas',fecha:d.fecha||today(),platform:d.platDestino,tipoPlat:'Transferencia entrada',monto:Number(d.monto),desc:d.desc||'Transferencia',transferId:tid};
-    movements=[salida,entrada,...movements];saveAll();closeModal();return;
-  }
-  let mov={id:uid(),seccion:sec,fecha:d.fecha||today()};
-  if(sec==='plataformas'){if(!d.platform||!d.monto)return;mov.platform=d.platform;mov.tipoPlat=d.tipoPlat;mov.monto=Number(d.monto);mov.desc=d.desc||'';}
-  else if(sec==='inversiones'){if(!d.ticker||!d.cantidad||!d.precioUnit)return;mov.tipoActivo=d.tipoActivo;mov.ticker=d.ticker.toUpperCase();mov.broker=d.broker;mov.tipoMov=d.tipoMov;mov.cantidad=Number(d.cantidad);mov.precioUnit=Number(d.precioUnit);mov.montoTotal=mov.cantidad*mov.precioUnit;mov.moneda=d.moneda||'USD';mov.comision=Number(d.comision)||0;mov.notas=d.notas||'';}
-  else{if(!d.importe)return;mov.categoria=d.categoria;mov.tipo=d.tipo;
-    const importeRaw=Number(d.importe);const monedaGasto=d.monedaGasto||'MXN';
-    if(monedaGasto==='EUR'){const fx=_fxCache||LS.get('fxCache');const eurmxn=fx?.eurmxn||settings.tipoEUR||21.5;mov.importe=Math.round(importeRaw*eurmxn*100)/100;mov.notas=(d.notas?d.notas+' · ':'')+'€'+importeRaw+' → $'+mov.importe+' MXN (TC '+eurmxn.toFixed(2)+')';}
-    else{mov.importe=importeRaw;mov.notas=d.notas||'';}
-  }
-  movements=[mov,...movements];saveAll();closeModal();
-}
-
-function deleteMovement(id){
-  const mov=movements.find(m=>m.id===id);if(!mov)return;
-  if(mov.transferId){
-    showConfirm('¿Eliminar transferencia completa?','Se eliminarán los dos registros de la transferencia.',()=>{movements=movements.filter(m=>m.transferId!==mov.transferId);saveAll();showToast('🗑 Transferencia eliminada','info');});
-  }else{
-    showConfirm('¿Eliminar este movimiento?','Esta acción no se puede deshacer.',()=>{movements=movements.filter(m=>m.id!==id);saveAll();showToast('🗑 Movimiento eliminado','info');});
-  }
-}
-
-function openEditMovModal(id){
-  const m=movements.find(x=>x.id===id);if(!m)return;const sec=m.seccion;
-  openModal(`
-    <div class="modal-header"><div class="modal-title">✏️ Editar Movimiento</div><button class="modal-close" onclick="closeModal()">✕</button></div>
-    <form id="editForm" onsubmit="updateMovement('${id}');return false">
-      ${sec==='plataformas'?`
-        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${m.fecha}" required></div><div class="form-group"><label class="form-label">Plataforma</label><select class="form-select" name="platform" required>${platforms.map(p=>`<option value="${p.name}" ${m.platform===p.name?'selected':''}>${p.name}</option>`).join('')}</select></div></div>
-        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Tipo</label><select class="form-select" name="tipoPlat">${['Saldo Actual','Aportación','Retiro','Gasto'].map(t=>`<option ${m.tipoPlat===t?'selected':''}>${t}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Monto</label><input type="number" step="any" class="form-input" name="monto" value="${m.monto}" required></div></div>
-        <div class="form-group"><label class="form-label">Descripción</label><input class="form-input" name="desc" value="${m.desc||''}"></div>
-      `:sec==='inversiones'?`
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${m.fecha}" required></div><div class="form-group"><label class="form-label">Tipo Activo</label><select class="form-select" name="tipoActivo">${ASSET_TYPES.map(t=>`<option ${m.tipoActivo===t?'selected':''}>${t}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Movimiento</label><select class="form-select" name="tipoMov">${['Compra','Venta','Dividendo','Comisión'].map(t=>`<option ${m.tipoMov===t?'selected':''}>${t}</option>`).join('')}</select></div></div>
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Ticker</label><input class="form-input" name="ticker" value="${m.ticker}" required style="text-transform:uppercase"></div><div class="form-group"><label class="form-label">Broker</label><input list="brokerListE" class="form-input" name="broker" value="${m.broker||''}"><datalist id="brokerListE">${BROKERS.map(b=>`<option value="${b}">`).join('')}</datalist></div><div class="form-group"><label class="form-label">Moneda</label><select class="form-select" name="moneda"><option value="USD" ${(m.moneda||'USD')==='USD'?'selected':''}>USD</option><option value="MXN" ${m.moneda==='MXN'?'selected':''}>MXN</option></select></div></div>
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Cantidad</label><input type="number" step="any" class="form-input" name="cantidad" value="${m.cantidad}" required></div><div class="form-group"><label class="form-label">Precio Unitario</label><input type="number" step="any" class="form-input" name="precioUnit" value="${m.precioUnit}" required></div><div class="form-group"><label class="form-label">Comisión</label><input type="number" step="any" class="form-input" name="comision" value="${m.comision||0}"></div></div>
-        <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="notas" value="${m.notas||''}"></div>
-      `:`
-        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${m.fecha}" required></div><div class="form-group"><label class="form-label">Tipo</label><select class="form-select" name="tipo"><option ${m.tipo==='Gasto'?'selected':''}>Gasto</option><option ${m.tipo==='Ingreso'?'selected':''}>Ingreso</option></select></div></div>
-        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Categoría</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}" ${m.categoria===c.id?'selected':''}>${c.icon} ${c.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Importe</label><input type="number" step="any" class="form-input" name="importe" value="${m.importe}" required></div></div>
-        <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="notas" value="${m.notas||''}"></div>
-      `}
-      <div style="display:flex;gap:10px;margin-top:16px"><button type="submit" class="btn btn-primary" style="flex:1;padding:14px">💾 Guardar</button><button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button></div>
-    </form>
-  `);
-}
-
-function updateMovement(id){
-  const f=document.getElementById('editForm');const d=Object.fromEntries(new FormData(f));
-  movements=movements.map(m=>{
-    if(m.id!==id)return m;const sec=m.seccion;let updated={...m,fecha:d.fecha||m.fecha};
-    if(sec==='plataformas'){updated.platform=d.platform;updated.tipoPlat=d.tipoPlat;updated.monto=Number(d.monto);updated.desc=d.desc||'';}
-    else if(sec==='inversiones'){updated.tipoActivo=d.tipoActivo;updated.ticker=d.ticker.toUpperCase();updated.broker=d.broker;updated.tipoMov=d.tipoMov;updated.cantidad=Number(d.cantidad);updated.precioUnit=Number(d.precioUnit);updated.montoTotal=updated.cantidad*updated.precioUnit;updated.moneda=d.moneda||'USD';updated.comision=Number(d.comision)||0;updated.notas=d.notas||'';}
-    else{updated.categoria=d.categoria;updated.tipo=d.tipo;updated.importe=Number(d.importe);updated.notas=d.notas||'';}
-    return updated;
-  });
-  saveAll();closeModal();
-}
-
-// ============================================
-// PLATAFORMAS
-// ============================================
-function renderPlataformas(){
-  const plats=calcPlatforms();
-  const total=plats.reduce((s,p)=>s+platSaldoToMXN(p),0);
-  const totalRendAuto=plats.reduce((s,p)=>s+(p.rendimientoAuto||0),0);
-  const platsConTasa=plats.filter(p=>(p.tasaAnual||0)>0);
-  document.getElementById('page-plataformas').innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
-      <div><div class="section-title">Plataformas</div><div class="section-sub">Bancos · SOFIPOs · ETFs · Fondos · CETES · Multi-moneda</div></div>
-      <div style="display:flex;gap:8px"><button class="btn btn-secondary btn-sm" onclick="openMovModal('transferencia')">↔ Transferir</button><button class="btn btn-secondary" onclick="openAddPlatformModal()">+ Plataforma</button></div>
-    </div>
-    ${platsConTasa.length>0?`<div class="yield-info" style="margin-bottom:16px">⚡ <strong>${platsConTasa.length} plataformas</strong> con tasa automática · Rend. auto total: <strong>${fmtFull(totalRendAuto)}</strong></div>`:''}
-    <div class="card-flat">
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>#</th><th>Plataforma</th><th>Moneda ✏️</th><th>Tipo</th><th>Saldo Ini. ✏️</th><th>⚡ Tasa % ✏️</th><th>Desde ✏️</th><th>Días</th><th>+ Aport. 🔍</th><th>Retiros</th><th>Gastos</th><th style="color:var(--teal)">⚡ Auto</th><th>Rend. Real</th><th>Saldo Actual</th><th>Rend %</th><th>% Port.</th><th></th></tr></thead>
-          <tbody>
-            ${plats.map((p,i)=>{
-              const cur=p.moneda||'MXN';
-              const tasaBadge=p.tasaAnual>0?`<span class="tasa-badge${p.tasaAnual>=10?' alta':p.tasaAnual>=5?' media':''}">${p.tasaAnual}%</span>`:`<span style="color:var(--text3);font-size:11px">—</span>`;
-              const rendAutoStr=p.rendimientoAuto>0?`<span class="rend-auto-cell">+${fmtFull(p.rendimientoAuto,cur)}</span>`:`<span style="color:var(--text3)">—</span>`;
-              const diasStr=p.tasaAnual>0&&p.diasDesdeRef>0?`<span style="font-size:11px;color:var(--text2)">${p.diasDesdeRef}d</span>`:`<span style="color:var(--text3)">—</span>`;
-              const aportLink = p.aportacion > 0 ? `<span class="editable" onclick="showAportaciones('${p.id}')" style="cursor:pointer;color:var(--blue);border-bottom:1px dashed var(--blue)">${fmtPlat(p.aportacion,cur)}</span>` : fmtPlat(p.aportacion,cur);
-              const retirosStr = p.retiro > 0 ? `<span style="color:var(--text2);font-size:12px">-${fmtPlat(p.retiro,cur)}</span>` : `<span style="color:var(--text3)">—</span>`;
-              const gastosStr = p.gasto > 0 ? `<span style="color:var(--text2);font-size:12px">-${fmtPlat(p.gasto,cur)}</span>` : `<span style="color:var(--text3)">—</span>`;
-              const pctPort=total>0?((platSaldoToMXN(p)/total)*100).toFixed(1)+'%':'0%';
-              return`<tr><td style="color:var(--text3);font-size:11px">${i+1}</td><td style="font-weight:700">${p.name}</td><td><span class="editable" onclick="editPlatField('${p.id}','moneda',this,'moneda')">${monedaBadge(cur)}</span></td><td>${typeBadge(p.type)}</td><td><span class="editable" onclick="editPlatField('${p.id}','saldoInicial',this,'number')">${fmtPlat(p.saldoInicial,cur)}</span></td><td><span class="editable" onclick="editPlatField('${p.id}','tasaAnual',this,'percent')">${tasaBadge}</span></td><td><span class="editable" onclick="editPlatField('${p.id}','fechaInicio',this,'date')" style="font-size:11px;color:var(--text2)">${p.fechaInicio||'—'}</span></td><td>${diasStr}</td><td>${aportLink}</td><td>${retirosStr}</td><td>${gastosStr}</td><td>${rendAutoStr}</td><td style="color:${pctCol(p.rendimientoManual)};font-weight:600">${p.rendimientoManual!==0?(p.rendimientoManual>=0?'+':'')+fmtPlat(p.rendimientoManual,cur):'<span style="color:var(--text3)">—</span>'}</td><td style="font-weight:800;font-size:14px">${fmtPlat(p.saldo,cur)}</td><td style="font-weight:600;color:${pctCol(p.rendimiento)}">${fmtPct(p.saldoInicial?p.rendimiento/p.saldoInicial:0)}</td><td style="font-size:11px;color:var(--text2)">${pctPort}</td><td><button class="del-btn" onclick="deletePlatform('${p.id}')">×</button></td></tr>`;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    <div style="margin-top:12px;padding:12px 16px;background:var(--card2);border-radius:10px;font-size:12px;color:var(--text2);line-height:1.6">
-      <strong>Moneda:</strong> Cada plataforma maneja su propia moneda (MXN, USD, EUR). Haz clic en la columna Moneda para cambiarla.<br>
-      <strong>Rendimiento:</strong> Solo se contabiliza con "Saldo Actual" o tasa automática.
-    </div>
-  `;
-}
-
-function editPlatField(id,field,el,inputType){
-  const p=platforms.find(x=>x.id===id);if(!p)return;
-  let input;
-  if(inputType==='date'){input=document.createElement('input');input.type='date';input.value=p[field]||today();input.className='form-input';input.style.cssText='width:130px;padding:4px 8px;font-size:12px';}
-  else if(inputType==='percent'){input=document.createElement('input');input.type='number';input.step='0.01';input.min='0';input.max='100';input.value=p[field]||0;input.className='form-input';input.style.cssText='width:90px;padding:4px 8px;font-size:12px';input.placeholder='ej: 13.5';}
-  else if(inputType==='moneda'){
-    input=document.createElement('select');input.className='form-select';input.style.cssText='width:100px;padding:4px 8px;font-size:12px';
-    PLAT_MONEDAS.forEach(m=>{const opt=document.createElement('option');opt.value=m;opt.textContent=m==='MXN'?'🇲🇽 MXN':m==='USD'?'🇺🇸 USD':'🇪🇺 EUR';if(p[field]===m)opt.selected=true;input.appendChild(opt);});
-  }
-  else{input=document.createElement('input');input.type='number';input.step='any';input.value=p[field]||0;input.className='form-input';input.style.cssText='width:110px;padding:4px 8px;font-size:12px';}
-  const finish=()=>{const raw=input.value;let val=inputType==='date'||inputType==='moneda'?raw:(Number(raw)||0);platforms=platforms.map(x=>x.id!==id?x:{...x,[field]:val});saveAll();};
-  let _editCancelled=false;
-  input.onblur=()=>{if(!_editCancelled)finish();};
-  input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();input.blur();}if(e.key==='Escape'){_editCancelled=true;saveAll();}};
-  if(inputType==='moneda')input.onchange=finish;
-  el.replaceWith(input);input.focus();
-}
-function deletePlatform(id){
-  const p=platforms.find(x=>x.id===id);if(!p)return;
-  showConfirm('¿Eliminar <strong>'+escHtml(p.name)+'</strong>?','Se borrará también su historial de movimientos. Esta acción no se puede deshacer.',()=>{
-    platforms=platforms.filter(x=>x.id!==id);
-    movements=movements.filter(m=>!(m.seccion==='plataformas'&&m.platform===p.name));
-    saveAll();showToast('🗑 '+escHtml(p.name)+' eliminada','info');
-  });
-}
-function openAddPlatformModal(){
-  openModal(`<div class="modal-header"><div class="modal-title">Nueva Plataforma</div><button class="modal-close" onclick="closeModal()">✕</button></div>
-    <form onsubmit="addPlatform();return false">
-      <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="npName" placeholder="Ej: Banco Azteca" required></div>
-      <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Tipo</label><select class="form-select" id="npType">${PLAT_TYPES.map(t=>`<option>${t}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Grupo</label><select class="form-select" id="npGroup">${PLAT_GROUPS.map(g=>`<option>${g}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Moneda</label><select class="form-select" id="npMoneda"><option value="MXN">🇲🇽 MXN</option><option value="USD">🇺🇸 USD</option><option value="EUR">🇪🇺 EUR</option></select></div></div>
-      <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Saldo Inicial</label><input type="number" class="form-input" id="npSaldo" placeholder="0" value="0"></div><div class="form-group"><label class="form-label">⚡ Tasa Anual %</label><input type="number" step="0.01" min="0" max="100" class="form-input" id="npTasa" placeholder="ej: 13.5" value="0"></div></div>
-      <div class="form-group"><label class="form-label">Fecha inicio</label><input type="date" class="form-input" id="npFecha" value="${today()}"></div>
-      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:16px">Agregar</button>
-    </form>`);
-}
-function addPlatform(){
-  const name=document.getElementById('npName').value;if(!name)return;
-  platforms.push({id:uid(),name,type:document.getElementById('npType').value,group:document.getElementById('npGroup').value,moneda:document.getElementById('npMoneda').value||'MXN',saldoInicial:Number(document.getElementById('npSaldo').value)||0,tasaAnual:Number(document.getElementById('npTasa').value)||0,fechaInicio:document.getElementById('npFecha').value||today()});
-  saveAll();closeModal();
-}
-
-// ============================================
-// GASTOS
-// ============================================
-function renderGastos(){
-  const cm=new Date().getMonth()+1,cy=new Date().getFullYear();
-  const budgets=settings.budgets||{},ingresos=settings.ingresos||{};
-  const expMovs=movements.filter(m=>m.seccion==='gastos');
-  const mesMovs=expMovs.filter(m=>{const d=new Date(m.fecha);return d.getMonth()+1===cm&&d.getFullYear()===cy;});
-  const sueldoEUR=ingresos.monedaSueldo==='EUR'?(ingresos.sueldoRaw||0):(ingresos.sueldo||0);
-  const extrasEUR=ingresos.extrasEUR||ingresos.extras||0;
-  const otrosEUR=ingresos.otrosEUR||ingresos.otros||0;
-  const fmtEUR=v=>'€'+Number(v||0).toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:2});
-  const eurmxn=getEurMxn();
-  const toEUR=m=>{
-    if(m.monedaOrig==='EUR') return m.importeEUR||m.importe;
-    if(m.notas&&m.notas.includes('€')&&m.notas.includes('→')){const match=m.notas.match(/€([\d.]+)/);if(match)return Number(match[1]);}
-    return Math.round(m.importe/eurmxn*100)/100;
-  };
-  const totGastoEUR=mesMovs.filter(m=>m.tipo==='Gasto').reduce((s,m)=>s+toEUR(m),0);
-  const totIngEUR=mesMovs.filter(m=>m.tipo==='Ingreso').reduce((s,m)=>s+toEUR(m),0);
-  const totalIngPlaneadoEUR=sueldoEUR+extrasEUR+otrosEUR;
-  const ingRefEUR=totIngEUR>0?totIngEUR:totalIngPlaneadoEUR;
-  const totalPresupuestoEUR=EXPENSE_CATS.reduce((s,c)=>s+(budgets[c.id]||0),0);
-  const sinAsignarEUR=totalIngPlaneadoEUR-totalPresupuestoEUR;
-  const disponibleEUR=ingRefEUR-totGastoEUR;
-  const byCat={};mesMovs.filter(m=>m.tipo==='Gasto').forEach(m=>{byCat[m.categoria]=(byCat[m.categoria]||0)+toEUR(m);});
-  const barPct=totalIngPlaneadoEUR>0?Math.min((totGastoEUR/totalIngPlaneadoEUR)*100,100).toFixed(1):0;
-  const barColor=totGastoEUR>totalIngPlaneadoEUR?'var(--red)':totGastoEUR>totalPresupuestoEUR?'var(--orange)':'var(--green)';
-  const barLabel=totGastoEUR>totalIngPlaneadoEUR?'🔴 Déficit':totGastoEUR>totalPresupuestoEUR?'🟡 Sobre presupuesto':'🟢 Dentro del plan';
-  const totalRecurrente=recurrentes.filter(r=>r.activo).reduce((s,r)=>s+r.importe,0);
-
-  const startDate = new Date(2026, 2, 1);
-  const now = new Date();
-  let acumTotal = 0;
-  let mesConDatos = 0;
-  const sobranteRows = [];
-  let d = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-  while (d <= now) {
-    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-    const gM = expMovs.filter(mv => mv.tipo==='Gasto' && mv.fecha?.startsWith(key));
-    const iM = expMovs.filter(mv => mv.tipo==='Ingreso' && mv.fecha?.startsWith(key));
-    const tG = gM.reduce((s,mv)=>s+toEUR(mv),0);
-    const tI = iM.reduce((s,mv)=>s+toEUR(mv),0);
-    const ingR = tI>0 ? tI : (sueldoEUR+extrasEUR+otrosEUR);
-    const sob = Math.round((ingR-tG)*100)/100;
-    if(sob>0) acumTotal += sob;
-    mesConDatos++;
-    const isCur = d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
-    sobranteRows.push(`<tr>
-      <td style="font-weight:600">${MONTHS[d.getMonth()]} ${d.getFullYear()}${isCur?' <span style="font-size:10px;color:var(--teal);font-weight:700">● actual</span>':''}</td>
-      <td style="color:var(--text2)">${fmtEUR(ingR)}</td>
-      <td style="color:var(--red)">${fmtEUR(tG)}</td>
-      <td style="font-weight:800;color:${sob>=0?'var(--green)':'var(--red)'}">${fmtEUR(sob)}</td>
-    </tr>`);
-    d = new Date(d.getFullYear(), d.getMonth()+1, 1);
-  }
-
-  const catRows=EXPENSE_CATS.map(cat=>{
-    const pres=budgets[cat.id]||0,real=byCat[cat.id]||0,rest=pres-real;
-    const pctUso=pres>0?(real/pres*100):0;const pctIng=totalIngPlaneadoEUR>0?(pres/totalIngPlaneadoEUR*100).toFixed(1)+'%':'—';
-    const barC=pctUso>100?'var(--red)':pctUso>85?'var(--orange)':'var(--green)';
-    const restStr=pres>0?(rest>=0?'+':'')+fmtEUR(rest):'—';const restCol=rest>=0?'var(--green)':'var(--red)';
-    const barHtml=pres>0?`<div style="display:flex;align-items:center;gap:6px"><div class="progress-bg" style="flex:1;height:6px"><div class="progress-fill" style="background:${barC};width:${Math.min(pctUso,100).toFixed(0)}%"></div></div><span style="font-size:10px;font-weight:700;color:${pctUso>100?'var(--red)':'var(--text2)'}"> ${pctUso.toFixed(0)}%</span></div>`:`<span style="font-size:10px;color:var(--text3)">sin asignar</span>`;
-    return`<tr><td style="font-weight:600">${cat.icon} ${cat.name}</td><td><input type="number" class="form-input" style="width:100px;padding:5px 8px;font-size:13px;font-weight:700;text-align:right" value="${pres||''}" placeholder="0" onchange="updateBudget('${cat.id}',this.value)"></td><td style="font-size:12px;color:var(--text2)">${pctIng}</td><td style="font-weight:600;${real>pres&&pres>0?'color:var(--red)':''}">${fmtEUR(real)}</td><td style="font-weight:600;color:${restCol}">${restStr}</td><td style="width:150px">${barHtml}</td></tr>`;
-  }).join('');
-
-  const movRows=mesMovs.length>0?mesMovs.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).map(m=>`<tr><td style="color:var(--text2);font-size:12px">${m.fecha}</td><td style="font-weight:500">${m.tipo==='Ingreso'?'💰 Ingreso':catName(m.categoria)} ${m.esRecurrente?'<span class="badge badge-purple">🔄 Auto</span>':''}</td><td><span class="badge ${m.tipo==='Ingreso'?'badge-green':'badge-red'}">${m.tipo}</span></td><td style="font-weight:700">${fmtEUR(toEUR(m))}</td><td style="color:var(--text2);font-size:11px">${m.notas||'—'}</td><td><button class="edit-btn" onclick="openEditMovModal('${m.id}')">✏️</button><button class="del-btn" onclick="deleteMovement('${m.id}')">×</button></td></tr>`).join(''):`<tr><td colspan="6" style="text-align:center;color:var(--text2);padding:24px">Sin movimientos este mes</td></tr>`;
-
-  document.getElementById('page-gastos').innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-      <div><div class="section-title">Control de Gastos 🇪🇺</div><div class="section-sub">${MONTHS[cm-1]} ${cy} · Todo en Euros</div></div>
-      <button class="btn btn-secondary" onclick="switchTab('movimientos');openMovModal('gastos')">+ Gasto</button>
-    </div>
-    <div class="card" style="margin-bottom:16px;border-top:3px solid var(--purple)">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <div class="card-title" style="margin:0">🔄 Gastos Recurrentes — ${fmtEUR(totalRecurrente)}/mes</div>
-        <button class="btn btn-sm" style="background:rgba(191,90,242,0.1);color:var(--purple);border:none;font-weight:700" onclick="openRecurrentesModal()">⚙️ Gestionar</button>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">
-        ${recurrentes.filter(r=>r.activo).slice(0,6).map(r=>`<div class="recurrente-card"><div class="recurrente-icon" style="background:${r.color||'var(--card2)'}22">${r.icon||'📌'}</div><div class="recurrente-info"><div class="recurrente-name">${r.nombre}</div><div class="recurrente-meta">${r.frecuencia} · día ${r.dia}</div></div><div class="recurrente-amount" style="color:var(--red)">-${fmtEUR(r.importe)}</div></div>`).join('')}
-        ${recurrentes.filter(r=>r.activo).length===0?'<div style="color:var(--text2);font-size:13px;padding:8px">Sin recurrentes.</div>':''}
-      </div>
-    </div>
-    <div class="card" style="margin-bottom:16px;border-top:3px solid var(--green)">
-      <div class="card-title">💰 Mis Ingresos del Mes (EUR 🇪🇺)</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:8px">
-        <div><label class="form-label">Sueldo fijo (€)</label><div style="display:flex;gap:6px;align-items:center"><input type="number" class="form-input" placeholder="0" value="${ingresos.sueldoRaw||sueldoEUR||''}" onchange="updateIngresoConMoneda('sueldo',this.value,'EUR')" style="font-size:16px;font-weight:700;flex:1"><span style="font-size:13px;font-weight:700;color:var(--text2)">€</span></div></div>
-        <div><label class="form-label">Extras / Bonos (€)</label><input type="number" class="form-input" placeholder="0" value="${extrasEUR||''}" onchange="if(!settings.ingresos)settings.ingresos={};settings.ingresos.extrasEUR=Number(this.value)||0;settings.ingresos.extras=Number(this.value)||0;saveAll()" style="font-size:16px;font-weight:700"></div>
-        <div><label class="form-label">Otros (€)</label><input type="number" class="form-input" placeholder="0" value="${otrosEUR||''}" onchange="if(!settings.ingresos)settings.ingresos={};settings.ingresos.otrosEUR=Number(this.value)||0;settings.ingresos.otros=Number(this.value)||0;saveAll()" style="font-size:16px;font-weight:700"></div>
-        <div style="background:var(--card2);border-radius:12px;padding:12px;text-align:center"><div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase">Total</div><div style="font-size:22px;font-weight:800;color:var(--green);margin-top:4px">${fmtEUR(totalIngPlaneadoEUR)}</div></div>
-      </div>
-    </div>
-
-    <div class="grid-4" style="margin-bottom:16px">
-      <div class="card stat" style="border-top:3px solid var(--teal)">
-        <div class="stat-label">💰 Saldo Acumulado</div>
-        <div class="stat-value" style="color:${acumTotal>=0?'var(--teal)':'var(--red)'}">${fmtEUR(acumTotal)}</div>
-        <div class="stat-sub">desde mar 2026 · ${mesConDatos} ${mesConDatos===1?'mes':'meses'}</div>
-      </div>
-      <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">📋 Presupuesto</div><div class="stat-value">${fmtEUR(totalPresupuestoEUR)}</div><div class="stat-sub">${sinAsignarEUR>=0?`<span style="color:var(--green);font-weight:700">+${fmtEUR(sinAsignarEUR)} libre</span>`:`<span style="color:var(--red);font-weight:700">${fmtEUR(sinAsignarEUR)} excedido</span>`}</div></div>
-      <div class="card stat" style="border-top:3px solid var(--red)"><div class="stat-label">💳 Gasto Real</div><div class="stat-value" style="color:var(--red)">${fmtEUR(totGastoEUR)}</div><div class="stat-sub">registrado este mes</div></div>
-      <div class="card stat" style="border-top:3px solid ${disponibleEUR>=0?'var(--green)':'var(--red)'}"><div class="stat-label">✅ Disponible</div><div class="stat-value" style="color:${disponibleEUR>=0?'var(--green)':'var(--red)'}">${fmtEUR(disponibleEUR)}</div><div class="stat-sub">${totIngEUR>0?'real: '+fmtEUR(totIngEUR):'según planeado'}</div></div>
-    </div>
-
-    ${totalIngPlaneadoEUR>0?`<div class="card" style="margin-bottom:16px;padding:16px 24px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-size:13px;font-weight:700">Uso del presupuesto global</div><div style="font-size:13px;font-weight:800;color:${barColor}">${barLabel}</div></div><div class="progress-bg" style="height:14px;border-radius:8px"><div class="progress-fill" style="height:14px;border-radius:8px;background:${barColor};width:${barPct}%"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-top:6px"><span>Gastado: ${fmtEUR(totGastoEUR)}</span><span>Presupuesto: ${fmtEUR(totalPresupuestoEUR)}</span><span>Ingreso: ${fmtEUR(totalIngPlaneadoEUR)}</span></div></div>`:''}
-
-    <div class="card" style="margin-bottom:16px;border-top:3px solid var(--teal)">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-        <div>
-          <div class="card-title" style="margin:0">💰 Capital Sobrante por Mes</div>
-          <div style="font-size:11px;color:var(--text2);margin-top:3px">Lo que te sobró · en EUR · desde mar 2026</div>
-        </div>
-        <button class="btn btn-sm" style="background:rgba(0,199,190,0.1);color:var(--teal);border:none;font-weight:700" onclick="switchTab('movimientos');openMovModal('transferencia')">💸 Transferir sobrante →</button>
-      </div>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Mes</th><th>Ingreso ref.</th><th>Gastos</th><th>Sobrante</th></tr></thead>
-        <tbody>
-          ${sobranteRows.join('')}
-          <tr style="font-weight:800;background:var(--card2);border-top:2px solid var(--border2)">
-            <td>Acumulado</td><td colspan="2"></td>
-            <td style="color:var(--teal);font-weight:800">${fmtEUR(acumTotal)}</td>
-          </tr>
-        </tbody>
-      </table></div>
-    </div>
-
-    <div class="card-flat" style="margin-bottom:16px"><div style="padding:16px 20px 0;display:flex;justify-content:space-between;align-items:center"><div class="card-title" style="margin:0">Presupuesto por Categoría (€)</div></div><div class="table-wrap"><table><thead><tr><th>Categoría</th><th>Presupuesto €</th><th>% ingreso</th><th>Real €</th><th>Restante</th><th>Uso</th></tr></thead><tbody>${catRows}<tr style="font-weight:800;background:var(--card2);border-top:2px solid var(--border2)"><td>TOTAL</td><td>${fmtEUR(totalPresupuestoEUR)}</td><td>${totalIngPlaneadoEUR>0?((totalPresupuestoEUR/totalIngPlaneadoEUR)*100).toFixed(1)+'%':'—'}</td><td style="color:${totGastoEUR>totalPresupuestoEUR?'var(--red)':'var(--text)'}">${fmtEUR(totGastoEUR)}</td><td style="color:${totalPresupuestoEUR-totGastoEUR>=0?'var(--green)':'var(--red)'}">${totalPresupuestoEUR>0?(totalPresupuestoEUR-totGastoEUR>=0?'+':'')+fmtEUR(totalPresupuestoEUR-totGastoEUR):'—'}</td><td>${totalPresupuestoEUR>0?`<span style="font-size:12px;font-weight:800">${(totGastoEUR/totalPresupuestoEUR*100).toFixed(0)}%</span>`:''}</td></tr></tbody></table></div></div>
-    <div class="card" style="margin-bottom:16px;border-top:3px solid var(--purple)">
-      <div class="card-title">📊 Gastos por Categoría — ${MONTHS[cm-1]} ${cy}</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-top:8px">
-        ${EXPENSE_CATS.filter(cat=>byCat[cat.id]>0).sort((a,b)=>(byCat[b.id]||0)-(byCat[a.id]||0)).map(cat=>{const real=byCat[cat.id]||0,pres=budgets[cat.id]||0;const pct=pres>0?Math.min(real/pres*100,100).toFixed(0):null;const barC=pres>0?(real>pres?'var(--red)':real>pres*0.85?'var(--orange)':'var(--green)'):'var(--blue)';return `<div style="background:var(--card2);border-radius:12px;padding:12px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px;font-weight:600">${cat.icon} ${cat.name}</span>${pct!==null?`<span style="font-size:10px;font-weight:700;color:${barC}">${pct}%</span>`:''}</div><div style="font-size:16px;font-weight:800;color:var(--red);margin-bottom:6px">€${real.toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:0})}</div>${pres>0?`<div style="height:4px;background:var(--progress-bg);border-radius:2px"><div style="height:4px;border-radius:2px;background:${barC};width:${Math.min(real/pres*100,100).toFixed(1)}%"></div></div>`:''}</div>`;}).join('')}
-        ${Object.keys(byCat).length===0?'<div style="color:var(--text2);font-size:13px;padding:8px">Sin gastos este mes</div>':''}
-      </div>
-    </div>
-    <div class="card-flat"><div style="padding:16px 20px 0"><div class="card-title">Movimientos — ${MONTHS[cm-1]} ${cy}</div></div><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Categoría</th><th>Tipo</th><th>Importe €</th><th>Notas</th><th></th></tr></thead><tbody>${movRows}</tbody></table></div></div>
-  `;
-}
-
-function updateBudget(catId,value){if(!settings.budgets)settings.budgets={};settings.budgets[catId]=Number(value)||0;saveAll();}
-function updateIngreso(tipo,value){if(!settings.ingresos)settings.ingresos={};settings.ingresos[tipo]=Number(value)||0;saveAll();}
-function updateIngresoConMoneda(tipo,value,moneda){
-  if(!settings.ingresos)settings.ingresos={};
-  const raw=Number(value)||0;settings.ingresos.monedaSueldo=moneda;settings.ingresos.sueldoRaw=raw;
-  if(moneda==='EUR'){settings.ingresos[tipo]=Math.round(raw*getEurMxn()*100)/100;}else{settings.ingresos[tipo]=raw;}
-  saveAll();
-}
-
-function openRecurrentesModal(){
-  openModal(`
-    <div class="modal-header"><div class="modal-title">🔄 Gastos Recurrentes</div><button class="modal-close" onclick="closeModal()">✕</button></div>
-    <div id="recList">
-      ${recurrentes.map(r=>`
-        <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--card2);border-radius:12px;margin-bottom:8px">
-          <div style="font-size:20px">${r.icon||'📌'}</div>
-          <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">${r.nombre}</div><div style="font-size:11px;color:var(--text2)">${r.frecuencia} · día ${r.dia}</div></div>
-          <div style="font-size:15px;font-weight:800;color:var(--red);margin-right:8px">-${fmt(r.importe)}</div>
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0"><input type="checkbox" ${r.activo?'checked':''} onchange="toggleRecurrente('${r.id}',this.checked)" style="accent-color:var(--blue);width:16px;height:16px"><span style="font-size:11px;color:var(--text2)">${r.activo?'Activo':'Off'}</span></label>
-          <button class="del-btn" onclick="deleteRecurrente('${r.id}')" style="opacity:0.5">×</button>
-        </div>`).join('')}
-    </div>
-    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
-      <div style="font-size:13px;font-weight:700;margin-bottom:12px">+ Nuevo recurrente</div>
-      <form id="recForm" onsubmit="addRecurrente();return false">
-        <div class="form-row form-row-2">
-          <div class="form-group"><label class="form-label">Categoría</label><select class="form-select" id="rCat" onchange="syncRecurrenteName()">${EXPENSE_CATS.map(c=>`<option value="${c.id}">${c.icon} ${c.name}</option>`).join('')}</select></div>
-          <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="rNombre" required></div>
-        </div>
-        <div class="form-row form-row-3">
-          <div class="form-group"><label class="form-label">Importe</label><input type="number" class="form-input" id="rImporte" required></div>
-          <div class="form-group"><label class="form-label">Frecuencia</label><select class="form-select" id="rFrec">${FRECUENCIAS.map(f=>`<option>${f}</option>`).join('')}</select></div>
-          <div class="form-group"><label class="form-label">Día</label><input type="number" class="form-input" id="rDia" value="1" min="1" max="28"></div>
-        </div>
-        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:4px">Agregar</button>
-      </form>
-    </div>
-  `);
-}
-function syncRecurrenteName(){const cat=document.getElementById('rCat')?.value;const nombreEl=document.getElementById('rNombre');if(!cat||!nombreEl)return;const c=EXPENSE_CATS.find(x=>x.id===cat);if(c)nombreEl.value=c.name;}
-function addRecurrente(){const nombre=document.getElementById('rNombre').value,importe=Number(document.getElementById('rImporte').value);if(!nombre||!importe)return;recurrentes.push({id:uid(),nombre,importe,categoria:document.getElementById('rCat').value,frecuencia:document.getElementById('rFrec').value,dia:Number(document.getElementById('rDia').value)||1,icon:'📌',color:'#0A84FF',activo:true});saveAll();openRecurrentesModal();}
-function toggleRecurrente(id,val){recurrentes=recurrentes.map(r=>r.id!==id?r:{...r,activo:val});saveAll();}
-function deleteRecurrente(id){recurrentes=recurrentes.filter(r=>r.id!==id);saveAll();openRecurrentesModal();}
-
-// ============================================
-// METAS — FIX: Ingreso Mensual en EUR
-// ============================================
-function renderMetas(){
-  const tc=settings.tipoCambio||20;
-  const eurmxn=getEurMxn();
-  const plats=calcPlatforms();
-  const totalMXN=plats.reduce((s,p)=>s+platSaldoToMXN(p),0);
-  const tickerPos=getTickerPositions();
-  const totalInvMXN=tickerPos.reduce((s,t)=>s+((t.valorActual||t.costoPosicion||0)*(t.moneda==='MXN'?1:tc)),0);
-  const patrimonioTotal=totalMXN+totalInvMXN;
-
-  const ingresos=settings.ingresos||{};
-  const sueldoEUR=ingresos.monedaSueldo==='EUR'?(ingresos.sueldoRaw||0):(ingresos.sueldo||0);
-  const extrasEUR=ingresos.extrasEUR||ingresos.extras||0;
-  const otrosEUR=ingresos.otrosEUR||ingresos.otros||0;
-  const ingresoMensualEUR=sueldoEUR+extrasEUR+otrosEUR;
-  const fmtEUR=v=>'€'+Number(v||0).toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:2});
-
-  document.getElementById('page-metas').innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
-      <div><div class="section-title">Metas Financieras</div></div>
-      <button class="btn btn-primary" onclick="openGoalModal()">+ Meta</button>
-    </div>
-    <div class="grid-4" style="margin-bottom:20px">
-      ${statCard('🏦 Plataformas MXN',fmt(totalMXN),'saldo total','var(--blue)','var(--blue)')}
-      ${statCard('📈 Inversiones MXN',fmt(totalInvMXN),'a precios actuales','#BF5AF2','#BF5AF2')}
-      ${statCard('💰 Patrimonio Total',fmt(patrimonioTotal),'todo incluido','var(--green)','var(--green)')}
-      ${statCard('💳 Ingreso Mensual',fmtEUR(ingresoMensualEUR),'sueldo + extras (EUR)','','var(--orange)')}
-    </div>
-    <div class="grid-2">
-      ${goals.map(g=>{
-        let actual=0;
-        if(g.clase==='Patrimonio Total'||g.clase==='Todos')actual=patrimonioTotal;
-        else if(g.clase==='Plataformas')actual=totalMXN;
-        else if(g.clase==='Inversiones')actual=totalInvMXN;
-        else if(g.clase==='Ingreso Mensual')actual=ingresoMensualEUR;
-        else actual=patrimonioTotal;
-        const pct=g.meta>0?actual/g.meta:0;
-        const st=pct>=1?'🏆 LOGRADA':pct>=0.8?'🔥 Casi':pct>=0.3?'⏳ En proceso':'💤 Inicio';
-        const sc=pct>=1?'var(--green)':pct>=0.8?'var(--orange)':pct>=0.3?'var(--blue)':'var(--text2)';
-        const restante=g.meta-actual;const re=settings.rendimientoEsperado||0.06;
-        const mesesEstimados=restante>0&&actual>0?Math.ceil(Math.log(g.meta/actual)/Math.log(1+re/12)):0;
-        const isEUR = g.clase==='Ingreso Mensual';
-        const fmtVal = v => isEUR ? fmtEUR(v) : fmt(v);
-        return`<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:16px;font-weight:700">${g.nombre}</div><div style="font-size:11px;color:var(--text2)">${g.clase} · ${g.fechaLimite||'Sin fecha'}</div></div><div style="display:flex;gap:6px;align-items:center"><span class="badge" style="background:${sc}18;color:${sc}">${st}</span><button class="del-btn" onclick="deleteGoal('${g.id}')">×</button></div></div><div style="margin-top:16px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span style="font-weight:600">${fmtVal(actual)}</span><span style="color:var(--text2)">${fmtVal(g.meta)}</span></div><div class="progress-bg"><div class="progress-fill" style="background:${sc};width:${Math.min(pct*100,100)}%"></div></div><div style="text-align:right;font-size:12px;font-weight:700;color:${sc};margin-top:4px">${(pct*100).toFixed(1)}%</div></div>${pct<1&&mesesEstimados>0?`<div style="font-size:11px;color:var(--text2);margin-top:8px">⏱ ~${mesesEstimados} meses al ${(re*100).toFixed(0)}% anual · Faltan ${fmtVal(restante)}</div>`:''}</div>`;
-      }).join('')}
-    </div>
-  `;
-}
-function openGoalModal(){openModal(`<div class="modal-header"><div class="modal-title">Nueva Meta</div><button class="modal-close" onclick="closeModal()">✕</button></div><form onsubmit="addGoal();return false"><div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="gName" required></div><div class="form-row form-row-2"><div class="form-group"><label class="form-label">Clase</label><select class="form-select" id="gClase"><option>Patrimonio Total</option><option>Plataformas</option><option>Inversiones</option><option>Ingreso Mensual</option></select></div><div class="form-group"><label class="form-label">Meta</label><input type="number" class="form-input" id="gMeta" required></div></div><div class="form-group"><label class="form-label">Fecha Límite</label><input type="date" class="form-input" id="gFecha"></div><div class="form-group"><label class="form-label">Descripción</label><input class="form-input" id="gDesc"></div><button type="submit" class="btn btn-primary" style="width:100%;margin-top:16px">Crear Meta</button></form>`);}
-function addGoal(){const nombre=document.getElementById('gName').value,meta=Number(document.getElementById('gMeta').value);if(!nombre||!meta)return;goals.push({id:uid(),nombre,clase:document.getElementById('gClase').value,meta,fechaLimite:document.getElementById('gFecha').value,descripcion:document.getElementById('gDesc').value});saveAll();closeModal();}
-function deleteGoal(id){
-  const g=goals.find(x=>x.id===id);if(!g)return;
-  showConfirm('¿Eliminar la meta <strong>'+escHtml(g.nombre)+'</strong>?','Esta acción no se puede deshacer.',()=>{
-    goals=goals.filter(x=>x.id!==id);saveAll();showToast('🎯 Meta eliminada','info');
-  });
-}
-
-// ============================================
-// AJUSTES
-// ============================================
-function renderAjustes(){
-  const hasFinnhub=!!(settings.finnhubKey);const priceSummary=getPriceSummary();
-  const cache=getPriceCache();const cacheEntries=Object.entries(cache);
-  const currentUser=window._currentUser;const isDark=document.documentElement.getAttribute('data-theme')==='dark';
-  document.getElementById('page-ajustes').innerHTML=`
-    <div class="section-title" style="margin-bottom:24px">⚙️ Ajustes</div>
-    <div class="card" style="margin-bottom:16px;border-top:3px solid var(--blue)">
-      <div class="card-title">👤 Cuenta</div>
-      <div style="display:flex;align-items:center;gap:16px;margin-top:8px;flex-wrap:wrap">
-        ${currentUser?.photoURL?`<img src="${currentUser.photoURL}" style="width:48px;height:48px;border-radius:24px">`:`<div style="width:48px;height:48px;border-radius:24px;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff">👤</div>`}
-        <div style="flex:1"><div style="font-size:16px;font-weight:700">${currentUser?.displayName||'Usuario'}</div><div style="font-size:13px;color:var(--text2)">${currentUser?.email||''}</div></div>
-        <button class="btn btn-danger btn-sm" onclick="window.signOutUser()">Cerrar sesión</button>
-      </div>
-    </div>
-    <div class="grid-2" style="margin-bottom:16px">
-      <div class="card"><div class="card-title">💱 Tipo de Cambio</div><div style="margin-top:10px;display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">1 USD =</span><input type="number" step="0.01" id="inputTCUSD" class="form-input" style="width:100px;font-size:18px;font-weight:700;text-align:center" value="${settings.tipoCambio||20}" onchange="settings.tipoCambio=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div><div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">1 EUR =</span><input type="number" step="0.01" id="inputTCEUR" class="form-input" style="width:100px;font-size:18px;font-weight:700;text-align:center" value="${settings.tipoEUR||21.5}" onchange="settings.tipoEUR=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div><button class="btn btn-secondary btn-sm" onclick="updateFX().then(()=>renderPage('ajustes'))">🔄 Actualizar automático</button></div></div>
-      <div class="card"><div class="card-title">📈 Rendimiento Esperado Anual</div><div style="display:flex;align-items:center;gap:10px;margin-top:8px"><input type="number" step="0.5" class="form-input" style="width:80px;font-size:20px;font-weight:700;text-align:center" value="${((settings.rendimientoEsperado||0.06)*100)}" onchange="settings.rendimientoEsperado=Number(this.value)/100;saveAll()"><span style="font-size:14px;color:var(--text2)">% anual</span></div></div>
-    </div>
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-title">🔑 API Key — Finnhub</div>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px"><input type="text" class="form-input" style="flex:1;min-width:200px;font-family:monospace;font-size:13px" id="finnhubKeyInput" placeholder="Pega tu API key" value="${settings.finnhubKey||''}" oninput="settings.finnhubKey=this.value.trim();saveAll()"><button class="btn btn-primary" onclick="testFinnhub()">🧪 Probar</button>${hasFinnhub?`<span style="font-size:12px;color:var(--green)">✅ OK</span>`:''}</div>
-      <div id="finnhubTestResult" style="margin-top:8px;font-size:12px"></div>
-    </div>
-    <div class="grid-2">
-      <div class="card"><div class="card-title">💾 Exportar / Importar</div><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px"><button class="btn btn-primary" onclick="exportData()">📥 Exportar JSON</button><button class="btn btn-secondary" onclick="exportCSV()">📊 Exportar CSV</button><button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📤 Importar JSON</button><input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)"></div></div>
-      <div class="card"><div class="card-title">⚠️ Zona de Peligro</div><button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="showConfirm('¿Borrar TODOS los datos?','Esta acción eliminará todas tus plataformas, movimientos y metas. No se puede deshacer.',resetAll)">🗑 Resetear Todo</button></div>
-    </div>
-    <div class="card" style="margin-top:16px;padding:16px 20px">
-      <div class="card-title">🔐 Reglas Firebase</div>
-      <div class="uid-box" onclick="navigator.clipboard.writeText(this.textContent.trim()).then(()=>this.style.borderColor='var(--green)')" title="Clic para copiar" style="margin-top:6px;font-size:11px;white-space:pre">rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /finanzas/main {
-      allow read, write: if request.auth != null
-        && request.auth.uid == '${currentUser?.uid||'TU_UID_AQUI'}';
-    }
-  }
-}</div>
-    </div>
-  `;
-}
-
-async function testFinnhub(){const k=settings.finnhubKey,el=document.getElementById('finnhubTestResult');if(!k){el.innerHTML='<span style="color:var(--red)">⚠️ Ingresa tu API key</span>';return;}el.innerHTML='<span class="spinner"></span> Probando...';try{const r=await fetch(`https://finnhub.io/api/v1/quote?symbol=AAPL&token=${k}`),d=await r.json();if(d.c&&d.c>0)el.innerHTML=`<span style="color:var(--green)">✅ AAPL: $${d.c.toFixed(2)}</span>`;else el.innerHTML='<span style="color:var(--orange)">⚠️ Respuesta inesperada</span>';}catch(e){el.innerHTML=`<span style="color:var(--red)">❌ ${e.message}</span>`;}}
-
-function updateNav(patrimonio,totalMXN,totalUSD,tc,totalRend){
-  const el1=document.getElementById('navTotal'),el2=document.getElementById('navSub');
-  if(el1)el1.textContent=fmt(patrimonio);
-  const fx=_fxCache||LS.get('fxCache');
-  const eurStr=fx?.eurmxn?`<span>EUR $${fx.eurmxn.toFixed(2)}</span>`:'';
-  if(el2)el2.innerHTML=`<span>🇲🇽 ${fmt(totalMXN)}</span><span>🇺🇸 ${fmt(totalUSD,'USD')}</span><span>💱 $${tc}</span>${eurStr}<span style="color:${pctCol(totalRend)};font-weight:600">${totalRend>=0?'▲':'▼'} ${fmt(totalRend)}</span>`;
-}
-function updateNavUser(user){
-  const el=document.getElementById('navUser');if(!el)return;
-  const darkBtn=`<button class="dark-toggle" onclick="toggleDark()" title="Modo oscuro" style="margin-right:4px"><span class="dark-toggle-icon dark-toggle-moon">🌙</span><span class="dark-toggle-icon dark-toggle-sun">☀️</span></button>`;
-  if(user)el.innerHTML=`${darkBtn}${user.photoURL?`<img src="${user.photoURL}" class="nav-avatar">`:`<div class="nav-avatar-placeholder">${(user.displayName||user.email||'U')[0].toUpperCase()}</div>`}<button class="btn-signout" onclick="window.signOutUser()">Salir</button>`;
-}
-
-function exportData(){const data={platforms,movements,goals,settings,recurrentes,patrimonioHistory,exportDate:new Date().toISOString(),version:'4.4'};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`finanzas-pro-${today()}.json`;a.click();URL.revokeObjectURL(url);}
-function exportCSV(){
-  const headers=['Fecha','Sección','Plataforma','Ticker','Broker','Tipo Activo','Tipo Mov','Cantidad','Precio Unit','Monto Total','Moneda','Categoría','Tipo Gasto','Importe','Notas'];
-  const rows=movements.map(m=>[
-    m.fecha||'',m.seccion||'',m.platform||'',m.ticker||'',m.broker||'',
-    m.tipoActivo||'',m.tipoMov||'',m.cantidad||'',m.precioUnit||'',m.montoTotal||'',
-    m.moneda||'',m.categoria||'',m.tipo||'',m.importe||'',(m.notas||m.desc||'').replace(/,/g,' ')
-  ]);
-  const csv=[headers,...rows].map(r=>r.join(',')).join('\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`finanzas-pro-${today()}.csv`;a.click();
-  URL.revokeObjectURL(url);
-  showToast('📊 CSV exportado','success');
-}
-
-function importData(input){
-  const file=input.files[0];if(!file)return;
-  const r=new FileReader();
-  r.onload=e=>{
-    try{
-      const d=JSON.parse(e.target.result);
-      if(typeof d!=='object'||d===null) throw new Error('No es un objeto JSON válido');
-      if(d.platforms&&!Array.isArray(d.platforms)) throw new Error('platforms debe ser array');
-      if(d.movements&&!Array.isArray(d.movements)) throw new Error('movements debe ser array');
-      if(d.goals&&!Array.isArray(d.goals)) throw new Error('goals debe ser array');
-      if(d.platforms)platforms=d.platforms.map(p=>({tasaAnual:0,fechaInicio:'2026-02-01',moneda:'MXN',...p}));
-      if(d.movements)movements=d.movements;
-      if(d.goals)goals=d.goals;
-      if(d.settings)settings=d.settings;
-      if(d.recurrentes)recurrentes=d.recurrentes;
-      if(d.patrimonioHistory)patrimonioHistory=d.patrimonioHistory;
-      saveAll();
-      showToast(`✅ Importados: ${(d.platforms||[]).length} plataformas, ${(d.movements||[]).length} movimientos`,'success',4000);
-    }catch(err){
-      showToast('❌ Archivo inválido: '+err.message,'error',5000);
-    }
-  };
-  r.readAsText(file);
-}
-function resetAll(){platforms=DEFAULT_PLATFORMS.map(p=>({...p}));movements=JSON.parse(JSON.stringify(DEFAULT_MOVS));goals=[...DEFAULT_GOALS];settings={...DEFAULT_SETTINGS};recurrentes=JSON.parse(JSON.stringify(DEFAULT_RECURRENTES));patrimonioHistory=[];LS.set('price_cache',{});saveAll();setTimeout(()=>updateAllPrices(false),500);}
-
-function renderPageInternal(tab){
-  if(tab==='dashboard')renderDashboard();else if(tab==='movimientos')renderMovimientos();else if(tab==='plataformas')renderPlataformas();else if(tab==='gastos')renderGastos();else if(tab==='metas')renderMetas();else if(tab==='ajustes')renderAjustes();
-}
-function renderPage(tab){renderPageInternal(tab);}
-window.renderPage=renderPage;
-window.showAportaciones = showAportaciones;
-
-// ==================== FIREBASE (MÓDULO) ====================
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
-const firebaseConfig={apiKey:"AIzaSyDUAOlDXmkBRQNoYgmax9KOMjQrZd061Q8",authDomain:"control-de-inversion.firebaseapp.com",projectId:"control-de-inversion",storageBucket:"control-de-inversion.firebasestorage.app",messagingSenderId:"955139190781",appId:"1:955139190781:web:b73653484f5f96b7e23394"};
-const app=initializeApp(firebaseConfig),db=getFirestore(app),auth=getAuth(app);
-const DOC_REF=doc(db,"finanzas","main");
-
-function setFbStatus(s){let el=document.getElementById('fbStatus');if(!el){el=document.createElement('div');el.id='fbStatus';el.style.cssText='font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;white-space:nowrap;transition:all 0.3s;flex-shrink:0';const nav=document.querySelector('.nav-inner');if(nav)nav.appendChild(el);}const map={syncing:['⏳ Sync...','rgba(10,132,255,0.1)','#0A84FF'],ok:['☁️ Sincronizado','rgba(48,209,88,0.1)','#30D158'],error:['⚠️ Sin conexión','rgba(255,69,58,0.1)','#FF453A'],offline:['📴 Offline','rgba(0,0,0,0.06)','#86868B']};const[text,bg,color]=map[s]||map.offline;el.textContent=text;el.style.background=bg;el.style.color=color;}
-function showApp(){document.getElementById('loginOverlay').classList.add('hidden');document.getElementById('mainNav').style.display='';document.getElementById('mainContainer').style.display='';document.getElementById('mobileNav').style.display='';document.getElementById('accessDenied').classList.remove('show');}
-function showLogin(msg){document.getElementById('loginOverlay').classList.remove('hidden');document.getElementById('mainNav').style.display='none';document.getElementById('mainContainer').style.display='none';document.getElementById('mobileNav').style.display='none';document.getElementById('accessDenied').classList.remove('show');if(msg){const el=document.getElementById('loginError');el.textContent=msg;el.style.display='block';}}
-
-window.signOutUser=async()=>{await signOut(auth);showLogin();};
-document.getElementById('btnGoogleLogin').addEventListener('click',async()=>{const btn=document.getElementById('btnGoogleLogin');btn.disabled=true;btn.innerHTML='<span style="display:inline-block;width:20px;height:20px;border:2px solid rgba(10,132,255,0.2);border-top-color:#0A84FF;border-radius:50%;animation:spin 0.7s linear infinite;margin-right:8px;vertical-align:middle"></span> Conectando...';try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(e){btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> Continuar con Google';showLogin(e.code==='auth/popup-closed-by-user'?'':'Error al iniciar sesión.');}});
-
-let _ignoreSnap=false,_saveTimeout=null,_unsub=null;
-
-function setupFirestore(){
-  if(_unsub){_unsub();_unsub=null;}
-  _unsub=onSnapshot(DOC_REF,snap=>{if(_ignoreSnap){_ignoreSnap=false;return;}if(!snap.exists()){window.saveToFirebase();return;}setFbStatus('ok');if(window.loadFromRemote)window.loadFromRemote(snap.data());},err=>{console.error(err);setFbStatus('error');});
-}
-
-window.saveToFirebase=async(forceImmediate=false)=>{
-  const doSave=async()=>{
-    setFbStatus('syncing');
-    try{
-      _ignoreSnap=true;
-      const d=window.getAppData?window.getAppData():{};
-      await setDoc(DOC_REF,{platforms:d.platforms||[],movements:d.movements||[],goals:d.goals||[],settings:d.settings||{},recurrentes:d.recurrentes||[],patrimonioHistory:d.patrimonioHistory||[],updatedAt:serverTimestamp(),device:navigator.userAgent.substring(0,60)});
-      setFbStatus('ok');
-    }catch(e){setFbStatus('error');console.error(e);if(!navigator.onLine){window.queueSave&&window.queueSave(window.getAppData&&window.getAppData());}throw e;}
-  };
-  if(forceImmediate){await doSave();return;}
-  clearTimeout(_saveTimeout);_saveTimeout=setTimeout(doSave,1500);
-};
-
-onAuthStateChanged(auth,user=>{
-  if(user){
-    window._currentUser=user;
-    if(typeof updateNavUser==='function')updateNavUser(user);
-    showApp();setupFirestore();
-    if(window.renderPage)window.renderPage(window.currentTab||'dashboard');
-    setTimeout(()=>{
-      if(typeof updateFX==='function')updateFX();
-      const s=typeof getPriceSummary==='function'?getPriceSummary():{total:0,missing:0};
-      if(s.total>0&&s.missing>0&&typeof updateAllPrices==='function')updateAllPrices(false);
-      if(typeof flushOfflineQueue==='function')flushOfflineQueue();
-    },1200);
-  }else{window._currentUser=null;if(_unsub){_unsub();_unsub=null;}showLogin();}
-});
-window.addEventListener('online',()=>setFbStatus('ok'));
-window.addEventListener('offline',()=>setFbStatus('offline'));
-
-// Exportar funciones al ámbito global
-window.toggleDark = toggleDark;
-window.debouncedRenderMovimientos = debouncedRenderMovimientos;
-window.exportCSV = exportCSV;
-window.switchTab = switchTab;
-window.openModal = openModal;
-window.closeModal = closeModal;
-window.setChartRange = setChartRange;
-window.setChartProj = setChartProj;
-window.toggleChartPanel = toggleChartPanel;
-window.setTipoTransfer = setTipoTransfer;
-window.actualizarMontoSobrante = actualizarMontoSobrante;
-window.showAportaciones = showAportaciones;
-window.editPlatField = editPlatField;
-window.deletePlatform = deletePlatform;
-window.openAddPlatformModal = openAddPlatformModal;
-window.addPlatform = addPlatform;
-window.updateBudget = updateBudget;
-window.updateIngreso = updateIngreso;
-window.updateIngresoConMoneda = updateIngresoConMoneda;
-window.openRecurrentesModal = openRecurrentesModal;
-window.syncRecurrenteName = syncRecurrenteName;
-window.addRecurrente = addRecurrente;
-window.toggleRecurrente = toggleRecurrente;
-window.deleteRecurrente = deleteRecurrente;
-window.openGoalModal = openGoalModal;
-window.addGoal = addGoal;
-window.deleteGoal = deleteGoal;
-window.testFinnhub = testFinnhub;
-window.exportData = exportData;
-window.importData = importData;
-window.resetAll = resetAll;
-window.openMovModal = openMovModal;
-window.saveMovement = saveMovement;
-window.deleteMovement = deleteMovement;
-window.openEditMovModal = openEditMovModal;
-window.updateMovement = updateMovement;
-window.updateAllPrices = updateAllPrices;
+            if(m.tipoPlat==='Transferencia salida'&&m.transferId){const grp=transferGroups[m.transferId]||[];const entrada=grp.find(
