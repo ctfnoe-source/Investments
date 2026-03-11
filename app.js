@@ -738,21 +738,34 @@ function renderDashboard(){
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
           <div>
             <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2);margin-bottom:4px">📈 Evolución del Patrimonio</div>
-            <div style="font-size:28px;font-weight:800;letter-spacing:-0.03em;color:var(--green);line-height:1">${fmt(patrimonio)}</div>
-            <div style="display:flex;gap:14px;margin-top:8px;flex-wrap:wrap">
-              <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:16px;height:2.5px;background:#30D158;border-radius:2px"></span>Real</span>
-              <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:16px;height:2px;background:rgba(10,132,255,0.6);border-radius:2px"></span>Proyectado</span>
+            <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+              <div style="font-size:28px;font-weight:800;letter-spacing:-0.03em;color:var(--green);line-height:1">${fmt(patrimonio)}</div>
+              <span id="chartPeriodChange" style="display:inline-flex;align-items:center;gap:5px;font-size:13px;padding:3px 10px;border-radius:20px;background:var(--card2)"></span>
+            </div>
+            <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap">
+              <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px">
+                <span style="display:inline-block;width:18px;height:3px;background:linear-gradient(90deg,#30D158,#34D35A);border-radius:2px;box-shadow:0 0 6px rgba(48,209,88,0.4)"></span>
+                Patrimonio real
+              </span>
+              <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px">
+                <span style="display:inline-flex;gap:2px;align-items:center"><span style="width:4px;height:2px;background:rgba(10,132,255,0.65);border-radius:1px"></span><span style="width:4px;height:2px;background:rgba(10,132,255,0.65);border-radius:1px"></span><span style="width:4px;height:2px;background:rgba(10,132,255,0.65);border-radius:1px"></span></span>
+                Proyección ${(re*100).toFixed(0)}%/año
+              </span>
             </div>
           </div>
           <div style="text-align:right">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--blue);margin-bottom:4px">Esperado en ${projInterval.label}</div>
-            <div style="font-size:28px;font-weight:800;letter-spacing:-0.03em;color:var(--blue);line-height:1">${fmt(patrimonioEsperado)}</div>
-            <div style="font-size:12px;color:var(--text2);margin-top:4px">+${fmt(gananciaProy)} · <span style="font-weight:700;color:var(--blue)">${(re*100).toFixed(0)}%/año</span></div>
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--blue);margin-bottom:4px">Esperado en ${projInterval.label}</div>
+            <div style="font-size:26px;font-weight:800;letter-spacing:-0.03em;color:var(--blue);line-height:1">${fmt(patrimonioEsperado)}</div>
+            <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:5px">
+              <span style="font-size:12px;color:var(--green);font-weight:700">+${fmt(gananciaProy)}</span>
+              <span style="font-size:11px;color:var(--text3)">·</span>
+              <span style="font-size:11px;font-weight:700;color:var(--blue)">${(re*100).toFixed(0)}%/año</span>
+            </div>
           </div>
         </div>
       </div>
-      <div style="padding:0 28px 0px">
-        <div class="chart-container" style="height:240px"><canvas id="chartEvo"></canvas></div>
+      <div style="padding:0 20px 0px">
+        <div class="chart-container" style="height:260px"><canvas id="chartEvo"></canvas></div>
       </div>
       <div style="padding:8px 28px 12px;display:flex;justify-content:flex-end">
         <button class="chart-toggle-btn" id="chartToggleBtn" onclick="toggleChartPanel()">▼ Controles</button>
@@ -852,45 +865,147 @@ function renderDashboard(){
     const realDates = realDatesFiltered;
     const realVals = realValsFiltered;
 
+    // Proyección: arranca desde el último punto real para conectar visualmente
     const now = new Date();
+    const lastRealDate = realDates.length > 0 ? realDates[realDates.length - 1] : now.toISOString().split('T')[0];
+    const lastRealVal = realVals.length > 0 ? realVals[realVals.length - 1] : patrimonio;
     const projDates=[];
     const projVals=[];
-    for(let i=0; i<=projMonths; i++){
+    // Punto de anclaje: último dato real
+    projDates.push(lastRealDate);
+    projVals.push(lastRealVal);
+    for(let i=1; i<=projMonths; i++){
       const d=new Date(now.getFullYear(), now.getMonth()+i, 1);
       projDates.push(d.toISOString().split('T')[0]);
       projVals.push(Math.round(patrimonio * Math.pow(1+re/12, i)));
     }
 
+    // Calcular cambio del período para badge en la cabecera
+    const periodChange = realVals.length >= 2 ? realVals[realVals.length-1] - realVals[0] : null;
+    const periodChangePct = (realVals.length >= 2 && realVals[0] > 0) ? (realVals[realVals.length-1] - realVals[0]) / realVals[0] : null;
+    const changeEl = document.getElementById('chartPeriodChange');
+    if(changeEl && periodChange !== null){
+      const sign = periodChange >= 0 ? '+' : '';
+      const col = periodChange >= 0 ? 'var(--green)' : 'var(--red)';
+      changeEl.innerHTML = `<span style="color:${col};font-weight:800">${sign}${fmt(periodChange)}</span> <span style="color:var(--text3);font-size:10px">${sign}${(periodChangePct*100).toFixed(2)}%</span>`;
+      changeEl.style.display = 'inline-flex';
+    } else if(changeEl){
+      changeEl.style.display = 'none';
+    }
+
     const ctxE=document.getElementById('chartEvo');
     if(ctxE){
+      // Gradiente bajo la curva real
+      const ctx2d = ctxE.getContext('2d');
+      const gradReal = ctx2d.createLinearGradient(0, 0, 0, ctxE.offsetHeight || 240);
+      gradReal.addColorStop(0, isDark ? 'rgba(48,209,88,0.18)' : 'rgba(48,209,88,0.13)');
+      gradReal.addColorStop(0.7, isDark ? 'rgba(48,209,88,0.04)' : 'rgba(48,209,88,0.02)');
+      gradReal.addColorStop(1, 'rgba(48,209,88,0)');
+
+      // pointRadius dinámico: visible si pocos puntos
+      const dynRadius = realDates.length <= 12 ? 3 : realDates.length <= 30 ? 2 : 0;
+      const dynLastRadius = realDates.length > 0 ? 5 : 0;
+
       chartInstances.chartEvo=new Chart(ctxE,{type:'line',data:{
         datasets:[
           {
             label:'Patrimonio Real',
             data:realDates.map((d,i)=>({x:d,y:realVals[i]})),
-            borderColor:'#30D158', backgroundColor:'transparent', borderWidth:2.5,fill:false,tension:0.4,
-            pointRadius:0, pointHoverRadius:5, pointHoverBackgroundColor:'#30D158',
-            pointHoverBorderColor:isDark?'#1C1C1E':'#fff', pointHoverBorderWidth:2,
+            borderColor:'#30D158',
+            backgroundColor: gradReal,
+            borderWidth:2.5,
+            fill:true,
+            tension:0.4,
+            pointRadius: realDates.map((_,i) => i === realDates.length-1 ? dynLastRadius : dynRadius),
+            pointBackgroundColor:'#30D158',
+            pointBorderColor: isDark?'#1C1C1E':'#fff',
+            pointBorderWidth:2,
+            pointHoverRadius:6,
+            pointHoverBackgroundColor:'#30D158',
+            pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
+            pointHoverBorderWidth:2,
           },
           {
-            label:'Rendimiento Esperado '+((re*100).toFixed(0))+'%',
+            label:'Proyección '+((re*100).toFixed(0))+'% anual',
             data:projDates.map((d,i)=>({x:d,y:projVals[i]})),
-            borderColor:'rgba(10,132,255,0.7)', backgroundColor:'transparent', borderWidth:1.5, borderDash:[6,4],
-            fill:false,tension:0.1, pointRadius:0, pointHoverRadius:4,
+            borderColor:'rgba(10,132,255,0.65)',
+            backgroundColor:'transparent',
+            borderWidth:1.5,
+            borderDash:[6,4],
+            fill:false,
+            tension:0.1,
+            pointRadius:0,
+            pointHoverRadius:4,
             pointHoverBackgroundColor:'rgba(10,132,255,0.8)',
-            pointHoverBorderColor:isDark?'#1C1C1E':'#fff', pointHoverBorderWidth:2,
+            pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
+            pointHoverBorderWidth:2,
           }
         ]
       },options:{
-        responsive:true,maintainAspectRatio:false,
+        responsive:true,
+        maintainAspectRatio:false,
         interaction:{intersect:false,mode:'index'},
         plugins:{
           legend:{display:false},
-          tooltip:{ backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)', cornerRadius:14,padding:14, bodyFont:{size:13,family:'DM Sans'}, callbacks:{label:ctx=>' '+ctx.dataset.label+': '+fmtFull(ctx.parsed.y)} }
+          tooltip:{
+            backgroundColor:isDark?'rgba(28,28,30,0.98)':'rgba(29,29,31,0.95)',
+            borderColor: isDark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.1)',
+            borderWidth:1,
+            cornerRadius:14,
+            padding:{top:12,bottom:12,left:16,right:16},
+            titleFont:{size:11,family:'DM Sans',weight:'600'},
+            bodyFont:{size:13,family:'DM Sans'},
+            titleColor:isDark?'#98989D':'#86868B',
+            callbacks:{
+              title: items => {
+                if(!items.length) return '';
+                const raw = items[0].label || items[0].raw?.x || '';
+                const p = raw.split('-');
+                if(p.length===3){ const d=new Date(raw+'T12:00:00'); return d.toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'}); }
+                return raw;
+              },
+              label: ctx => {
+                const val = ctx.parsed.y;
+                const isReal = ctx.datasetIndex === 0;
+                const icon = isReal ? '🟢' : '🔵';
+                return ` ${icon} ${ctx.dataset.label}: ${fmtFull(val)}`;
+              },
+              afterBody: items => {
+                if(items.length < 2) return [];
+                const real = items.find(i=>i.datasetIndex===0);
+                const proj = items.find(i=>i.datasetIndex===1);
+                if(!real||!proj) return [];
+                const diff = proj.parsed.y - real.parsed.y;
+                if(diff === 0) return [];
+                const sign = diff > 0 ? '+' : '';
+                return ['', ` Potencial: ${sign}${fmtFull(diff)}`];
+              }
+            }
+          }
         },
         scales:{
-          x:{ type:'category', grid:{display:false}, ticks:{font:{size:10},color:tickColor,maxTicksLimit:10,callback:function(val){const v=this.getLabelForValue(val);if(!v)return'';const p=v.split('-');return p.length===3?p[2]==='01'?MONTHS[parseInt(p[1])-1]:p[1]+'-'+p[2]:v;}}, border:{display:false} },
-          y:{ grid:{color:gridColor}, ticks:{font:{size:11},color:tickColor,callback:v=>fmt(v),maxTicksLimit:5}, border:{display:false} }
+          x:{
+            type:'time',
+            time:{
+              unit:'month',
+              displayFormats:{ month:'MMM yy', day:'d MMM' },
+              tooltipFormat:'yyyy-MM-dd'
+            },
+            adapters:{ date:{} },
+            grid:{display:false},
+            ticks:{
+              font:{size:10},
+              color:tickColor,
+              maxTicksLimit:10,
+              maxRotation:0,
+            },
+            border:{display:false}
+          },
+          y:{
+            grid:{color:gridColor},
+            ticks:{font:{size:11},color:tickColor,callback:v=>fmt(v),maxTicksLimit:5},
+            border:{display:false}
+          }
         }
       }});
     }
