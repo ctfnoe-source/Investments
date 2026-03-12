@@ -1872,6 +1872,169 @@ function deleteRecurrente(id){recurrentes=recurrentes.filter(r=>r.id!==id);saveA
 // ============================================
 // METAS — FIX: Ingreso Mensual en EUR
 // ============================================
+// ============================================
+// INVERSIONES
+// ============================================
+function renderInversiones(){
+  const tc = settings.tipoCambio || 20;
+  const tickers = getTickerPositions();
+  const abiertas = tickers.filter(t => t.cantActual > 0);
+  const cerradas = tickers.filter(t => t.cantActual <= 0);
+
+  // Totales generales
+  const totalCosto = abiertas.reduce((s,t) => s + t.costoTotal * (t.moneda==='MXN'?1:tc), 0);
+  const totalValor = abiertas.reduce((s,t) => s + (t.valorActual||t.costoPosicion||0) * (t.moneda==='MXN'?1:tc), 0);
+  const totalGP = totalValor - totalCosto;
+  const totalGPPct = totalCosto > 0 ? totalGP / totalCosto : 0;
+  const gpRealTotal = cerradas.reduce((s,t) => s + (t.gpRealizada||0) * (t.moneda==='MXN'?1:tc), 0);
+
+  // Diversificación por tipo
+  const porTipo = {};
+  abiertas.forEach(t => {
+    const tipo = t.type || 'Otro';
+    const val = (t.valorActual||t.costoPosicion||0) * (t.moneda==='MXN'?1:tc);
+    porTipo[tipo] = (porTipo[tipo]||0) + val;
+  });
+  const tipoEntries = Object.entries(porTipo).sort((a,b)=>b[1]-a[1]);
+  const TIPO_COLORS = {'ETF':'var(--blue)','Acción':'var(--green)','Crypto':'var(--orange)','Bono':'var(--teal)','Otro':'var(--text2)'};
+
+  // Diversificación por moneda
+  const porMoneda = {};
+  abiertas.forEach(t => {
+    const val = (t.valorActual||t.costoPosicion||0) * (t.moneda==='MXN'?1:tc);
+    porMoneda[t.moneda||'USD'] = (porMoneda[t.moneda||'USD']||0) + val;
+  });
+
+  document.getElementById('page-inversiones').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+      <div><div class="section-title">📈 Inversiones</div><div class="section-sub">${abiertas.length} posiciones abiertas · ${cerradas.length} cerradas</div></div>
+      <button class="btn btn-primary btn-sm" onclick="openMovModal('inversion')">+ Operación</button>
+    </div>
+
+    <!-- Stats superiores -->
+    <div class="grid-4" style="margin-bottom:16px">
+      <div class="card stat" style="border-top:3px solid var(--blue)">
+        <div class="stat-label">💰 Costo Total</div>
+        <div class="stat-value">${fmt(totalCosto)}</div>
+        <div class="stat-sub">${abiertas.length} posiciones</div>
+      </div>
+      <div class="card stat" style="border-top:3px solid var(--green)">
+        <div class="stat-label">📊 Valor Actual</div>
+        <div class="stat-value">${fmt(totalValor)}</div>
+        <div class="stat-sub">a precios ${abiertas.some(t=>t.gpNoRealizada!==null)?'de hoy':'de compra'}</div>
+      </div>
+      <div class="card stat" style="border-top:3px solid ${pctCol(totalGP)}">
+        <div class="stat-label">📈 G/P No Realizada</div>
+        <div class="stat-value" style="color:${pctCol(totalGP)}">${totalGP>=0?'+':''}${fmt(totalGP)}</div>
+        <div class="stat-sub" style="color:${pctCol(totalGPPct)}">${fmtPct(totalGPPct)}</div>
+      </div>
+      <div class="card stat" style="border-top:3px solid ${pctCol(gpRealTotal)}">
+        <div class="stat-label">✅ G/P Realizada</div>
+        <div class="stat-value" style="color:${pctCol(gpRealTotal)}">${gpRealTotal>=0?'+':''}${fmt(gpRealTotal)}</div>
+        <div class="stat-sub">${cerradas.length} posiciones cerradas</div>
+      </div>
+    </div>
+
+    <!-- Diversificación -->
+    <div class="grid-2" style="margin-bottom:16px">
+      <div class="card">
+        <div class="card-title">🥧 Por Tipo de Activo</div>
+        ${tipoEntries.map(([tipo, val]) => {
+          const pct = totalValor > 0 ? val/totalValor : 0;
+          const color = TIPO_COLORS[tipo] || 'var(--text2)';
+          return `<div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+              <span style="font-weight:700;color:${color}">${tipo}</span>
+              <span style="color:var(--text2)">${fmt(val)} <strong style="color:var(--text)">${(pct*100).toFixed(1)}%</strong></span>
+            </div>
+            <div class="progress-bg"><div class="progress-fill" style="background:${color};width:${(pct*100).toFixed(1)}%"></div></div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="card">
+        <div class="card-title">🌍 Por Moneda</div>
+        ${Object.entries(porMoneda).sort((a,b)=>b[1]-a[1]).map(([mon, val]) => {
+          const pct = totalValor > 0 ? val/totalValor : 0;
+          const color = mon==='MXN'?'var(--green)':mon==='USD'?'var(--blue)':'var(--purple)';
+          return `<div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+              <span style="font-weight:700;color:${color}">${mon==='MXN'?'🇲🇽':mon==='USD'?'🇺🇸':'🇪🇺'} ${mon}</span>
+              <span style="color:var(--text2)">${fmt(val)} <strong style="color:var(--text)">${(pct*100).toFixed(1)}%</strong></span>
+            </div>
+            <div class="progress-bg"><div class="progress-fill" style="background:${color};width:${(pct*100).toFixed(1)}%"></div></div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <!-- Tabla de posiciones abiertas -->
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div class="card-title" style="margin:0">📂 Posiciones Abiertas</div>
+      </div>
+      ${abiertas.length > 0 ? abiertas.sort((a,b) => {
+        const va = (a.valorActual||a.costoPosicion||0)*(a.moneda==='MXN'?1:tc);
+        const vb = (b.valorActual||b.costoPosicion||0)*(b.moneda==='MXN'?1:tc);
+        return vb - va;
+      }).map(t => {
+        const tipoClass = t.type==='Acción'?'badge-green':t.type==='ETF'?'badge-blue':t.type==='Crypto'?'badge-orange':'badge-gray';
+        const valorMXN = (t.valorActual||t.costoPosicion||0)*(t.moneda==='MXN'?1:tc);
+        const costoMXN = t.costoTotal*(t.moneda==='MXN'?1:tc);
+        const gpMXN = valorMXN - costoMXN;
+        const pctPort = totalValor > 0 ? valorMXN/totalValor : 0;
+        return `<div class="list-item" style="flex-direction:column;align-items:stretch;gap:8px;padding:12px 0">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:16px;font-weight:800">${t.ticker}</span>
+              <span class="badge ${tipoClass}">${t.type}</span>
+              ${monedaBadge(t.moneda)}
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:15px;font-weight:800">${t.moneda==='MXN'?fmt(t.valorActual||t.costoPosicion||0):fmtFull(t.valorActual||t.costoPosicion||0)+' '+t.moneda}</div>
+              <div style="font-size:11px;color:var(--text2)">${fmt(valorMXN)} MXN</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-size:11px">
+            <div><div style="color:var(--text2)">Cantidad</div><div style="font-weight:700">${t.cantActual}</div></div>
+            <div><div style="color:var(--text2)">P. Compra</div><div style="font-weight:700">${t.moneda==='MXN'?'$':'US$'}${t.precioCostoPromedio.toFixed(2)}</div></div>
+            <div><div style="color:var(--text2)">P. Actual</div><div style="font-weight:700" class="${t.priceCssClass}">${t.priceLabel}</div></div>
+            <div><div style="color:var(--text2)">% Portafolio</div><div style="font-weight:700">${(pctPort*100).toFixed(1)}%</div></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="height:4px;flex:1;background:var(--progress-bg);border-radius:3px;margin-right:12px">
+              <div style="height:4px;border-radius:3px;background:${pctCol(gpMXN)};width:${Math.min(pctPort*100,100).toFixed(1)}%"></div>
+            </div>
+            <div style="text-align:right">
+              <span style="font-size:13px;font-weight:800;color:${pctCol(t.gpNoRealizada)}">${t.gpNoRealizada!==null?(t.gpNoRealizada>=0?'+':'')+fmtFull(t.gpNoRealizada)+' '+t.moneda:'sin precio'}</span>
+              ${t.gpNoRealizada!==null?`<span style="font-size:11px;color:${pctCol(t.pctNoRealizada)};margin-left:6px;font-weight:600">${fmtPct(t.pctNoRealizada)}</span>`:''}
+            </div>
+          </div>
+        </div>`;
+      }).join('') : '<div style="text-align:center;color:var(--text2);padding:32px">Sin posiciones abiertas</div>'}
+    </div>
+
+    <!-- Posiciones cerradas -->
+    ${cerradas.length > 0 ? `
+    <div class="card">
+      <div class="card-title">🔒 Posiciones Cerradas</div>
+      ${cerradas.map(t => {
+        const tipoClass = t.type==='Acción'?'badge-green':t.type==='ETF'?'badge-blue':t.type==='Crypto'?'badge-orange':'badge-gray';
+        return `<div class="list-item">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:13px;font-weight:800;color:var(--text2)">${t.ticker}</span>
+            <span class="badge ${tipoClass}">${t.type}</span>
+            <span style="font-size:11px;color:var(--text2)">costo ${fmtFull(t.costoTotal)} ${t.moneda}</span>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:13px;font-weight:700;color:${pctCol(t.gpRealizada)}">${(t.gpRealizada||0)>=0?'+':''}${fmtFull(t.gpRealizada||0)} ${t.moneda}</div>
+            <div style="font-size:10px;color:var(--text2)">realizada</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+  `;
+}
+
 function renderMetas(){
   const tc=settings.tipoCambio||20;
   const eurmxn=getEurMxn();
@@ -2043,7 +2206,7 @@ function importData(input){const file=input.files[0];if(!file)return;const r=new
 function resetAll(){platforms=DEFAULT_PLATFORMS.map(p=>({...p}));movements=JSON.parse(JSON.stringify(DEFAULT_MOVS));goals=[...DEFAULT_GOALS];settings={...DEFAULT_SETTINGS};recurrentes=JSON.parse(JSON.stringify(DEFAULT_RECURRENTES));patrimonioHistory=[];LS.set('price_cache',{});saveAll();setTimeout(()=>updateAllPrices(false),500);}
 
 function renderPageInternal(tab){
-  if(tab==='dashboard')renderDashboard();else if(tab==='movimientos')renderMovimientos();else if(tab==='plataformas')renderPlataformas();else if(tab==='gastos')renderGastos();else if(tab==='metas')renderMetas();else if(tab==='ajustes')renderAjustes();
+  if(tab==='dashboard')renderDashboard();else if(tab==='movimientos')renderMovimientos();else if(tab==='plataformas')renderPlataformas();else if(tab==='inversiones')renderInversiones();else if(tab==='gastos')renderGastos();else if(tab==='metas')renderMetas();else if(tab==='ajustes')renderAjustes();
 }
 function renderPage(tab){renderPageInternal(tab);}
 window.renderPage=renderPage;
