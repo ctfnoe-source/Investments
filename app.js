@@ -948,10 +948,21 @@ function renderDashboard(){
   }
 
   let histFiltered = hist;
-  const selInterval = CHART_INTERVALS.find(i => i.key === _chartRange);
-  if (selInterval) {
-    const cutoff = new Date();
-    cutoff.setMonth(cutoff.getMonth() - selInterval.months);
+  if (_chartRange !== 'all') {
+    let cutoff = new Date();
+    if (_chartRange === '1d') {
+      cutoff.setDate(cutoff.getDate() - 1);
+    } else if (_chartRange === '1w') {
+      cutoff.setDate(cutoff.getDate() - 7);
+    } else if (_chartRange === 'ytd') {
+      cutoff = new Date(cutoff.getFullYear(), 0, 1);
+    } else if (_chartRange === '1m') {
+      cutoff.setMonth(cutoff.getMonth() - 1);
+    } else if (_chartRange === '1y') {
+      cutoff.setMonth(cutoff.getMonth() - 12);
+    } else if (_chartRange === '3y') {
+      cutoff.setMonth(cutoff.getMonth() - 36);
+    }
     const cutoffStr = cutoff.toISOString().split('T')[0];
     histFiltered = hist.filter(s => s.date >= cutoffStr);
     if (histFiltered.length === 0) histFiltered = hist.slice(-2);
@@ -967,19 +978,18 @@ function renderDashboard(){
   const projMonths = projInterval.months;
 
   const periodOptions = [
-    ...CHART_INTERVALS,
-    { key:'all', label:'Todo', months:null }
+    { key:'1d',  label:'1D',   days:1    },
+    { key:'1w',  label:'1S',   days:7    },
+    { key:'1m',  label:'1M',   months:1  },
+    { key:'ytd', label:'YTD',  ytd:true  },
+    { key:'1y',  label:'1A',   months:12 },
+    { key:'3y',  label:'3A',   months:36 },
+    { key:'all', label:'Todo', months:null },
   ];
 
   const rangeButtonsHTML = periodOptions.map(r => {
-    const change = r.months !== null ? getChangeForMonths(r.months) : (hist.length>=2 ? pureYield(hist[hist.length-1]) - pureYield(hist[0]) : null);
-    const col = change === null ? 'var(--text3)' : pctCol(change);
-    const val = change !== null ? (change >= 0 ? '+' : '') + fmt(change) : '—';
     const isActive = _chartRange === r.key;
-    return `<button class="chart-ctrl-btn ${isActive ? 'active' : ''}" onclick="setChartRange('${r.key}')">
-      <span>${r.label}</span>
-      <span class="btn-val" style="color:${isActive ? 'inherit' : col}">${val}</span>
-    </button>`;
+    return `<button onclick="setChartRange('${r.key}')" style="padding:4px 10px;border-radius:20px;border:1px solid ${isActive?'var(--blue)':'var(--border)'};background:${isActive?'var(--blue)':'transparent'};color:${isActive?'#fff':'var(--text2)'};font-size:12px;font-weight:${isActive?'700':'500'};cursor:pointer;font-family:var(--font);transition:all 0.15s">${r.label}</button>`;
   }).join('');
 
   const projButtonsHTML = CHART_INTERVALS.map(r => {
@@ -1079,21 +1089,8 @@ function renderDashboard(){
       <div style="padding:0 20px 0px">
         <div class="chart-container" style="height:260px">${hist.length < 2 ? `<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text3)"><div style="font-size:32px">📈</div><div style="font-size:13px;font-weight:600;color:var(--text2)">La gráfica aparecerá mañana</div><div style="font-size:11px;text-align:center;max-width:220px;line-height:1.5">Necesitas al menos 2 días de datos.<br>Vuelve mañana y verás tu evolución.</div></div>` : `<canvas id="chartEvo"></canvas>`}</div>
       </div>
-      <div style="padding:8px 28px 12px;display:flex;justify-content:flex-end">
-        <button class="chart-toggle-btn" id="chartToggleBtn" onclick="toggleChartPanel()">▼ Controles</button>
-      </div>
-      <div class="chart-controls-panel" id="chartControlsPanel">
-        <div class="chart-controls-inner">
-          <div class="chart-ctrl-row">
-            <span class="chart-ctrl-label">📅 Período</span>
-            ${rangeButtonsHTML}
-          </div>
-          <div style="height:1px;background:var(--border)"></div>
-          <div class="chart-ctrl-row">
-            <span class="chart-ctrl-label">🔵 Proyección</span>
-            ${projButtonsHTML}
-          </div>
-        </div>
+      <div style="padding:10px 24px 16px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap">
+        ${rangeButtonsHTML}
       </div>
     </div>
 
@@ -1479,7 +1476,26 @@ function renderMovimientos(){
     </div>` : '';
   const emptyHtml = isEmpty ? `<tr><td colspan="8">${emptyContent}</td></tr>` : '';
 
-  document.getElementById('page-movimientos').innerHTML=`
+  // Si la página ya está renderizada, solo actualizar pills, contador y filas
+  const existingPage = document.getElementById('page-movimientos');
+  const alreadyRendered = existingPage && existingPage.querySelector('#movTbody');
+
+  if (alreadyRendered) {
+    // Actualizar pills activas
+    existingPage.querySelectorAll('.mov-pill').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.sec === movFilter.seccion);
+    });
+    // Actualizar contador
+    const counter = existingPage.querySelector('#movCounterWrap');
+    if (counter) counter.textContent = `${_movFiltered.length} movimientos`;
+    // Actualizar filas
+    const tbody = document.getElementById('movTbody');
+    if (tbody) { tbody.innerHTML = emptyHtml; }
+    if (!isEmpty) { _appendMovRows(); setTimeout(_setupMovScroll, 60); }
+    return;
+  }
+
+  existingPage.innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px">
       <div>
         <div class="section-title">Movimientos</div>
@@ -1488,11 +1504,9 @@ function renderMovimientos(){
       <button class="btn btn-primary" onclick="openMovModal()">+ Nuevo</button>
     </div>
     <div class="filter-pills">
-      ${['todas','plataformas','inversiones','gastos'].map(s=>`<button class="pill ${movFilter.seccion===s?'active':''}" onclick="movFilter.seccion='${s}';renderMovimientos()">${s==='todas'?'Todas':s==='plataformas'?'🏦 Plataformas':s==='inversiones'?'📈 Inversiones':'💳 Gastos'}</button>`).join('')}
-      <input class="pill-search" placeholder="Buscar..." value="${movFilter.search}" oninput="movFilter.search=this.value;renderMovimientos()">
-      <span style="font-size:12px;color:var(--text2);margin-left:4px">
-        ${_movFiltered.length>0?`<span id="movCounter">0 de ${_movFiltered.length}</span> movimientos`:`0 movimientos`}
-      </span>
+      ${['todas','plataformas','inversiones','gastos'].map(s=>`<button class="pill mov-pill ${movFilter.seccion===s?'active':''}" data-sec="${s}" onclick="movFilter.seccion='${s}';renderMovimientos()">${s==='todas'?'Todas':s==='plataformas'?'🏦 Plataformas':s==='inversiones'?'📈 Inversiones':'💳 Gastos'}</button>`).join('')}
+      <input class="pill-search" id="movSearchInput" placeholder="Buscar..." value="${movFilter.search}" oninput="movFilter.search=this.value;renderMovimientos()">
+      <span style="font-size:12px;color:var(--text2);margin-left:4px" id="movCounterWrap">${_movFiltered.length} movimientos</span>
     </div>
     <div class="card-flat">
       ${isMobile() ? `
