@@ -977,7 +977,7 @@ function renderDashboard(){
   }).join('');
 
   const projButtonsHTML = CHART_INTERVALS.map(r => {
-    const gain = Math.round(patrimonio * Math.pow(1 + re/12, r.months) - patrimonio);
+    const gain = Math.round(capitalHoy * (Math.pow(1 + re/12, r.months) - 1));
     const isActive = _projKey === r.key;
     return `<button class="chart-ctrl-btn proj-btn ${isActive ? 'active' : ''}" onclick="setChartProj('${r.key}')">
       <span>${r.label}</span>
@@ -1060,9 +1060,9 @@ function renderDashboard(){
             <div style="width:1px;background:var(--border);align-self:stretch;margin:2px 0"></div>
             <div style="text-align:right">
               <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--blue);margin-bottom:2px">Ganancia esperada en ${projInterval.label}</div>
-              <div style="font-size:26px;font-weight:800;letter-spacing:-0.03em;color:var(--blue);line-height:1">+${fmt(Math.round(patrimonio * (Math.pow(1+re/12, projMonths) - 1)))}</div>
+              <div style="font-size:26px;font-weight:800;letter-spacing:-0.03em;color:var(--blue);line-height:1">+${fmt(Math.round(capitalHoy * (Math.pow(1+re/12, projMonths) - 1)))}</div>
               <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:5px">
-                <span style="font-size:12px;color:var(--text2);font-weight:700">sobre ${fmt(patrimonio)} patrimonio</span>
+                <span style="font-size:12px;color:var(--text2);font-weight:700">sobre ${fmt(capitalHoy)} capital</span>
                 <span style="font-size:11px;color:var(--text3)">·</span>
                 <span style="font-size:11px;font-weight:700;color:var(--blue)">${(re*100).toFixed(0)}%/año</span>
               </div>
@@ -1184,29 +1184,26 @@ function renderDashboard(){
     const realDates = realDatesFiltered;
     const realVals = realValsFiltered;
 
-    // Proyección azul: crecimiento esperado del PATRIMONIO REAL al % anual configurado.
-    // Base = patrimonio real de hoy (no el capital aportado).
-    // Esto significa:
-    //   - Si tienes pérdidas de mercado, la línea azul NO baja — el dinero sigue invertido.
-    //   - Si haces retiros, el patrimonio baja y la proyección también baja — correcto.
-    // La línea azul muestra la "ganancia adicional" en el mismo eje que la línea verde.
-    // Se ancla en patrimonioRendPuro (ganancia actual) y crece desde ahí.
-    // Si verde > azul = vas MEJOR que el 6% esperado ✅
+    // Proyección azul: crecimiento esperado del CAPITAL APORTADO al % anual configurado.
+    // Base = capitalHoy = saldoInicial + aportaciones - retiros (lo que realmente metiste).
+    // Reglas:
+    //   - Pérdidas/ganancias de mercado → línea azul NO se mueve (el dinero sigue invertido)
+    //   - Retiros → línea azul baja (salió dinero que ya no genera rendimiento)
+    //   - Aportaciones → línea azul sube
+    // La línea azul empieza en 0 (referencia) y muestra la ganancia adicional esperada.
+    // Si verde > azul = vas MEJOR que el % esperado ✅
     const now = new Date();
     const todayDateStr = now.toISOString().split('T')[0];
     const projDates=[];
     const projVals=[];
     projDates.push(todayDateStr);
-    projVals.push(patrimonioRendPuro); // punto de partida = ganancia/pérdida real hoy
-    // La base de crecimiento es el PATRIMONIO REAL (no el capital aportado):
-    // así pérdidas de mercado no reducen la proyección, solo los retiros la afectan.
-    const baseProyeccion = patrimonio; // saldo real actual (incluye pérdidas/ganancias de mercado)
+    projVals.push(patrimonioRendPuro); // arranca donde está la verde hoy
     for(let i=1; i<=projMonths; i++){
       const d=new Date(now.getFullYear(), now.getMonth()+i, 1);
       projDates.push(d.toISOString().split('T')[0]);
-      // Ganancia futura = sobre el patrimonio real actual, no sobre el capital aportado
-      // Restamos capitalHoy para mantener el mismo eje "ganancia neta" que la línea verde
-      projVals.push(Math.round(baseProyeccion * Math.pow(1+re/12, i) - capitalHoy));
+      // Crecimiento del capital aportado desde HOY, sumado a la ganancia/pérdida actual
+      // Pérdidas pasadas no afectan la pendiente — solo retiros/aportaciones cambian capitalHoy
+      projVals.push(Math.round(patrimonioRendPuro + capitalHoy * (Math.pow(1+re/12, i) - 1)));
     }
 
     // Calcular cambio del período para badge en la cabecera
