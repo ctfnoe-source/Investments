@@ -94,12 +94,18 @@ function clearPriceCache(ticker, moneda) {
     if (!isPriceReasonable(v.price, k)) { delete c[k]; changed = true; console.warn(`[Cache] Inválido limpiado — ${k}: ${v.price}`); }
   });
   if (changed) setPriceCache(c);
-  // Limpiar fxCache si USD/MXN está fuera de rango razonable
+  // Limpiar fxCache si USD/MXN está fuera de rango razonable o muy alejado del tipo manual
   const fx = LS.get('fxCache');
-  if (fx && (!fx.gbpmxn || !isFxCacheFresh(fx.ts) || fx.usdmxn < 15 || fx.usdmxn > 30)) {
-    console.warn(`[fxCache] Inválido o expirado — limpiando. USD/MXN: ${fx?.usdmxn}`);
-    LS.set('fxCache', null);
-    _fxCache = null;
+  if (fx) {
+    const manualTC = settings?.tipoCambio || 20;
+    const outOfRange = fx.usdmxn < 15 || fx.usdmxn > 30;
+    const tooFarFromManual = Math.abs(fx.usdmxn - manualTC) > 4; // más de $4 de diferencia = sospechoso
+    const noGBP = !fx.gbpmxn;
+    if (outOfRange || tooFarFromManual || noGBP || !isFxCacheFresh(fx.ts)) {
+      console.warn(`[fxCache] Limpiando — USD/MXN: ${fx.usdmxn} (manual: ${manualTC})`);
+      LS.set('fxCache', null);
+      _fxCache = null;
+    }
   }
 })();
 
@@ -173,7 +179,7 @@ async function fetchAlphaVantagePrice(ticker, targetMoneda) {
 
 async function fetchFX() {
   const cached = LS.get('fxCache');
-  // Validar que el caché sea fresco Y tenga valores razonables (USD/MXN entre 15 y 30)
+  // Caché válido: fresco (< 6h), tiene GBP, y USD/MXN entre 15 y 30
   const isValid = cached && isFxCacheFresh(cached.ts) && cached.gbpmxn && cached.usdmxn >= 15 && cached.usdmxn <= 30;
   if (isValid) { _fxCache = cached; return cached; }
   try {
@@ -182,12 +188,13 @@ async function fetchFX() {
     const d = await r.json();
     const gbpmxn = d.rates.MXN / d.rates.GBP;
     const result = { usdmxn: d.rates.MXN, usdeur: d.rates.EUR, eurmxn: d.rates.MXN / d.rates.EUR, gbpmxn, usdgbp: d.rates.GBP, ts: Date.now() };
-    // Solo guardar si los valores son razonables
+    console.log(`[FX] Frankfurter: USD/MXN=${result.usdmxn.toFixed(4)}`);
     if (result.usdmxn >= 15 && result.usdmxn <= 30) {
       LS.set('fxCache', result);
       _fxCache = result;
+    } else {
+      console.warn(`[FX] Valor fuera de rango, descartando: ${result.usdmxn}`);
     }
-    return result;
     return result;
   } catch { return _fxCache || { usdmxn: settings.tipoCambio||20, usdeur: 0.92, eurmxn: (settings.tipoCambio||20)/0.92, gbpmxn: (settings.tipoCambio||20)*1.27, usdgbp: 0.79, ts: 0 }; }
 }
@@ -2093,8 +2100,7 @@ onAuthStateChanged(auth,user=>{
     if(window.renderPage)window.renderPage(window.currentTab||'dashboard');
     setTimeout(()=>{
       if(typeof updateFX==='function')updateFX();
-      const s=typeof getPriceSummary==='function'?getPriceSummary():{total:0,missing:0};
-      if(s.total>0&&s.missing>0&&typeof updateAllPrices==='function')updateAllPrices(false);
+      // Precios solo se actualizan cuando el usuario presiona el botón — no automáticamente
       if(typeof flushOfflineQueue==='function')flushOfflineQueue();
     },1200);
   }else{window._currentUser=null;if(_unsub){_unsub();_unsub=null;}showLogin();}
