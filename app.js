@@ -94,19 +94,12 @@ function clearPriceCache(ticker, moneda) {
     if (!isPriceReasonable(v.price, k)) { delete c[k]; changed = true; console.warn(`[Cache] Inválido limpiado — ${k}: ${v.price}`); }
   });
   if (changed) setPriceCache(c);
-  // Limpiar fxCache si USD/MXN está fuera de rango razonable o muy alejado del tipo manual
+  // Limpiar fxCache si está expirado (>6h) o sin GBP o fuera de rango absoluto
   const fx = LS.get('fxCache');
-  if (fx) {
-    const savedSettings = LS.get('settings');
-    const manualTC = savedSettings?.tipoCambio || 20;
-    const outOfRange = fx.usdmxn < 15 || fx.usdmxn > 30;
-    const tooFarFromManual = Math.abs(fx.usdmxn - manualTC) > 4;
-    const noGBP = !fx.gbpmxn;
-    if (outOfRange || tooFarFromManual || noGBP || !isFxCacheFresh(fx.ts)) {
-      console.warn(`[fxCache] Limpiando — USD/MXN: ${fx.usdmxn} (manual: ${manualTC})`);
-      LS.set('fxCache', null);
-      _fxCache = null;
-    }
+  if (fx && (!fx.gbpmxn || !isFxCacheFresh(fx.ts) || fx.usdmxn < 14 || fx.usdmxn > 35)) {
+    console.warn(`[fxCache] Limpiando — USD/MXN: ${fx.usdmxn}`);
+    LS.set('fxCache', null);
+    _fxCache = null;
   }
 })();
 
@@ -1126,9 +1119,10 @@ function renderDashboard(){
       </div>
     </div>
 
-    <div class="grid-2" style="margin-bottom:16px">
-      <div class="card">
+    <div class="grid-2" style="margin-bottom:16px;align-items:stretch">
+      <div class="card" style="display:flex;flex-direction:column">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div class="card-title" style="margin:0">🏆 Top Plataformas</div></div>
+        <div style="flex:1;overflow-y:auto;margin:0 -4px;padding:0 4px">
         ${[...plats].sort((a,b)=>platSaldoToMXN(b)-platSaldoToMXN(a)).slice(0,10).map((p,i)=>`
           <div class="list-item">
             <div style="display:flex;align-items:center;gap:8px">
@@ -1137,24 +1131,25 @@ function renderDashboard(){
             </div>
             <div style="text-align:right"><div style="font-size:13px;font-weight:700">${fmtPlat(p.saldo, p.moneda)}</div><div style="font-size:10px;font-weight:600;color:${pctCol(p.rendimiento)}">${p.rendimiento>=0?'+':''}${fmtPlat(p.rendimiento, p.moneda)}</div></div>
           </div>`).join('')}
+        </div>
       </div>
-      <div class="card">
+      <div class="card" style="display:flex;flex-direction:column">
         <div class="card-title">📊 Posiciones</div>
+        <div style="flex:1;overflow-y:auto;margin:0 -4px;padding:0 4px">
         ${tickerList.length>0?tickerList.sort((a,b)=>b.costoTotal-a.costoTotal).map(t=>{
           const tipoClass=t.type==='Acción'?'badge-green':t.type==='ETF'?'badge-blue':t.type==='Crypto'?'badge-orange':'badge-gray';
           const monedaLabel=t.moneda==='MXN'?'MXN':'USD';
-          return`<div class="list-item" style="flex-direction:column;align-items:flex-start;gap:6px;padding:10px 0">
-            <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
-              <div style="display:flex;align-items:center;gap:6px"><span style="font-size:15px;font-weight:800">${t.ticker}</span><span class="badge ${tipoClass}">${t.type}</span><span class="badge badge-gray">${monedaLabel}</span>${t.cantActual<=0?'<span class="badge badge-gray">CERRADA</span>':''}</div>
-              <div style="text-align:right">${t.gpNoRealizada!==null?`<div style="font-size:14px;font-weight:800;color:${pctCol(t.gpNoRealizada)}">${t.gpNoRealizada>=0?'+':''}${fmtFull(t.gpNoRealizada)} ${monedaLabel}</div><div style="font-size:10px;color:${pctCol(t.pctNoRealizada)};font-weight:600">${fmtPct(t.pctNoRealizada)}</div>`:`<div style="font-size:11px;color:var(--text3)">sin precio hoy</div>`}</div>
+          return`<div class="list-item" style="padding:8px 0;gap:4px">
+            <div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1">
+              <span style="font-size:13px;font-weight:800;flex-shrink:0">${t.ticker}</span>
+              <span class="badge ${tipoClass}" style="font-size:9px">${t.type}</span>
+              ${t.cantActual<=0?'<span class="badge badge-gray" style="font-size:9px">CERRADA</span>':''}
+              <span style="font-size:10px;color:var(--text2);white-space:nowrap">×${t.cantActual} · ${t.moneda==='MXN'?'$':'US$'}${t.precioCostoPromedio.toFixed(1)}→<span class="${t.priceCssClass}">${t.priceLabel}</span></span>
             </div>
-            <div style="display:flex;gap:16px;font-size:11px">
-              <span><span style="color:var(--text2)">Compra: </span><span style="font-weight:700">${t.moneda==='MXN'?'$':'US$'}${t.precioCostoPromedio.toFixed(2)}</span></span>
-              <span><span style="color:var(--text2)">Actual: </span><span class="${t.priceCssClass}" style="font-weight:700">${t.priceLabel}</span></span>
-              <span><span style="color:var(--text2)">Cant: </span><span style="font-weight:700">${t.cantActual}</span></span>
-            </div>
+            <div style="text-align:right;flex-shrink:0">${t.gpNoRealizada!==null?`<div style="font-size:13px;font-weight:800;color:${pctCol(t.gpNoRealizada)}">${t.gpNoRealizada>=0?'+':''}${fmtFull(t.gpNoRealizada)}</div><div style="font-size:10px;color:${pctCol(t.pctNoRealizada)};font-weight:600">${fmtPct(t.pctNoRealizada)}</div>`:`<div style="font-size:11px;color:var(--text3)">sin precio</div>`}</div>
           </div>`;
         }).join(''):'<div style="text-align:center;color:var(--text2);padding:32px">Sin operaciones</div>'}
+        </div>
       </div>
     </div>
 
