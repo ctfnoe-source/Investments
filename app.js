@@ -697,6 +697,7 @@ function loadFromRemote(remote){
   if(remote.patrimonioHistory)patrimonioHistory=remote.patrimonioHistory;
   LS.set('platforms',platforms);LS.set('movements',movements);LS.set('goals',goals);LS.set('settings',settings);
   LS.set('recurrentes',recurrentes);LS.set('patrimonioHistory',patrimonioHistory);
+  buildHistoricalSnapshots();
   renderPageInternal(currentTab);
 }
 window.loadFromRemote = loadFromRemote;
@@ -710,6 +711,7 @@ function saveAll(){
   LS.set('platforms',platforms);LS.set('movements',movements);LS.set('goals',goals);LS.set('settings',settings);
   LS.set('recurrentes',recurrentes);LS.set('patrimonioHistory',patrimonioHistory);
   _recalcAndSaveSnapshot();
+  buildHistoricalSnapshots();
   renderPageInternal(currentTab);
   if (!_isOnline) { queueSave(window.getAppData()); setOfflineBanner('offline'); }
   else if(typeof window.saveToFirebase==='function') { window.saveToFirebase(); }
@@ -829,6 +831,12 @@ function renderDashboard(){
   const maxConc=topPlat?platSaldoToMXN(topPlat)/totalMXN:0;
   const riskLvl=maxConc>0.4?'🔴 ALTO':maxConc>0.25?'🟡 MEDIO':'🟢 BAJO';
   const platsConTasa=plats.filter(p=>(p.tasaAnual||0)>0).length;
+  // Plataformas sin "Saldo Actual" registrado — su rendimiento se cuenta como 0
+  const todayIso = today();
+  const platsSinActualizar = plats.filter(p => {
+    const movsSaldoActual = movements.filter(m => m.seccion==='plataformas' && m.platform===p.name && m.tipoPlat==='Saldo Actual');
+    return movsSaldoActual.length === 0 && (p.tasaAnual||0) === 0;
+  });
   const tickerList=getTickerPositions();
   const tickerListUSD=tickerList.filter(t=>t.moneda!=='MXN');
   const tickerListMXN=tickerList.filter(t=>t.moneda==='MXN');
@@ -880,7 +888,12 @@ function renderDashboard(){
   const btnLabel=priceUpdateState.loading?`<span class="spinner"></span> Actualizando...`:'🔄 Actualizar precios';
   const alerts=getBudgetAlerts();
   const alertsHtml=alerts.length>0?`<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">${alerts.map(a=>`<div style="padding:10px 16px;background:${a.level==='error'?'rgba(255,69,58,0.06)':'rgba(255,159,10,0.06)'};border:1px solid ${a.level==='error'?'rgba(255,69,58,0.2)':'rgba(255,159,10,0.2)'};border-radius:10px;font-size:13px">${a.msg}</div>`).join('')}</div>`:'';
-  _recalcAndSaveSnapshot();
+  const platsSinActualizarHtml = platsSinActualizar.length > 0
+    ? `<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:rgba(10,132,255,0.05);border:1px solid rgba(10,132,255,0.15);border-radius:10px;font-size:13px;margin-bottom:16px">
+        <span style="font-size:16px">ℹ️</span>
+        <span><strong style="color:var(--blue)">${platsSinActualizar.length} plataforma${platsSinActualizar.length>1?'s':''}</strong> sin "Saldo Actual" registrado: su rendimiento se cuenta como <strong>$0</strong>. Para ver ganancias/pérdidas reales, agrega un movimiento de "Saldo Actual" en cada una. <em style="color:var(--text3)">(${platsSinActualizar.slice(0,4).map(p=>p.name).join(', ')}${platsSinActualizar.length>4?'…':''})</em></span>
+      </div>`
+    : '';  _recalcAndSaveSnapshot();
   const applied=applyRecurrentes();
 
   const hist=[...patrimonioHistory].sort((a,b)=>new Date(a.date)-new Date(b.date));
@@ -964,8 +977,7 @@ function renderDashboard(){
   }).join('');
 
   const projButtonsHTML = CHART_INTERVALS.map(r => {
-    const pv = Math.round(capitalHoy * Math.pow(1 + re/12, r.months));
-    const gain = pv - capitalHoy;
+    const gain = Math.round(patrimonio * Math.pow(1 + re/12, r.months) - patrimonio);
     const isActive = _projKey === r.key;
     return `<button class="chart-ctrl-btn proj-btn ${isActive ? 'active' : ''}" onclick="setChartProj('${r.key}')">
       <span>${r.label}</span>
@@ -991,6 +1003,7 @@ function renderDashboard(){
   document.getElementById('page-dashboard').innerHTML=`
     ${applied>0?`<div class="snapshot-banner" style="background:rgba(191,90,242,0.06);border-color:rgba(191,90,242,0.2);margin-bottom:16px"><span class="snap-dot" style="background:var(--purple)"></span><span style="color:var(--purple)">✅ Se aplicaron <strong>${applied} gastos recurrentes</strong> automáticamente este mes</span></div>`:''}
     ${alertsHtml}
+    ${platsSinActualizarHtml}
     <div class="price-banner">
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         ${bannerStatus}
@@ -1047,9 +1060,9 @@ function renderDashboard(){
             <div style="width:1px;background:var(--border);align-self:stretch;margin:2px 0"></div>
             <div style="text-align:right">
               <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--blue);margin-bottom:2px">Ganancia esperada en ${projInterval.label}</div>
-              <div style="font-size:26px;font-weight:800;letter-spacing:-0.03em;color:var(--blue);line-height:1">+${fmt(Math.round(capitalHoy * (Math.pow(1+re/12, projMonths) - 1)))}</div>
+              <div style="font-size:26px;font-weight:800;letter-spacing:-0.03em;color:var(--blue);line-height:1">+${fmt(Math.round(patrimonio * (Math.pow(1+re/12, projMonths) - 1)))}</div>
               <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:5px">
-                <span style="font-size:12px;color:var(--text2);font-weight:700">sobre ${fmt(capitalHoy)} capital</span>
+                <span style="font-size:12px;color:var(--text2);font-weight:700">sobre ${fmt(patrimonio)} patrimonio</span>
                 <span style="font-size:11px;color:var(--text3)">·</span>
                 <span style="font-size:11px;font-weight:700;color:var(--blue)">${(re*100).toFixed(0)}%/año</span>
               </div>
@@ -1171,20 +1184,29 @@ function renderDashboard(){
     const realDates = realDatesFiltered;
     const realVals = realValsFiltered;
 
-    // Proyección azul: ganancia esperada sobre el capital actual al % esperado
-    // Mismo eje que la línea verde (ganancia neta) — si verde está encima = vas mejor ✅
+    // Proyección azul: crecimiento esperado del PATRIMONIO REAL al % anual configurado.
+    // Base = patrimonio real de hoy (no el capital aportado).
+    // Esto significa:
+    //   - Si tienes pérdidas de mercado, la línea azul NO baja — el dinero sigue invertido.
+    //   - Si haces retiros, el patrimonio baja y la proyección también baja — correcto.
+    // La línea azul muestra la "ganancia adicional" en el mismo eje que la línea verde.
+    // Se ancla en patrimonioRendPuro (ganancia actual) y crece desde ahí.
+    // Si verde > azul = vas MEJOR que el 6% esperado ✅
     const now = new Date();
-    const lastRealDate = realDates.length > 0 ? realDates[realDates.length - 1] : now.toISOString().split('T')[0];
-    const lastRealVal = realVals.length > 0 ? realVals[realVals.length - 1] : patrimonioRendPuro;
+    const todayDateStr = now.toISOString().split('T')[0];
     const projDates=[];
     const projVals=[];
-    projDates.push(lastRealDate);
-    projVals.push(lastRealVal);
-    // Ganancia esperada = capital actual × ((1+re)^i - 1) — crece con el capital pero no con ganancias
+    projDates.push(todayDateStr);
+    projVals.push(patrimonioRendPuro); // punto de partida = ganancia/pérdida real hoy
+    // La base de crecimiento es el PATRIMONIO REAL (no el capital aportado):
+    // así pérdidas de mercado no reducen la proyección, solo los retiros la afectan.
+    const baseProyeccion = patrimonio; // saldo real actual (incluye pérdidas/ganancias de mercado)
     for(let i=1; i<=projMonths; i++){
       const d=new Date(now.getFullYear(), now.getMonth()+i, 1);
       projDates.push(d.toISOString().split('T')[0]);
-      projVals.push(Math.round(capitalHoy * (Math.pow(1+re/12, i) - 1) + patrimonioRendPuro));
+      // Ganancia futura = sobre el patrimonio real actual, no sobre el capital aportado
+      // Restamos capitalHoy para mantener el mismo eje "ganancia neta" que la línea verde
+      projVals.push(Math.round(baseProyeccion * Math.pow(1+re/12, i) - capitalHoy));
     }
 
     // Calcular cambio del período para badge en la cabecera
