@@ -1203,13 +1203,11 @@ function renderDashboard(){
     const projDates=[];
     const projVals=[];
     projDates.push(todayDateStr);
-    projVals.push(patrimonioRendPuro); // arranca donde está la verde hoy
+    projVals.push(0); // siempre arranca en $0 — las pérdidas pasadas no afectan la proyección futura
     for(let i=1; i<=projMonths; i++){
       const d=new Date(now.getFullYear(), now.getMonth()+i, 1);
       projDates.push(d.toISOString().split('T')[0]);
-      // Crecimiento del capital aportado desde HOY, sumado a la ganancia/pérdida actual
-      // Pérdidas pasadas no afectan la pendiente — solo retiros/aportaciones cambian capitalHoy
-      projVals.push(Math.round(patrimonioRendPuro + capitalHoy * (Math.pow(1+re/12, i) - 1)));
+      projVals.push(Math.round(capitalHoy * (Math.pow(1+re/12, i) - 1)));
     }
 
     // Calcular cambio del período para badge en la cabecera
