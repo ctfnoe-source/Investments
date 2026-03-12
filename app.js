@@ -1008,21 +1008,22 @@ function renderDashboard(){
     </button>`;
   }).join('');
 
-  // Rentabilidad anualizada real (CAGR) usando snapshots históricos
-  // Usamos ganancia real (value - capital) sobre capital invertido, NO crecimiento bruto del patrimonio
-  // Esto descuenta correctamente las aportaciones y retiros
-  let rendAnualReal = null;
+  // Rentabilidad Total y CAGR usando snapshots históricos
+  // capital = lo que el usuario ha aportado realmente (patrimonio - ganancias reales)
+  let rendAnualReal = null;   // CAGR — solo si hay 30+ días
+  let rentabilidadTotal = null; // Rentabilidad acumulada total — siempre que haya capital
   if (hist.length >= 2) {
     const first = hist[0], last = hist[hist.length - 1];
     const diasTotal = (new Date(last.date) - new Date(first.date)) / (1000*60*60*24);
-    // capital = lo que el usuario ha aportado (value - ganancias reales acumuladas)
     const capitalActual = last.capital != null ? last.capital : last.value;
     const gananciaActual = last.value - capitalActual;
-    if (diasTotal > 30 && capitalActual > 0) {
-      // Rentabilidad simple acumulada sobre capital = ganancia / capital
-      const rentAcum = gananciaActual / capitalActual;
-      // Anualizar: (1 + r_acum)^(365/días) - 1
-      rendAnualReal = Math.pow(1 + rentAcum, 365 / diasTotal) - 1;
+    if (capitalActual > 0) {
+      // Rentabilidad total acumulada: sin anualizar, siempre disponible
+      rentabilidadTotal = gananciaActual / capitalActual;
+      // CAGR solo tiene sentido con 30+ dias de historial
+      if (diasTotal >= 30) {
+        rendAnualReal = Math.pow(1 + rentabilidadTotal, 365 / diasTotal) - 1;
+      }
     }
   }
   // Delta del patrimonio vs ayer
@@ -1053,7 +1054,7 @@ function renderDashboard(){
       <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">🏦 Rend. Plataformas</div><div class="stat-value" style="color:${pctCol(totalRend)}">${fmt(totalRend)}</div><div class="stat-sub">${platsConTasa>0?`<span style="color:var(--teal)">⚡${fmt(totalRendAuto)} auto</span>`:'rendimiento total'}</div></div>
       <div class="card stat" style="border-top:3px solid var(--green)"><div class="stat-label">📈 Valor Inversiones</div><div class="stat-value">${fmt(totalInvMXN)}</div><div class="stat-sub">${tickerList.length} posiciones · ${priceSummary.live>0?'precios hoy':'costo compra'}</div></div>
       <div class="card stat" style="border-top:3px solid var(--green)"><div class="stat-label">📈 G/P No Realizada</div><div class="stat-value" style="color:${pctCol(gpNoRealizadaTotal)}">${fmt(gpNoRealizadaTotal)}</div><div class="stat-sub">${fmtPct(totalInvertidoUSD?gpNoRealizadaTotal/(totalInvertidoUSD*tc):0)} sobre invertido</div></div>
-      <div class="card stat" style="border-top:3px solid var(--purple)"><div class="stat-label">📊 CAGR Real</div><div class="stat-value" style="color:${rendAnualReal!==null?pctCol(rendAnualReal):'var(--text2)'}">${rendAnualReal!==null?(rendAnualReal>=0?'+':'')+(rendAnualReal*100).toFixed(1)+'%':'—'}</div><div class="stat-sub">${rendAnualReal!==null?'rentabilidad anualizada':'sin historial aún'}</div></div>
+      <div class="card stat" style="border-top:3px solid var(--purple)"><div class="stat-label">📊 Rentabilidad Total</div><div class="stat-value" style="color:${rentabilidadTotal!==null?pctCol(rentabilidadTotal):'var(--text2)'}">${rentabilidadTotal!==null?(rentabilidadTotal>=0?'+':'')+(rentabilidadTotal*100).toFixed(2)+'%':'—'}</div><div class="stat-sub">${rentabilidadTotal!==null?'sobre capital invertido':'sin historial aún'}</div></div>
       <div class="card stat" style="border-top:3px solid var(--purple)"><div class="stat-label">📊 Concentración</div><div class="stat-value" style="font-size:14px">${topPlat?.name||'—'}</div><div class="stat-sub"><span style="color:var(--orange);font-weight:700">${(maxConc*100).toFixed(1)}%</span> · ${riskLvl}</div></div>
       <div class="card stat" style="border-top:3px solid var(--orange)"><div class="stat-label">💳 Gastos Mes ${curLabel}</div><div class="stat-value" style="color:${totGastoMes>0?'var(--red)':'var(--text)'}">${fmtD(totGastoMes)}</div><div class="stat-sub">${totalPresupuesto>0?(pctPresUsado*100).toFixed(0)+'% presupuesto':totIngMes>0||ingresoMensualEUR>0?fmtD(totIngMes>0?totIngMes:ingresoMensualEUR)+' ingreso':''}</div></div>
       <div class="card stat" style="border-top:3px solid var(--orange)"><div class="stat-label">💳 Balance Mes ${curLabel}</div><div class="stat-value" style="color:${pctCol(balMes)}">${fmtD(balMes)}</div><div class="stat-sub">${(pctAhorro*100).toFixed(0)}% ahorro${totIngMes===0&&ingresoMensualEUR>0?' (est.)':''}</div></div>
@@ -1068,8 +1069,7 @@ function renderDashboard(){
             <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2);margin-bottom:4px">📈 Evolución del Patrimonio</div>
             <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
               <div style="font-size:28px;font-weight:800;letter-spacing:-0.03em;color:${pctCol(patrimonioRendPuro)};line-height:1">${fmt(patrimonioRendPuro)}</div>
-              <span style="font-size:12px;color:var(--text2)">ganancia · ${fmt(totalMXN - patrimonioRendPuro)} invertidos</span>
-              <span id="chartPeriodChange" style="display:inline-flex;align-items:center;gap:5px;font-size:13px;padding:3px 10px;border-radius:20px;background:var(--card2)"></span>
+              <span style="font-size:12px;color:var(--text2)">ganancia neta total</span>
             </div>
             <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap">
               <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px">
@@ -1097,6 +1097,13 @@ function renderDashboard(){
                 <span style="font-size:11px;font-weight:700;color:var(--blue)">${(re*100).toFixed(0)}%/año</span>
               </div>
             </div>
+            ${rendAnualReal !== null ? `
+            <div style="width:1px;background:var(--border);align-self:stretch;margin:2px 0"></div>
+            <div style="text-align:right">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--purple);margin-bottom:2px">CAGR Real</div>
+              <div style="font-size:20px;font-weight:800;letter-spacing:-0.03em;color:${pctCol(rendAnualReal)};line-height:1">${rendAnualReal>=0?'+':''}${(rendAnualReal*100).toFixed(1)}%</div>
+              <div style="font-size:10px;color:var(--text2);margin-top:4px">anualizado · ${Math.round((new Date(hist[hist.length-1].date)-new Date(hist[0].date))/(1000*60*60*24))}d de historial</div>
+            </div>` : ''}
           </div>
         </div>
       </div>
@@ -1221,18 +1228,7 @@ function renderDashboard(){
       projVals.push(Math.round(capitalHoy * (Math.pow(1+re/12, i) - 1)));
     }
 
-    // Calcular cambio del período para badge en la cabecera
-    const periodChange = realVals.length >= 2 ? realVals[realVals.length-1] - realVals[0] : null;
-    const periodChangePct = (realVals.length >= 2 && realVals[0] > 0) ? (realVals[realVals.length-1] - realVals[0]) / realVals[0] : null;
-    const changeEl = document.getElementById('chartPeriodChange');
-    if(changeEl && periodChange !== null){
-      const sign = periodChange >= 0 ? '+' : '';
-      const col = periodChange >= 0 ? 'var(--green)' : 'var(--red)';
-      changeEl.innerHTML = `<span style="color:${col};font-weight:800">${sign}${fmt(periodChange)}</span> <span style="color:var(--text3);font-size:10px">${sign}${(periodChangePct*100).toFixed(2)}%</span>`;
-      changeEl.style.display = 'inline-flex';
-    } else if(changeEl){
-      changeEl.style.display = 'none';
-    }
+
 
     const ctxE=document.getElementById('chartEvo');
     if(ctxE){
