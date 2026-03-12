@@ -1068,7 +1068,7 @@ function renderDashboard(){
           <div>
             <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2);margin-bottom:4px">📈 Evolución del Patrimonio</div>
             <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
-              <div style="font-size:28px;font-weight:800;letter-spacing:-0.03em;color:${pctCol(patrimonioRendPuro)};line-height:1">${fmt(patrimonioRendPuro)}</div>
+              <div style="font-size:18px;font-weight:800;letter-spacing:-0.03em;color:${pctCol(patrimonioRendPuro)};line-height:1">${fmt(patrimonioRendPuro)}</div>
               <span style="font-size:12px;color:var(--text2)">ganancia neta total</span>
             </div>
             <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap">
@@ -1085,12 +1085,12 @@ function renderDashboard(){
           <div style="display:flex;gap:24px;align-items:flex-start">
             <div style="text-align:right">
               <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2);margin-bottom:2px">Patrimonio Total</div>
-              <div style="font-size:26px;font-weight:800;letter-spacing:-0.03em;color:var(--text);line-height:1">${fmt(patrimonio)}</div>
+              <div style="font-size:18px;font-weight:800;letter-spacing:-0.03em;color:var(--text);line-height:1">${fmt(patrimonio)}</div>
             </div>
             <div style="width:1px;background:var(--border);align-self:stretch;margin:2px 0"></div>
             <div style="text-align:right">
               <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--blue);margin-bottom:2px">Ganancia esperada en ${projInterval.label}</div>
-              <div style="font-size:26px;font-weight:800;letter-spacing:-0.03em;color:var(--blue);line-height:1">+${fmt(Math.round(capitalHoy * (Math.pow(1+re/12, projMonths) - 1)))}</div>
+              <div style="font-size:18px;font-weight:800;letter-spacing:-0.03em;color:var(--blue);line-height:1">+${fmt(Math.round(capitalHoy * (Math.pow(1+re/12, projMonths) - 1)))}</div>
               <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:5px">
                 <span style="font-size:12px;color:var(--text2);font-weight:700">sobre ${fmt(capitalHoy)} capital</span>
                 <span style="font-size:11px;color:var(--text3)">·</span>
@@ -1159,7 +1159,7 @@ function renderDashboard(){
     <div class="grid-2" style="margin-bottom:16px;align-items:stretch">
       <div class="card" style="display:flex;flex-direction:column">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div class="card-title" style="margin:0">🏆 Top Plataformas</div></div>
-        <div style="flex:1;overflow-y:auto;margin:0 -4px;padding:0 4px">
+        <div style="max-height:380px;overflow-y:auto;margin:0 -4px;padding:0 4px">
         ${[...plats].sort((a,b)=>platSaldoToMXN(b)-platSaldoToMXN(a)).slice(0,10).map((p,i)=>`
           <div class="list-item">
             <div style="display:flex;align-items:center;gap:8px">
@@ -1172,7 +1172,7 @@ function renderDashboard(){
       </div>
       <div class="card" style="display:flex;flex-direction:column">
         <div class="card-title">📊 Posiciones</div>
-        <div style="flex:1;overflow-y:auto;margin:0 -4px;padding:0 4px">
+        <div style="max-height:380px;overflow-y:auto;margin:0 -4px;padding:0 4px">
         ${tickerList.length>0?tickerList.sort((a,b)=>b.costoTotal-a.costoTotal).map(t=>{
           const tipoClass=t.type==='Acción'?'badge-green':t.type==='ETF'?'badge-blue':t.type==='Crypto'?'badge-orange':'badge-gray';
           const monedaLabel=t.moneda==='MXN'?'MXN':'USD';
