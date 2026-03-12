@@ -49,6 +49,7 @@ const PRICE_CACHE_KEY = 'price_cache';
 function getPriceCache() { return LS.get(PRICE_CACHE_KEY) || {}; }
 function setPriceCache(c) { LS.set(PRICE_CACHE_KEY, c); }
 function isCacheFresh(ts) { if (!ts) return false; const n = new Date(), c = new Date(ts); return n.getFullYear()===c.getFullYear() && n.getMonth()===c.getMonth() && n.getDate()===c.getDate(); }
+function isFxCacheFresh(ts) { if (!ts) return false; return (Date.now() - ts) < 6 * 60 * 60 * 1000; }
 function getCachedPrice(t) { const c=getPriceCache(); return c[t]||null; }
 let _fxCache = null;
 
@@ -95,8 +96,8 @@ function clearPriceCache(ticker, moneda) {
   if (changed) setPriceCache(c);
   // Limpiar fxCache si USD/MXN está fuera de rango razonable
   const fx = LS.get('fxCache');
-  if (fx && (!fx.gbpmxn || fx.usdmxn < 15 || fx.usdmxn > 30)) {
-    console.warn(`[fxCache] Inválido limpiado — USD/MXN: ${fx.usdmxn}`);
+  if (fx && (!fx.gbpmxn || !isFxCacheFresh(fx.ts) || fx.usdmxn < 15 || fx.usdmxn > 30)) {
+    console.warn(`[fxCache] Inválido o expirado — limpiando. USD/MXN: ${fx?.usdmxn}`);
     LS.set('fxCache', null);
     _fxCache = null;
   }
@@ -120,9 +121,13 @@ async function fetchStockPrice(ticker) {
 async function fetchAlphaVantagePrice(ticker, targetMoneda) {
   const k = settings.alphaVantageKey || ''; if (!k) return null;
   const base = ticker.toUpperCase().replace(/\.(L|DE|AS|PA|MI|SW|LON|DEX)$/i, '');
-  const symbols = [base+'.LON', base+'.DEX', base+'.EPA', base+'.AMS'];
-  const symbolsUSD = [base];
-  const allSymbols = targetMoneda === 'MXN' ? symbols : [...symbols, ...symbolsUSD];
+
+  // Recordar qué sufijo funciona para cada ticker — evita probar los 4 cada vez
+  const suffixKey = 'av_suffix_' + base;
+  const knownSuffix = LS.get(suffixKey);
+  const symbols = knownSuffix ? [base + knownSuffix] : [base+'.LON', base+'.DEX', base+'.EPA', base+'.AMS'];
+  const symbolsUSD = knownSuffix ? [base + knownSuffix] : [base+'.LON', base];
+  const allSymbols = targetMoneda === 'MXN' ? symbols : (knownSuffix ? [base + knownSuffix] : [...symbols, base]);
 
   // Asegurar que tengamos tipos de cambio frescos ANTES de convertir
   if (!_fxCache || !_fxCache.gbpmxn) await fetchFX();
@@ -132,29 +137,29 @@ async function fetchAlphaVantagePrice(ticker, targetMoneda) {
   const gbpmxn = (fx?.gbpmxn) || settings.tipoGBP || 25.5;
   const usdgbp = (fx?.usdgbp) || 0.79;
   const usdeur = (fx?.usdeur) || 0.92;
-  console.log(`[AlphaVantage] FX listo — USD/MXN:${tc} EUR/MXN:${eurmxn} GBP/MXN:${gbpmxn}`);
+  console.log(`[AlphaVantage] FX listo — USD/MXN:${tc} GBP/MXN:${gbpmxn}`);
 
   for (const sym of allSymbols) {
     try {
       const r = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(sym)}&apikey=${k}`);
       if (!r.ok) continue;
       const d = await r.json();
-      if (d.Note || d.Information) { console.warn('Alpha Vantage limit:', d.Note||d.Information); return null; }
+      if (d.Note || d.Information) { console.warn('[AlphaVantage] Límite alcanzado'); return null; }
       const q = d['Global Quote'];
       if (!q || !q['01. symbol'] || !q['05. price']) continue;
       let price = parseFloat(q['05. price']);
       if (!price || price <= 0) continue;
-      console.log(`[AlphaVantage] ${sym} = ${price} raw → convirtiendo a ${targetMoneda}`);
+
+      // Guardar qué sufijo funcionó para este ticker
+      const suffix = sym.replace(base, '');
+      if (suffix) LS.set(suffixKey, suffix);
+
+      console.log(`[AlphaVantage] ${sym} = ${price} raw → ${targetMoneda}`);
       if (targetMoneda === 'MXN') {
-        if (sym.includes('.LON')) {
-          // Alpha Vantage para .LON devuelve el precio en USD (no GBp ni GBP)
-          // VUAA.LON = 131 USD → × tipoCambio = MXN
-          price = price * tc;
-        }
+        if (sym.includes('.LON')) price = price * tc;
         else if (sym.includes('.DEX') || sym.includes('.EPA') || sym.includes('.AMS')) price = price * eurmxn;
         else price = price * tc;
       } else if (targetMoneda === 'USD') {
-        // .LON ya viene en USD según Alpha Vantage — no convertir
         if (sym.includes('.DEX') || sym.includes('.EPA') || sym.includes('.AMS')) price = price / usdeur;
       }
       console.log(`[AlphaVantage] ${sym} = ${price} ${targetMoneda} ✅`);
@@ -169,7 +174,7 @@ async function fetchAlphaVantagePrice(ticker, targetMoneda) {
 async function fetchFX() {
   const cached = LS.get('fxCache');
   // Validar que el caché sea fresco Y tenga valores razonables (USD/MXN entre 15 y 30)
-  const isValid = cached && isCacheFresh(cached.ts) && cached.gbpmxn && cached.usdmxn >= 15 && cached.usdmxn <= 30;
+  const isValid = cached && isFxCacheFresh(cached.ts) && cached.gbpmxn && cached.usdmxn >= 15 && cached.usdmxn <= 30;
   if (isValid) { _fxCache = cached; return cached; }
   try {
     const r = await fetch('https://api.frankfurter.app/latest?from=USD&to=MXN,EUR,GBP');
@@ -232,9 +237,16 @@ async function fetchPrice(ticker, type, moneda) {
     if (price !== null) source = 'coingecko';
   }
   else if ((type === 'Acción' || type === 'ETF') && moneda === 'MXN') {
-    // 1. Alpha Vantage directo a MXN — VUAA.LON GBp→MXN, o VUAA.DEX EUR→MXN (más preciso)
-    if (settings.alphaVantageKey) { price = await fetchAlphaVantagePrice(ticker, 'MXN'); if (price !== null) source = 'alphavantage-mxn'; }
-    // 2. Fallback: usar caché USD del mismo ticker × tipoCambio (no gasta llamada API)
+    // 1. Finnhub primero — si lo encuentra no gasta cuota de Alpha Vantage
+    let priceUSD = await fetchStockPrice(ticker);
+    if (priceUSD !== null) {
+      const fx = _fxCache || LS.get('fxCache');
+      const tcLive = (fx?.usdmxn) || settings.tipoCambio || 20;
+      price = priceUSD * tcLive; source = 'finnhub-converted';
+    }
+    // 2. Alpha Vantage directo a MXN — solo si Finnhub no lo encontró
+    if (price === null && settings.alphaVantageKey) { price = await fetchAlphaVantagePrice(ticker, 'MXN'); if (price !== null) source = 'alphavantage-mxn'; }
+    // 3. Fallback: caché USD × tipoCambio
     if (price === null) {
       const cachedUSD = getCachedPrice(ticker.toUpperCase());
       if (cachedUSD && isCacheFresh(cachedUSD.ts) && isPriceReasonable(cachedUSD.price, ticker.toUpperCase())) {
@@ -244,15 +256,13 @@ async function fetchPrice(ticker, type, moneda) {
         if (isPriceReasonable(derived, ticker.toUpperCase()+'_MXN')) { price = derived; source = 'usd-cache-converted'; }
       }
     }
-    // 3. Último recurso: obtener precio USD en vivo y convertir
-    if (price === null) {
-      let priceUSD = await fetchStockPrice(ticker);
-      if (priceUSD === null && settings.alphaVantageKey) { priceUSD = await fetchAlphaVantagePrice(ticker, 'USD'); }
-      if (priceUSD !== null) {
+    // 4. Último recurso: Alpha Vantage USD × tipoCambio
+    if (price === null && settings.alphaVantageKey) {
+      const priceUSD2 = await fetchAlphaVantagePrice(ticker, 'USD');
+      if (priceUSD2 !== null) {
         const fx = _fxCache || LS.get('fxCache');
-        const tcLive = (fx?.usdmxn) || settings.tipoCambio || 20;
-        price = priceUSD * tcLive;
-        source = 'usd-converted';
+        price = priceUSD2 * ((fx?.usdmxn) || settings.tipoCambio || 20);
+        source = 'alphavantage-usd-converted';
       }
     }
   }
@@ -270,6 +280,7 @@ async function fetchPrice(ticker, type, moneda) {
     if (price === null && settings.alphaVantageKey) { price = await fetchAlphaVantagePrice(ticker, moneda); if (price !== null) source = 'alphavantage'; }
   }
   if (price !== null) { setCachedPrice(cacheKey, price, source); return {price, source, cached:false, ts:Date.now()}; }
+  console.warn(`[fetchPrice] Sin precio para ${ticker} (${moneda}, ${type}) — todas las fuentes fallaron`);
   return null;
 }
 
