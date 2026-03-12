@@ -525,14 +525,17 @@ function _recalcAndSaveSnapshot() {
   }, 0);
   const patrimonioTotal = totalMXN + totalInvMXN;
 
-  // Capital base = dinero que el usuario HA METIDO (saldos iniciales + aportaciones - retiros)
-  // No incluye rendimientos — solo movimientos de capital propios
-  const capitalPlats = plats.reduce((s,p) => {
-    const toMXN = v => p.moneda === 'USD' ? v*tc : p.moneda === 'EUR' ? v*eurmxn : v;
-    return s + toMXN(p.saldoInicial||0) + toMXN(p.aportacion||0) - toMXN(p.retiro||0);
+  // Ganancia real = suma de rendimientos individuales por plataforma + inversiones
+  // Esto es correcto porque cada plataforma ya descuenta aportaciones/retiros/transferencias
+  const totalRendPlats = plats.reduce((s,p) => s + (p.rendimiento||0), 0);
+  const totalRendInv = tickers.reduce((s,t) => {
+    const gp = t.gpNoRealizada !== null ? t.gpNoRealizada : 0;
+    return s + (t.moneda === 'MXN' ? gp : gp * tc);
   }, 0);
-  const capitalInv = tickers.reduce((s,t) => s + (t.moneda === 'MXN' ? t.costoPosicion : t.costoPosicion * tc), 0);
-  const capitalBase = capitalPlats + capitalInv;
+  const gananciaReal = totalRendPlats + totalRendInv;
+
+  // capital = patrimonio - ganancia real, para que value - capital = gananciaReal siempre
+  const capitalBase = Math.round(patrimonioTotal - gananciaReal);
 
   savePatrimonioSnapshot(patrimonioTotal, capitalBase);
 }
@@ -697,6 +700,7 @@ function loadFromRemote(remote){
   if(remote.patrimonioHistory)patrimonioHistory=remote.patrimonioHistory;
   LS.set('platforms',platforms);LS.set('movements',movements);LS.set('goals',goals);LS.set('settings',settings);
   LS.set('recurrentes',recurrentes);LS.set('patrimonioHistory',patrimonioHistory);
+  _recalcAndSaveSnapshot();
   buildHistoricalSnapshots();
   renderPageInternal(currentTab);
 }
@@ -928,23 +932,9 @@ function renderDashboard(){
   const tickers2 = getTickerPositions();
   const capitalInvHoy = tickers2.reduce((s,t) => s + (t.moneda==='MXN' ? t.costoPosicion : t.costoPosicion*tc2), 0);
   const capitalHoy = capitalPlatsHoy + capitalInvHoy;
-  const patrimonioRendPuro = patrimonio - capitalHoy; // ganancia neta total hoy
-
-  // DEBUG — abre la consola del navegador (F12) para ver estos valores
-  console.group('🔍 DEBUG Patrimonio');
-  console.log('patrimonio (totalMXN + inv):', patrimonio);
-  console.log('capitalHoy (saldoIni + aport - retiros + costoPosInv):', capitalHoy);
-  console.log('  capitalPlatsHoy:', capitalPlatsHoy);
-  console.log('  capitalInvHoy:', capitalInvHoy);
-  console.log('patrimonioRendPuro (patrimonio - capitalHoy):', patrimonioRendPuro);
-  console.log('totalRend (suma rendimientos por plataforma):', plats.reduce((s,p)=>s+(p.rendimiento||0),0));
-  console.log('--- Por plataforma ---');
-  plats2.forEach(p => {
-    const toMXN = v => p.moneda==='USD' ? v*tc2 : p.moneda==='EUR' ? v*eurmxn2 : v;
-    const capPlat = toMXN(p.saldoInicial||0) + toMXN(p.aportacion||0) - toMXN(p.retiro||0);
-    console.log(`${p.name}: saldo=${p.saldo} | saldoInicial=${p.saldoInicial} | rendimiento=${p.rendimiento} | capital=${capPlat}`);
-  });
-  console.groupEnd();
+  // Ganancia neta real = suma de rendimientos individuales por plataforma
+  // Correcto porque cada plataforma ya descuenta aportaciones/retiros/transferencias
+  const patrimonioRendPuro = plats.reduce((s,p) => s + (p.rendimiento||0), 0);
 
   function getChangeForMonths(months) {
     if (hist.length < 2) return null;
@@ -1053,8 +1043,8 @@ function renderDashboard(){
           <div>
             <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2);margin-bottom:4px">📈 Evolución del Patrimonio</div>
             <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
-              <div style="font-size:28px;font-weight:800;letter-spacing:-0.03em;color:${pctCol(patrimonio - capitalHoy)};line-height:1">${fmt(patrimonio - capitalHoy)}</div>
-              <span style="font-size:12px;color:var(--text2)">ganancia · ${fmt(capitalHoy)} invertidos</span>
+              <div style="font-size:28px;font-weight:800;letter-spacing:-0.03em;color:${pctCol(patrimonioRendPuro)};line-height:1">${fmt(patrimonioRendPuro)}</div>
+              <span style="font-size:12px;color:var(--text2)">ganancia · ${fmt(totalMXN - patrimonioRendPuro)} invertidos</span>
               <span id="chartPeriodChange" style="display:inline-flex;align-items:center;gap:5px;font-size:13px;padding:3px 10px;border-radius:20px;background:var(--card2)"></span>
             </div>
             <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap">
