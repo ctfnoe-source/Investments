@@ -1009,13 +1009,20 @@ function renderDashboard(){
   }).join('');
 
   // Rentabilidad anualizada real (CAGR) usando snapshots históricos
+  // Usamos ganancia real (value - capital) sobre capital invertido, NO crecimiento bruto del patrimonio
+  // Esto descuenta correctamente las aportaciones y retiros
   let rendAnualReal = null;
   if (hist.length >= 2) {
     const first = hist[0], last = hist[hist.length - 1];
     const diasTotal = (new Date(last.date) - new Date(first.date)) / (1000*60*60*24);
-    if (diasTotal > 30 && first.value > 0) {
-      const cagr = Math.pow(last.value / first.value, 365 / diasTotal) - 1;
-      rendAnualReal = cagr;
+    // capital = lo que el usuario ha aportado (value - ganancias reales acumuladas)
+    const capitalActual = last.capital != null ? last.capital : last.value;
+    const gananciaActual = last.value - capitalActual;
+    if (diasTotal > 30 && capitalActual > 0) {
+      // Rentabilidad simple acumulada sobre capital = ganancia / capital
+      const rentAcum = gananciaActual / capitalActual;
+      // Anualizar: (1 + r_acum)^(365/días) - 1
+      rendAnualReal = Math.pow(1 + rentAcum, 365 / diasTotal) - 1;
     }
   }
   // Delta del patrimonio vs ayer
@@ -2164,6 +2171,7 @@ function renderInversiones(){
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
         <div class="card-title" style="margin:0">📂 Posiciones Abiertas</div>
       </div>
+      <div style="max-height:520px;overflow-y:auto;margin:0 -4px;padding:0 4px">
       ${abiertas.length > 0 ? abiertas.sort((a,b) => {
         const va = (a.valorActual||a.costoPosicion||0)*(a.moneda==='MXN'?1:tc);
         const vb = (b.valorActual||b.costoPosicion||0)*(b.moneda==='MXN'?1:tc);
@@ -2203,6 +2211,7 @@ function renderInversiones(){
           </div>
         </div>`;
       }).join('') : `<div style="text-align:center;color:var(--text2);padding:48px 24px"><div style="font-size:40px;margin-bottom:12px">📈</div><div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">Sin posiciones abiertas</div><div style="font-size:13px;margin-bottom:20px">Registra tu primera compra para ver tu portafolio aquí</div><button class="btn btn-primary" onclick="openMovModal('inversiones')">+ Primera operación</button></div>`}
+      </div>
     </div>
 
     <!-- Posiciones cerradas -->
