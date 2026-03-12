@@ -1434,9 +1434,6 @@ function _appendMovRows() {
   if (chunk.length === 0) { if (sentinel) sentinel.style.display='none'; return; }
   chunk.forEach(m => { tbody.insertAdjacentHTML('beforeend', _buildMovRow(m, transferGroups)); });
   _movPage++;
-  const counter = document.getElementById('movCounter');
-  const loaded = Math.min((_movPage-1)*MOV_PAGE_SIZE, _movFiltered.length);
-  if (counter) counter.textContent = `${loaded} de ${_movFiltered.length}`;
   if (loaded >= _movFiltered.length) { if (sentinel) sentinel.style.display='none'; }
 }
 
@@ -1461,6 +1458,10 @@ function renderMovimientos(){
   }).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
   _movPage=1;
 
+  // Guardar estado del input antes de re-renderizar
+  const prevFocused = document.activeElement?.id === 'movSearchInput';
+  const prevCursor = prevFocused ? document.getElementById('movSearchInput')?.selectionStart : null;
+
   const isEmpty = _movFiltered.length===0;
   const noMovsAtAll = movements.length===0;
   const emptyContent = isEmpty ? `
@@ -1476,26 +1477,7 @@ function renderMovimientos(){
     </div>` : '';
   const emptyHtml = isEmpty ? `<tr><td colspan="8">${emptyContent}</td></tr>` : '';
 
-  // Si la página ya está renderizada, solo actualizar pills, contador y filas
-  const existingPage = document.getElementById('page-movimientos');
-  const alreadyRendered = existingPage && existingPage.querySelector('#movTbody');
-
-  if (alreadyRendered) {
-    // Actualizar pills activas
-    existingPage.querySelectorAll('.mov-pill').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.sec === movFilter.seccion);
-    });
-    // Actualizar contador
-    const counter = existingPage.querySelector('#movCounterWrap');
-    if (counter) counter.textContent = `${_movFiltered.length} movimientos`;
-    // Actualizar filas
-    const tbody = document.getElementById('movTbody');
-    if (tbody) { tbody.innerHTML = emptyHtml; }
-    if (!isEmpty) { _appendMovRows(); setTimeout(_setupMovScroll, 60); }
-    return;
-  }
-
-  existingPage.innerHTML=`
+  document.getElementById('page-movimientos').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px">
       <div>
         <div class="section-title">Movimientos</div>
@@ -1506,7 +1488,7 @@ function renderMovimientos(){
     <div class="filter-pills">
       ${['todas','plataformas','inversiones','gastos'].map(s=>`<button class="pill mov-pill ${movFilter.seccion===s?'active':''}" data-sec="${s}" onclick="movFilter.seccion='${s}';renderMovimientos()">${s==='todas'?'Todas':s==='plataformas'?'🏦 Plataformas':s==='inversiones'?'📈 Inversiones':'💳 Gastos'}</button>`).join('')}
       <input class="pill-search" id="movSearchInput" placeholder="Buscar..." value="${movFilter.search}" oninput="movFilter.search=this.value;renderMovimientos()">
-      <span style="font-size:12px;color:var(--text2);margin-left:4px" id="movCounterWrap">${_movFiltered.length} movimientos</span>
+      <span style="font-size:12px;color:var(--text2);margin-left:4px">${_movFiltered.length} movimientos</span>
     </div>
     <div class="card-flat">
       ${isMobile() ? `
@@ -1526,6 +1508,12 @@ function renderMovimientos(){
   if (!isEmpty) {
     _appendMovRows();
     setTimeout(_setupMovScroll, 60);
+  }
+
+  // Restaurar foco y cursor en el input de búsqueda
+  if (prevFocused) {
+    const inp = document.getElementById('movSearchInput');
+    if (inp) { inp.focus(); if (prevCursor !== null) inp.setSelectionRange(prevCursor, prevCursor); }
   }
 }
 function openMovModal(sec){
