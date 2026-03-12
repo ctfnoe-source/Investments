@@ -369,54 +369,11 @@ function fmtPct(n) { return (n==null||isNaN(n)) ? '0.00%' : (n>=0?'+':'') + (n*1
 function pctCol(n) { return n >= 0 ? 'var(--green)' : 'var(--red)'; }
 function fmtPlat(n, moneda) { return fmt(n, moneda || 'MXN'); }
 
-const DEFAULT_PLATFORMS=[
-  {id:'nu',name:'Nu Bank',type:'BANCO',group:'Ahorro/Liquidez',moneda:'MXN',saldoInicial:171436,tasaAnual:0,fechaInicio:'2026-02-01'},
-  {id:'klar',name:'Klar',type:'SOFIPO',group:'Ahorro/Liquidez',moneda:'MXN',saldoInicial:151400,tasaAnual:0,fechaInicio:'2026-02-01'},
-  {id:'finsus',name:'Finsus',type:'SOFIPO',group:'Ahorro/Liquidez',moneda:'MXN',saldoInicial:107271,tasaAnual:0,fechaInicio:'2026-02-01'},
-  {id:'supert',name:'Super Tasas',type:'SOFIPO',group:'Ahorro/Liquidez',moneda:'MXN',saldoInicial:128480,tasaAnual:0,fechaInicio:'2026-02-01'},
-  {id:'stori',name:'Stori',type:'SOFIPO',group:'Ahorro/Liquidez',moneda:'MXN',saldoInicial:159522,tasaAnual:0,fechaInicio:'2026-02-01'},
-  {id:'mpago',name:'Mercado Pago',type:'CUENTA DIGITAL',group:'Cuenta Digital',moneda:'MXN',saldoInicial:38674,tasaAnual:0,fechaInicio:'2026-02-01'},
-  {id:'uala',name:'Ualá',type:'BANCO',group:'Ahorro/Liquidez',moneda:'MXN',saldoInicial:49727,tasaAnual:0,fechaInicio:'2026-02-01'},
-  {id:'kubo',name:'Kubo',type:'SOFIPO',group:'Ahorro/Liquidez',moneda:'MXN',saldoInicial:5917,tasaAnual:0,fechaInicio:'2026-02-01'},
-  {id:'gbm',name:'GBM',type:'BOLSA/ETFs',group:'Bolsa/ETFs',moneda:'MXN',saldoInicial:558468,tasaAnual:0,fechaInicio:'2026-02-01'},
-  {id:'finamex',name:'Finamex',type:'BOLSA/ETFs',group:'Bolsa/ETFs',moneda:'MXN',saldoInicial:87269,tasaAnual:0,fechaInicio:'2026-02-01'},
-  {id:'heybanco',name:'Hey Banco',type:'BANCO',group:'Ahorro/Liquidez',moneda:'MXN',saldoInicial:27608,tasaAnual:0,fechaInicio:'2026-02-01'},
-  {id:'actinver',name:'Actinver',type:'BOLSA/ETFs',group:'Bolsa/ETFs',moneda:'MXN',saldoInicial:15205,tasaAnual:0,fechaInicio:'2026-02-01'},
-  {id:'dinn',name:'Dinn',type:'FONDOS',group:'Fondos',moneda:'MXN',saldoInicial:5303,tasaAnual:0,fechaInicio:'2026-02-01'},
-  {id:'fintual',name:'Fintual',type:'FONDOS RETIRO',group:'Fondos',moneda:'MXN',saldoInicial:44864,tasaAnual:0,fechaInicio:'2026-02-01'},
-  {id:'mifel',name:'Mifel',type:'BANCO',group:'Ahorro/Liquidez',moneda:'MXN',saldoInicial:17290,tasaAnual:0,fechaInicio:'2026-02-01'},
-  {id:'didi',name:'Didi',type:'SOFIPO',group:'Ahorro/Liquidez',moneda:'MXN',saldoInicial:24620,tasaAnual:0,fechaInicio:'2026-02-01'},
-  {id:'openbank',name:'Openbank',type:'BANCO',group:'Ahorro/Liquidez',moneda:'MXN',saldoInicial:20000,tasaAnual:0,fechaInicio:'2026-02-01'},
-  {id:'cetes',name:'CETES',type:'DEUDA/CETES',group:'Deuda/CETES',moneda:'MXN',saldoInicial:12000,tasaAnual:0,fechaInicio:'2026-02-01'},
-];
-const DEFAULT_MOVS=[
-  {id:uid(),fecha:'2026-02-10',seccion:'inversiones',tipoActivo:'Crypto',ticker:'BTC',broker:'Binance',tipoMov:'Compra',cantidad:0.5,precioUnit:94000,montoTotal:47000,moneda:'USD',comision:0,notas:'Bitcoin'},
-  {id:uid(),fecha:'2026-02-15',seccion:'inversiones',tipoActivo:'Crypto',ticker:'ETH',broker:'Binance',tipoMov:'Compra',cantidad:4,precioUnit:3200,montoTotal:12800,moneda:'USD',comision:0,notas:'Ethereum'},
-  {id:uid(),fecha:'2026-02-20',seccion:'inversiones',tipoActivo:'ETF',ticker:'VOO',broker:'Fidelity',tipoMov:'Compra',cantidad:3,precioUnit:520,montoTotal:1560,moneda:'USD',comision:0,notas:'Vanguard S&P500'},
-  {id:uid(),fecha:'2026-02-22',seccion:'inversiones',tipoActivo:'ETF',ticker:'QQQ',broker:'Interactive Brokers',tipoMov:'Compra',cantidad:2,precioUnit:470,montoTotal:940,moneda:'USD',comision:0,notas:'Nasdaq 100'},
-  {id:uid(),fecha:'2026-02-25',seccion:'inversiones',tipoActivo:'Acción',ticker:'NVDA',broker:'Interactive Brokers',tipoMov:'Compra',cantidad:5,precioUnit:135,montoTotal:675,moneda:'USD',comision:0,notas:'Nvidia'},
-  {id:uid(),fecha:'2026-02-28',seccion:'inversiones',tipoActivo:'Acción',ticker:'AAPL',broker:'Fidelity',tipoMov:'Compra',cantidad:4,precioUnit:230,montoTotal:920,moneda:'USD',comision:0,notas:'Apple'},
-  {id:uid(),fecha:'2026-03-01',seccion:'gastos',categoria:'vivienda',tipo:'Gasto',importe:430,notas:'Alquiler marzo'},
-  {id:uid(),fecha:'2026-03-05',seccion:'gastos',categoria:'alimentacion',tipo:'Gasto',importe:200,notas:'Supermercado'},
-  {id:uid(),fecha:'2026-03-08',seccion:'gastos',categoria:'luz',tipo:'Gasto',importe:80,notas:'Factura luz'},
-  {id:uid(),fecha:'2026-03-01',seccion:'gastos',categoria:'otros',tipo:'Ingreso',importe:25000,notas:'Nómina'},
-  {id:uid(),fecha:'2026-02-15',seccion:'plataformas',platform:'Nu Bank',tipoPlat:'Saldo Actual',monto:172760,desc:'Actualización feb'},
-];
-const DEFAULT_GOALS=[
-  {id:uid(),nombre:'Meta Conservadora $2M',clase:'Todos',meta:2000000,fechaLimite:'2031-12-31',descripcion:'Portafolio MX a 2 millones'},
-  {id:uid(),nombre:'Meta Ambiciosa $5M',clase:'Todos',meta:5000000,fechaLimite:'2036-12-31',descripcion:'5 millones en 10 años'},
-  {id:uid(),nombre:'Portafolio $100K USD',clase:'Todos',meta:100000,fechaLimite:'2027-12-31',descripcion:'Meta maestra inversión'},
-  {id:uid(),nombre:'Cartera Crypto $20K',clase:'Crypto',meta:20000,fechaLimite:'2027-06-30',descripcion:'Alta volatilidad controlada'},
-];
+const DEFAULT_PLATFORMS=[];
+const DEFAULT_MOVS=[];
+const DEFAULT_GOALS=[];
 const DEFAULT_SETTINGS={tipoCambio:20,tipoEUR:21.5,tipoGBP:25.5,rendimientoEsperado:0.06,finnhubKey:''};
-const DEFAULT_RECURRENTES=[
-  {id:uid(),nombre:'Renta / Hipoteca',icon:'🏠',categoria:'vivienda',importe:8500,frecuencia:'Mensual',dia:1,activo:true,color:'#FF9F0A'},
-  {id:uid(),nombre:'Luz',icon:'💡',categoria:'luz',importe:350,frecuencia:'Mensual',dia:1,activo:true,color:'#FFD60A'},
-  {id:uid(),nombre:'Agua',icon:'🚰',categoria:'agua',importe:200,frecuencia:'Mensual',dia:1,activo:true,color:'#64D2FF'},
-  {id:uid(),nombre:'Celular',icon:'📱',categoria:'celular',importe:400,frecuencia:'Mensual',dia:1,activo:true,color:'#30D158'},
-  {id:uid(),nombre:'Seguro',icon:'🛡',categoria:'seguro',importe:1200,frecuencia:'Mensual',dia:15,activo:true,color:'#BF5AF2'},
-  {id:uid(),nombre:'Suscripciones',icon:'📲',categoria:'suscripciones',importe:350,frecuencia:'Mensual',dia:1,activo:true,color:'#5856D6'},
-];
+const DEFAULT_RECURRENTES=[];
 
 let platforms = LS.get('platforms') || DEFAULT_PLATFORMS;
 let movements = LS.get('movements') || DEFAULT_MOVS;
@@ -2488,8 +2445,40 @@ function renderAjustes(){
   const cache=getPriceCache();const cacheEntries=Object.entries(cache);
   const currentUser=window._currentUser;const isDark=document.documentElement.getAttribute('data-theme')==='dark';
   const storage = getStorageInfo();
+  const isAdmin = window._currentUser?.uid === ADMIN_UID;
+  const adminFirebaseRulesHTML = isAdmin ? (
+    '<div class="card" style="margin-top:16px;padding:16px 20px">' +
+    '<div class="card-title">🔐 Reglas Firebase</div>' +
+    '<div class="uid-box" onclick="navigator.clipboard.writeText(this.textContent.trim()).then(()=>this.style.borderColor=\'var(--green)\')" title="Clic para copiar" style="margin-top:6px;font-size:11px;white-space:pre">' +
+    'rules_version = \'2\';\n' +
+    'service cloud.firestore {\n' +
+    '  match /databases/{database}/documents {\n' +
+    '    match /usuarios/{uid}/datos/main {\n' +
+    '      allow read, write: if request.auth != null && request.auth.uid == uid;\n' +
+    '    }\n' +
+    '    match /usuarios/{uid}/meta/perfil {\n' +
+    '      allow read, write: if request.auth != null && request.auth.uid == uid;\n' +
+    '    }\n' +
+    '    match /registros/{uid} {\n' +
+    '      allow create: if request.auth != null && request.auth.uid == uid;\n' +
+    '      allow update, read: if request.auth != null && (request.auth.uid == uid || request.auth.uid == \'vZBQ7d80yPSxbmar96UqPHXDpd32\');\n' +
+    '      allow delete: if request.auth != null && request.auth.uid == \'vZBQ7d80yPSxbmar96UqPHXDpd32\';\n' +
+    '    }\n' +
+    '  }\n' +
+    '}' +
+    '</div></div>'
+  ) : '';
   document.getElementById('page-ajustes').innerHTML=`
     <div class="section-title" style="margin-bottom:24px">⚙️ Ajustes</div>
+
+    ${isAdmin ? `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:rgba(191,90,242,0.06);border:1px solid rgba(191,90,242,0.2);border-radius:14px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:20px">👑</span>
+        <div><div style="font-size:13px;font-weight:700">Panel de Administrador</div><div style="font-size:11px;color:var(--text2)">Gestiona quién tiene acceso a la app</div></div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="window.openAdminPanel()">Gestionar usuarios</button>
+    </div>` : ''}
 
     <!-- Alerta de almacenamiento si >60% -->
     ${storage.pct >= 60 ? `
@@ -2571,18 +2560,7 @@ function renderAjustes(){
       </div>
     </div>
     <div class="card" style="margin-top:16px"><div class="card-title">⚠️ Zona de Peligro</div><button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="resetAll()">🗑 Resetear Todo</button></div>
-    <div class="card" style="margin-top:16px;padding:16px 20px">
-      <div class="card-title">🔐 Reglas Firebase</div>
-      <div class="uid-box" onclick="navigator.clipboard.writeText(this.textContent.trim()).then(()=>this.style.borderColor='var(--green)')" title="Clic para copiar" style="margin-top:6px;font-size:11px;white-space:pre">rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /finanzas/main {
-      allow read, write: if request.auth != null
-        && request.auth.uid == '${currentUser?.uid||'TU_UID_AQUI'}';
-    }
-  }
-}</div>
-    </div>
+    ${isAdmin ? adminFirebaseRulesHTML : ''}
   `;
 }
 
@@ -2777,15 +2755,19 @@ function resetAll(){
   `);
 }
 function confirmResetAll(){
-  platforms=DEFAULT_PLATFORMS.map(p=>({...p}));
-  movements=JSON.parse(JSON.stringify(DEFAULT_MOVS));
-  goals=[...DEFAULT_GOALS];
+  platforms=[];
+  movements=[];
+  goals=[];
   settings={...DEFAULT_SETTINGS};
-  recurrentes=JSON.parse(JSON.stringify(DEFAULT_RECURRENTES));
+  recurrentes=[];
   patrimonioHistory=[];
   LS.set('price_cache',{});
   saveAll();
+  // También limpiar en Firebase para que onSnapshot no restaure los datos viejos
+  _ignoreSnap = true;
+  if(typeof window.saveToFirebase==='function') window.saveToFirebase(true);
   closeModal();
+  if(window.renderPage) window.renderPage(window.currentTab||'dashboard');
 }
 
 function renderPageInternal(tab){
@@ -2802,20 +2784,55 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChang
 
 const firebaseConfig={apiKey:"AIzaSyDUAOlDXmkBRQNoYgmax9KOMjQrZd061Q8",authDomain:"control-de-inversion.firebaseapp.com",projectId:"control-de-inversion",storageBucket:"control-de-inversion.firebasestorage.app",messagingSenderId:"955139190781",appId:"1:955139190781:web:b73653484f5f96b7e23394"};
 const app=initializeApp(firebaseConfig),db=getFirestore(app),auth=getAuth(app);
-const DOC_REF=doc(db,"finanzas","main");
+
+// ── MULTI-USUARIO ──────────────────────────────────────────────────────────
+// Tu UID de admin — cámbialo por el tuyo real de Firebase Auth
+const ADMIN_UID = 'vZBQ7d80yPSxbmar96UqPHXDpd32';
+
+// DOC_REF ahora es dinámico por usuario
+let DOC_REF = null;
+let USER_META_REF = null;
+
+function getDocRef(uid) {
+  return doc(db, 'usuarios', uid, 'datos', 'main');
+}
+function getMetaRef(uid) {
+  return doc(db, 'usuarios', uid, 'meta', 'perfil');
+}
 
 function setFbStatus(s){let el=document.getElementById('fbStatus');if(!el){el=document.createElement('div');el.id='fbStatus';el.style.cssText='font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;white-space:nowrap;transition:all 0.3s;flex-shrink:0';const nav=document.querySelector('.nav-inner');if(nav)nav.appendChild(el);}const map={syncing:['⏳ Sync...','rgba(10,132,255,0.1)','#0A84FF'],ok:['☁️ Sincronizado','rgba(48,209,88,0.1)','#30D158'],error:['⚠️ Sin conexión','rgba(255,69,58,0.1)','#FF453A'],offline:['📴 Offline','rgba(0,0,0,0.06)','#86868B']};const[text,bg,color]=map[s]||map.offline;el.textContent=text;el.style.background=bg;el.style.color=color;}
 function showApp(){document.getElementById('loginOverlay').classList.add('hidden');document.getElementById('mainNav').style.display='';document.getElementById('mainContainer').style.display='';document.getElementById('mobileNav').style.display='';document.getElementById('accessDenied').classList.remove('show');}
 function showLogin(msg){document.getElementById('loginOverlay').classList.remove('hidden');document.getElementById('mainNav').style.display='none';document.getElementById('mainContainer').style.display='none';document.getElementById('mobileNav').style.display='none';document.getElementById('accessDenied').classList.remove('show');if(msg){const el=document.getElementById('loginError');el.textContent=msg;el.style.display='block';}}
 
-window.signOutUser=async()=>{await signOut(auth);showLogin();};
+window.signOutUser=async()=>{await signOut(auth);window.location.reload();};
 document.getElementById('btnGoogleLogin').addEventListener('click',async()=>{const btn=document.getElementById('btnGoogleLogin');btn.disabled=true;btn.innerHTML='<span style="display:inline-block;width:20px;height:20px;border:2px solid rgba(10,132,255,0.2);border-top-color:#0A84FF;border-radius:50%;animation:spin 0.7s linear infinite;margin-right:8px;vertical-align:middle"></span> Conectando...';try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(e){btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> Continuar con Google';showLogin(e.code==='auth/popup-closed-by-user'?'':'Error al iniciar sesión.');}});
 
 let _ignoreSnap=false,_saveTimeout=null,_unsub=null;
 
-function setupFirestore(){
+function setupFirestore(uid){
   if(_unsub){_unsub();_unsub=null;}
-  _unsub=onSnapshot(DOC_REF,snap=>{if(_ignoreSnap){_ignoreSnap=false;return;}if(!snap.exists()){window.saveToFirebase();return;}setFbStatus('ok');if(window.loadFromRemote)window.loadFromRemote(snap.data());},err=>{console.error(err);setFbStatus('error');});
+  DOC_REF = getDocRef(uid);
+  _unsub=onSnapshot(DOC_REF,snap=>{
+    if(_ignoreSnap){_ignoreSnap=false;return;}
+    if(!snap.exists()){
+      // Documento nuevo — inicializar con datos VACÍOS, no con los del usuario anterior
+      resetToEmpty();
+      window.saveToFirebase();
+      return;
+    }
+    setFbStatus('ok');
+    if(window.loadFromRemote)window.loadFromRemote(snap.data());
+  },err=>{console.error(err);setFbStatus('error');});
+}
+
+function resetToEmpty(){
+  // Limpia todos los datos en memoria antes de cargar un nuevo usuario
+  if(typeof platforms !== 'undefined') platforms = [];
+  if(typeof movements !== 'undefined') movements = [];
+  if(typeof goals !== 'undefined') goals = [];
+  if(typeof recurrentes !== 'undefined') recurrentes = [];
+  if(typeof patrimonioHistory !== 'undefined') patrimonioHistory = [];
+  if(typeof settings !== 'undefined') settings = {...(window.DEFAULT_SETTINGS||{tipoCambio:20,tipoEUR:21.5,tipoGBP:25.5,rendimientoEsperado:0.06,finnhubKey:''})};
 }
 
 window.saveToFirebase=async(forceImmediate=false)=>{
@@ -2832,18 +2849,156 @@ window.saveToFirebase=async(forceImmediate=false)=>{
   clearTimeout(_saveTimeout);_saveTimeout=setTimeout(doSave,1500);
 };
 
-onAuthStateChanged(auth,user=>{
+// ── Pantalla de espera de aprobación ───────────────────────────────────────
+function showPending(user){
+  document.getElementById('loginOverlay').classList.add('hidden');
+  document.getElementById('mainNav').style.display='none';
+  document.getElementById('mainContainer').style.display='none';
+  document.getElementById('mobileNav').style.display='none';
+  document.getElementById('accessDenied').classList.remove('show');
+  let el = document.getElementById('pendingOverlay');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'pendingOverlay';
+    el.style.cssText = 'position:fixed;inset:0;background:var(--bg,#f2f2f7);display:flex;align-items:center;justify-content:center;z-index:9998;font-family:var(--font,"DM Sans",sans-serif)';
+    el.innerHTML = `<div style="background:var(--card,#fff);border-radius:24px;padding:40px 32px;max-width:380px;width:90%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.12)">
+      <div style="font-size:48px;margin-bottom:16px">⏳</div>
+      <div style="font-size:20px;font-weight:800;letter-spacing:-0.02em;margin-bottom:8px">Acceso pendiente</div>
+      <div style="font-size:14px;color:#666;line-height:1.6;margin-bottom:24px">Tu cuenta está esperando aprobación.<br>El administrador será notificado y te dará acceso pronto.</div>
+      <div style="font-size:12px;color:#999;margin-bottom:24px;word-break:break-all">${user.email}</div>
+      <button onclick="window.signOutUser()" style="padding:10px 24px;border-radius:20px;border:1px solid #ddd;background:none;cursor:pointer;font-size:13px;font-weight:600">← Cerrar sesión</button>
+    </div>`;
+    document.body.appendChild(el);
+  }
+  el.style.display = 'flex';
+}
+function hidePending(){
+  const el = document.getElementById('pendingOverlay');
+  if(el) el.style.display = 'none';
+}
+
+// ── Panel de admin para aprobar usuarios ────────────────────────────────────
+window.openAdminPanel = async function(){
+  const { collection, getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+  // Leemos el índice central de usuarios (colección 'registros')
+  const snap = await getDocs(collection(db, 'registros'));
+  const userMetas = [];
+  snap.forEach(d => { if(d.id !== ADMIN_UID) userMetas.push({uid: d.id, ...d.data()}); });
+  userMetas.sort((a,b) => (a.aprobado === b.aprobado) ? 0 : a.aprobado ? 1 : -1);
+
+  const rows = userMetas.map(u => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:0.5px solid var(--border)">
+      <div>
+        <div style="font-size:13px;font-weight:700">${u.displayName||'Sin nombre'}</div>
+        <div style="font-size:11px;color:var(--text2)">${u.email||''}</div>
+        <div style="font-size:10px;color:var(--text3)">${u.uid}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span style="font-size:11px;font-weight:700;color:${u.aprobado?'var(--green)':'var(--orange)'}">${u.aprobado?'✅ Aprobado':'⏳ Pendiente'}</span>
+        ${!u.aprobado?`<button onclick="window.aprobarUsuario('${u.uid}')" style="padding:6px 14px;border-radius:16px;border:none;background:var(--green);color:#fff;font-size:12px;font-weight:700;cursor:pointer">Aprobar</button>`:''}
+        ${u.aprobado?`<button onclick="window.revocarUsuario('${u.uid}')" style="padding:6px 14px;border-radius:16px;border:none;background:var(--orange,#ff9f0a);color:#fff;font-size:12px;font-weight:700;cursor:pointer">Revocar</button>`:''}
+        <button onclick="window.eliminarUsuario('${u.uid}')" style="padding:6px 14px;border-radius:16px;border:none;background:var(--red,#ff453a);color:#fff;font-size:12px;font-weight:700;cursor:pointer">Eliminar</button>
+      </div>
+    </div>`).join('');
+
+  openModal(`<div style="padding:8px 0">
+    <div style="font-size:18px;font-weight:800;margin-bottom:16px">👑 Panel de Admin</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:16px">${userMetas.length} usuario(s) registrado(s)</div>
+    ${rows || '<div style="text-align:center;padding:32px;color:var(--text2)">Sin usuarios aún</div>'}
+  </div>`);
+};
+
+window.aprobarUsuario = async function(uid){
+  const { doc: _doc, setDoc: _setDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+  await _setDoc(_doc(db,'registros',uid), {aprobado:true}, {merge:true});
+  window.openAdminPanel();
+};
+
+window.revocarUsuario = async function(uid){
+  const { doc: _doc, setDoc: _setDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+  await _setDoc(_doc(db,'registros',uid), {aprobado:false}, {merge:true});
+  window.openAdminPanel();
+};
+
+window.eliminarUsuario = async function(uid){
+  if(!confirm('¿Eliminar este usuario completamente? Se borrarán sus datos, perfil y registro de Firebase.')) return;
+  const { doc: _doc, deleteDoc: _deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+  // Borrar en paralelo: datos, meta y registro
+  try {
+    await Promise.all([
+      _deleteDoc(_doc(db, 'registros', uid)),
+      _deleteDoc(_doc(db, 'usuarios', uid, 'datos', 'main')),
+      _deleteDoc(_doc(db, 'usuarios', uid, 'meta', 'perfil')),
+    ]);
+  } catch(e) {
+    console.warn('Algunos documentos no existían, ignorado:', e);
+  }
+  window.openAdminPanel();
+};
+
+// ── Auth principal ──────────────────────────────────────────────────────────
+onAuthStateChanged(auth,async user=>{
   if(user){
     window._currentUser=user;
-    if(typeof updateNavUser==='function')updateNavUser(user);
-    showApp();setupFirestore();
-    if(window.renderPage)window.renderPage(window.currentTab||'dashboard');
+    const uid = user.uid;
+
+    // Guardar/actualizar metadata del usuario
+    const { setDoc: _setDoc, getDoc: _getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    const metaRef = getMetaRef(uid);
+    const metaSnap = await _getDoc(metaRef);
+    const isAdmin = uid === ADMIN_UID;
+
+    const perfilData = {
+      uid, email: user.email, displayName: user.displayName,
+      photoURL: user.photoURL, aprobado: isAdmin,
+      rol: isAdmin ? 'admin' : 'usuario',
+      creadoEn: new Date().toISOString()
+    };
+    if(!metaSnap.exists()){
+      // Primera vez — crear perfil pendiente (o aprobado si es admin)
+      await _setDoc(metaRef, perfilData);
+      // Escribir en índice central para que el admin pueda verlo
+      await _setDoc(doc(db,'registros',uid), {
+        uid, email: user.email, displayName: user.displayName,
+        photoURL: user.photoURL, aprobado: isAdmin,
+        creadoEn: new Date().toISOString()
+      });
+    } else {
+      // Actualizar datos frescos del perfil
+      await _setDoc(metaRef, {email:user.email, displayName:user.displayName, photoURL:user.photoURL}, {merge:true});
+      await _setDoc(doc(db,'registros',uid), {email:user.email, displayName:user.displayName}, {merge:true});
+    }
+
+    // Leer estado de aprobación desde índice central (registros)
+    const registroRef = doc(db, 'registros', uid);
+    const registroSnap = await _getDoc(registroRef);
+    const aprobado = registroSnap.exists() && registroSnap.data()?.aprobado === true;
+
+    if(!aprobado && !isAdmin){
+      hidePending();
+      showPending(user);
+      return;
+    }
+
+    hidePending();
+    DOC_REF = getDocRef(uid);
+    resetToEmpty(); // Limpiar memoria antes de cargar datos del nuevo usuario
+    if(typeof updateNavUser==='function') updateNavUser(user);
+    showApp(); setupFirestore(uid);
+    if(window.renderPage) window.renderPage(window.currentTab||'dashboard');
     setTimeout(()=>{
-      if(typeof updateFX==='function')updateFX();
-      // Precios solo se actualizan cuando el usuario presiona el botón — no automáticamente
-      if(typeof flushOfflineQueue==='function')flushOfflineQueue();
+      if(typeof updateFX==='function') updateFX();
+      if(typeof flushOfflineQueue==='function') flushOfflineQueue();
     },1200);
-  }else{window._currentUser=null;if(_unsub){_unsub();_unsub=null;}showLogin();}
+  }else{
+    window._currentUser=null;
+    // _unsub y showLogin ya los maneja signOutUser si fue cierre intencional
+    // Esto cubre el caso de sesión expirada o revocada externamente
+    if(_unsub){_unsub();_unsub=null;}
+    hidePending();
+    if(document.getElementById('loginOverlay') && !document.getElementById('loginOverlay').classList.contains('hidden')) return;
+    showLogin();
+  }
 });
 window.addEventListener('online',()=>setFbStatus('ok'));
 window.addEventListener('offline',()=>setFbStatus('offline'));
