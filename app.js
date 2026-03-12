@@ -97,9 +97,10 @@ function clearPriceCache(ticker, moneda) {
   // Limpiar fxCache si USD/MXN está fuera de rango razonable o muy alejado del tipo manual
   const fx = LS.get('fxCache');
   if (fx) {
-    const manualTC = settings?.tipoCambio || 20;
+    const savedSettings = LS.get('settings');
+    const manualTC = savedSettings?.tipoCambio || 20;
     const outOfRange = fx.usdmxn < 15 || fx.usdmxn > 30;
-    const tooFarFromManual = Math.abs(fx.usdmxn - manualTC) > 4; // más de $4 de diferencia = sospechoso
+    const tooFarFromManual = Math.abs(fx.usdmxn - manualTC) > 4;
     const noGBP = !fx.gbpmxn;
     if (outOfRange || tooFarFromManual || noGBP || !isFxCacheFresh(fx.ts)) {
       console.warn(`[fxCache] Limpiando — USD/MXN: ${fx.usdmxn} (manual: ${manualTC})`);
