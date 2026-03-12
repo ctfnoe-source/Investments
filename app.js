@@ -1434,6 +1434,7 @@ function _appendMovRows() {
   if (chunk.length === 0) { if (sentinel) sentinel.style.display='none'; return; }
   chunk.forEach(m => { tbody.insertAdjacentHTML('beforeend', _buildMovRow(m, transferGroups)); });
   _movPage++;
+  const loaded = Math.min((_movPage-1)*MOV_PAGE_SIZE, _movFiltered.length);
   if (loaded >= _movFiltered.length) { if (sentinel) sentinel.style.display='none'; }
 }
 
@@ -2747,4 +2748,6 @@ window.saveMovement = saveMovement;
 window.deleteMovement = deleteMovement;
 window.openEditMovModal = openEditMovModal;
 window.updateMovement = updateMovement;
+window.movFilter = movFilter;
+window.renderMovimientos = renderMovimientos;
 window.updateAllPrices = updateAllPrices;
