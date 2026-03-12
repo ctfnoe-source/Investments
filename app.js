@@ -1364,6 +1364,30 @@ function _buildMovRow(m, transferGroups) {
   const secCell = m.tipoPlat==='Transferencia salida'&&m.transferId
     ? `<span class="badge badge-teal">↔ TRANSFER</span>`
     : secBadge(m.seccion);
+
+  if (isMobile()) {
+    return `<div class="mov-card ${rowClass}" style="background:var(--card2);border-radius:12px;padding:12px 14px;border:0.5px solid var(--border);margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          ${secCell}
+          <span style="font-size:12px;font-weight:700">${det}</span>
+        </div>
+        <div style="font-size:15px;font-weight:800;flex-shrink:0">${monto}</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <span style="font-size:11px;color:var(--text2)">${m.fecha} · ${tipo}</span>
+          ${extra?`<span style="font-size:11px;color:var(--text2)"> · ${extra}</span>`:''}
+          ${notas?`<div style="font-size:11px;color:var(--text3);margin-top:2px">${notas}</div>`:''}
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          <button class="edit-btn" onclick="openEditMovModal('${m.id}')" style="opacity:0.6">✏️</button>
+          <button class="del-btn" onclick="deleteMovement('${m.id}')" style="opacity:0.5">×</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
   return `<tr class="${rowClass}">
     <td style="color:var(--text2);font-size:12px">${m.fecha}</td>
     <td>${secCell}</td>
@@ -1419,19 +1443,18 @@ function renderMovimientos(){
 
   const isEmpty = _movFiltered.length===0;
   const noMovsAtAll = movements.length===0;
-  const emptyHtml = isEmpty ? `
-    <tr><td colspan="8">
-      <div style="text-align:center;padding:56px 24px">
-        <div style="font-size:44px;margin-bottom:14px">${noMovsAtAll?'📋':movFilter.search?'🔍':'📭'}</div>
-        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">
-          ${movFilter.search?'Sin resultados para "'+movFilter.search+'"':noMovsAtAll?'Aún no tienes movimientos':'Sin movimientos en esta sección'}
-        </div>
-        <div style="font-size:13px;color:var(--text2);margin-bottom:24px">
-          ${movFilter.search?'Prueba con otro término':'Registra plataformas, inversiones o gastos para llevar el control'}
-        </div>
-        ${!movFilter.search?`<button class="btn btn-primary" onclick="openMovModal()">+ Agregar primer movimiento</button>`:''}
+  const emptyContent = isEmpty ? `
+    <div style="text-align:center;padding:56px 24px">
+      <div style="font-size:44px;margin-bottom:14px">${noMovsAtAll?'📋':movFilter.search?'🔍':'📭'}</div>
+      <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">
+        ${movFilter.search?'Sin resultados para "'+movFilter.search+'"':noMovsAtAll?'Aún no tienes movimientos':'Sin movimientos en esta sección'}
       </div>
-    </td></tr>` : '';
+      <div style="font-size:13px;color:var(--text2);margin-bottom:24px">
+        ${movFilter.search?'Prueba con otro término':'Registra plataformas, inversiones o gastos para llevar el control'}
+      </div>
+      ${!movFilter.search?`<button class="btn btn-primary" onclick="openMovModal()">+ Agregar primer movimiento</button>`:''}
+    </div>` : '';
+  const emptyHtml = isEmpty ? `<tr><td colspan="8">${emptyContent}</td></tr>` : '';
 
   document.getElementById('page-movimientos').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px">
@@ -1449,13 +1472,17 @@ function renderMovimientos(){
       </span>
     </div>
     <div class="card-flat">
+      ${isMobile() ? `
+        <div id="movTbody" style="padding:12px">${isEmpty ? emptyContent : ''}</div>
+        <div id="movSentinel" style="height:4px"></div>
+      ` : `
       <div class="table-wrap">
         <table>
           <thead><tr><th>Fecha</th><th>Sección</th><th>Detalle</th><th>Tipo</th><th>Monto</th><th>Extra</th><th>Notas</th><th style="width:70px"></th></tr></thead>
           <tbody id="movTbody">${emptyHtml}</tbody>
         </table>
         <div id="movSentinel" style="height:4px"></div>
-      </div>
+      </div>`}
     </div>
   `;
 
@@ -2037,49 +2064,130 @@ function renderInversiones(){
 
 function renderMetas(){
   const tc=settings.tipoCambio||20;
-  const eurmxn=getEurMxn();
   const plats=calcPlatforms();
   const totalMXN=plats.reduce((s,p)=>s+platSaldoToMXN(p),0);
   const tickerPos=getTickerPositions();
   const totalInvMXN=tickerPos.reduce((s,t)=>s+((t.valorActual||t.costoPosicion||0)*(t.moneda==='MXN'?1:tc)),0);
   const patrimonioTotal=totalMXN+totalInvMXN;
-
   const ingresos=settings.ingresos||{};
   const sueldoEUR=ingresos.monedaSueldo==='EUR'?(ingresos.sueldoRaw||0):(ingresos.sueldo||0);
   const extrasEUR=ingresos.extrasEUR||ingresos.extras||0;
   const otrosEUR=ingresos.otrosEUR||ingresos.otros||0;
   const ingresoMensualEUR=sueldoEUR+extrasEUR+otrosEUR;
   const fmtEUR=v=>'€'+Number(v||0).toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:2});
+  const re=settings.rendimientoEsperado||0.06;
+
+  // Calcular progreso de cada meta
+  const metasData = goals.map(g=>{
+    let actual=0;
+    if(g.clase==='Patrimonio Total'||g.clase==='Todos')actual=patrimonioTotal;
+    else if(g.clase==='Plataformas')actual=totalMXN;
+    else if(g.clase==='Inversiones')actual=totalInvMXN;
+    else if(g.clase==='Ingreso Mensual')actual=ingresoMensualEUR;
+    else actual=patrimonioTotal;
+    const pct=g.meta>0?Math.min(actual/g.meta,1):0;
+    const restante=Math.max(g.meta-actual,0);
+    const mesesEstimados=restante>0&&actual>0?Math.ceil(Math.log(g.meta/actual)/Math.log(1+re/12)):0;
+    const sc=pct>=1?'var(--green)':pct>=0.8?'var(--orange)':pct>=0.3?'var(--blue)':'var(--text2)';
+    const st=pct>=1?'🏆 LOGRADA':pct>=0.8?'🔥 Casi':pct>=0.3?'⏳ En proceso':'💤 Inicio';
+    const isEUR=g.clase==='Ingreso Mensual';
+    const fmtVal=v=>isEUR?fmtEUR(v):fmt(v);
+    // Fecha estimada de llegada
+    let fechaEst='';
+    if(pct<1&&mesesEstimados>0){
+      const d=new Date();d.setMonth(d.getMonth()+mesesEstimados);
+      fechaEst=d.toLocaleDateString('es-ES',{month:'short',year:'numeric'});
+    }
+    return {...g, actual, pct, restante, mesesEstimados, sc, st, fmtVal, fechaEst, isEUR};
+  });
+
+  // Ordenar por fecha límite para el timeline
+  const metasOrdenadas=[...metasData].sort((a,b)=>{
+    if(!a.fechaLimite&&!b.fechaLimite)return 0;
+    if(!a.fechaLimite)return 1;
+    if(!b.fechaLimite)return -1;
+    return a.fechaLimite.localeCompare(b.fechaLimite);
+  });
 
   document.getElementById('page-metas').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
-      <div><div class="section-title">Metas Financieras</div></div>
+      <div><div class="section-title">🎯 Metas Financieras</div><div class="section-sub">${goals.length} metas · rendimiento esperado ${(re*100).toFixed(0)}% anual</div></div>
       <button class="btn btn-primary" onclick="openGoalModal()">+ Meta</button>
     </div>
+
     <div class="grid-4" style="margin-bottom:20px">
-      ${statCard('🏦 Plataformas MXN',fmt(totalMXN),'saldo total','var(--blue)','var(--blue)')}
-      ${statCard('📈 Inversiones MXN',fmt(totalInvMXN),'a precios actuales','#BF5AF2','#BF5AF2')}
+      ${statCard('🏦 Plataformas',fmt(totalMXN),'saldo total','var(--blue)','var(--blue)')}
+      ${statCard('📈 Inversiones',fmt(totalInvMXN),'a precios actuales','#BF5AF2','#BF5AF2')}
       ${statCard('💰 Patrimonio Total',fmt(patrimonioTotal),'todo incluido','var(--green)','var(--green)')}
-      ${statCard('💳 Ingreso Mensual',fmtEUR(ingresoMensualEUR),'sueldo + extras (EUR)','','var(--orange)')}
+      ${statCard('💳 Ingreso Mensual',fmtEUR(ingresoMensualEUR),'sueldo + extras','','var(--orange)')}
     </div>
+
+    ${goals.length===0?`<div class="card" style="text-align:center;padding:48px;color:var(--text2)">
+      <div style="font-size:40px;margin-bottom:12px">🎯</div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:8px">Sin metas todavía</div>
+      <div style="font-size:13px;margin-bottom:20px">Define tus objetivos financieros y sigue tu progreso</div>
+      <button class="btn btn-primary" onclick="openGoalModal()">Crear primera meta</button>
+    </div>` : `
+
+    <!-- TIMELINE -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">📅 Línea de Tiempo</div>
+      <div style="position:relative;padding:8px 0 4px">
+        <!-- línea vertical -->
+        <div style="position:absolute;left:20px;top:0;bottom:0;width:2px;background:var(--border);border-radius:2px"></div>
+        ${metasOrdenadas.map((g,i)=>`
+          <div style="position:relative;padding-left:52px;margin-bottom:${i<metasOrdenadas.length-1?'24':'8'}px">
+            <!-- dot -->
+            <div style="position:absolute;left:10px;top:4px;width:22px;height:22px;border-radius:50%;background:${g.sc};display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:800;z-index:1;box-shadow:0 0 0 3px var(--card)">${g.pct>=1?'✓':Math.round(g.pct*100)+'%'}</div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:4px">
+              <div>
+                <div style="font-size:14px;font-weight:700">${g.nombre}</div>
+                <div style="font-size:11px;color:var(--text2);margin-top:1px">${g.clase}${g.fechaLimite?' · límite '+g.fechaLimite:''}</div>
+              </div>
+              <div style="text-align:right;flex-shrink:0">
+                <span class="badge" style="background:${g.sc}18;color:${g.sc}">${g.st}</span>
+                <div style="font-size:11px;color:var(--text2);margin-top:3px">${g.fechaEst?'~'+g.fechaEst:g.pct>=1?'¡Lograda!':''}</div>
+              </div>
+            </div>
+            <div style="margin-top:8px">
+              <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+                <span style="color:var(--text);font-weight:600">${g.fmtVal(g.actual)}</span>
+                <span style="color:var(--text2)">meta: ${g.fmtVal(g.meta)}</span>
+              </div>
+              <div class="progress-bg" style="height:6px"><div class="progress-fill" style="background:${g.sc};width:${(g.pct*100).toFixed(1)}%;height:6px"></div></div>
+            </div>
+            ${g.pct<1&&g.mesesEstimados>0?`<div style="font-size:11px;color:var(--text2);margin-top:6px">⏱ ~${g.mesesEstimados} meses · faltan ${g.fmtVal(g.restante)}</div>`:''}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- CARDS GRID -->
     <div class="grid-2">
-      ${goals.map(g=>{
-        let actual=0;
-        if(g.clase==='Patrimonio Total'||g.clase==='Todos')actual=patrimonioTotal;
-        else if(g.clase==='Plataformas')actual=totalMXN;
-        else if(g.clase==='Inversiones')actual=totalInvMXN;
-        else if(g.clase==='Ingreso Mensual')actual=ingresoMensualEUR;
-        else actual=patrimonioTotal;
-        const pct=g.meta>0?actual/g.meta:0;
-        const st=pct>=1?'🏆 LOGRADA':pct>=0.8?'🔥 Casi':pct>=0.3?'⏳ En proceso':'💤 Inicio';
-        const sc=pct>=1?'var(--green)':pct>=0.8?'var(--orange)':pct>=0.3?'var(--blue)':'var(--text2)';
-        const restante=g.meta-actual;const re=settings.rendimientoEsperado||0.06;
-        const mesesEstimados=restante>0&&actual>0?Math.ceil(Math.log(g.meta/actual)/Math.log(1+re/12)):0;
-        const isEUR = g.clase==='Ingreso Mensual';
-        const fmtVal = v => isEUR ? fmtEUR(v) : fmt(v);
-        return`<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:16px;font-weight:700">${g.nombre}</div><div style="font-size:11px;color:var(--text2)">${g.clase} · ${g.fechaLimite||'Sin fecha'}</div></div><div style="display:flex;gap:6px;align-items:center"><span class="badge" style="background:${sc}18;color:${sc}">${st}</span><button class="del-btn" onclick="deleteGoal('${g.id}')">×</button></div></div><div style="margin-top:16px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span style="font-weight:600">${fmtVal(actual)}</span><span style="color:var(--text2)">${fmtVal(g.meta)}</span></div><div class="progress-bg"><div class="progress-fill" style="background:${sc};width:${Math.min(pct*100,100)}%"></div></div><div style="text-align:right;font-size:12px;font-weight:700;color:${sc};margin-top:4px">${(pct*100).toFixed(1)}%</div></div>${pct<1&&mesesEstimados>0?`<div style="font-size:11px;color:var(--text2);margin-top:8px">⏱ ~${mesesEstimados} meses al ${(re*100).toFixed(0)}% anual · Faltan ${fmtVal(restante)}</div>`:''}</div>`;
-      }).join('')}
-    </div>
+      ${metasData.map(g=>`
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+            <div>
+              <div style="font-size:16px;font-weight:700">${g.nombre}</div>
+              <div style="font-size:11px;color:var(--text2)">${g.clase} · ${g.fechaLimite||'Sin fecha'}</div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <span class="badge" style="background:${g.sc}18;color:${g.sc}">${g.st}</span>
+              <button class="del-btn" onclick="deleteGoal('${g.id}')">×</button>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+            <span style="font-weight:600">${g.fmtVal(g.actual)}</span>
+            <span style="color:var(--text2)">${g.fmtVal(g.meta)}</span>
+          </div>
+          <div class="progress-bg"><div class="progress-fill" style="background:${g.sc};width:${(g.pct*100).toFixed(1)}%"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:6px">
+            <span style="color:var(--text2)">${g.pct<1&&g.mesesEstimados>0?'⏱ ~'+g.mesesEstimados+' meses':''}</span>
+            <span style="font-weight:700;color:${g.sc}">${(g.pct*100).toFixed(1)}%</span>
+          </div>
+        </div>
+      `).join('')}
+    </div>`}
   `;
 }
 function openGoalModal(){openModal(`<div class="modal-header"><div class="modal-title">Nueva Meta</div><button class="modal-close" onclick="closeModal()">✕</button></div><form onsubmit="addGoal();return false"><div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="gName" required></div><div class="form-row form-row-2"><div class="form-group"><label class="form-label">Clase</label><select class="form-select" id="gClase"><option>Patrimonio Total</option><option>Plataformas</option><option>Inversiones</option><option>Ingreso Mensual</option></select></div><div class="form-group"><label class="form-label">Meta</label><input type="number" class="form-input" id="gMeta" required></div></div><div class="form-group"><label class="form-label">Fecha Límite</label><input type="date" class="form-input" id="gFecha"></div><div class="form-group"><label class="form-label">Descripción</label><input class="form-input" id="gDesc"></div><button type="submit" class="btn btn-primary" style="width:100%;margin-top:16px">Crear Meta</button></form>`);}
@@ -2145,7 +2253,7 @@ function renderAjustes(){
       </div>
     </div>
     <div class="grid-2">
-      <div class="card"><div class="card-title">💾 Exportar / Importar</div><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px"><button class="btn btn-primary" onclick="exportData()">📥 Exportar JSON</button><button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📤 Importar JSON</button><input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)"></div></div>
+      <div class="card"><div class="card-title">💾 Exportar / Importar</div><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px"><button class="btn btn-primary" onclick="exportData()">📥 Exportar JSON</button><button class="btn btn-secondary" onclick="exportCSV()">📊 Exportar CSV movimientos</button><button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📤 Importar JSON</button><input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)"></div></div>
       <div class="card"><div class="card-title">⚠️ Zona de Peligro</div><button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="if(confirm('¿Borrar TODOS los datos?'))resetAll()">🗑 Resetear Todo</button></div>
     </div>
     <div class="card" style="margin-top:16px;padding:16px 20px">
@@ -2202,8 +2310,46 @@ function updateNavUser(user){
 }
 
 function exportData(){const data={platforms,movements,goals,settings,recurrentes,patrimonioHistory,exportDate:new Date().toISOString(),version:'4.4'};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`finanzas-pro-${today()}.json`;a.click();URL.revokeObjectURL(url);}
+
+function exportCSV(){
+  const tc=settings.tipoCambio||20;
+  const rows=[['Fecha','Tipo','Plataforma','Ticker','Monto','Moneda','Monto MXN','Categoría','Descripción']];
+  const sorted=[...movements].sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  sorted.forEach(m=>{
+    const plat=platforms.find(p=>p.id===m.platId);
+    const moneda=m.moneda||plat?.moneda||'MXN';
+    const montoMXN=moneda==='MXN'?m.monto:moneda==='USD'?m.monto*tc:m.monto*(((_fxCache||LS.get('fxCache'))?.eurmxn)||tc);
+    rows.push([m.fecha,m.tipoPlat||m.tipo||'',plat?.name||'',m.ticker||'',m.monto,moneda,montoMXN.toFixed(2),m.categoria||'',m.desc||'']);
+  });
+  const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`movimientos-${today()}.csv`;a.click();URL.revokeObjectURL(url);
+}
+
 function importData(input){const file=input.files[0];if(!file)return;const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.platforms)platforms=d.platforms.map(p=>({tasaAnual:0,fechaInicio:'2026-02-01',moneda:'MXN',...p}));if(d.movements)movements=d.movements;if(d.goals)goals=d.goals;if(d.settings)settings=d.settings;if(d.recurrentes)recurrentes=d.recurrentes;if(d.patrimonioHistory)patrimonioHistory=d.patrimonioHistory;saveAll();alert('✅ Datos importados');}catch{alert('❌ Archivo inválido');}};r.readAsText(file);}
-function resetAll(){platforms=DEFAULT_PLATFORMS.map(p=>({...p}));movements=JSON.parse(JSON.stringify(DEFAULT_MOVS));goals=[...DEFAULT_GOALS];settings={...DEFAULT_SETTINGS};recurrentes=JSON.parse(JSON.stringify(DEFAULT_RECURRENTES));patrimonioHistory=[];LS.set('price_cache',{});saveAll();setTimeout(()=>updateAllPrices(false),500);}
+
+function resetAll(){
+  openModal(`
+    <div class="modal-header"><div class="modal-title" style="color:var(--red)">⚠️ Borrar todo</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div style="font-size:14px;color:var(--text2);margin-bottom:20px;line-height:1.6">
+      Esto borrará <strong style="color:var(--text)">todas tus plataformas, movimientos, metas e inversiones</strong>. Esta acción no se puede deshacer.<br><br>
+      Escribe <strong style="color:var(--red)">BORRAR TODO</strong> para confirmar:
+    </div>
+    <input class="form-input" id="resetConfirmInput" placeholder="BORRAR TODO" oninput="document.getElementById('btnConfirmReset').disabled=this.value!=='BORRAR TODO'">
+    <button id="btnConfirmReset" class="btn btn-danger" style="width:100%;margin-top:16px" disabled onclick="confirmResetAll()">Borrar todo permanentemente</button>
+  `);
+}
+function confirmResetAll(){
+  platforms=DEFAULT_PLATFORMS.map(p=>({...p}));
+  movements=JSON.parse(JSON.stringify(DEFAULT_MOVS));
+  goals=[...DEFAULT_GOALS];
+  settings={...DEFAULT_SETTINGS};
+  recurrentes=JSON.parse(JSON.stringify(DEFAULT_RECURRENTES));
+  patrimonioHistory=[];
+  LS.set('price_cache',{});
+  saveAll();
+  closeModal();
+}
 
 function renderPageInternal(tab){
   if(tab==='dashboard')renderDashboard();else if(tab==='movimientos')renderMovimientos();else if(tab==='plataformas')renderPlataformas();else if(tab==='inversiones')renderInversiones();else if(tab==='gastos')renderGastos();else if(tab==='metas')renderMetas();else if(tab==='ajustes')renderAjustes();
@@ -2294,8 +2440,10 @@ window.deleteGoal = deleteGoal;
 window.testFinnhub = testFinnhub;
 window.testAlphaVantage = testAlphaVantage;
 window.exportData = exportData;
+window.exportCSV = exportCSV;
 window.importData = importData;
 window.resetAll = resetAll;
+window.confirmResetAll = confirmResetAll;
 window.openMovModal = openMovModal;
 window.saveMovement = saveMovement;
 window.deleteMovement = deleteMovement;
