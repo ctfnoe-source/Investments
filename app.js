@@ -1018,36 +1018,6 @@ function renderDashboard(){
 
     ${maxConc>0.25?`<div style="display:flex;align-items:center;gap:10px;padding:12px 20px;background:rgba(255,159,10,0.06);border:1px solid rgba(255,159,10,0.15);border-radius:12px;margin-bottom:16px;font-size:13px"><span style="font-size:18px">⚠️</span><span><strong>${topPlat?.name}</strong> concentra el <strong style="color:var(--orange)">${(maxConc*100).toFixed(1)}%</strong> de tu portafolio.</span></div>`:''}
 
-    ${(()=>{
-      if(goals.length===0) return '';
-      const re2=settings.rendimientoEsperado||0.06;
-      const metasResumen=goals.map(g=>{
-        let actual=0;
-        if(g.clase==='Patrimonio Total'||g.clase==='Todos') actual=patrimonio;
-        else if(g.clase==='Plataformas') actual=totalMXN;
-        else if(g.clase==='Inversiones') actual=totalInvMXN;
-        else if(g.clase==='Ingreso Mensual') actual=ingresos.sueldoRaw||0;
-        const pct=g.meta>0?Math.min(actual/g.meta,1):0;
-        const sc=pct>=1?'var(--green)':pct>=0.8?'var(--orange)':pct>=0.3?'var(--blue)':'var(--text2)';
-        return {...g,pct,sc};
-      }).sort((a,b)=>b.pct-a.pct).slice(0,3);
-      return `<div class="card" style="margin-bottom:16px;padding:16px 20px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-          <div class="card-title" style="margin:0">🎯 Metas</div>
-          <button class="btn btn-sm" style="font-size:11px;padding:3px 10px;background:none;border:1px solid var(--border);color:var(--text2)" onclick="switchTab('metas')">Ver todas →</button>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          ${metasResumen.map(g=>`<div>
-            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
-              <span style="font-weight:700">${g.nombre}</span>
-              <span style="font-weight:800;color:${g.sc}">${(g.pct*100).toFixed(1)}%</span>
-            </div>
-            <div class="progress-bg" style="height:5px"><div class="progress-fill" style="background:${g.sc};width:${(g.pct*100).toFixed(1)}%;height:5px"></div></div>
-          </div>`).join('')}
-        </div>
-      </div>`;
-    })()}
-
     <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden">
       <div style="padding:24px 28px 16px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
