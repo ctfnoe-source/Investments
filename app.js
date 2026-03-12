@@ -2253,7 +2253,7 @@ function renderAjustes(){
       </div>
     </div>
     <div class="grid-2">
-      <div class="card"><div class="card-title">💾 Exportar / Importar</div><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px"><button class="btn btn-primary" onclick="exportData()">📥 Exportar JSON</button><button class="btn btn-secondary" onclick="exportCSV()">📊 Exportar CSV movimientos</button><button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📤 Importar JSON</button><input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)"></div></div>
+      <div class="card"><div class="card-title">💾 Exportar / Importar</div><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px"><button class="btn btn-primary" onclick="exportData()">📥 Exportar JSON</button><button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📤 Importar JSON</button><input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)"></div></div>
       <div class="card"><div class="card-title">⚠️ Zona de Peligro</div><button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="if(confirm('¿Borrar TODOS los datos?'))resetAll()">🗑 Resetear Todo</button></div>
     </div>
     <div class="card" style="margin-top:16px;padding:16px 20px">
