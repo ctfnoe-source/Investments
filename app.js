@@ -654,23 +654,18 @@ function applyRecurrentes() {
 function loadFromRemote(remote){
   if(Date.now()-_lastLocalSave<3000) return;
   if(remote.platforms)platforms=remote.platforms.map(p=>({tasaAnual:0,fechaInicio:'2026-02-01',moneda:'MXN',...p}));
-  if(remote.movements)movements=remote.movements;
   if(remote.goals)goals=remote.goals;
-  // Merge con defaults para que campos nuevos (tipoGBP, etc.) nunca se pierdan al cargar de Firebase
   if(remote.settings)settings={...DEFAULT_SETTINGS,...remote.settings};
   if(remote.recurrentes)recurrentes=remote.recurrentes;
-  if(remote.patrimonioHistory)patrimonioHistory=remote.patrimonioHistory.slice(-3650);
-  LS.set('platforms',platforms);LS.set('movements',movements);LS.set('goals',goals);LS.set('settings',settings);
-  LS.set('recurrentes',recurrentes);LS.set('patrimonioHistory',patrimonioHistory);
-  _recalcAndSaveSnapshot();
-  buildHistoricalSnapshots();
-  renderPageInternal(currentTab);
+  LS.set('platforms',platforms);LS.set('goals',goals);LS.set('settings',settings);
+  LS.set('recurrentes',recurrentes);
+  // movements y snapshots se cargan por separado via loadSubcollections
 }
 window.loadFromRemote = loadFromRemote;
 window.getAppData = () => ({platforms,movements,goals,settings,recurrentes,patrimonioHistory});
 window.currentTab = 'dashboard';
 
-function saveAll(){
+function saveAll(changedMovId, deletedMovId, changedSnapDate){
   window.currentTab = currentTab;
   recalcularPlatformas();
   _lastLocalSave = Date.now();
@@ -680,7 +675,9 @@ function saveAll(){
   buildHistoricalSnapshots();
   renderPageInternal(currentTab);
   if (!_isOnline) { queueSave(window.getAppData()); setOfflineBanner('offline'); }
-  else if(typeof window.saveToFirebase==='function') { window.saveToFirebase(); }
+  else if(typeof window.saveToFirebase==='function') {
+    window.saveToFirebase(false, changedMovId, deletedMovId, changedSnapDate);
+  }
 }
 
 function switchTab(tab){
@@ -1547,14 +1544,14 @@ function saveMovement(sec){
       const montoEUR=Number(d.montoSob);if(!montoEUR||montoEUR<=0){alert('⚠️ El monto debe ser mayor a 0');return;}
       const eurmxn=getEurMxn();const montoMXN=Math.round(montoEUR*eurmxn*100)/100;
       const mov={id:uid(),seccion:'plataformas',fecha:d.fechaSob||today(),platform:d.platDestinoSob,tipoPlat:'Aportación',monto:montoMXN,desc:(d.descSob||('Sobrante '+d.mesSobrante))+` · €${montoEUR} → $${montoMXN} MXN (TC ${eurmxn.toFixed(2)})`};
-      movements=[mov,...movements];saveAll();closeModal();return;
+      movements=[mov,...movements];saveAll(mov.id);closeModal();return;
     }
     if(!d.platOrigen||!d.platDestino||!d.monto)return;
     if(d.platOrigen===d.platDestino){alert('⚠️ Origen y destino deben ser distintos');return;}
     const tid=uid();
     const salida={id:uid(),seccion:'plataformas',fecha:d.fecha||today(),platform:d.platOrigen,tipoPlat:'Transferencia salida',monto:Number(d.monto),desc:d.desc||'Transferencia',transferId:tid};
     const entrada={id:uid(),seccion:'plataformas',fecha:d.fecha||today(),platform:d.platDestino,tipoPlat:'Transferencia entrada',monto:Number(d.monto),desc:d.desc||'Transferencia',transferId:tid};
-    movements=[salida,entrada,...movements];saveAll();closeModal();return;
+    movements=[salida,entrada,...movements];saveAll(salida.id+'|'+entrada.id);closeModal();return;
   }
   let mov={id:uid(),seccion:sec,fecha:d.fecha||today()};
   if(sec==='plataformas'){if(!d.platform||!d.monto)return;mov.platform=d.platform;mov.tipoPlat=d.tipoPlat;mov.monto=Number(d.monto);mov.desc=d.desc||'';}
@@ -1564,10 +1561,24 @@ function saveMovement(sec){
     if(monedaGasto==='EUR'){const fx=_fxCache||LS.get('fxCache');const eurmxn=fx?.eurmxn||settings.tipoEUR||21.5;mov.importe=Math.round(importeRaw*eurmxn*100)/100;mov.notas=(d.notas?d.notas+' · ':'')+'€'+importeRaw+' → $'+mov.importe+' MXN (TC '+eurmxn.toFixed(2)+')';}
     else{mov.importe=importeRaw;mov.notas=d.notas||'';}
   }
-  movements=[mov,...movements];saveAll();closeModal();
+  movements=[mov,...movements];saveAll(mov.id);closeModal();
 }
 
-function deleteMovement(id){const mov=movements.find(m=>m.id===id);if(mov&&mov.transferId){if(confirm('¿Eliminar la transferencia completa?')){movements=movements.filter(m=>m.transferId!==mov.transferId);}else return;}else{if(!confirm('¿Eliminar este movimiento?'))return;movements=movements.filter(m=>m.id!==id);}saveAll();}
+function deleteMovement(id){
+  const mov=movements.find(m=>m.id===id);
+  let deletedIds = [];
+  if(mov&&mov.transferId){
+    if(confirm('¿Eliminar la transferencia completa?')){
+      deletedIds = movements.filter(m=>m.transferId===mov.transferId).map(m=>m.id);
+      movements=movements.filter(m=>m.transferId!==mov.transferId);
+    }else return;
+  }else{
+    if(!confirm('¿Eliminar este movimiento?'))return;
+    deletedIds = [id];
+    movements=movements.filter(m=>m.id!==id);
+  }
+  saveAll(null, deletedIds.join('|'));
+}
 
 function openEditMovModal(id){
   const m=movements.find(x=>x.id===id);if(!m)return;const sec=m.seccion;
@@ -1613,7 +1624,7 @@ function updateMovement(id){
     }
     return updated;
   });
-  saveAll();closeModal();
+  saveAll(id);closeModal();
 }
 
 // ============================================
@@ -2553,7 +2564,7 @@ function renderAjustes(){
             <div style="height:8px;border-radius:4px;background:${storage.color};width:${Math.min(storage.pct,100).toFixed(1)}%;transition:width 0.3s"></div>
           </div>
           <div style="font-size:11px;color:var(--text2);margin-bottom:10px">
-            ${movements.length} movimientos · ${platforms.length} plataformas · ${patrimonioHistory.length} snapshots
+            ${movements.filter(m=>m.seccion==='plataformas').length} plat · ${movements.filter(m=>m.seccion==='inversiones').length} inv · ${movements.filter(m=>m.seccion==='gastos').length} gastos · ${patrimonioHistory.length} snaps
           </div>
           <button class="btn btn-secondary" style="width:100%;font-size:12px" onclick="openArchivarModal()">🗜️ Archivar movimientos antiguos</button>
         </div>
@@ -2604,7 +2615,19 @@ function updateNavUser(user){
 
 function exportData(){const data={platforms,movements,goals,settings,recurrentes,patrimonioHistory,exportDate:new Date().toISOString(),version:'4.4'};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`finanzas-pro-${today()}.json`;a.click();URL.revokeObjectURL(url);}
 
-function importData(input){const file=input.files[0];if(!file)return;const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.platforms)platforms=d.platforms.map(p=>({tasaAnual:0,fechaInicio:'2026-02-01',moneda:'MXN',...p}));if(d.movements)movements=d.movements;if(d.goals)goals=d.goals;if(d.settings)settings=d.settings;if(d.recurrentes)recurrentes=d.recurrentes;if(d.patrimonioHistory)patrimonioHistory=d.patrimonioHistory;saveAll();alert('✅ Datos importados');}catch{alert('❌ Archivo inválido');}};r.readAsText(file);}
+function importData(input){const file=input.files[0];if(!file)return;const r=new FileReader();r.onload=async e=>{try{
+  const d=JSON.parse(e.target.result);
+  if(d.platforms)platforms=d.platforms.map(p=>({tasaAnual:0,fechaInicio:'2026-02-01',moneda:'MXN',...p}));
+  if(d.movements)movements=d.movements;
+  if(d.goals)goals=d.goals;
+  if(d.settings)settings=d.settings;
+  if(d.recurrentes)recurrentes=d.recurrentes;
+  if(d.patrimonioHistory)patrimonioHistory=d.patrimonioHistory;
+  saveAll();
+  // Guardar todos los movimientos importados a sus subcolecciones
+  await window.saveAllMovementsToFirebase();
+  alert('✅ Datos importados');
+}catch(e){alert('❌ Archivo inválido: '+e.message);}};r.readAsText(file);}
 
 function openImportCSVModal(){
   openModal(`
@@ -2763,9 +2786,10 @@ function confirmResetAll(){
   patrimonioHistory=[];
   LS.set('price_cache',{});
   saveAll();
-  // También limpiar en Firebase para que onSnapshot no restaure los datos viejos
+  // Limpiar en Firebase — doc principal y subcolecciones
   _ignoreSnap = true;
   if(typeof window.saveToFirebase==='function') window.saveToFirebase(true);
+  if(typeof window.saveAllMovementsToFirebase==='function') window.saveAllMovementsToFirebase();
   closeModal();
   if(window.renderPage) window.renderPage(window.currentTab||'dashboard');
 }
@@ -2809,19 +2833,48 @@ document.getElementById('btnGoogleLogin').addEventListener('click',async()=>{con
 
 let _ignoreSnap=false,_saveTimeout=null,_unsub=null;
 
+async function loadSubcollections(uid){
+  const { collection, getDocs: _getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+  // Cargar las 3 subcolecciones de movimientos en paralelo
+  const [platSnap, invSnap, gasSnap, snapSnap] = await Promise.all([
+    _getDocs(collection(db, 'usuarios', uid, 'movimientos_plataformas')),
+    _getDocs(collection(db, 'usuarios', uid, 'movimientos_inversiones')),
+    _getDocs(collection(db, 'usuarios', uid, 'movimientos_gastos')),
+    _getDocs(collection(db, 'usuarios', uid, 'snapshots')),
+  ]);
+  // Reconstruir array movements en memoria (misma estructura que antes)
+  movements = [];
+  platSnap.forEach(d => movements.push(d.data()));
+  invSnap.forEach(d => movements.push(d.data()));
+  gasSnap.forEach(d => movements.push(d.data()));
+  // Reconstruir patrimonioHistory
+  patrimonioHistory = [];
+  snapSnap.forEach(d => patrimonioHistory.push(d.data()));
+  patrimonioHistory.sort((a,b) => a.date < b.date ? -1 : 1);
+  patrimonioHistory = patrimonioHistory.slice(-3650);
+  // Guardar en localStorage para offline
+  LS.set('movements', movements);
+  LS.set('patrimonioHistory', patrimonioHistory);
+  _recalcAndSaveSnapshot();
+  buildHistoricalSnapshots();
+  renderPageInternal(currentTab);
+}
+
 function setupFirestore(uid){
   if(_unsub){_unsub();_unsub=null;}
   DOC_REF = getDocRef(uid);
-  _unsub=onSnapshot(DOC_REF,snap=>{
+  _unsub=onSnapshot(DOC_REF, async snap=>{
     if(_ignoreSnap){_ignoreSnap=false;return;}
     if(!snap.exists()){
-      // Documento nuevo — inicializar con datos VACÍOS, no con los del usuario anterior
+      // Usuario nuevo — datos vacíos y guardar estructura inicial
       resetToEmpty();
-      window.saveToFirebase();
+      window.saveToFirebase(true);
       return;
     }
     setFbStatus('ok');
-    if(window.loadFromRemote)window.loadFromRemote(snap.data());
+    if(window.loadFromRemote) window.loadFromRemote(snap.data());
+    // Cargar movimientos y snapshots de sus subcolecciones
+    await loadSubcollections(uid);
   },err=>{console.error(err);setFbStatus('error');});
 }
 
@@ -2835,15 +2888,87 @@ function resetToEmpty(){
   if(typeof settings !== 'undefined') settings = {...(window.DEFAULT_SETTINGS||{tipoCambio:20,tipoEUR:21.5,tipoGBP:25.5,rendimientoEsperado:0.06,finnhubKey:''})};
 }
 
-window.saveToFirebase=async(forceImmediate=false)=>{
+// Guarda TODOS los movimientos a subcolecciones (usado en import y reset)
+window.saveAllMovementsToFirebase = async function(){
+  const uid = window._currentUser?.uid;
+  if(!uid) return;
+  const { collection, doc: _doc, setDoc: _setDoc, getDocs: _getDocs, deleteDoc: _deleteDoc } =
+    await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+  setFbStatus('syncing');
+  try{
+    // Borrar subcolecciones existentes
+    for(const subcol of ['movimientos_plataformas','movimientos_inversiones','movimientos_gastos','snapshots']){
+      const snap = await _getDocs(collection(db,'usuarios',uid,subcol));
+      await Promise.all(snap.docs.map(d => _deleteDoc(d.ref)));
+    }
+    // Escribir todos los movimientos
+    const saves = movements.map(mov => {
+      const subcol = mov.seccion==='plataformas' ? 'movimientos_plataformas'
+                   : mov.seccion==='inversiones' ? 'movimientos_inversiones'
+                   : 'movimientos_gastos';
+      return _setDoc(_doc(db,'usuarios',uid,subcol,mov.id), mov);
+    });
+    // Escribir todos los snapshots
+    const snapSaves = patrimonioHistory.map(s =>
+      _setDoc(_doc(db,'usuarios',uid,'snapshots',s.date), s)
+    );
+    await Promise.all([...saves, ...snapSaves]);
+    setFbStatus('ok');
+  }catch(e){ setFbStatus('error'); console.error(e); }
+};
+
+window.saveToFirebase=async(forceImmediate=false, changedMovIds='', deletedMovIds='', changedSnapDate='')=>{
+  const uid = window._currentUser?.uid;
+  if(!uid || !DOC_REF) return;
+
   const doSave=async()=>{
     setFbStatus('syncing');
     try{
-      _ignoreSnap=true;
-      const d=window.getAppData?window.getAppData():{};
-      await setDoc(DOC_REF,{platforms:d.platforms||[],movements:d.movements||[],goals:d.goals||[],settings:d.settings||{},recurrentes:d.recurrentes||[],patrimonioHistory:d.patrimonioHistory||[],updatedAt:serverTimestamp(),device:navigator.userAgent.substring(0,60)});
+      const { collection, doc: _doc, setDoc: _setDoc, deleteDoc: _deleteDoc } =
+        await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+
+      // 1. Guardar doc principal (sin movements ni snapshots)
+      const d = window.getAppData ? window.getAppData() : {};
+      _ignoreSnap = true;
+      await _setDoc(DOC_REF, {
+        platforms: d.platforms||[], goals: d.goals||[],
+        settings: d.settings||{}, recurrentes: d.recurrentes||[],
+        updatedAt: serverTimestamp(), device: navigator.userAgent.substring(0,60)
+      });
+
+      // 2. Guardar/borrar movimientos individuales que cambiaron
+      if(changedMovIds){
+        for(const mid of changedMovIds.split('|')){
+          const mov = movements.find(m=>m.id===mid);
+          if(!mov) continue;
+          const subcol = mov.seccion==='plataformas' ? 'movimientos_plataformas'
+                       : mov.seccion==='inversiones' ? 'movimientos_inversiones'
+                       : 'movimientos_gastos';
+          await _setDoc(_doc(db,'usuarios',uid,subcol,mid), mov);
+        }
+      }
+
+      // 3. Borrar movimientos eliminados
+      if(deletedMovIds){
+        for(const mid of deletedMovIds.split('|')){
+          // Intentar borrar de las 3 subcolecciones (no sabemos cuál sin el objeto)
+          for(const subcol of ['movimientos_plataformas','movimientos_inversiones','movimientos_gastos']){
+            try{ await _deleteDoc(_doc(db,'usuarios',uid,subcol,mid)); }catch(e){}
+          }
+        }
+      }
+
+      // 4. Guardar snapshot del día si cambió
+      const todaySnap = patrimonioHistory.find(s=>s.date===today());
+      if(todaySnap){
+        await _setDoc(_doc(db,'usuarios',uid,'snapshots',todaySnap.date), todaySnap);
+      }
+
       setFbStatus('ok');
-    }catch(e){setFbStatus('error');console.error(e);if(!navigator.onLine){window.queueSave&&window.queueSave(window.getAppData&&window.getAppData());}throw e;}
+    }catch(e){
+      setFbStatus('error');console.error(e);
+      if(!navigator.onLine){window.queueSave&&window.queueSave(window.getAppData&&window.getAppData());}
+    }
   };
   if(forceImmediate){await doSave();return;}
   clearTimeout(_saveTimeout);_saveTimeout=setTimeout(doSave,1500);
