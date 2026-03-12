@@ -1139,14 +1139,12 @@ function renderDashboard(){
         ${tickerList.length>0?tickerList.sort((a,b)=>b.costoTotal-a.costoTotal).map(t=>{
           const tipoClass=t.type==='Acción'?'badge-green':t.type==='ETF'?'badge-blue':t.type==='Crypto'?'badge-orange':'badge-gray';
           const monedaLabel=t.moneda==='MXN'?'MXN':'USD';
-          return`<div class="list-item" style="padding:8px 0;gap:4px">
-            <div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1">
-              <span style="font-size:13px;font-weight:800;flex-shrink:0">${t.ticker}</span>
-              <span class="badge ${tipoClass}" style="font-size:9px">${t.type}</span>
-              ${t.cantActual<=0?'<span class="badge badge-gray" style="font-size:9px">CERRADA</span>':''}
-              <span style="font-size:10px;color:var(--text2);white-space:nowrap">×${t.cantActual} · ${t.moneda==='MXN'?'$':'US$'}${t.precioCostoPromedio.toFixed(1)}→<span class="${t.priceCssClass}">${t.priceLabel}</span></span>
+          return`<div class="list-item">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="badge ${tipoClass}">${t.ticker}</span>
+              <div><div style="font-size:13px;font-weight:600">${t.type} <span class="badge badge-gray" style="font-size:9px">${monedaLabel}</span>${t.cantActual<=0?' <span class="badge badge-gray" style="font-size:9px">CERRADA</span>':''}</div><div style="font-size:10px;color:var(--text2)">×${t.cantActual} · <span class="${t.priceCssClass}">${t.priceLabel}</span></div></div>
             </div>
-            <div style="text-align:right;flex-shrink:0">${t.gpNoRealizada!==null?`<div style="font-size:13px;font-weight:800;color:${pctCol(t.gpNoRealizada)}">${t.gpNoRealizada>=0?'+':''}${fmtFull(t.gpNoRealizada)}</div><div style="font-size:10px;color:${pctCol(t.pctNoRealizada)};font-weight:600">${fmtPct(t.pctNoRealizada)}</div>`:`<div style="font-size:11px;color:var(--text3)">sin precio</div>`}</div>
+            <div style="text-align:right"><div style="font-size:13px;font-weight:700;color:${pctCol(t.gpNoRealizada)}">${t.gpNoRealizada!==null?(t.gpNoRealizada>=0?'+':'')+fmtFull(t.gpNoRealizada):'—'}</div><div style="font-size:10px;font-weight:600;color:${pctCol(t.pctNoRealizada)}">${t.gpNoRealizada!==null?fmtPct(t.pctNoRealizada):'sin precio'}</div></div>
           </div>`;
         }).join(''):'<div style="text-align:center;color:var(--text2);padding:32px">Sin operaciones</div>'}
         </div>
