@@ -2714,7 +2714,6 @@ window.deleteGoal = deleteGoal;
 window.testFinnhub = testFinnhub;
 window.testAlphaVantage = testAlphaVantage;
 window.exportData = exportData;
-window.exportCSV = exportCSV;
 window.importData = importData;
 window.resetAll = resetAll;
 window.confirmResetAll = confirmResetAll;
