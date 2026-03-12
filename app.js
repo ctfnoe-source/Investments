@@ -1018,6 +1018,36 @@ function renderDashboard(){
 
     ${maxConc>0.25?`<div style="display:flex;align-items:center;gap:10px;padding:12px 20px;background:rgba(255,159,10,0.06);border:1px solid rgba(255,159,10,0.15);border-radius:12px;margin-bottom:16px;font-size:13px"><span style="font-size:18px">⚠️</span><span><strong>${topPlat?.name}</strong> concentra el <strong style="color:var(--orange)">${(maxConc*100).toFixed(1)}%</strong> de tu portafolio.</span></div>`:''}
 
+    ${(()=>{
+      if(goals.length===0) return '';
+      const re2=settings.rendimientoEsperado||0.06;
+      const metasResumen=goals.map(g=>{
+        let actual=0;
+        if(g.clase==='Patrimonio Total'||g.clase==='Todos') actual=patrimonio;
+        else if(g.clase==='Plataformas') actual=totalMXN;
+        else if(g.clase==='Inversiones') actual=totalInvMXN;
+        else if(g.clase==='Ingreso Mensual') actual=ingresos.sueldoRaw||0;
+        const pct=g.meta>0?Math.min(actual/g.meta,1):0;
+        const sc=pct>=1?'var(--green)':pct>=0.8?'var(--orange)':pct>=0.3?'var(--blue)':'var(--text2)';
+        return {...g,pct,sc};
+      }).sort((a,b)=>b.pct-a.pct).slice(0,3);
+      return `<div class="card" style="margin-bottom:16px;padding:16px 20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div class="card-title" style="margin:0">🎯 Metas</div>
+          <button class="btn btn-sm" style="font-size:11px;padding:3px 10px;background:none;border:1px solid var(--border);color:var(--text2)" onclick="switchTab('metas')">Ver todas →</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          ${metasResumen.map(g=>`<div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+              <span style="font-weight:700">${g.nombre}</span>
+              <span style="font-weight:800;color:${g.sc}">${(g.pct*100).toFixed(1)}%</span>
+            </div>
+            <div class="progress-bg" style="height:5px"><div class="progress-fill" style="background:${g.sc};width:${(g.pct*100).toFixed(1)}%;height:5px"></div></div>
+          </div>`).join('')}
+        </div>
+      </div>`;
+    })()}
+
     <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden">
       <div style="padding:24px 28px 16px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
@@ -1591,7 +1621,7 @@ function openEditMovModal(id){
         <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="notas" value="${m.notas||''}"></div>
       `:`
         <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${m.fecha}" required></div><div class="form-group"><label class="form-label">Tipo</label><select class="form-select" name="tipo"><option ${m.tipo==='Gasto'?'selected':''}>Gasto</option><option ${m.tipo==='Ingreso'?'selected':''}>Ingreso</option></select></div></div>
-        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Categoría</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}" ${m.categoria===c.id?'selected':''}>${c.icon} ${c.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Importe</label><input type="number" step="any" class="form-input" name="importe" value="${m.importe}" required></div></div>
+        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Categoría</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}" ${m.categoria===c.id?'selected':''}>${c.icon} ${c.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Importe</label><input type="number" step="any" class="form-input" name="importe" value="${m.importe}" required></div><div class="form-group"><label class="form-label">Moneda</label><select class="form-select" name="monedaGasto"><option value="MXN" ${(m.monedaOrig||'MXN')==='MXN'?'selected':''}>MXN 🇲🇽</option><option value="EUR" ${m.monedaOrig==='EUR'?'selected':''}>EUR 🇪🇺</option></select></div></div>
         <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="notas" value="${m.notas||''}"></div>
       `}
       <div style="display:flex;gap:10px;margin-top:16px"><button type="submit" class="btn btn-primary" style="flex:1;padding:14px">💾 Guardar</button><button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button></div>
@@ -1605,7 +1635,18 @@ function updateMovement(id){
     if(m.id!==id)return m;const sec=m.seccion;let updated={...m,fecha:d.fecha||m.fecha};
     if(sec==='plataformas'){updated.platform=d.platform;updated.tipoPlat=d.tipoPlat;updated.monto=Number(d.monto);updated.desc=d.desc||'';}
     else if(sec==='inversiones'){updated.tipoActivo=d.tipoActivo;updated.ticker=d.ticker.toUpperCase();updated.broker=d.broker;updated.tipoMov=d.tipoMov;updated.cantidad=Number(d.cantidad);updated.precioUnit=Number(d.precioUnit);updated.montoTotal=updated.cantidad*updated.precioUnit;updated.moneda=d.moneda||'USD';updated.comision=Number(d.comision)||0;updated.notas=d.notas||'';}
-    else{updated.categoria=d.categoria;updated.tipo=d.tipo;updated.importe=Number(d.importe);updated.notas=d.notas||'';}
+    else{
+      updated.categoria=d.categoria;updated.tipo=d.tipo;
+      const importeRaw=Number(d.importe);const monedaGasto=d.monedaGasto||'MXN';
+      if(monedaGasto==='EUR'){
+        const fx=_fxCache||LS.get('fxCache');const eurmxn=fx?.eurmxn||settings.tipoEUR||21.5;
+        updated.importe=Math.round(importeRaw*eurmxn*100)/100;
+        updated.monedaOrig='EUR';
+        updated.notas=(d.notas?d.notas+' · ':'')+'€'+importeRaw+' → $'+updated.importe+' MXN (TC '+eurmxn.toFixed(2)+')';
+      } else {
+        updated.importe=importeRaw;updated.monedaOrig='MXN';updated.notas=d.notas||'';
+      }
+    }
     return updated;
   });
   saveAll();closeModal();
@@ -1652,7 +1693,7 @@ function renderPlataformas(){
                 <span style="margin-left:auto;color:var(--text3)">${pctPort} portafolio</span>
               </div>
               <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
-                <button class="btn btn-sm" style="font-size:11px;padding:4px 10px;background:none;border:1px solid var(--border);color:var(--text2)" onclick="editPlatField('${p.id}','saldoInicial',this,'number')">✏️ Editar</button>
+                <button class="btn btn-sm" style="font-size:11px;padding:4px 10px;background:none;border:1px solid var(--border);color:var(--text2)" onclick="openEditPlatModal('${p.id}')">✏️ Editar</button>
                 <button class="del-btn" style="opacity:0.5;font-size:18px" onclick="deletePlatform('${p.id}')">×</button>
               </div>
             </div>`;
@@ -1701,6 +1742,36 @@ function editPlatField(id,field,el,inputType){
   el.replaceWith(input);input.focus();
 }
 function deletePlatform(id){if(!confirm('¿Eliminar esta plataforma?'))return;platforms=platforms.filter(p=>p.id!==id);saveAll();}
+
+function openEditPlatModal(id){
+  const p = platforms.find(x=>x.id===id); if(!p) return;
+  openModal(`<div class="modal-header"><div class="modal-title">✏️ Editar Plataforma</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="epName" value="${p.name||''}"></div>
+    <div class="form-row form-row-2">
+      <div class="form-group"><label class="form-label">Tipo</label><select class="form-select" id="epType">${PLAT_TYPES.map(t=>`<option ${p.type===t?'selected':''}>${t}</option>`).join('')}</select></div>
+      <div class="form-group"><label class="form-label">Moneda</label><select class="form-select" id="epMoneda"><option value="MXN" ${(p.moneda||'MXN')==='MXN'?'selected':''}>🇲🇽 MXN</option><option value="USD" ${p.moneda==='USD'?'selected':''}>🇺🇸 USD</option><option value="EUR" ${p.moneda==='EUR'?'selected':''}>🇪🇺 EUR</option></select></div>
+    </div>
+    <div class="form-row form-row-2">
+      <div class="form-group"><label class="form-label">Saldo Inicial</label><input type="number" step="any" class="form-input" id="epSaldo" value="${p.saldoInicial||0}"></div>
+      <div class="form-group"><label class="form-label">⚡ Tasa Anual %</label><input type="number" step="0.01" min="0" max="100" class="form-input" id="epTasa" value="${p.tasaAnual||0}" placeholder="ej: 13.5"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Fecha inicio</label><input type="date" class="form-input" id="epFecha" value="${p.fechaInicio||today()}"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="saveEditPlat('${id}')">Guardar</button>`);
+}
+function saveEditPlat(id){
+  platforms = platforms.map(p => p.id!==id ? p : {
+    ...p,
+    name: document.getElementById('epName').value || p.name,
+    type: document.getElementById('epType').value,
+    moneda: document.getElementById('epMoneda').value,
+    saldoInicial: Number(document.getElementById('epSaldo').value)||0,
+    tasaAnual: Number(document.getElementById('epTasa').value)||0,
+    fechaInicio: document.getElementById('epFecha').value || p.fechaInicio,
+  });
+  saveAll(); closeModal();
+}
+window.openEditPlatModal = openEditPlatModal;
+window.saveEditPlat = saveEditPlat;
 function openAddPlatformModal(){
   openModal(`<div class="modal-header"><div class="modal-title">Nueva Plataforma</div><button class="modal-close" onclick="closeModal()">✕</button></div>
     <form onsubmit="addPlatform();return false">
@@ -1818,6 +1889,8 @@ function renderGastos(){
         <div style="background:var(--card2);border-radius:12px;padding:12px;text-align:center"><div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase">Total</div><div style="font-size:22px;font-weight:800;color:var(--green);margin-top:4px">${fmtEUR(totalIngPlaneadoEUR)}</div></div>
       </div>
     </div>
+
+    ${totIngEUR===0&&totalIngPlaneadoEUR>0?`<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:rgba(10,132,255,0.06);border:1px solid rgba(10,132,255,0.15);border-radius:10px;margin-bottom:16px;font-size:12px;color:var(--text2)"><span>💡</span><span>Usando ingreso planeado (€${fmtEUR(totalIngPlaneadoEUR)}) como referencia. <button class="btn btn-sm" style="font-size:11px;padding:2px 8px;margin-left:4px;background:none;border:1px solid var(--border);cursor:pointer" onclick="switchTab('movimientos');openMovModal('gastos')">+ Registrar ingreso real</button></span></div>`:''}
 
     <div class="grid-4" style="margin-bottom:16px">
       <div class="card stat" style="border-top:3px solid var(--teal)">
@@ -2023,7 +2096,7 @@ function renderInversiones(){
   document.getElementById('page-inversiones').innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
       <div><div class="section-title">📈 Inversiones</div><div class="section-sub">${abiertas.length} posiciones abiertas · ${cerradas.length} cerradas</div></div>
-      <button class="btn btn-primary btn-sm" onclick="openMovModal('inversion')">+ Operación</button>
+      <button class="btn btn-primary btn-sm" onclick="openMovModal('inversiones')">+ Operación</button>
     </div>
 
     <!-- Stats superiores -->
@@ -2125,7 +2198,7 @@ function renderInversiones(){
             </div>
           </div>
         </div>`;
-      }).join('') : '<div style="text-align:center;color:var(--text2);padding:32px">Sin posiciones abiertas</div>'}
+      }).join('') : `<div style="text-align:center;color:var(--text2);padding:48px 24px"><div style="font-size:40px;margin-bottom:12px">📈</div><div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">Sin posiciones abiertas</div><div style="font-size:13px;margin-bottom:20px">Registra tu primera compra para ver tu portafolio aquí</div><button class="btn btn-primary" onclick="openMovModal('inversiones')">+ Primera operación</button></div>`}
     </div>
 
     <!-- Posiciones cerradas -->
@@ -2517,7 +2590,7 @@ function processCSVImport(input){
         const mov = { id: uid(), fecha, seccion, tipo };
 
         if(seccion === 'plataformas'){
-          const plat = platforms.find(p => p.name.toLowerCase() === platNombre.toLowerCase());
+          const plat = platforms.find(p => p.name.toLowerCase().trim() === platNombre.toLowerCase().trim());
           if(!plat && platNombre){ errorMsgs.push(`Fila ${li+2}: plataforma "${platNombre}" no encontrada — se importó sin vincular`); }
           mov.platform = plat ? plat.name : platNombre;
           mov.tipoPlat = tipo;
