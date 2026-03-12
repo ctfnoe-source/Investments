@@ -655,6 +655,11 @@ function calcPlatforms() {
         rendimientoMov += (m.monto - saldoEsperado);
         saldoBase = m.monto; saldoBaseParaYield = m.monto;
         ultimoSaldoFecha = m.fecha; ultimoSaldoValor = m.monto;
+      } else if (m.tipoPlat === 'Saldo Archivado') {
+        // Movimiento de archivo: restaura saldo y suma ganancia histórica comprimida
+        rendimientoMov += (m.gananciaHistorica || 0);
+        saldoBase = m.monto; saldoBaseParaYield = m.monto;
+        ultimoSaldoFecha = m.fecha; ultimoSaldoValor = m.monto;
       }
     });
 
@@ -2376,12 +2381,122 @@ function deleteGoal(id){if(!confirm('¿Eliminar esta meta?'))return;goals=goals.
 // ============================================
 // AJUSTES
 // ============================================
+function estimateDocSize() {
+  const data = { platforms, movements, goals, settings, recurrentes, patrimonioHistory };
+  const json = JSON.stringify(data);
+  return json.length; // bytes aproximados
+}
+
+function getStorageInfo() {
+  const bytes = estimateDocSize();
+  const kb = bytes / 1024;
+  const pct = (bytes / (1024 * 1024)) * 100; // % de 1MB
+  const color = pct >= 80 ? 'var(--red)' : pct >= 60 ? 'var(--orange)' : 'var(--green)';
+  return { bytes, kb, pct, color };
+
+}
+
+function openArchivarModal() {
+  const plats = calcPlatforms();
+  const cutoffDate = new Date();
+  cutoffDate.setFullYear(cutoffDate.getFullYear() - 1);
+  const cutoffStr = cutoffDate.toISOString().split('T')[0];
+  const movsAArchivar = movements.filter(m => m.seccion === 'plataformas' && m.fecha < cutoffStr);
+  const movsBloqueados = movements.filter(m => m.seccion !== 'plataformas' || m.fecha >= cutoffStr);
+  const ahorroBytes = JSON.stringify(movsAArchivar).length;
+
+  openModal(`
+    <div class="modal-header"><div class="modal-title">🗜️ Archivar Movimientos Antiguos</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">
+      Se comprimirán todos los movimientos de plataformas <strong>anteriores al ${cutoffStr}</strong> en un solo registro por plataforma, conservando el saldo y la ganancia/pérdida histórica acumulada.
+    </div>
+    <div style="background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px">
+      <div style="font-weight:700;margin-bottom:6px">📦 Qué se archivará:</div>
+      <div style="color:var(--text2)">${movsAArchivar.length} movimientos de plataformas → <strong style="color:var(--green)">~${(ahorroBytes/1024).toFixed(1)} KB liberados</strong></div>
+      <div style="color:var(--text2);margin-top:4px">Movimientos de inversiones y gastos no se tocan.</div>
+    </div>
+    <div style="background:var(--card2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12px;max-height:200px;overflow-y:auto">
+      ${plats.map(p => {
+        const movsPlat = movsAArchivar.filter(m => m.platform === p.name);
+        if (movsPlat.length === 0) return '';
+        return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)">
+          <span style="font-weight:600">${p.name}</span>
+          <span style="color:var(--text2)">${movsPlat.length} movs → saldo <strong>${fmtPlat(p.saldo, p.moneda)}</strong> · G/P <strong style="color:${pctCol(p.rendimiento)}">${p.rendimiento>=0?'+':''}${fmtPlat(p.rendimiento, p.moneda)}</strong></span>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="background:rgba(255,159,10,0.08);border:1px solid rgba(255,159,10,0.2);border-radius:10px;padding:10px 14px;margin-bottom:20px;font-size:12px;color:var(--text2)">
+      ⚠️ <strong>Recomendado:</strong> Exporta un backup JSON antes de archivar.
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-secondary" onclick="exportData();closeModal();setTimeout(openArchivarModal,300)">📥 Exportar backup primero</button>
+      <button class="btn btn-primary" style="flex:1" onclick="ejecutarArchivado('${cutoffStr}')">🗜️ Archivar ahora</button>
+    </div>
+  `);
+}
+
+function ejecutarArchivado(cutoffStr) {
+  const plats = calcPlatforms();
+  // Crear un movimiento "Saldo Archivado" por plataforma con el saldo y ganancia acumulada hasta la fecha de corte
+  const nuevosMovsArchivados = [];
+  plats.forEach(p => {
+    const movsPlat = movements.filter(m => m.seccion === 'plataformas' && m.platform === p.name && m.fecha < cutoffStr);
+    if (movsPlat.length === 0) return;
+    // Recalcular saldo hasta cutoffStr para ese momento
+    let saldoArchivado = p.saldoInicial;
+    let gananciaArchivada = 0;
+    movements.filter(m => m.seccion === 'plataformas' && m.platform === p.name && m.fecha < cutoffStr)
+      .sort((a,b) => new Date(a.fecha) - new Date(b.fecha))
+      .forEach(m => {
+        if (m.tipoPlat === 'Aportación' || m.tipoPlat === 'Transferencia entrada') saldoArchivado += m.monto;
+        else if (m.tipoPlat === 'Retiro' || m.tipoPlat === 'Transferencia salida') saldoArchivado -= m.monto;
+        else if (m.tipoPlat === 'Gasto') saldoArchivado -= m.monto;
+        else if (m.tipoPlat === 'Saldo Actual') {
+          gananciaArchivada += m.monto - saldoArchivado;
+          saldoArchivado = m.monto;
+        }
+      });
+    nuevosMovsArchivados.push({
+      id: uid(),
+      seccion: 'plataformas',
+      platform: p.name,
+      fecha: cutoffStr,
+      tipoPlat: 'Saldo Archivado',
+      monto: saldoArchivado,
+      gananciaHistorica: gananciaArchivada,
+      desc: `Archivo histórico hasta ${cutoffStr} · G/P acumulada: ${gananciaArchivada >= 0 ? '+' : ''}${fmtPlat(gananciaArchivada, p.moneda)}`,
+    });
+  });
+
+  // Eliminar movimientos viejos de plataformas y añadir los archivados
+  movements = [
+    ...nuevosMovsArchivados,
+    ...movements.filter(m => m.seccion !== 'plataformas' || m.fecha >= cutoffStr)
+  ];
+  saveAll();
+  closeModal();
+  alert(`✅ Archivado completado. ${nuevosMovsArchivados.length} plataformas comprimidas.`);
+}
+
 function renderAjustes(){
   const hasFinnhub=!!(settings.finnhubKey);const priceSummary=getPriceSummary();
   const cache=getPriceCache();const cacheEntries=Object.entries(cache);
   const currentUser=window._currentUser;const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  const storage = getStorageInfo();
   document.getElementById('page-ajustes').innerHTML=`
     <div class="section-title" style="margin-bottom:24px">⚙️ Ajustes</div>
+
+    <!-- Alerta de almacenamiento si >60% -->
+    ${storage.pct >= 60 ? `
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:${storage.pct>=80?'rgba(255,69,58,0.08)':'rgba(255,159,10,0.08)'};border:1px solid ${storage.pct>=80?'rgba(255,69,58,0.25)':'rgba(255,159,10,0.25)'};border-radius:12px;margin-bottom:16px">
+      <span style="font-size:20px">${storage.pct>=80?'🔴':'🟡'}</span>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:${storage.color}">Documento Firebase al ${storage.pct.toFixed(1)}% de capacidad</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px">${(storage.kb).toFixed(0)} KB de 1,024 KB máximo</div>
+      </div>
+      <button class="btn btn-sm" style="background:${storage.pct>=80?'var(--red)':'var(--orange)'};color:#fff;border:none" onclick="openArchivarModal()">🗜️ Archivar ahora</button>
+    </div>` : ''}
+
     <div class="card" style="margin-bottom:16px;border-top:3px solid var(--blue)">
       <div class="card-title">👤 Cuenta</div>
       <div style="display:flex;align-items:center;gap:16px;margin-top:8px;flex-wrap:wrap">
@@ -2433,8 +2548,24 @@ function renderAjustes(){
     </div>
     <div class="grid-2">
       <div class="card"><div class="card-title">💾 Exportar / Importar</div><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px"><button class="btn btn-primary" onclick="exportData()">📥 Exportar JSON (backup)</button><button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📤 Importar JSON (backup)</button><button class="btn btn-secondary" onclick="openImportCSVModal()">📊 Importar movimientos desde Excel/CSV</button><input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)"></div></div>
-      <div class="card"><div class="card-title">⚠️ Zona de Peligro</div><button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="resetAll()">🗑 Resetear Todo</button></div>
+      <div class="card">
+        <div class="card-title">🗄️ Almacenamiento Firebase</div>
+        <div style="margin-top:8px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+            <span style="color:var(--text2)">${storage.kb.toFixed(0)} KB usados</span>
+            <span style="font-weight:700;color:${storage.color}">${storage.pct.toFixed(1)}% de 1 MB</span>
+          </div>
+          <div style="height:8px;background:var(--progress-bg);border-radius:4px;overflow:hidden;margin-bottom:10px">
+            <div style="height:8px;border-radius:4px;background:${storage.color};width:${Math.min(storage.pct,100).toFixed(1)}%;transition:width 0.3s"></div>
+          </div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:10px">
+            ${movements.length} movimientos · ${platforms.length} plataformas · ${patrimonioHistory.length} snapshots
+          </div>
+          <button class="btn btn-secondary" style="width:100%;font-size:12px" onclick="openArchivarModal()">🗜️ Archivar movimientos antiguos</button>
+        </div>
+      </div>
     </div>
+    <div class="card" style="margin-top:16px"><div class="card-title">⚠️ Zona de Peligro</div><button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="resetAll()">🗑 Resetear Todo</button></div>
     <div class="card" style="margin-top:16px;padding:16px 20px">
       <div class="card-title">🔐 Reglas Firebase</div>
       <div class="uid-box" onclick="navigator.clipboard.writeText(this.textContent.trim()).then(()=>this.style.borderColor='var(--green)')" title="Clic para copiar" style="margin-top:6px;font-size:11px;white-space:pre">rules_version = '2';
@@ -2626,6 +2757,8 @@ function processCSVImport(input){
 window.openImportCSVModal = openImportCSVModal;
 window.downloadCSVTemplate = downloadCSVTemplate;
 window.processCSVImport = processCSVImport;
+window.openArchivarModal = openArchivarModal;
+window.ejecutarArchivado = ejecutarArchivado;
 
 function resetAll(){
   openModal(`
