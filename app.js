@@ -544,7 +544,7 @@ function savePatrimonioSnapshot(value, capital) {
   const todayStr = today();
   const existingIndex = patrimonioHistory.findIndex(s => s.date === todayStr);
   const newSnapshot = { date: todayStr, value: Math.round(value), capital: Math.round(capital || value) };
-  if (existingIndex === -1) { patrimonioHistory.push(newSnapshot); if (patrimonioHistory.length > 365) patrimonioHistory = patrimonioHistory.slice(-365); }
+  if (existingIndex === -1) { patrimonioHistory.push(newSnapshot); if (patrimonioHistory.length > 730) patrimonioHistory = patrimonioHistory.slice(-730); }
   else { patrimonioHistory[existingIndex] = newSnapshot; }
   LS.set('patrimonioHistory', patrimonioHistory);
 }
@@ -697,7 +697,7 @@ function loadFromRemote(remote){
   // Merge con defaults para que campos nuevos (tipoGBP, etc.) nunca se pierdan al cargar de Firebase
   if(remote.settings)settings={...DEFAULT_SETTINGS,...remote.settings};
   if(remote.recurrentes)recurrentes=remote.recurrentes;
-  if(remote.patrimonioHistory)patrimonioHistory=remote.patrimonioHistory;
+  if(remote.patrimonioHistory)patrimonioHistory=remote.patrimonioHistory.slice(-730);
   LS.set('platforms',platforms);LS.set('movements',movements);LS.set('goals',goals);LS.set('settings',settings);
   LS.set('recurrentes',recurrentes);LS.set('patrimonioHistory',patrimonioHistory);
   _recalcAndSaveSnapshot();
@@ -897,7 +897,9 @@ function renderDashboard(){
         <span style="font-size:16px">ℹ️</span>
         <span><strong style="color:var(--blue)">${platsSinActualizar.length} plataforma${platsSinActualizar.length>1?'s':''}</strong> sin "Saldo Actual" registrado: su rendimiento se cuenta como <strong>$0</strong>. Para ver ganancias/pérdidas reales, agrega un movimiento de "Saldo Actual" en cada una. <em style="color:var(--text3)">(${platsSinActualizar.slice(0,4).map(p=>p.name).join(', ')}${platsSinActualizar.length>4?'…':''})</em></span>
       </div>`
-    : '';  _recalcAndSaveSnapshot();
+    : '';
+
+  _recalcAndSaveSnapshot();
   const applied=applyRecurrentes();
 
   const hist=[...patrimonioHistory].sort((a,b)=>new Date(a.date)-new Date(b.date));
@@ -2066,8 +2068,8 @@ function renderInversiones(){
   const abiertas = tickers.filter(t => t.cantActual > 0);
   const cerradas = tickers.filter(t => t.cantActual <= 0);
 
-  // Totales generales
-  const totalCosto = abiertas.reduce((s,t) => s + t.costoTotal * (t.moneda==='MXN'?1:tc), 0);
+  // Totales generales — costoPosicion = costo de la posición actual (no histórico acumulado)
+  const totalCosto = abiertas.reduce((s,t) => s + t.costoPosicion * (t.moneda==='MXN'?1:tc), 0);
   const totalValor = abiertas.reduce((s,t) => s + (t.valorActual||t.costoPosicion||0) * (t.moneda==='MXN'?1:tc), 0);
   const totalGP = totalValor - totalCosto;
   const totalGPPct = totalCosto > 0 ? totalGP / totalCosto : 0;
@@ -2164,7 +2166,7 @@ function renderInversiones(){
       }).map(t => {
         const tipoClass = t.type==='Acción'?'badge-green':t.type==='ETF'?'badge-blue':t.type==='Crypto'?'badge-orange':'badge-gray';
         const valorMXN = (t.valorActual||t.costoPosicion||0)*(t.moneda==='MXN'?1:tc);
-        const costoMXN = t.costoTotal*(t.moneda==='MXN'?1:tc);
+        const costoMXN = t.costoPosicion*(t.moneda==='MXN'?1:tc);
         const gpMXN = valorMXN - costoMXN;
         const pctPort = totalValor > 0 ? valorMXN/totalValor : 0;
         return `<div class="list-item" style="flex-direction:column;align-items:stretch;gap:8px;padding:12px 0">
