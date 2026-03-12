@@ -2355,18 +2355,25 @@ function deleteGoal(id){if(!confirm('¿Eliminar esta meta?'))return;goals=goals.
 // AJUSTES
 // ============================================
 function estimateDocSize() {
-  const data = { platforms, movements, goals, settings, recurrentes, patrimonioHistory };
-  const json = JSON.stringify(data);
-  return json.length; // bytes aproximados
+  // Doc principal: ya NO incluye movements ni snapshots (están en subcolecciones)
+  const mainDoc = { platforms, goals, settings, recurrentes };
+  const mainBytes = JSON.stringify(mainDoc).length;
+  // Subcolecciones (estimado por movimiento individual)
+  const movBytes = JSON.stringify(movements).length;
+  const snapBytes = JSON.stringify(patrimonioHistory).length;
+  return { mainBytes, movBytes, snapBytes,
+           totalBytes: mainBytes + movBytes + snapBytes };
 }
 
 function getStorageInfo() {
-  const bytes = estimateDocSize();
-  const kb = bytes / 1024;
-  const pct = (bytes / (1024 * 1024)) * 100; // % de 1MB
-  const color = pct >= 80 ? 'var(--red)' : pct >= 60 ? 'var(--orange)' : 'var(--green)';
-  return { bytes, kb, pct, color };
-
+  const est = estimateDocSize();
+  const totalKb = est.totalBytes / 1024;
+  const mainKb = est.mainBytes / 1024;
+  // El doc principal tiene límite de 1MB, los movimientos no tienen límite práctico
+  const mainPct = (est.mainBytes / (1024 * 1024)) * 100;
+  const color = mainPct >= 80 ? 'var(--red)' : mainPct >= 60 ? 'var(--orange)' : 'var(--green)';
+  return { kb: totalKb, mainKb, mainPct, color,
+           movCount: movements.length, snapCount: patrimonioHistory.length };
 }
 
 function openArchivarModal() {
@@ -2492,12 +2499,12 @@ function renderAjustes(){
     </div>` : ''}
 
     <!-- Alerta de almacenamiento si >60% -->
-    ${storage.pct >= 60 ? `
-    <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:${storage.pct>=80?'rgba(255,69,58,0.08)':'rgba(255,159,10,0.08)'};border:1px solid ${storage.pct>=80?'rgba(255,69,58,0.25)':'rgba(255,159,10,0.25)'};border-radius:12px;margin-bottom:16px">
-      <span style="font-size:20px">${storage.pct>=80?'🔴':'🟡'}</span>
+    ${storage.mainPct >= 60 ? `
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:${storage.mainPct>=80?'rgba(255,69,58,0.08)':'rgba(255,159,10,0.08)'};border:1px solid ${storage.mainPct>=80?'rgba(255,69,58,0.25)':'rgba(255,159,10,0.25)'};border-radius:12px;margin-bottom:16px">
+      <span style="font-size:20px">${storage.mainPct>=80?'🔴':'🟡'}</span>
       <div style="flex:1">
-        <div style="font-size:13px;font-weight:700;color:${storage.color}">Documento Firebase al ${storage.pct.toFixed(1)}% de capacidad</div>
-        <div style="font-size:12px;color:var(--text2);margin-top:2px">${(storage.kb).toFixed(0)} KB de 1,024 KB máximo</div>
+        <div style="font-size:13px;font-weight:700;color:${storage.color}">Documento principal al ${storage.mainPct.toFixed(1)}% de capacidad</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px">${(storage.mainKb).toFixed(1)} KB de 1,024 KB máximo</div>
       </div>
       <button class="btn btn-sm" style="background:${storage.pct>=80?'var(--red)':'var(--orange)'};color:#fff;border:none" onclick="openArchivarModal()">🗜️ Archivar ahora</button>
     </div>` : ''}
@@ -2556,16 +2563,29 @@ function renderAjustes(){
       <div class="card">
         <div class="card-title">🗄️ Almacenamiento Firebase</div>
         <div style="margin-top:8px">
+          <div style="font-size:11px;color:var(--text2);margin-bottom:8px">Doc principal (límite 1 MB)</div>
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
-            <span style="color:var(--text2)">${storage.kb.toFixed(0)} KB usados</span>
-            <span style="font-weight:700;color:${storage.color}">${storage.pct.toFixed(1)}% de 1 MB</span>
+            <span style="color:var(--text2)">${storage.mainKb.toFixed(1)} KB usados</span>
+            <span style="font-weight:700;color:${storage.color}">${storage.mainPct.toFixed(1)}% de 1 MB</span>
           </div>
-          <div style="height:8px;background:var(--progress-bg);border-radius:4px;overflow:hidden;margin-bottom:10px">
-            <div style="height:8px;border-radius:4px;background:${storage.color};width:${Math.min(storage.pct,100).toFixed(1)}%;transition:width 0.3s"></div>
+          <div style="height:8px;background:var(--progress-bg);border-radius:4px;overflow:hidden;margin-bottom:12px">
+            <div style="height:8px;border-radius:4px;background:${storage.color};width:${Math.min(storage.mainPct,100).toFixed(1)}%;transition:width 0.3s"></div>
           </div>
-          <div style="font-size:11px;color:var(--text2);margin-bottom:10px">
-            ${movements.filter(m=>m.seccion==='plataformas').length} plat · ${movements.filter(m=>m.seccion==='inversiones').length} inv · ${movements.filter(m=>m.seccion==='gastos').length} gastos · ${patrimonioHistory.length} snaps
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">
+            <div style="background:var(--card2);border-radius:8px;padding:6px;text-align:center">
+              <div style="font-size:15px;font-weight:800;color:var(--blue)">${movements.filter(m=>m.seccion==='plataformas').length}</div>
+              <div style="font-size:9px;color:var(--text2);text-transform:uppercase">Plataformas</div>
+            </div>
+            <div style="background:var(--card2);border-radius:8px;padding:6px;text-align:center">
+              <div style="font-size:15px;font-weight:800;color:var(--green)">${movements.filter(m=>m.seccion==='inversiones').length}</div>
+              <div style="font-size:9px;color:var(--text2);text-transform:uppercase">Inversiones</div>
+            </div>
+            <div style="background:var(--card2);border-radius:8px;padding:6px;text-align:center">
+              <div style="font-size:15px;font-weight:800;color:var(--orange)">${movements.filter(m=>m.seccion==='gastos').length}</div>
+              <div style="font-size:9px;color:var(--text2);text-transform:uppercase">Gastos</div>
+            </div>
           </div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:10px;text-align:center">Movimientos y snapshots (${patrimonioHistory.length}) en subcolecciones — sin límite</div>
           <button class="btn btn-secondary" style="width:100%;font-size:12px" onclick="openArchivarModal()">🗜️ Archivar movimientos antiguos</button>
         </div>
       </div>
