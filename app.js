@@ -531,7 +531,7 @@ function _recalcAndSaveSnapshot() {
     const toMXN = v => p.moneda === 'USD' ? v*tc : p.moneda === 'EUR' ? v*eurmxn : v;
     return s + toMXN(p.saldoInicial||0) + toMXN(p.aportacion||0) - toMXN(p.retiro||0);
   }, 0);
-  const capitalInv = tickers.reduce((s,t) => s + (t.moneda === 'MXN' ? t.costoTotal : t.costoTotal * tc), 0);
+  const capitalInv = tickers.reduce((s,t) => s + (t.moneda === 'MXN' ? t.costoPosicion : t.costoPosicion * tc), 0);
   const capitalBase = capitalPlats + capitalInv;
 
   savePatrimonioSnapshot(patrimonioTotal, capitalBase);
@@ -926,9 +926,25 @@ function renderDashboard(){
     return s + toMXN(p.saldoInicial||0) + toMXN(p.aportacion||0) - toMXN(p.retiro||0);
   }, 0);
   const tickers2 = getTickerPositions();
-  const capitalInvHoy = tickers2.reduce((s,t) => s + (t.moneda==='MXN' ? t.costoTotal : t.costoTotal*tc2), 0);
+  const capitalInvHoy = tickers2.reduce((s,t) => s + (t.moneda==='MXN' ? t.costoPosicion : t.costoPosicion*tc2), 0);
   const capitalHoy = capitalPlatsHoy + capitalInvHoy;
   const patrimonioRendPuro = patrimonio - capitalHoy; // ganancia neta total hoy
+
+  // DEBUG — abre la consola del navegador (F12) para ver estos valores
+  console.group('🔍 DEBUG Patrimonio');
+  console.log('patrimonio (totalMXN + inv):', patrimonio);
+  console.log('capitalHoy (saldoIni + aport - retiros + costoPosInv):', capitalHoy);
+  console.log('  capitalPlatsHoy:', capitalPlatsHoy);
+  console.log('  capitalInvHoy:', capitalInvHoy);
+  console.log('patrimonioRendPuro (patrimonio - capitalHoy):', patrimonioRendPuro);
+  console.log('totalRend (suma rendimientos por plataforma):', plats.reduce((s,p)=>s+(p.rendimiento||0),0));
+  console.log('--- Por plataforma ---');
+  plats2.forEach(p => {
+    const toMXN = v => p.moneda==='USD' ? v*tc2 : p.moneda==='EUR' ? v*eurmxn2 : v;
+    const capPlat = toMXN(p.saldoInicial||0) + toMXN(p.aportacion||0) - toMXN(p.retiro||0);
+    console.log(`${p.name}: saldo=${p.saldo} | saldoInicial=${p.saldoInicial} | rendimiento=${p.rendimiento} | capital=${capPlat}`);
+  });
+  console.groupEnd();
 
   function getChangeForMonths(months) {
     if (hist.length < 2) return null;
