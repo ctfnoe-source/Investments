@@ -329,6 +329,7 @@ const FRECUENCIAS=['Mensual','Quincenal','Semanal','Anual','Trimestral'];
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 const today = () => new Date().toISOString().split('T')[0];
+const isMobile = () => window.innerWidth <= 768;
 
 function fmt(n, cur) {
   if (n == null || isNaN(n)) {
@@ -1586,6 +1587,39 @@ function renderPlataformas(){
     </div>
     ${platsConTasa.length>0?`<div class="yield-info" style="margin-bottom:16px">⚡ <strong>${platsConTasa.length} plataformas</strong> con tasa automática · Rend. auto total: <strong>${fmtFull(totalRendAuto)}</strong></div>`:''}
     <div class="card-flat">
+      ${isMobile() ? `
+        <div style="display:flex;flex-direction:column;gap:10px;padding:12px">
+          ${plats.map((p,i)=>{
+            const cur=p.moneda||'MXN';
+            const tasaBadge=p.tasaAnual>0?`<span class="tasa-badge${p.tasaAnual>=10?' alta':p.tasaAnual>=5?' media':''}">${p.tasaAnual}%</span>`:'';
+            const rendAutoStr=p.rendimientoAuto>0?`<span style="color:var(--teal);font-weight:700">⚡+${fmtFull(p.rendimientoAuto,cur)}</span>`:'';
+            const pctPort=total>0?((platSaldoToMXN(p)/total)*100).toFixed(1)+'%':'0%';
+            return`<div style="background:var(--card2);border-radius:14px;padding:14px 16px;border:0.5px solid var(--border)">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="font-size:15px;font-weight:800">${p.name}</div>
+                  ${monedaBadge(cur)} ${typeBadge(p.type)} ${tasaBadge}
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:16px;font-weight:800">${fmtPlat(p.saldo,cur)}</div>
+                  <div style="font-size:11px;color:${pctCol(p.rendimiento)};font-weight:700">${p.rendimiento>=0?'+':''}${fmtPlat(p.rendimiento,cur)} ${fmtPct(p.saldoInicial?p.rendimiento/p.saldoInicial:0)}</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:12px;font-size:11px;color:var(--text2);flex-wrap:wrap">
+                <span>Inicial: <strong style="color:var(--text)">${fmtPlat(p.saldoInicial,cur)}</strong></span>
+                ${p.aportacion>0?`<span>+<strong style="color:var(--text)">${fmtPlat(p.aportacion,cur)}</strong> aport.</span>`:''}
+                ${p.retiro>0?`<span>-<strong style="color:var(--text)">${fmtPlat(p.retiro,cur)}</strong> retiro</span>`:''}
+                ${rendAutoStr}
+                <span style="margin-left:auto;color:var(--text3)">${pctPort} portafolio</span>
+              </div>
+              <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
+                <button class="btn btn-sm" style="font-size:11px;padding:4px 10px;background:none;border:1px solid var(--border);color:var(--text2)" onclick="editPlatField('${p.id}','saldoInicial',this,'number')">✏️ Editar</button>
+                <button class="del-btn" style="opacity:0.5;font-size:18px" onclick="deletePlatform('${p.id}')">×</button>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      ` : `
       <div class="table-wrap">
         <table>
           <thead><tr><th>#</th><th>Plataforma</th><th>Moneda ✏️</th><th>Tipo</th><th>Saldo Ini. ✏️</th><th>⚡ Tasa % ✏️</th><th>Desde ✏️</th><th>Días</th><th>+ Aport. 🔍</th><th>Retiros</th><th>Gastos</th><th style="color:var(--teal)">⚡ Auto</th><th>Rend. Real</th><th>Saldo Actual</th><th>Rend %</th><th>% Port.</th><th></th></tr></thead>
@@ -1603,7 +1637,7 @@ function renderPlataformas(){
             }).join('')}
           </tbody>
         </table>
-      </div>
+      </div>`}
     </div>
     <div style="margin-top:12px;padding:12px 16px;background:var(--card2);border-radius:10px;font-size:12px;color:var(--text2);line-height:1.6">
       <strong>Moneda:</strong> Cada plataforma maneja su propia moneda (MXN, USD, EUR). Haz clic en la columna Moneda para cambiarla.<br>
