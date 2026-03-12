@@ -1573,7 +1573,7 @@ function saveMovement(sec){
   movements=[mov,...movements];saveAll();closeModal();
 }
 
-function deleteMovement(id){const mov=movements.find(m=>m.id===id);if(mov&&mov.transferId){if(confirm('¿Eliminar la transferencia completa?')){movements=movements.filter(m=>m.transferId!==mov.transferId);}else return;}else{movements=movements.filter(m=>m.id!==id);}saveAll();}
+function deleteMovement(id){const mov=movements.find(m=>m.id===id);if(mov&&mov.transferId){if(confirm('¿Eliminar la transferencia completa?')){movements=movements.filter(m=>m.transferId!==mov.transferId);}else return;}else{if(!confirm('¿Eliminar este movimiento?'))return;movements=movements.filter(m=>m.id!==id);}saveAll();}
 
 function openEditMovModal(id){
   const m=movements.find(x=>x.id===id);if(!m)return;const sec=m.seccion;
@@ -1700,7 +1700,7 @@ function editPlatField(id,field,el,inputType){
   if(inputType==='moneda')input.onchange=finish;
   el.replaceWith(input);input.focus();
 }
-function deletePlatform(id){platforms=platforms.filter(p=>p.id!==id);saveAll();}
+function deletePlatform(id){if(!confirm('¿Eliminar esta plataforma?'))return;platforms=platforms.filter(p=>p.id!==id);saveAll();}
 function openAddPlatformModal(){
   openModal(`<div class="modal-header"><div class="modal-title">Nueva Plataforma</div><button class="modal-close" onclick="closeModal()">✕</button></div>
     <form onsubmit="addPlatform();return false">
@@ -1876,6 +1876,7 @@ function openRecurrentesModal(){
           <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">${r.nombre}</div><div style="font-size:11px;color:var(--text2)">${r.frecuencia} · día ${r.dia}</div></div>
           <div style="font-size:15px;font-weight:800;color:var(--red);margin-right:8px">-${fmt(r.importe)}</div>
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0"><input type="checkbox" ${r.activo?'checked':''} onchange="toggleRecurrente('${r.id}',this.checked)" style="accent-color:var(--blue);width:16px;height:16px"><span style="font-size:11px;color:var(--text2)">${r.activo?'Activo':'Off'}</span></label>
+          <button class="edit-btn" onclick="openEditRecurrenteModal('${r.id}')">✏️</button>
           <button class="del-btn" onclick="deleteRecurrente('${r.id}')" style="opacity:0.5">×</button>
         </div>`).join('')}
     </div>
@@ -1899,7 +1900,27 @@ function openRecurrentesModal(){
 function syncRecurrenteName(){const cat=document.getElementById('rCat')?.value;const nombreEl=document.getElementById('rNombre');if(!cat||!nombreEl)return;const c=EXPENSE_CATS.find(x=>x.id===cat);if(c)nombreEl.value=c.name;}
 function addRecurrente(){const nombre=document.getElementById('rNombre').value,importe=Number(document.getElementById('rImporte').value);if(!nombre||!importe)return;recurrentes.push({id:uid(),nombre,importe,categoria:document.getElementById('rCat').value,frecuencia:document.getElementById('rFrec').value,dia:Number(document.getElementById('rDia').value)||1,icon:'📌',color:'#0A84FF',activo:true});saveAll();openRecurrentesModal();}
 function toggleRecurrente(id,val){recurrentes=recurrentes.map(r=>r.id!==id?r:{...r,activo:val});saveAll();}
-function deleteRecurrente(id){recurrentes=recurrentes.filter(r=>r.id!==id);saveAll();openRecurrentesModal();}
+function openEditRecurrenteModal(id){
+  const r=recurrentes.find(x=>x.id===id); if(!r) return;
+  openModal(`<div class="modal-header"><div class="modal-title">✏️ Editar Recurrente</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="erNombre" value="${r.nombre||''}" required></div>
+    <div class="form-row form-row-2">
+      <div class="form-group"><label class="form-label">Categoría</label><select class="form-select" id="erCat">${EXPENSE_CATS.map(c=>`<option value="${c.id}" ${r.categoria===c.id?'selected':''}>${c.icon} ${c.name}</option>`).join('')}</select></div>
+      <div class="form-group"><label class="form-label">Importe</label><input type="number" class="form-input" id="erImporte" value="${r.importe||''}" required></div>
+    </div>
+    <div class="form-row form-row-2">
+      <div class="form-group"><label class="form-label">Frecuencia</label><select class="form-select" id="erFrec">${FRECUENCIAS.map(f=>`<option ${r.frecuencia===f?'selected':''}>${f}</option>`).join('')}</select></div>
+      <div class="form-group"><label class="form-label">Día del mes</label><input type="number" class="form-input" id="erDia" value="${r.dia||1}" min="1" max="28"></div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="saveRecurrente('${id}')">Guardar</button>`);
+}
+function saveRecurrente(id){
+  const nombre=document.getElementById('erNombre').value, importe=Number(document.getElementById('erImporte').value);
+  if(!nombre||!importe) return;
+  recurrentes=recurrentes.map(r=>r.id!==id?r:{...r,nombre,importe,categoria:document.getElementById('erCat').value,frecuencia:document.getElementById('erFrec').value,dia:Number(document.getElementById('erDia').value)||1});
+  saveAll(); openRecurrentesModal();
+}
+function deleteRecurrente(id){if(!confirm('¿Eliminar este gasto recurrente?'))return;recurrentes=recurrentes.filter(r=>r.id!==id);saveAll();openRecurrentesModal();}
 
 // ============================================
 // METAS — FIX: Ingreso Mensual en EUR
@@ -2178,6 +2199,7 @@ function renderMetas(){
             </div>
             <div style="display:flex;gap:6px;align-items:center">
               <span class="badge" style="background:${g.sc}18;color:${g.sc}">${g.st}</span>
+              <button class="edit-btn" onclick="openEditGoalModal('${g.id}')">✏️</button>
               <button class="del-btn" onclick="deleteGoal('${g.id}')">×</button>
             </div>
           </div>
@@ -2196,8 +2218,26 @@ function renderMetas(){
   `;
 }
 function openGoalModal(){openModal(`<div class="modal-header"><div class="modal-title">Nueva Meta</div><button class="modal-close" onclick="closeModal()">✕</button></div><form onsubmit="addGoal();return false"><div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="gName" required></div><div class="form-row form-row-2"><div class="form-group"><label class="form-label">Clase</label><select class="form-select" id="gClase"><option>Patrimonio Total</option><option>Plataformas</option><option>Inversiones</option><option>Ingreso Mensual</option></select></div><div class="form-group"><label class="form-label">Meta</label><input type="number" class="form-input" id="gMeta" required></div></div><div class="form-group"><label class="form-label">Fecha Límite</label><input type="date" class="form-input" id="gFecha"></div><div class="form-group"><label class="form-label">Descripción</label><input class="form-input" id="gDesc"></div><button type="submit" class="btn btn-primary" style="width:100%;margin-top:16px">Crear Meta</button></form>`);}
+function openEditGoalModal(id){
+  const g=goals.find(x=>x.id===id); if(!g) return;
+  openModal(`<div class="modal-header"><div class="modal-title">✏️ Editar Meta</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="egName" value="${g.nombre||''}" required></div>
+    <div class="form-row form-row-2">
+      <div class="form-group"><label class="form-label">Clase</label><select class="form-select" id="egClase"><option ${g.clase==='Patrimonio Total'?'selected':''}>Patrimonio Total</option><option ${g.clase==='Plataformas'?'selected':''}>Plataformas</option><option ${g.clase==='Inversiones'?'selected':''}>Inversiones</option><option ${g.clase==='Ingreso Mensual'?'selected':''}>Ingreso Mensual</option></select></div>
+      <div class="form-group"><label class="form-label">Meta</label><input type="number" class="form-input" id="egMeta" value="${g.meta||''}" required></div>
+    </div>
+    <div class="form-group"><label class="form-label">Fecha Límite</label><input type="date" class="form-input" id="egFecha" value="${g.fechaLimite||''}"></div>
+    <div class="form-group"><label class="form-label">Descripción</label><input class="form-input" id="egDesc" value="${g.descripcion||''}"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="saveGoal('${id}')">Guardar</button>`);
+}
+function saveGoal(id){
+  const nombre=document.getElementById('egName').value, meta=Number(document.getElementById('egMeta').value);
+  if(!nombre||!meta) return;
+  goals=goals.map(g=>g.id!==id?g:{...g,nombre,clase:document.getElementById('egClase').value,meta,fechaLimite:document.getElementById('egFecha').value,descripcion:document.getElementById('egDesc').value});
+  saveAll(); closeModal();
+}
 function addGoal(){const nombre=document.getElementById('gName').value,meta=Number(document.getElementById('gMeta').value);if(!nombre||!meta)return;goals.push({id:uid(),nombre,clase:document.getElementById('gClase').value,meta,fechaLimite:document.getElementById('gFecha').value,descripcion:document.getElementById('gDesc').value});saveAll();closeModal();}
-function deleteGoal(id){goals=goals.filter(g=>g.id!==id);saveAll();}
+function deleteGoal(id){if(!confirm('¿Eliminar esta meta?'))return;goals=goals.filter(g=>g.id!==id);saveAll();}
 
 // ============================================
 // AJUSTES
@@ -2435,11 +2475,15 @@ window.updateBudget = updateBudget;
 window.updateIngreso = updateIngreso;
 window.updateIngresoConMoneda = updateIngresoConMoneda;
 window.openRecurrentesModal = openRecurrentesModal;
+window.openEditRecurrenteModal = openEditRecurrenteModal;
+window.saveRecurrente = saveRecurrente;
 window.syncRecurrenteName = syncRecurrenteName;
 window.addRecurrente = addRecurrente;
 window.toggleRecurrente = toggleRecurrente;
 window.deleteRecurrente = deleteRecurrente;
 window.openGoalModal = openGoalModal;
+window.openEditGoalModal = openEditGoalModal;
+window.saveGoal = saveGoal;
 window.addGoal = addGoal;
 window.deleteGoal = deleteGoal;
 window.testFinnhub = testFinnhub;
