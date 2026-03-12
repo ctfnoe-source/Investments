@@ -1852,8 +1852,70 @@ function renderGastos(){
       </table></div>
     </div>
 
-    <div class="card-flat" style="margin-bottom:16px"><div style="padding:16px 20px 0;display:flex;justify-content:space-between;align-items:center"><div class="card-title" style="margin:0">Presupuesto por Categoría (€)</div></div><div class="table-wrap"><table><thead><tr><th>Categoría</th><th>Presupuesto €</th><th>% ingreso</th><th>Real €</th><th>Restante</th><th>Uso</th></tr></thead><tbody>${catRows||`<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--text2);font-size:13px">Asigna presupuestos o registra gastos para verlos aquí</td></tr>`}${hiddenHint}<tr style="font-weight:800;background:var(--card2);border-top:2px solid var(--border2)"><td>TOTAL</td><td>${fmtEUR(totalPresupuestoEUR)}</td><td>${totalIngPlaneadoEUR>0?((totalPresupuestoEUR/totalIngPlaneadoEUR)*100).toFixed(1)+'%':'—'}</td><td style="color:${totGastoEUR>totalPresupuestoEUR?'var(--red)':'var(--text)'}">${fmtEUR(totGastoEUR)}</td><td style="color:${totalPresupuestoEUR-totGastoEUR>=0?'var(--green)':'var(--red)'}">${totalPresupuestoEUR>0?(totalPresupuestoEUR-totGastoEUR>=0?'+':'')+fmtEUR(totalPresupuestoEUR-totGastoEUR):'—'}</td><td>${totalPresupuestoEUR>0?`<span style="font-size:12px;font-weight:800">${(totGastoEUR/totalPresupuestoEUR*100).toFixed(0)}%</span>`:''}</td></tr></tbody></table></div></div>
-    <div class="card-flat"><div style="padding:16px 20px 0"><div class="card-title">Movimientos — ${MONTHS[cm-1]} ${cy}</div></div><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Categoría</th><th>Tipo</th><th>Importe €</th><th>Notas</th><th></th></tr></thead><tbody>${movRows}</tbody></table></div></div>
+    <div class="card-flat" style="margin-bottom:16px">
+      <div style="padding:16px 20px 0;display:flex;justify-content:space-between;align-items:center">
+        <div class="card-title" style="margin:0">Presupuesto por Categoría (€)</div>
+      </div>
+      ${isMobile() ? `
+        <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">
+          ${(()=>{
+            const rows = EXPENSE_CATS.map(cat => {
+              const pres=budgets[cat.id]||0, real=byCat[cat.id]||0;
+              if(!window._showAllCats && pres===0 && real===0) return '';
+              const pctUso = pres>0 ? real/pres*100 : 0;
+              const barC = pctUso>100?'var(--red)':pctUso>85?'var(--orange)':'var(--green)';
+              const rest = pres - real;
+              return `<div style="background:var(--card2);border-radius:10px;padding:10px 12px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                  <span style="font-size:13px;font-weight:700">${cat.icon} ${cat.name}</span>
+                  <div style="text-align:right">
+                    <span style="font-size:13px;font-weight:800;color:${real>pres&&pres>0?'var(--red)':'var(--text)'}">${fmtEUR(real)}</span>
+                    ${pres>0?`<span style="font-size:11px;color:var(--text2)"> / ${fmtEUR(pres)}</span>`:''}
+                  </div>
+                </div>
+                ${pres>0?`
+                  <div class="progress-bg" style="height:5px;margin-bottom:4px">
+                    <div class="progress-fill" style="background:${barC};width:${Math.min(pctUso,100).toFixed(0)}%;height:5px"></div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text2)">
+                    <span>${pctUso.toFixed(0)}% usado</span>
+                    <span style="color:${rest>=0?'var(--green)':'var(--red)'};font-weight:700">${rest>=0?'+':''}${fmtEUR(rest)}</span>
+                  </div>
+                `:`<div style="font-size:10px;color:var(--text3)">sin presupuesto asignado · <button class="btn btn-sm" style="font-size:10px;padding:1px 6px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="switchTab('ajustes')">asignar</button></div>`}
+              </div>`;
+            }).filter(Boolean);
+            const hiddenCount = EXPENSE_CATS.filter(cat=>(budgets[cat.id]||0)===0&&(byCat[cat.id]||0)===0).length;
+            return rows.join('') + ((!window._showAllCats && hiddenCount>0) ? `<div style="text-align:center;font-size:11px;color:var(--text3);padding:6px 0">${hiddenCount} categorías ocultas · <button class="btn btn-sm" style="font-size:11px;padding:2px 8px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="window._showAllCats=true;renderGastos()">Mostrar todas</button></div>` : '');
+          })()}
+        </div>
+      ` : `<div class="table-wrap"><table><thead><tr><th>Categoría</th><th>Presupuesto €</th><th>% ingreso</th><th>Real €</th><th>Restante</th><th>Uso</th></tr></thead><tbody>${catRows||`<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--text2);font-size:13px">Asigna presupuestos o registra gastos para verlos aquí</td></tr>`}${hiddenHint}<tr style="font-weight:800;background:var(--card2);border-top:2px solid var(--border2)"><td>TOTAL</td><td>${fmtEUR(totalPresupuestoEUR)}</td><td>${totalIngPlaneadoEUR>0?((totalPresupuestoEUR/totalIngPlaneadoEUR)*100).toFixed(1)+'%':'—'}</td><td style="color:${totGastoEUR>totalPresupuestoEUR?'var(--red)':'var(--text)'}">${fmtEUR(totGastoEUR)}</td><td style="color:${totalPresupuestoEUR-totGastoEUR>=0?'var(--green)':'var(--red)'}">${totalPresupuestoEUR>0?(totalPresupuestoEUR-totGastoEUR>=0?'+':'')+fmtEUR(totalPresupuestoEUR-totGastoEUR):'—'}</td><td>${totalPresupuestoEUR>0?`<span style="font-size:12px;font-weight:800">${(totGastoEUR/totalPresupuestoEUR*100).toFixed(0)}%</span>`:''}</td></tr></tbody></table></div>`}
+    </div>
+
+    <div class="card-flat">
+      <div style="padding:16px 20px 0"><div class="card-title">Movimientos — ${MONTHS[cm-1]} ${cy}</div></div>
+      ${isMobile() ? `
+        <div style="padding:8px 12px;display:flex;flex-direction:column;gap:6px">
+          ${mesMovs.length>0 ? mesMovs.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).map(m=>`
+            <div style="background:var(--card2);border-radius:10px;padding:10px 12px">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+                <div>
+                  <span style="font-size:13px;font-weight:700">${m.tipo==='Ingreso'?'💰 Ingreso':catName(m.categoria)}</span>
+                  ${m.esRecurrente?'<span class="badge badge-purple" style="margin-left:4px">🔄</span>':''}
+                </div>
+                <span style="font-size:14px;font-weight:800;color:${m.tipo==='Ingreso'?'var(--green)':'var(--red)'}">${m.tipo==='Ingreso'?'+':'−'}${fmtEUR(toEUR(m))}</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span style="font-size:11px;color:var(--text2)">${m.fecha}${m.notas?` · ${m.notas}`:''}</span>
+                <div style="display:flex;gap:4px">
+                  <button class="edit-btn" onclick="openEditMovModal('${m.id}')" style="opacity:0.6">✏️</button>
+                  <button class="del-btn" onclick="deleteMovement('${m.id}')" style="opacity:0.5">×</button>
+                </div>
+              </div>
+            </div>`).join('')
+          : '<div style="text-align:center;color:var(--text2);padding:24px;font-size:13px">Sin movimientos este mes</div>'}
+        </div>
+      ` : `<div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Categoría</th><th>Tipo</th><th>Importe €</th><th>Notas</th><th></th></tr></thead><tbody>${movRows}</tbody></table></div>`}
+    </div>
   `;
 }
 
@@ -2047,7 +2109,7 @@ function renderInversiones(){
               <div style="font-size:11px;color:var(--text2)">${fmt(valorMXN)} MXN</div>
             </div>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-size:11px">
+          <div style="display:grid;grid-template-columns:${isMobile()?'repeat(2,1fr)':'repeat(4,1fr)'};gap:8px;font-size:11px">
             <div><div style="color:var(--text2)">Cantidad</div><div style="font-weight:700">${t.cantActual}</div></div>
             <div><div style="color:var(--text2)">P. Compra</div><div style="font-weight:700">${t.moneda==='MXN'?'$':'US$'}${t.precioCostoPromedio.toFixed(2)}</div></div>
             <div><div style="color:var(--text2)">P. Actual</div><div style="font-weight:700" class="${t.priceCssClass}">${t.priceLabel}</div></div>
@@ -2298,8 +2360,8 @@ function renderAjustes(){
       </div>
     </div>
     <div class="grid-2">
-      <div class="card"><div class="card-title">💾 Exportar / Importar</div><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px"><button class="btn btn-primary" onclick="exportData()">📥 Exportar JSON</button><button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📤 Importar JSON</button><input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)"></div></div>
-      <div class="card"><div class="card-title">⚠️ Zona de Peligro</div><button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="if(confirm('¿Borrar TODOS los datos?'))resetAll()">🗑 Resetear Todo</button></div>
+      <div class="card"><div class="card-title">💾 Exportar / Importar</div><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px"><button class="btn btn-primary" onclick="exportData()">📥 Exportar JSON (backup)</button><button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📤 Importar JSON (backup)</button><button class="btn btn-secondary" onclick="openImportCSVModal()">📊 Importar movimientos desde Excel/CSV</button><input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)"></div></div>
+      <div class="card"><div class="card-title">⚠️ Zona de Peligro</div><button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="resetAll()">🗑 Resetear Todo</button></div>
     </div>
     <div class="card" style="margin-top:16px;padding:16px 20px">
       <div class="card-title">🔐 Reglas Firebase</div>
@@ -2356,22 +2418,142 @@ function updateNavUser(user){
 
 function exportData(){const data={platforms,movements,goals,settings,recurrentes,patrimonioHistory,exportDate:new Date().toISOString(),version:'4.4'};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`finanzas-pro-${today()}.json`;a.click();URL.revokeObjectURL(url);}
 
-function exportCSV(){
-  const tc=settings.tipoCambio||20;
-  const rows=[['Fecha','Tipo','Plataforma','Ticker','Monto','Moneda','Monto MXN','Categoría','Descripción']];
-  const sorted=[...movements].sort((a,b)=>a.fecha.localeCompare(b.fecha));
-  sorted.forEach(m=>{
-    const plat=platforms.find(p=>p.id===m.platId);
-    const moneda=m.moneda||plat?.moneda||'MXN';
-    const montoMXN=moneda==='MXN'?m.monto:moneda==='USD'?m.monto*tc:m.monto*(((_fxCache||LS.get('fxCache'))?.eurmxn)||tc);
-    rows.push([m.fecha,m.tipoPlat||m.tipo||'',plat?.name||'',m.ticker||'',m.monto,moneda,montoMXN.toFixed(2),m.categoria||'',m.desc||'']);
-  });
-  const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
-  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
-  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`movimientos-${today()}.csv`;a.click();URL.revokeObjectURL(url);
+function importData(input){const file=input.files[0];if(!file)return;const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.platforms)platforms=d.platforms.map(p=>({tasaAnual:0,fechaInicio:'2026-02-01',moneda:'MXN',...p}));if(d.movements)movements=d.movements;if(d.goals)goals=d.goals;if(d.settings)settings=d.settings;if(d.recurrentes)recurrentes=d.recurrentes;if(d.patrimonioHistory)patrimonioHistory=d.patrimonioHistory;saveAll();alert('✅ Datos importados');}catch{alert('❌ Archivo inválido');}};r.readAsText(file);}
+
+function openImportCSVModal(){
+  openModal(`
+    <div class="modal-header"><div class="modal-title">📊 Importar desde Excel / CSV</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">
+      Prepara tu archivo con estas columnas (puedes copiar desde Excel y guardar como .csv):
+    </div>
+    <div style="background:var(--card2);border-radius:10px;padding:12px 14px;font-size:11px;font-family:monospace;color:var(--text);margin-bottom:16px;overflow-x:auto;white-space:nowrap">
+      fecha | seccion | tipo | plataforma | importe | moneda | categoria | notas
+    </div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.8">
+      <strong>fecha</strong> — formato YYYY-MM-DD (ej: 2026-03-01)<br>
+      <strong>seccion</strong> — <code>gastos</code> o <code>plataformas</code><br>
+      <strong>tipo</strong> — para gastos: <code>Gasto</code> o <code>Ingreso</code> · para plataformas: <code>Aportación</code>, <code>Retiro</code>, <code>Saldo Actual</code><br>
+      <strong>plataforma</strong> — nombre exacto de la plataforma (solo para sección plataformas)<br>
+      <strong>importe</strong> — número sin símbolos (ej: 1500.00)<br>
+      <strong>moneda</strong> — MXN, USD o EUR (opcional, default MXN)<br>
+      <strong>categoria</strong> — para gastos: alimentacion, transporte, etc. (opcional)<br>
+      <strong>notas</strong> — descripción libre (opcional)
+    </div>
+    <div style="margin-bottom:12px">
+      <button class="btn btn-secondary btn-sm" onclick="downloadCSVTemplate()">⬇️ Descargar plantilla de ejemplo</button>
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:16px">
+      <input type="file" id="csvImportFile" accept=".csv,.txt" style="display:none" onchange="processCSVImport(this)">
+      <button class="btn btn-primary" style="width:100%" onclick="document.getElementById('csvImportFile').click()">📂 Seleccionar archivo CSV</button>
+    </div>
+    <div id="csvImportResult" style="margin-top:12px;font-size:13px"></div>
+  `);
 }
 
-function importData(input){const file=input.files[0];if(!file)return;const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.platforms)platforms=d.platforms.map(p=>({tasaAnual:0,fechaInicio:'2026-02-01',moneda:'MXN',...p}));if(d.movements)movements=d.movements;if(d.goals)goals=d.goals;if(d.settings)settings=d.settings;if(d.recurrentes)recurrentes=d.recurrentes;if(d.patrimonioHistory)patrimonioHistory=d.patrimonioHistory;saveAll();alert('✅ Datos importados');}catch{alert('❌ Archivo inválido');}};r.readAsText(file);}
+function downloadCSVTemplate(){
+  const rows = [
+    'fecha,seccion,tipo,plataforma,importe,moneda,categoria,notas',
+    '2026-03-01,gastos,Gasto,,850,MXN,alimentacion,Súper semanal',
+    '2026-03-05,gastos,Gasto,,450,MXN,transporte,Gasolina',
+    '2026-03-10,gastos,Ingreso,,3200,EUR,,Sueldo marzo',
+    '2026-03-15,plataformas,Aportación,Nu Bank,5000,MXN,,Ahorro mensual',
+    '2026-03-28,plataformas,Saldo Actual,Finsus,108500,MXN,,Actualización saldo',
+  ].join('\n');
+  const blob = new Blob(['\uFEFF'+rows], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='plantilla-finanzas-pro.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function processCSVImport(input){
+  const file = input.files[0]; if(!file) return;
+  const resultEl = document.getElementById('csvImportResult');
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const text = e.target.result.replace(/^\uFEFF/,''); // quitar BOM
+      const lines = text.split(/\r?\n/).filter(l => l.trim());
+      if(lines.length < 2){ resultEl.innerHTML='<span style="color:var(--red)">❌ El archivo está vacío o solo tiene encabezados</span>'; return; }
+
+      // Detectar separador (coma o punto y coma)
+      const sep = lines[0].includes(';') ? ';' : ',';
+      const headers = lines[0].split(sep).map(h => h.trim().toLowerCase().replace(/['"]/g,''));
+
+      const idxFecha    = headers.findIndex(h => h.includes('fecha'));
+      const idxSeccion  = headers.findIndex(h => h.includes('seccion') || h.includes('sección'));
+      const idxTipo     = headers.findIndex(h => h.includes('tipo'));
+      const idxPlat     = headers.findIndex(h => h.includes('plataforma'));
+      const idxImporte  = headers.findIndex(h => h.includes('importe') || h.includes('monto'));
+      const idxMoneda   = headers.findIndex(h => h.includes('moneda'));
+      const idxCat      = headers.findIndex(h => h.includes('categoria') || h.includes('categoría'));
+      const idxNotas    = headers.findIndex(h => h.includes('notas') || h.includes('descripcion') || h.includes('descripción'));
+
+      if(idxFecha === -1 || idxImporte === -1){
+        resultEl.innerHTML='<span style="color:var(--red)">❌ Faltan columnas obligatorias: <strong>fecha</strong> e <strong>importe</strong></span>'; return;
+      }
+
+      const parseVal = (row, idx) => idx>=0 ? (row[idx]||'').replace(/['"]/g,'').trim() : '';
+
+      let importados = 0, errores = 0, errorMsgs = [];
+      const newMovs = [];
+
+      lines.slice(1).forEach((line, li) => {
+        if(!line.trim()) return;
+        const row = line.split(sep);
+        const fecha = parseVal(row, idxFecha);
+        const seccion = (parseVal(row, idxSeccion) || 'gastos').toLowerCase();
+        const tipo = parseVal(row, idxTipo) || (seccion==='gastos' ? 'Gasto' : 'Aportación');
+        const platNombre = parseVal(row, idxPlat);
+        const importeRaw = parseVal(row, idxImporte).replace(/[,$\s]/g,'');
+        const importe = parseFloat(importeRaw);
+        const moneda = (parseVal(row, idxMoneda) || 'MXN').toUpperCase();
+        const categoria = parseVal(row, idxCat) || 'otros';
+        const notas = parseVal(row, idxNotas);
+
+        // Validaciones
+        if(!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)){ errores++; errorMsgs.push(`Fila ${li+2}: fecha inválida "${fecha}"`); return; }
+        if(!importe || importe <= 0){ errores++; errorMsgs.push(`Fila ${li+2}: importe inválido "${importeRaw}"`); return; }
+
+        const mov = { id: uid(), fecha, seccion, tipo };
+
+        if(seccion === 'plataformas'){
+          const plat = platforms.find(p => p.name.toLowerCase() === platNombre.toLowerCase());
+          if(!plat && platNombre){ errorMsgs.push(`Fila ${li+2}: plataforma "${platNombre}" no encontrada — se importó sin vincular`); }
+          mov.platform = plat ? plat.name : platNombre;
+          mov.tipoPlat = tipo;
+          mov.monto = importe;
+          mov.moneda = moneda;
+          mov.desc = notas;
+        } else {
+          mov.tipo = tipo || 'Gasto';
+          mov.importe = importe;
+          mov.moneda = moneda;
+          mov.categoria = categoria;
+          mov.notas = notas;
+        }
+
+        newMovs.push(mov);
+        importados++;
+      });
+
+      if(importados === 0){ resultEl.innerHTML=`<span style="color:var(--red)">❌ No se importó ningún movimiento. ${errores} errores.</span>`; return; }
+
+      movements = [...newMovs, ...movements];
+      saveAll();
+
+      let html = `<div style="color:var(--green);font-weight:700;margin-bottom:8px">✅ ${importados} movimientos importados</div>`;
+      if(errores > 0) html += `<div style="color:var(--orange);margin-bottom:6px">⚠️ ${errores} filas con errores omitidas</div>`;
+      if(errorMsgs.length > 0) html += `<div style="font-size:11px;color:var(--text2);max-height:100px;overflow-y:auto">${errorMsgs.map(m=>`• ${m}`).join('<br>')}</div>`;
+      html += `<button class="btn btn-primary btn-sm" style="margin-top:12px;width:100%" onclick="closeModal()">Ver movimientos</button>`;
+      resultEl.innerHTML = html;
+
+    } catch(err){ resultEl.innerHTML=`<span style="color:var(--red)">❌ Error procesando el archivo: ${err.message}</span>`; }
+  };
+  reader.readAsText(file);
+}
+window.openImportCSVModal = openImportCSVModal;
+window.downloadCSVTemplate = downloadCSVTemplate;
+window.processCSVImport = processCSVImport;
 
 function resetAll(){
   openModal(`
