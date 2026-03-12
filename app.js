@@ -544,7 +544,7 @@ function savePatrimonioSnapshot(value, capital) {
   const todayStr = today();
   const existingIndex = patrimonioHistory.findIndex(s => s.date === todayStr);
   const newSnapshot = { date: todayStr, value: Math.round(value), capital: Math.round(capital || value) };
-  if (existingIndex === -1) { patrimonioHistory.push(newSnapshot); if (patrimonioHistory.length > 730) patrimonioHistory = patrimonioHistory.slice(-730); }
+  if (existingIndex === -1) { patrimonioHistory.push(newSnapshot); if (patrimonioHistory.length > 3650) patrimonioHistory = patrimonioHistory.slice(-3650); }
   else { patrimonioHistory[existingIndex] = newSnapshot; }
   LS.set('patrimonioHistory', patrimonioHistory);
 }
@@ -697,7 +697,7 @@ function loadFromRemote(remote){
   // Merge con defaults para que campos nuevos (tipoGBP, etc.) nunca se pierdan al cargar de Firebase
   if(remote.settings)settings={...DEFAULT_SETTINGS,...remote.settings};
   if(remote.recurrentes)recurrentes=remote.recurrentes;
-  if(remote.patrimonioHistory)patrimonioHistory=remote.patrimonioHistory.slice(-730);
+  if(remote.patrimonioHistory)patrimonioHistory=remote.patrimonioHistory.slice(-3650);
   LS.set('platforms',platforms);LS.set('movements',movements);LS.set('goals',goals);LS.set('settings',settings);
   LS.set('recurrentes',recurrentes);LS.set('patrimonioHistory',patrimonioHistory);
   _recalcAndSaveSnapshot();
