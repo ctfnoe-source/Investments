@@ -1748,7 +1748,12 @@ function renderGastos(){
   const barLabel=totGastoEUR>totalIngPlaneadoEUR?'🔴 Déficit':totGastoEUR>totalPresupuestoEUR?'🟡 Sobre presupuesto':'🟢 Dentro del plan';
   const totalRecurrente=recurrentes.filter(r=>r.activo).reduce((s,r)=>s+r.importe,0);
 
-  const startDate = new Date(2026, 2, 1);
+  // Fecha de inicio dinámica: primer movimiento de gastos, o primer día del mes actual
+  const firstMovFecha = expMovs.length > 0
+    ? expMovs.reduce((min, m) => m.fecha < min ? m.fecha : min, expMovs[0].fecha)
+    : today();
+  const firstMovDate = new Date(firstMovFecha);
+  const startDate = new Date(firstMovDate.getFullYear(), firstMovDate.getMonth(), 1);
   const now = new Date();
   let acumTotal = 0;
   let mesConDatos = 0;
@@ -1776,8 +1781,8 @@ function renderGastos(){
 
   const catRows=EXPENSE_CATS.map(cat=>{
     const pres=budgets[cat.id]||0,real=byCat[cat.id]||0,rest=pres-real;
-    // Ocultar categorías sin presupuesto y sin gastos reales
-    if (pres===0 && real===0) return '';
+    // Ocultar categorías sin presupuesto y sin gastos reales (a menos que el usuario pida verlas)
+    if (!window._showAllCats && pres===0 && real===0) return '';
     const pctUso=pres>0?(real/pres*100):0;const pctIng=totalIngPlaneadoEUR>0?(pres/totalIngPlaneadoEUR*100).toFixed(1)+'%':'—';
     const barC=pctUso>100?'var(--red)':pctUso>85?'var(--orange)':'var(--green)';
     const restStr=pres>0?(rest>=0?'+':'')+fmtEUR(rest):'—';const restCol=rest>=0?'var(--green)':'var(--red)';
@@ -1785,7 +1790,7 @@ function renderGastos(){
     return`<tr><td style="font-weight:600">${cat.icon} ${cat.name}</td><td><input type="number" class="form-input" style="width:100px;padding:5px 8px;font-size:13px;font-weight:700;text-align:right" value="${pres||''}" placeholder="0" onchange="updateBudget('${cat.id}',this.value)"></td><td style="font-size:12px;color:var(--text2)">${pctIng}</td><td style="font-weight:600;${real>pres&&pres>0?'color:var(--red)':''}">${fmtEUR(real)}</td><td style="font-weight:600;color:${restCol}">${restStr}</td><td style="width:150px">${barHtml}</td></tr>`;
   }).join('');
   const hiddenCatCount = EXPENSE_CATS.filter(cat=>(budgets[cat.id]||0)===0 && (byCat[cat.id]||0)===0).length;
-  const hiddenHint = hiddenCatCount>0?`<tr><td colspan="6" style="text-align:center;padding:10px 0;font-size:11px;color:var(--text3)">${hiddenCatCount} categorías sin asignar ocultas · <button class="btn btn-sm" style="font-size:11px;padding:2px 8px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="this.closest('table').querySelectorAll('tr.cat-hidden').forEach(r=>r.style.display='')">Mostrar todas</button></td></tr>`:'';
+  const hiddenHint = (!window._showAllCats && hiddenCatCount>0) ? `<tr><td colspan="6" style="text-align:center;padding:10px 0;font-size:11px;color:var(--text3)">${hiddenCatCount} categorías sin asignar ocultas · <button class="btn btn-sm" style="font-size:11px;padding:2px 8px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="window._showAllCats=true;renderGastos()">Mostrar todas</button></td></tr>` : '';
 
   const movRows=mesMovs.length>0?mesMovs.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).map(m=>`<tr><td style="color:var(--text2);font-size:12px">${m.fecha}</td><td style="font-weight:500">${m.tipo==='Ingreso'?'💰 Ingreso':catName(m.categoria)} ${m.esRecurrente?'<span class="badge badge-purple">🔄 Auto</span>':''}</td><td><span class="badge ${m.tipo==='Ingreso'?'badge-green':'badge-red'}">${m.tipo}</span></td><td style="font-weight:700">${fmtEUR(toEUR(m))}</td><td style="color:var(--text2);font-size:11px">${m.notas||'—'}</td><td><button class="edit-btn" onclick="openEditMovModal('${m.id}')">✏️</button><button class="del-btn" onclick="deleteMovement('${m.id}')">×</button></td></tr>`).join(''):`<tr><td colspan="6" style="text-align:center;color:var(--text2);padding:24px">Sin movimientos este mes</td></tr>`;
 
@@ -1818,7 +1823,7 @@ function renderGastos(){
       <div class="card stat" style="border-top:3px solid var(--teal)">
         <div class="stat-label">💰 Saldo Acumulado</div>
         <div class="stat-value" style="color:${acumTotal>=0?'var(--teal)':'var(--red)'}">${fmtEUR(acumTotal)}</div>
-        <div class="stat-sub">desde mar 2026 · ${mesConDatos} ${mesConDatos===1?'mes':'meses'}</div>
+        <div class="stat-sub">desde ${MONTHS[startDate.getMonth()]} ${startDate.getFullYear()} · ${mesConDatos} ${mesConDatos===1?'mes':'meses'}</div>
       </div>
       <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">📋 Presupuesto</div><div class="stat-value">${fmtEUR(totalPresupuestoEUR)}</div><div class="stat-sub">${sinAsignarEUR>=0?`<span style="color:var(--green);font-weight:700">+${fmtEUR(sinAsignarEUR)} libre</span>`:`<span style="color:var(--red);font-weight:700">${fmtEUR(sinAsignarEUR)} excedido</span>`}</div></div>
       <div class="card stat" style="border-top:3px solid var(--red)"><div class="stat-label">💳 Gasto Real</div><div class="stat-value" style="color:var(--red)">${fmtEUR(totGastoEUR)}</div><div class="stat-sub">registrado este mes</div></div>
@@ -1831,7 +1836,7 @@ function renderGastos(){
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
         <div>
           <div class="card-title" style="margin:0">💰 Capital Sobrante por Mes</div>
-          <div style="font-size:11px;color:var(--text2);margin-top:3px">Lo que te sobró · en EUR · desde mar 2026</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:3px">Lo que te sobró · en EUR · desde ${MONTHS[startDate.getMonth()]} ${startDate.getFullYear()}</div>
         </div>
         <button class="btn btn-sm" style="background:rgba(0,199,190,0.1);color:var(--teal);border:none;font-weight:700" onclick="switchTab('movimientos');openMovModal('transferencia')">💸 Transferir sobrante →</button>
       </div>
