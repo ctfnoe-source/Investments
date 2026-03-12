@@ -3004,32 +3004,92 @@ function hidePending(){
 
 // ── Panel de admin para aprobar usuarios ────────────────────────────────────
 window.openAdminPanel = async function(){
+  openModal('<div style="padding:8px 0"><div style="font-size:18px;font-weight:800;margin-bottom:16px">👑 Panel de Admin</div><div style="text-align:center;padding:32px;color:var(--text2)"><span class="spinner"></span> Cargando usuarios...</div></div>');
+
   const { collection, getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-  // Leemos el índice central de usuarios (colección 'registros')
   const snap = await getDocs(collection(db, 'registros'));
   const userMetas = [];
   snap.forEach(d => { if(d.id !== ADMIN_UID) userMetas.push({uid: d.id, ...d.data()}); });
-  userMetas.sort((a,b) => (a.aprobado === b.aprobado) ? 0 : a.aprobado ? 1 : -1);
 
-  const rows = userMetas.map(u => `
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:0.5px solid var(--border)">
-      <div>
-        <div style="font-size:13px;font-weight:700">${u.displayName||'Sin nombre'}</div>
-        <div style="font-size:11px;color:var(--text2)">${u.email||''}</div>
-        <div style="font-size:10px;color:var(--text3)">${u.uid}</div>
+  // Cargar conteo de movimientos de cada usuario en paralelo
+  const usageData = await Promise.all(userMetas.map(async u => {
+    try {
+      const [platSnap, invSnap, gasSnap, snapSnap] = await Promise.all([
+        getDocs(collection(db,'usuarios',u.uid,'movimientos_plataformas')),
+        getDocs(collection(db,'usuarios',u.uid,'movimientos_inversiones')),
+        getDocs(collection(db,'usuarios',u.uid,'movimientos_gastos')),
+        getDocs(collection(db,'usuarios',u.uid,'snapshots')),
+      ]);
+      return {
+        ...u,
+        movPlat: platSnap.size,
+        movInv: invSnap.size,
+        movGas: gasSnap.size,
+        snaps: snapSnap.size,
+        totalMovs: platSnap.size + invSnap.size + gasSnap.size,
+      };
+    } catch(e) {
+      return { ...u, movPlat:0, movInv:0, movGas:0, snaps:0, totalMovs:0 };
+    }
+  }));
+
+  // Pendientes primero, luego por total de movimientos desc
+  usageData.sort((a,b) => {
+    if(a.aprobado !== b.aprobado) return a.aprobado ? 1 : -1;
+    return b.totalMovs - a.totalMovs;
+  });
+
+  const rows = usageData.map(u => `
+    <div style="padding:14px 0;border-bottom:0.5px solid var(--border)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex-shrink:0">
+            ${(u.displayName||u.email||'?')[0].toUpperCase()}
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:700">${u.displayName||'Sin nombre'}</div>
+            <div style="font-size:11px;color:var(--text2)">${u.email||''}</div>
+          </div>
+        </div>
+        <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:${u.aprobado?'rgba(48,209,88,0.1)':'rgba(255,159,10,0.1)'};color:${u.aprobado?'var(--green)':'var(--orange)'}">${u.aprobado?'✅ Activo':'⏳ Pendiente'}</span>
       </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <span style="font-size:11px;font-weight:700;color:${u.aprobado?'var(--green)':'var(--orange)'}">${u.aprobado?'✅ Aprobado':'⏳ Pendiente'}</span>
-        ${!u.aprobado?`<button onclick="window.aprobarUsuario('${u.uid}')" style="padding:6px 14px;border-radius:16px;border:none;background:var(--green);color:#fff;font-size:12px;font-weight:700;cursor:pointer">Aprobar</button>`:''}
-        ${u.aprobado?`<button onclick="window.revocarUsuario('${u.uid}')" style="padding:6px 14px;border-radius:16px;border:none;background:var(--orange,#ff9f0a);color:#fff;font-size:12px;font-weight:700;cursor:pointer">Revocar</button>`:''}
-        <button onclick="window.eliminarUsuario('${u.uid}')" style="padding:6px 14px;border-radius:16px;border:none;background:var(--red,#ff453a);color:#fff;font-size:12px;font-weight:700;cursor:pointer">Eliminar</button>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">
+        <div style="background:var(--card2);border-radius:8px;padding:6px 8px;text-align:center">
+          <div style="font-size:16px;font-weight:800;color:var(--blue)">${u.movPlat}</div>
+          <div style="font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em">Plataformas</div>
+        </div>
+        <div style="background:var(--card2);border-radius:8px;padding:6px 8px;text-align:center">
+          <div style="font-size:16px;font-weight:800;color:var(--green)">${u.movInv}</div>
+          <div style="font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em">Inversiones</div>
+        </div>
+        <div style="background:var(--card2);border-radius:8px;padding:6px 8px;text-align:center">
+          <div style="font-size:16px;font-weight:800;color:var(--orange)">${u.movGas}</div>
+          <div style="font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em">Gastos</div>
+        </div>
+        <div style="background:var(--card2);border-radius:8px;padding:6px 8px;text-align:center">
+          <div style="font-size:16px;font-weight:800;color:var(--purple)">${u.snaps}</div>
+          <div style="font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em">Snapshots</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;justify-content:flex-end">
+        ${!u.aprobado?`<button onclick="window.aprobarUsuario('${u.uid}')" style="padding:5px 12px;border-radius:14px;border:none;background:var(--green);color:#fff;font-size:11px;font-weight:700;cursor:pointer">Aprobar</button>`:''}
+        ${u.aprobado?`<button onclick="window.revocarUsuario('${u.uid}')" style="padding:5px 12px;border-radius:14px;border:none;background:var(--orange,#ff9f0a);color:#fff;font-size:11px;font-weight:700;cursor:pointer">Revocar</button>`:''}
+        <button onclick="window.eliminarUsuario('${u.uid}')" style="padding:5px 12px;border-radius:14px;border:none;background:var(--red,#ff453a);color:#fff;font-size:11px;font-weight:700;cursor:pointer">Eliminar</button>
       </div>
     </div>`).join('');
 
+  const pending = usageData.filter(u=>!u.aprobado).length;
   openModal(`<div style="padding:8px 0">
-    <div style="font-size:18px;font-weight:800;margin-bottom:16px">👑 Panel de Admin</div>
-    <div style="font-size:13px;color:var(--text2);margin-bottom:16px">${userMetas.length} usuario(s) registrado(s)</div>
-    ${rows || '<div style="text-align:center;padding:32px;color:var(--text2)">Sin usuarios aún</div>'}
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-size:18px;font-weight:800">👑 Panel de Admin</div>
+      <div style="display:flex;gap:8px">
+        ${pending>0?`<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(255,159,10,0.1);color:var(--orange)">${pending} pendiente${pending>1?'s':''}</span>`:''}
+        <span style="font-size:11px;color:var(--text2)">${usageData.length} usuario${usageData.length!==1?'s':''}</span>
+      </div>
+    </div>
+    <div style="max-height:420px;overflow-y:auto;margin:0 -4px;padding:0 4px">
+      ${rows || '<div style="text-align:center;padding:32px;color:var(--text2)">Sin usuarios aún</div>'}
+    </div>
   </div>`);
 };
 
