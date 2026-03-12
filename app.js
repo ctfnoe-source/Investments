@@ -576,17 +576,17 @@ function buildHistoricalSnapshots() {
       if (p.fechaInicio && p.fechaInicio > fecha) return;
       const toMXN = v => p.moneda === 'USD' ? v*tc : p.moneda === 'EUR' ? v*eurmxn : v;
       capitalPlats += toMXN(p.saldoInicial || 0);
-      movements.filter(m => m.seccion === 'plataformas' && m.plataforma === p.name && m.fecha <= fecha).forEach(m => {
-        if (m.tipo === 'Aportación') capitalPlats += toMXN(m.monto || 0);
-        if (m.tipo === 'Retiro') capitalPlats -= toMXN(m.monto || 0);
+      movements.filter(m => m.seccion === 'plataformas' && m.platform === p.name && m.fecha <= fecha).forEach(m => {
+        if (m.tipoPlat === 'Aportación' || m.tipoPlat === 'Transferencia entrada') capitalPlats += toMXN(m.monto || 0);
+        if (m.tipoPlat === 'Retiro' || m.tipoPlat === 'Transferencia salida') capitalPlats -= toMXN(m.monto || 0);
       });
     });
 
     let capitalInv = 0;
-    movements.filter(m => m.seccion === 'inversiones' && m.tipo === 'Compra' && m.fecha <= fecha)
-      .forEach(m => { const monto = (m.cantidad||0)*(m.precio||0); capitalInv += m.moneda==='MXN' ? monto : monto*tc; });
-    movements.filter(m => m.seccion === 'inversiones' && m.tipo === 'Venta' && m.fecha <= fecha)
-      .forEach(m => { const monto = (m.cantidad||0)*(m.precio||0); capitalInv -= m.moneda==='MXN' ? monto : monto*tc; });
+    movements.filter(m => m.seccion === 'inversiones' && m.tipoMov === 'Compra' && m.fecha <= fecha)
+      .forEach(m => { const monto = m.montoTotal || (m.cantidad||0)*(m.precioUnit||0); capitalInv += m.moneda==='MXN' ? monto : monto*tc; });
+    movements.filter(m => m.seccion === 'inversiones' && m.tipoMov === 'Venta' && m.fecha <= fecha)
+      .forEach(m => { const monto = m.montoTotal || (m.cantidad||0)*(m.precioUnit||0); capitalInv -= m.moneda==='MXN' ? monto : monto*tc; });
 
     const capital = Math.round(capitalPlats + Math.max(0, capitalInv));
     if (capital > 0) capitalPorFecha.push({ date: fecha, capital });
