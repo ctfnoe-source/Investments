@@ -2870,33 +2870,40 @@ function renderAjustes(){
     <div class="card" style="margin-top:16px">
       <div class="card-title">🤖 Asistente IA</div>
       <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">Conecta tu propia API key para usar el asistente financiero. El asistente tiene acceso a todos tus datos (plataformas, inversiones, gastos, metas) pero nunca los envía a terceros salvo a la API que elijas.</div>
-      <div style="display:flex;flex-direction:column;gap:12px">
-        <div>
-          <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Proveedor</label>
-          <select class="form-input" style="width:100%" onchange="settings.aiProvider=this.value;LS.set('settings',settings)" id="aiProviderSelect">
-            <option value="gemini" ${(settings.aiProvider||'gemini')==='gemini'?'selected':''}>Gemini (Google) — gemini-2.0-flash · Gratis</option>
-            <option value="groq" ${(settings.aiProvider||'gemini')==='groq'?'selected':''}>Groq — llama-3.3-70b · Gratis</option>
-            <option value="deepseek" ${(settings.aiProvider||'gemini')==='deepseek'?'selected':''}>DeepSeek — deepseek-chat · Casi gratis</option>
-            <option value="openrouter" ${(settings.aiProvider||'gemini')==='openrouter'?'selected':''}>OpenRouter — acceso a múltiples modelos</option>
-          </select>
-        </div>
-        <div>
-          <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">API Key</label>
-          <div style="display:flex;gap:8px;align-items:center">
-            <input type="password" class="form-input" style="flex:1;font-family:monospace;font-size:13px" id="aiKeyInput" placeholder="AIza... / gsk_... / sk-... / sk-or-..." value="${settings.aiKey||''}" oninput="settings.aiKey=this.value.trim();LS.set('settings',settings)">
-            <button class="btn btn-primary btn-sm" onclick="testAiKey()">🧪 Probar</button>
-            ${settings.aiKey?'<span style="font-size:13px;color:var(--green)">✅</span>':''}
-          </div>
-          <div id="aiKeyTestResult" style="margin-top:6px;font-size:12px"></div>
-        </div>
-        <div style="font-size:11px;color:var(--text3);line-height:1.6">
-          🔑 <strong>Gemini:</strong> <a href="https://aistudio.google.com" target="_blank" style="color:var(--blue)">aistudio.google.com</a> · Get API key → gratis<br>
-          🔑 <strong>Groq:</strong> <a href="https://console.groq.com" target="_blank" style="color:var(--blue)">console.groq.com</a> · gratis con Llama 3.3<br>
-          🔑 <strong>DeepSeek:</strong> <a href="https://platform.deepseek.com" target="_blank" style="color:var(--blue)">platform.deepseek.com</a> · muy barato<br>
-          🔑 <strong>OpenRouter:</strong> <a href="https://openrouter.ai/keys" target="_blank" style="color:var(--blue)">openrouter.ai/keys</a> · modelos gratuitos disponibles
-        </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px;padding:10px 12px;background:rgba(10,132,255,0.06);border-radius:10px;border:1px solid rgba(10,132,255,0.15)">
+        ⚡ <strong>Fallback automático:</strong> El asistente usa las keys en orden Groq → Gemini → DeepSeek → OpenRouter. Si una falla, prueba la siguiente.
       </div>
-    </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        ${(()=>{
+          const aiProviders=[
+            {id:'groq',   label:'Groq',        badge:'Gratis',         ph:'gsk_...',    url:'https://console.groq.com',        urlLabel:'console.groq.com'},
+            {id:'gemini', label:'Gemini',       badge:'Gratis',         ph:'AIza...',    url:'https://aistudio.google.com',     urlLabel:'aistudio.google.com'},
+            {id:'deepseek',label:'DeepSeek',    badge:'Casi gratis',    ph:'sk-...',     url:'https://platform.deepseek.com',   urlLabel:'platform.deepseek.com'},
+            {id:'openrouter',label:'OpenRouter',badge:'Modelos gratis', ph:'sk-or-...',  url:'https://openrouter.ai/keys',      urlLabel:'openrouter.ai/keys'},
+          ];
+          return aiProviders.map(p=>{
+            const val=(settings.aiKeys||{})[p.id]||'';
+            const ok=!!val;
+            return '<div style="background:var(--card2);border-radius:12px;padding:12px 14px;border:1px solid '+(ok?'rgba(48,209,88,0.3)':'var(--border)')+'">'+
+              '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'+
+                '<div style="display:flex;align-items:center;gap:8px">'+
+                  '<span style="font-size:13px;font-weight:700">'+p.label+'</span>'+
+                  '<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(48,209,88,0.12);color:var(--green)">'+p.badge+'</span>'+
+                  (ok?'<span style="font-size:12px">✅</span>':'')+
+                '</div>'+
+                '<a href="'+p.url+'" target="_blank" style="font-size:11px;color:var(--blue)">'+p.urlLabel+'</a>'+
+              '</div>'+
+              '<div style="display:flex;gap:8px;align-items:center">'+
+                '<input type="password" class="form-input" id="aiKey_'+p.id+'" style="flex:1;font-family:monospace;font-size:12px" placeholder="'+p.ph+'" value="'+val+'" '+
+                  'oninput="if(!settings.aiKeys)settings.aiKeys={};settings.aiKeys[''+p.id+'']=this.value.trim();LS.set('settings',settings);this.closest('div').style.borderColor=this.value?'rgba(48,209,88,0.3)':'var(--border)'">'+
+                '<button class="btn btn-sm" style="background:var(--card);border:1px solid var(--border);white-space:nowrap" onclick="testAiKey(''+p.id+'')">🧪 Probar</button>'+
+              '</div>'+
+              '<div id="aiKeyTestResult_'+p.id+'" style="margin-top:6px;font-size:11px"></div>'+
+            '</div>';
+          }).join('');
+        })()}
+      </div>
+
     <div class="card" style="margin-top:16px"><div class="card-title">⚠️ Zona de Peligro</div><button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="resetAll()">🗑 Resetear Todo</button></div>
     ${isAdmin ? adminFirebaseRulesHTML : ''}
   `;
@@ -2984,118 +2991,110 @@ DATOS DEL USUARIO (${new Date().toLocaleDateString('es-ES')}):
   }
 }
 
-async function testAiKey() {
-  const provider = settings.aiProvider || 'claude';
-  const key = settings.aiKey || '';
-  const el = document.getElementById('aiKeyTestResult');
+async function testAiKey(provider) {
+  if (!provider) return;
+  const key = (settings.aiKeys||{})[provider] || '';
+  const el = document.getElementById('aiKeyTestResult_' + provider);
   if (!el) return;
   if (!key) { el.innerHTML = '<span style="color:var(--red)">⚠️ Ingresa tu API key primero</span>'; return; }
   el.innerHTML = '<span class="spinner"></span> Probando...';
   try {
-    const result = await _aiCall([{role:'user',content:'Responde solo: OK'}], true);
+    const result = await _aiCallSingle(provider, key, [{role:'user',content:'Responde solo: OK'}], true);
     if (result) {
-      settings.aiKey = key;
-      LS.set('settings', settings);
-      const pname = provider==='gemini'?'Gemini':provider==='groq'?'Groq':provider==='deepseek'?'DeepSeek':'OpenRouter';
-      el.innerHTML = '<span style="color:var(--green)">✅ Conexión exitosa — ' + pname + ' listo</span>';
+      el.innerHTML = '<span style="color:var(--green)">✅ ' + provider.charAt(0).toUpperCase()+provider.slice(1) + ' listo</span>';
     }
   } catch(e) {
     el.innerHTML = '<span style="color:var(--red)">❌ ' + e.message + '</span>';
   }
 }
 
-async function _aiCall(messages, test=false) {
-  const provider = settings.aiProvider || 'gemini';
-  const key = settings.aiKey || '';
-  if (!key) throw new Error('No hay API key configurada. Ve a Ajustes → Asistente IA.');
-
+// Single provider call (used by both fallback orchestrator and test)
+async function _aiCallSingle(provider, key, messages, test=false) {
   const systemPrompt = _buildAiContext();
   const maxTokens = test ? 10 : 1024;
 
   if (provider === 'gemini') {
-    // Gemini: alternating user/model, no consecutive same role
     const rawMsgs = messages.map(m=>({role:m.role==='assistant'?'model':'user', parts:[{text:m.content}]}));
-    // Gemini requires alternating roles — merge consecutive same-role messages
     const geminiMsgs = [];
     for (const msg of rawMsgs) {
       if (geminiMsgs.length > 0 && geminiMsgs[geminiMsgs.length-1].role === msg.role) {
         geminiMsgs[geminiMsgs.length-1].parts[0].text += '
 ' + msg.parts[0].text;
-      } else {
-        geminiMsgs.push(msg);
-      }
+      } else { geminiMsgs.push(msg); }
     }
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        system_instruction: {parts:[{text:systemPrompt}]},
-        contents: geminiMsgs,
-        generationConfig: {maxOutputTokens: maxTokens}
-      })
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({system_instruction:{parts:[{text:systemPrompt}]}, contents:geminiMsgs, generationConfig:{maxOutputTokens:maxTokens}})
     });
-    if (!r.ok) { const err = await r.json().catch(()=>({})); throw new Error(err?.error?.message || 'Error Gemini ' + r.status); }
+    if (!r.ok) { const e=await r.json().catch(()=>({})); throw new Error(e?.error?.message||'Error Gemini '+r.status); }
     const d = await r.json();
     return d.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
   } else if (provider === 'groq') {
     const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        max_tokens: maxTokens,
-        messages: [{role:'system',content:systemPrompt}, ...messages.map(m=>({role:m.role,content:m.content}))]
-      })
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body: JSON.stringify({model:'llama-3.3-70b-versatile', max_tokens:maxTokens, messages:[{role:'system',content:systemPrompt},...messages.map(m=>({role:m.role,content:m.content}))]})
     });
-    if (!r.ok) { const err = await r.json().catch(()=>({})); throw new Error(err?.error?.message || 'Error Groq ' + r.status); }
+    if (!r.ok) { const e=await r.json().catch(()=>({})); throw new Error(e?.error?.message||'Error Groq '+r.status); }
     const d = await r.json();
     return d.choices?.[0]?.message?.content || '';
 
   } else if (provider === 'deepseek') {
     const r = await fetch('https://api.deepseek.com/chat/completions', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body: JSON.stringify({
-        model: 'deepseek-chat',
-        max_tokens: maxTokens,
-        messages: [{role:'system',content:systemPrompt}, ...messages.map(m=>({role:m.role,content:m.content}))]
-      })
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body: JSON.stringify({model:'deepseek-chat', max_tokens:maxTokens, messages:[{role:'system',content:systemPrompt},...messages.map(m=>({role:m.role,content:m.content}))]})
     });
-    if (!r.ok) { const err = await r.json().catch(()=>({})); throw new Error(err?.error?.message || 'Error DeepSeek ' + r.status); }
+    if (!r.ok) { const e=await r.json().catch(()=>({})); throw new Error(e?.error?.message||'Error DeepSeek '+r.status); }
     const d = await r.json();
     return d.choices?.[0]?.message?.content || '';
 
   } else if (provider === 'openrouter') {
     const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type':'application/json',
-        'Authorization':'Bearer '+key,
-        'HTTP-Referer': window.location.origin,
-        'X-Title': 'Finanzas Pro'
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.0-flash-exp:free',
-        max_tokens: maxTokens,
-        messages: [{role:'system',content:systemPrompt}, ...messages.map(m=>({role:m.role,content:m.content}))]
-      })
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key,'HTTP-Referer':window.location.origin,'X-Title':'Finanzas Pro'},
+      body: JSON.stringify({model:'google/gemini-2.0-flash-exp:free', max_tokens:maxTokens, messages:[{role:'system',content:systemPrompt},...messages.map(m=>({role:m.role,content:m.content}))]})
     });
-    if (!r.ok) { const err = await r.json().catch(()=>({})); throw new Error(err?.error?.message || 'Error OpenRouter ' + r.status); }
+    if (!r.ok) { const e=await r.json().catch(()=>({})); throw new Error(e?.error?.message||'Error OpenRouter '+r.status); }
     const d = await r.json();
     return d.choices?.[0]?.message?.content || '';
   }
-
   throw new Error('Proveedor desconocido: ' + provider);
+}
+
+// Fallback orchestrator: tries Groq → Gemini → DeepSeek → OpenRouter
+async function _aiCall(messages, test=false) {
+  const keys = settings.aiKeys || {};
+  const order = ['groq','gemini','deepseek','openrouter'];
+  const available = order.filter(p => !!keys[p]);
+  if (available.length === 0) throw new Error('No hay API keys configuradas. Ve a Ajustes → Asistente IA.');
+
+  let lastError = null;
+  for (const provider of available) {
+    try {
+      const result = await _aiCallSingle(provider, keys[provider], messages, test);
+      if (result) {
+        _aiLastProvider = provider; // track which one worked
+        return result;
+      }
+    } catch(e) {
+      console.warn(`[AI] ${provider} falló:`, e.message);
+      lastError = e;
+    }
+  }
+  throw new Error('Todos los proveedores fallaron. Último error: ' + (lastError?.message || 'desconocido'));
 }
 
 function _renderAiChat() {
   const panel = document.getElementById('aiChatPanel');
   if (!panel) return;
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const hasKey = !!(settings.aiKey);
+  const hasKey = Object.values(settings.aiKeys||{}).some(v=>!!v);
   const provider = settings.aiProvider || 'claude';
-  const providerLabel = provider==='gemini'?'Gemini ✦':provider==='groq'?'Groq ✦':provider==='deepseek'?'DeepSeek ✦':'OpenRouter ✦';
+  const keys = settings.aiKeys||{};
+  const activeProviders = ['groq','gemini','deepseek','openrouter'].filter(p=>!!keys[p]);
+  const providerLabel = activeProviders.length === 0 ? 'Sin configurar' :
+    activeProviders.length === 1 ? (activeProviders[0].charAt(0).toUpperCase()+activeProviders[0].slice(1)+' ✦') :
+    (_aiLastProvider ? (_aiLastProvider.charAt(0).toUpperCase()+_aiLastProvider.slice(1)+' ✦') : activeProviders.length + ' proveedores ✦');
 
   const msgsHtml = _aiMessages.length === 0
     ? `<div style="text-align:center;padding:32px 20px;color:var(--text2)">
