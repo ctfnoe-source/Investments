@@ -3073,10 +3073,18 @@ async function _aiCallSingle(provider, key, messages, test=false) {
       });
       if (modelsResp.ok) {
         const modelsData = await modelsResp.json();
+        // Excluir modelos conocidos por saturarse (qwen3, etc)
+        const blacklist = ['qwen3','qwen/qwen3'];
         freeModels = (modelsData.data || [])
-          .filter(m => m.id.endsWith(':free') && m.context_length >= 4096)
-          .sort((a, b) => (b.context_length || 0) - (a.context_length || 0))
-          .slice(0, 6)
+          .filter(m => {
+            if (!m.id.endsWith(':free')) return false;
+            if (m.context_length < 4096) return false;
+            if (blacklist.some(b => m.id.includes(b))) return false;
+            return true;
+          })
+          // Ordenar por context_length ASCENDENTE — modelos más pequeños suelen tener menos carga
+          .sort((a, b) => (a.context_length || 0) - (b.context_length || 0))
+          .slice(0, 8)
           .map(m => m.id);
         console.log('[OpenRouter] Modelos gratuitos disponibles:', freeModels);
       }
@@ -3093,11 +3101,13 @@ async function _aiCallSingle(provider, key, messages, test=false) {
           headers:{'Content-Type':'application/json','Authorization':'Bearer '+key,'HTTP-Referer':window.location.origin,'X-Title':'Finanzas Pro'},
           body: JSON.stringify({model, max_tokens:maxTokens, messages:[{role:'system',content:systemPrompt},...messages.map(m=>({role:m.role,content:m.content}))]})
         });
+        if (r.status === 429) { console.warn('[OpenRouter]', model, 'falló: 429 (saturado)'); lastErr=new Error('429'); continue; }
         if (!r.ok) { const e=await r.json().catch(()=>({})); lastErr=new Error(e?.error?.message||'Error '+r.status); console.warn('[OpenRouter]', model, 'falló:', r.status); continue; }
         const d = await r.json();
         const text = d.choices?.[0]?.message?.content;
         if (text) { console.log('[OpenRouter] Modelo usado:', model); return text; }
       } catch(e) { lastErr=e; console.warn('[OpenRouter]', model, 'error:', e.message); }
+      await new Promise(r => setTimeout(r, 500)); // pausa entre modelos para no saturar
     }
     throw lastErr || new Error('Todos los modelos de OpenRouter fallaron');
   }
