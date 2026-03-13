@@ -410,15 +410,7 @@ async function flushOfflineQueue() {
   if (!_offlineQueue.length) return;
   if (typeof window.saveToFirebase !== 'function') return;
   setOfflineBanner('syncing');
-  try {
-    // Guardar doc principal (platforms, goals, settings, recurrentes)
-    await window.saveToFirebase(true);
-    // Sincronizar TODOS los movimientos y snapshots acumulados offline
-    if (typeof window.saveAllMovementsToFirebase === 'function') {
-      await window.saveAllMovementsToFirebase();
-    }
-    _offlineQueue = []; LS.set('offlineQueue', []); setOfflineBanner('synced');
-  }
+  try { await window.saveToFirebase(true); _offlineQueue = []; LS.set('offlineQueue', []); setOfflineBanner('synced'); }
   catch(e) { setOfflineBanner('offline'); }
 }
 
@@ -1004,7 +996,7 @@ function _recalcAndSaveSnapshot() {
   const gananciaReal = totalRendPlats + totalRendInv;
 
   // capital = patrimonio - ganancia real, para que value - capital = gananciaReal siempre
-  const capitalBase = Math.max(0, Math.round(patrimonioTotal - gananciaReal));
+  const capitalBase = Math.round(patrimonioTotal - gananciaReal);
 
   savePatrimonioSnapshot(patrimonioTotal, capitalBase);
 }
@@ -1430,12 +1422,9 @@ function renderDashboard(){
   const tickers2 = getTickerPositions();
   const capitalInvHoy = tickers2.reduce((s,t) => s + (t.moneda==='MXN' ? t.costoPosicion : t.costoPosicion*tc2), 0);
   const capitalHoy = capitalPlatsHoy + capitalInvHoy;
-  // Ganancia neta real = rendimientos de plataformas + G/P no realizada de inversiones
-  const tickers2Rend = tickers2.reduce((s,t) => {
-    const gp = t.gpNoRealizada !== null ? t.gpNoRealizada : 0;
-    return s + (t.moneda === 'MXN' ? gp : gp * tc2);
-  }, 0);
-  const patrimonioRendPuro = plats.reduce((s,p) => s + (p.rendimiento||0), 0) + tickers2Rend;
+  // Ganancia neta real = suma de rendimientos individuales por plataforma
+  // Correcto porque cada plataforma ya descuenta aportaciones/retiros/transferencias
+  const patrimonioRendPuro = plats.reduce((s,p) => s + (p.rendimiento||0), 0);
 
   function getChangeForMonths(months) {
     if (hist.length < 2) return null;
@@ -2285,7 +2274,6 @@ function renderPlataformas(){
 
 function editPlatField(id,field,el,inputType){
   const p=platforms.find(x=>x.id===id);if(!p)return;
-  const originalEl=el.cloneNode(true); // guardar nodo original para cancelar
   let input;
   if(inputType==='date'){input=document.createElement('input');input.type='date';input.value=p[field]||today();input.className='form-input';input.style.cssText='width:130px;padding:4px 8px;font-size:12px';}
   else if(inputType==='percent'){input=document.createElement('input');input.type='number';input.step='0.01';input.min='0';input.max='100';input.value=p[field]||0;input.className='form-input';input.style.cssText='width:90px;padding:4px 8px;font-size:12px';input.placeholder='e.g. 13.5';}
@@ -2294,11 +2282,8 @@ function editPlatField(id,field,el,inputType){
     PLAT_MONEDAS.forEach(m=>{const opt=document.createElement('option');opt.value=m;opt.textContent=m==='MXN'?'🇲🇽 MXN':m==='USD'?'🇺🇸 USD':'🇪🇺 EUR';if(p[field]===m)opt.selected=true;input.appendChild(opt);});
   }
   else{input=document.createElement('input');input.type='number';input.step='any';input.value=p[field]||0;input.className='form-input';input.style.cssText='width:110px;padding:4px 8px;font-size:12px';}
-  let _committed=false;
-  const finish=()=>{if(_committed)return;_committed=true;const raw=input.value;let val=inputType==='date'||inputType==='moneda'?raw:(Number(raw)||0);platforms=platforms.map(x=>x.id!==id?x:{...x,[field]:val});saveAll();};
-  const cancel=()=>{if(_committed)return;_committed=true;input.replaceWith(originalEl);};
-  input.onblur=finish;
-  input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();input.blur();}if(e.key==='Escape'){e.preventDefault();cancel();}};
+  const finish=()=>{const raw=input.value;let val=inputType==='date'||inputType==='moneda'?raw:(Number(raw)||0);platforms=platforms.map(x=>x.id!==id?x:{...x,[field]:val});saveAll();};
+  input.onblur=finish;input.onkeydown=e=>{if(e.key==='Enter')input.blur();if(e.key==='Escape')saveAll();};
   if(inputType==='moneda')input.onchange=finish;
   el.replaceWith(input);input.focus();
 }
@@ -3657,13 +3642,10 @@ function importData(input){const file=input.files[0];if(!file)return;const r=new
   if(d.settings)settings=d.settings;
   if(d.recurrentes)recurrentes=d.recurrentes;
   if(d.patrimonioHistory)patrimonioHistory=d.patrimonioHistory;
-  // saveAll() ya llama a saveToFirebase internamente (doc principal + movimientos cambiados).
-  // Para una importación masiva forzamos también saveAllMovementsToFirebase una sola vez
-  // en lugar de dos (evita doble escritura que había antes).
   saveAll();
+  // Guardar todos los movimientos importados a sus subcolecciones
   if(typeof window.saveAllMovementsToFirebase==='function' && window._currentUser?.uid){
-    // Esperar el debounce de saveAll (1.5 s) antes de lanzar el guardado masivo
-    setTimeout(async () => { await window.saveAllMovementsToFirebase(); }, 2000);
+    await window.saveAllMovementsToFirebase();
   }
   alert('✅ Data imported');
 }catch(e){alert('❌ Invalid file: '+e.message);}};r.readAsText(file);}
@@ -3868,10 +3850,14 @@ function setFbStatus(s){let el=document.getElementById('fbStatus');if(!el)return
 function showApp(){document.getElementById('loginOverlay').classList.add('hidden');document.getElementById('mainNav').style.display='';document.getElementById('mainContainer').style.display='';document.getElementById('mobileNav').style.display='';document.getElementById('accessDenied').classList.remove('show');}
 function showLogin(msg){document.getElementById('loginOverlay').classList.remove('hidden');document.getElementById('mainNav').style.display='none';document.getElementById('mainContainer').style.display='none';document.getElementById('mobileNav').style.display='none';document.getElementById('accessDenied').classList.remove('show');if(msg){const el=document.getElementById('loginError');el.textContent=msg;el.style.display='block';}}
 
-window.signOutUser=async()=>{await signOut(auth);window.location.reload();};
+window.signOutUser=async()=>{
+  if(_unsub){_unsub();_unsub=null;}
+  if(_unsubRegistro){_unsubRegistro();_unsubRegistro=null;}
+  await signOut(auth);window.location.reload();
+};
 document.getElementById('btnGoogleLogin').addEventListener('click',async()=>{const btn=document.getElementById('btnGoogleLogin');btn.disabled=true;btn.innerHTML='<span style="display:inline-block;width:20px;height:20px;border:2px solid rgba(10,132,255,0.2);border-top-color:#0A84FF;border-radius:50%;animation:spin 0.7s linear infinite;margin-right:8px;vertical-align:middle"></span> Connecting...';try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(e){btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> Continue with Google';showLogin(e.code==='auth/popup-closed-by-user'?'':'Error signing in.');}});
 
-let _ignoreSnap=false,_saveTimeout=null,_unsub=null;
+let _ignoreSnap=false,_saveTimeout=null,_unsub=null,_unsubRegistro=null;
 
 async function loadSubcollections(uid){
   const { collection, getDocs: _getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
@@ -4156,19 +4142,8 @@ window.revocarUsuario = async function(uid){
 
 window.eliminarUsuario = async function(uid){
   if(!confirm('Delete this user completely? Their data, profile and Firebase record will be removed.')) return;
-  const { doc: _doc, deleteDoc: _deleteDoc, collection: _col, getDocs: _getDocs } =
-    await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-
-  // Borrar subcolecciones (movimientos + snapshots) — Firestore no las borra en cascada
-  const SUBCOLS = ['movimientos_plataformas','movimientos_inversiones','movimientos_gastos','snapshots'];
-  for (const subcol of SUBCOLS) {
-    try {
-      const snap = await _getDocs(_col(db, 'usuarios', uid, subcol));
-      await Promise.all(snap.docs.map(d => _deleteDoc(d.ref)));
-    } catch(e) { console.warn(`Could not delete subcollection ${subcol}:`, e); }
-  }
-
-  // Borrar documentos principales + registro
+  const { doc: _doc, deleteDoc: _deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+  // Borrar en paralelo: datos, meta y registro
   try {
     await Promise.all([
       _deleteDoc(_doc(db, 'registros', uid)),
@@ -4230,6 +4205,27 @@ onAuthStateChanged(auth,async user=>{
     resetToEmpty(); // Limpiar memoria antes de cargar datos del nuevo usuario
     if(typeof updateNavUser==='function') updateNavUser(user);
     showApp(); setupFirestore(uid);
+
+    // Listener en tiempo real sobre registros/{uid} — detecta revocación o eliminación
+    if(_unsubRegistro){_unsubRegistro();_unsubRegistro=null;}
+    _unsubRegistro = onSnapshot(registroRef, (snap) => {
+      if(!snap.exists()){
+        // Documento eliminado (admin borró al usuario)
+        if(!isAdmin){
+          if(_unsub){_unsub();_unsub=null;}
+          if(_unsubRegistro){_unsubRegistro();_unsubRegistro=null;}
+          signOut(auth).then(()=>window.location.reload());
+        }
+        return;
+      }
+      const data = snap.data();
+      // Acceso revocado por el admin
+      if(!isAdmin && data.aprobado === false){
+        if(_unsub){_unsub();_unsub=null;}
+        if(_unsubRegistro){_unsubRegistro();_unsubRegistro=null;}
+        signOut(auth).then(()=>window.location.reload());
+      }
+    }, (err) => { console.error('[registro listener]', err); });
     if(window.renderPage) window.renderPage(window.currentTab||'dashboard');
     setTimeout(()=>{ _runProactiveAiAlert(); }, 4000);
     setTimeout(()=>{
@@ -4241,6 +4237,7 @@ onAuthStateChanged(auth,async user=>{
     // _unsub y showLogin ya los maneja signOutUser si fue cierre intencional
     // Esto cubre el caso de sesión expirada o revocada externamente
     if(_unsub){_unsub();_unsub=null;}
+    if(_unsubRegistro){_unsubRegistro();_unsubRegistro=null;}
     hidePending();
     if(document.getElementById('loginOverlay') && !document.getElementById('loginOverlay').classList.contains('hidden')) return;
     showLogin();
