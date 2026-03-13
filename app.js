@@ -2985,24 +2985,50 @@ function _buildAiContext() {
       .map(t=>`${t.ticker} (${t.type}): ×${t.cantActual}, G/P ${t.gpNoRealizada!=null?(t.gpNoRealizada>=0?'+':'')+t.gpNoRealizada.toFixed(0)+' '+t.moneda:'sin precio'}`).join('; ');
 
     // Metas
-    const metasSummary = goals.slice(0,4).map(g=>`${g.nombre}: meta ${fmt(g.meta)}`).join('; ');
+    const metasSummary = goals.slice(0,4).map(g=>`${g.nombre}: meta ${fmt(g.meta)}, actual ${fmt(g.actual||0)}`).join('; ');
 
     // Balance mes
     const balance = totalIng - totalGastos;
 
-    return `Eres un asistente financiero personal para la app Finanzas Pro. Tienes acceso a los datos reales del usuario. Responde en español, de forma concisa y amigable. NO des consejos de inversión formales. SÍ puedes analizar los datos y dar observaciones útiles.
+    // Movimientos recientes — últimos 3 meses
+    const hace3meses = new Date(now.getFullYear(), now.getMonth()-2, 1).toISOString().slice(0,7);
+    const movRecientes = movements
+      .filter(m => m.fecha && m.fecha >= hace3meses)
+      .sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''))
+      .slice(0, 150)
+      .map(m => `[${m.fecha}] ${m.seccion||''} | ${m.categoria||''} | ${m.concepto||m.descripcion||''} | ${m.monedaOrig||'MXN'} ${(m.importe||0).toFixed(2)}${m.notas?' ('+m.notas+')':''}`)
+      .join('\n');
 
-DATOS DEL USUARIO (${new Date().toLocaleDateString('es-ES')}):
+    // Recurrentes
+    const recurrentesList = recurrentes
+      .filter(r => r.activo !== false)
+      .map(r => `${r.nombre}: ${r.importe} ${r.moneda||'EUR'} / ${r.frecuencia||'mes'} — ${r.categoria||''}`)
+      .join('\n');
+
+    // Todas las plataformas
+    const todasPlats = plats.map(p=>`${p.name} (${p.type}/${p.moneda}): saldo ${fmtPlat(p.saldo,p.moneda)}, rend ${p.rendimiento>=0?'+':''}${fmtPlat(p.rendimiento,p.moneda)}`).join('\n');
+
+    return `Eres un asistente financiero personal para la app Finanzas Pro. Tienes acceso a los datos REALES del usuario. Responde en español, de forma concisa y amigable. NO des consejos de inversión formales. SI puedes analizar los datos y dar observaciones útiles. Cuando te pregunten por movimientos específicos, búscalos en la lista proporcionada.
+
+RESUMEN FINANCIERO (${new Date().toLocaleDateString('es-ES')}):
 - Patrimonio total: ${fmt(patrimonio)} MXN (plataformas: ${fmt(totalPlats)}, inversiones: ${fmt(totalInv)})
 - Tipo de cambio: USD/MXN = ${tc}
-- Ingreso mensual estimado: €${totalIng.toFixed(0)} EUR
-- Gastos este mes (${mesKey}): €${totalGastos.toFixed(0)} EUR
-- Balance del mes: €${balance.toFixed(0)} EUR (${totalIng>0?((balance/totalIng)*100).toFixed(0):'—'}% ahorro)
-- Top plataformas: ${topPlats||'ninguna'}
-- Inversiones abiertas: ${topInv||'ninguna'}
+- Ingreso mensual estimado: EUR ${totalIng.toFixed(0)}
+- Gastos este mes (${mesKey}): EUR ${totalGastos.toFixed(0)} — por categoria: ${Object.entries(bycat).map(([k,v])=>k+': EUR '+v.toFixed(0)).join(', ')}
+- Balance del mes: EUR ${balance.toFixed(0)} (${totalIng>0?((balance/totalIng)*100).toFixed(0):'—'}% ahorro)
 - Metas: ${metasSummary||'sin metas'}
-- Número de movimientos registrados: ${movements.length}
-- Recurrentes activos: ${recurrentes.filter(r=>r.activo!==false).length}`;
+
+PLATAFORMAS:
+${todasPlats||'ninguna'}
+
+INVERSIONES ABIERTAS:
+${topInv||'ninguna'}
+
+RECURRENTES ACTIVOS:
+${recurrentesList||'ninguno'}
+
+MOVIMIENTOS ULTIMOS 3 MESES (total historico: ${movements.length}):
+${movRecientes||'sin movimientos'}`;
   } catch(e) {
     return 'Eres un asistente financiero personal. Responde en español de forma concisa y amigable.';
   }
@@ -3067,12 +3093,6 @@ async function _aiCallSingle(provider, key, messages, test=false) {
   } else if (provider === 'openrouter') {
     // Obtener lista de modelos gratuitos disponibles en tiempo real
     // Modelos probados que sí funcionan con system prompt
-    const provenModels = [
-      'meta-llama/llama-3.1-8b-instruct:free',
-      'mistralai/mistral-7b-instruct:free',
-      'deepseek/deepseek-r1-0528-qwen3-8b:free',
-      'microsoft/phi-3-mini-128k-instruct:free',
-    ];
     let freeModels = [];
     try {
       const modelsResp = await fetch('https://openrouter.ai/api/v1/models', {
@@ -3080,28 +3100,23 @@ async function _aiCallSingle(provider, key, messages, test=false) {
       });
       if (modelsResp.ok) {
         const modelsData = await modelsResp.json();
-        // Excluir modelos saturados (429) o con formato incompatible (400 en system prompt)
-        const blacklist = ['qwen3', 'qwen/qwen3', 'gemma-3n', 'gemma-3', 'gemma-2'];
+        const blacklist = ['qwen3', 'gemma-3n', 'gemma-3', 'gemma-2'];
         freeModels = (modelsData.data || [])
           .filter(m => {
             if (!m.id.endsWith(':free')) return false;
-            if (m.context_length < 4096) return false;
+            if ((m.context_length || 0) < 4096) return false;
             if (blacklist.some(b => m.id.includes(b))) return false;
             return true;
           })
-          // Ordenar por context_length ASCENDENTE — modelos más pequeños suelen tener menos carga
           .sort((a, b) => (a.context_length || 0) - (b.context_length || 0))
-          .slice(0, 8)
+          .slice(0, 10)
           .map(m => m.id);
         console.log('[OpenRouter] Modelos gratuitos disponibles:', freeModels);
-        // Poner modelos probados primero, luego los dinámicos que no estén ya en la lista
-        const dynamic = freeModels.filter(m => !provenModels.includes(m));
-        freeModels = [...provenModels, ...dynamic].slice(0, 8);
       }
     } catch(e) { console.warn('[OpenRouter] No se pudo obtener lista de modelos:', e.message); }
-    // Fallback hardcodeado si la lista falla
     if (freeModels.length === 0) {
-      freeModels = ['deepseek/deepseek-chat-v3-0324:free', 'meta-llama/llama-3.3-70b-instruct:free', 'mistralai/mistral-7b-instruct:free'];
+      // Fallback mínimo — solo si la API de modelos falla por red
+      freeModels = ['liquid/lfm-2.5-1.2b-instruct:free'];
     }
     let lastErr = null;
     for (const model of freeModels) {
