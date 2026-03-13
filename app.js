@@ -1069,12 +1069,12 @@ function renderDashboard(){
   const mesI=expMovs.filter(m=>{const d=new Date(m.fecha);return d.getMonth()+1===cm&&d.getFullYear()===cy&&m.tipo==='Ingreso';});
 
   const toDisplayCur = m => {
-    // Primero obtener valor en EUR
-    let valEUR;
-    if(m.monedaOrig==='EUR') { valEUR = m.importeEUR||m.importe; }
-    else if(m.notas&&m.notas.includes('€')&&m.notas.includes('→')){const match=m.notas.match(/€([\d.]+)/);valEUR=match?Number(match[1]):Math.round(m.importe/eurmxn*100)/100;}
-    else { valEUR = Math.round(m.importe/eurmxn*100)/100; }
-    // Luego convertir a moneda del sueldo
+    // Extraer valor original si está en notas
+    if(m.monedaOrig==='EUR'){const match=m.notas&&m.notas.match(/€([\d.]+)/);const v=match?Number(match[1]):(m.importeEUR||Math.round(m.importe/eurmxn*100)/100);if(monedaSueldo==='EUR')return v;return eurToDash(v);}
+    if(m.monedaOrig==='USD'){const match=m.notas&&m.notas.match(/US\$([\d.]+)/);const v=match?Number(match[1]):Math.round(m.importe/(usdeurD?(1/usdeurD)*eurmxn:eurmxn)*100)/100;if(monedaSueldo==='USD')return v;return eurToDash(v*usdeurD);}
+    if(m.monedaOrig==='GBP'){const match=m.notas&&m.notas.match(/£([\d.]+)/);const v=match?Number(match[1]):Math.round(m.importe/((1/gbpeurD)*eurmxn)*100)/100;if(monedaSueldo==='GBP')return v;return eurToDash(v/gbpeurD);}
+    // MXN: convertir a moneda del sueldo
+    const valEUR=Math.round(m.importe/eurmxn*100)/100;
     return eurToDash(valEUR);
   };
 
@@ -1819,7 +1819,7 @@ function openMovModal(sec){
         </div>
       `:`
         <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${today()}" required></div><div class="form-group"><label class="form-label">Tipo</label><select class="form-select" name="tipo"><option>Gasto</option><option>Ingreso</option></select></div></div>
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Categoría</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}">${c.icon} ${c.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Importe</label><input type="number" step="any" class="form-input" name="importe" placeholder="0" required></div><div class="form-group"><label class="form-label">Moneda</label><select class="form-select" name="monedaGasto"><option value="MXN">MXN 🇲🇽</option><option value="EUR">EUR 🇪🇺</option></select></div></div>
+        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Categoría</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}">${c.icon} ${c.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Importe</label><input type="number" step="any" class="form-input" name="importe" placeholder="0" required></div><div class="form-group"><label class="form-label">Moneda</label><select class="form-select" name="monedaGasto"><option value="MXN">MXN 🇲🇽</option><option value="EUR">EUR 🇪🇺</option><option value="USD">USD 🇺🇸</option><option value="GBP">GBP 🇬🇧</option></select></div></div>
         <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="notas" placeholder="Opcional..."></div>
       `}
       <button type="submit" class="btn btn-primary" style="width:100%;margin-top:16px;padding:14px;font-size:15px">Guardar</button>
@@ -1850,8 +1850,11 @@ function saveMovement(sec){
   else if(sec==='inversiones'){if(!d.ticker||!d.cantidad||!d.precioUnit)return;mov.tipoActivo=d.tipoActivo;mov.ticker=d.ticker.toUpperCase();mov.broker=d.broker;mov.tipoMov=d.tipoMov;mov.cantidad=Number(d.cantidad);mov.precioUnit=Number(d.precioUnit);mov.montoTotal=mov.cantidad*mov.precioUnit;mov.moneda=d.moneda||'USD';mov.comision=Number(d.comision)||0;mov.notas=d.notas||'';}
   else{if(!d.importe)return;mov.categoria=d.categoria;mov.tipo=d.tipo;
     const importeRaw=Number(d.importe);const monedaGasto=d.monedaGasto||'MXN';
-    if(monedaGasto==='EUR'){const fx=_fxCache||LS.get('fxCache');const eurmxn=fx?.eurmxn||settings.tipoEUR;mov.importe=Math.round(importeRaw*eurmxn*100)/100;mov.monedaOrig='EUR';mov.notas=(d.notas?d.notas+' · ':'')+'€'+importeRaw+' → $'+mov.importe+' MXN (TC '+eurmxn.toFixed(2)+')';}
-    else{mov.importe=importeRaw;mov.monedaOrig='MXN';mov.notas=d.notas||'';}
+    {const _fx=_fxCache||LS.get('fxCache');const _eurmxn=(_fx?.eurmxn)||settings.tipoEUR||17;const _usdmxn=(_fx?.usdmxn)||settings.tipoCambio||17;const _gbpmxn=_usdmxn/(_fx?.usdgbp||0.78);
+    if(monedaGasto==='EUR'){mov.importe=Math.round(importeRaw*_eurmxn*100)/100;mov.monedaOrig='EUR';mov.notas=(d.notas?d.notas+' · ':'')+'€'+importeRaw+' → $'+mov.importe+' MXN (TC '+_eurmxn.toFixed(2)+')';}
+    else if(monedaGasto==='USD'){mov.importe=Math.round(importeRaw*_usdmxn*100)/100;mov.monedaOrig='USD';mov.notas=(d.notas?d.notas+' · ':'')+'US$'+importeRaw+' → $'+mov.importe+' MXN (TC '+_usdmxn.toFixed(2)+')';}
+    else if(monedaGasto==='GBP'){mov.importe=Math.round(importeRaw*_gbpmxn*100)/100;mov.monedaOrig='GBP';mov.notas=(d.notas?d.notas+' · ':'')+'£'+importeRaw+' → $'+mov.importe+' MXN (TC '+_gbpmxn.toFixed(2)+')';}
+    else{mov.importe=importeRaw;mov.monedaOrig='MXN';mov.notas=d.notas||'';}}
   }
   movements=[mov,...movements];saveAll(mov.id);closeModal();
 }
@@ -1888,7 +1891,7 @@ function openEditMovModal(id){
         <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="notas" value="${escHtml(m.notas||'')}"></div>
       `:`
         <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${m.fecha}" required></div><div class="form-group"><label class="form-label">Tipo</label><select class="form-select" name="tipo"><option ${m.tipo==='Gasto'?'selected':''}>Gasto</option><option ${m.tipo==='Ingreso'?'selected':''}>Ingreso</option></select></div></div>
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Categoría</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}" ${m.categoria===c.id?'selected':''}>${c.icon} ${c.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Importe</label><input type="number" step="any" class="form-input" name="importe" value="${m.monedaOrig==='EUR'?((m.notas&&m.notas.match(/€([\.\d]+)/)?Number(m.notas.match(/€([\.\d]+)/)[1]):Math.round(m.importe/getEurMxn()*100)/100)):m.importe}" required></div><div class="form-group"><label class="form-label">Moneda</label><select class="form-select" name="monedaGasto"><option value="MXN" ${(m.monedaOrig||'MXN')==='MXN'?'selected':''}>MXN 🇲🇽</option><option value="EUR" ${m.monedaOrig==='EUR'?'selected':''}>EUR 🇪🇺</option></select></div></div>
+        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Categoría</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}" ${m.categoria===c.id?'selected':''}>${c.icon} ${c.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Importe</label><input type="number" step="any" class="form-input" name="importe" value="${m.monedaOrig==='EUR'?(m.notas&&m.notas.match(/€([\d.]+)/)?Number(m.notas.match(/€([\d.]+)/)[1]):Math.round(m.importe/getEurMxn()*100)/100):m.monedaOrig==='USD'?(m.notas&&m.notas.match(/US\$([\d.]+)/)?Number(m.notas.match(/US\$([\d.]+)/)[1]):Math.round(m.importe/(((_fxCache||LS.get('fxCache'))?.usdmxn)||settings.tipoCambio||17)*100)/100):m.monedaOrig==='GBP'?(m.notas&&m.notas.match(/£([\d.]+)/)?Number(m.notas.match(/£([\d.]+)/)[1]):Math.round(m.importe/20*100)/100):m.importe}" required></div><div class="form-group"><label class="form-label">Moneda</label><select class="form-select" name="monedaGasto"><option value="MXN" ${(m.monedaOrig||'MXN')==='MXN'?'selected':''}>MXN 🇲🇽</option><option value="EUR" ${m.monedaOrig==='EUR'?'selected':''}>EUR 🇪🇺</option><option value="USD" ${m.monedaOrig==='USD'?'selected':''}>USD 🇺🇸</option><option value="GBP" ${m.monedaOrig==='GBP'?'selected':''}>GBP 🇬🇧</option></select></div></div>
         <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="notas" value="${escHtml(m.notas||'')}"></div>
       `}
       <div style="display:flex;gap:10px;margin-top:16px"><button type="submit" class="btn btn-primary" style="flex:1;padding:14px">💾 Guardar</button><button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button></div>
@@ -1905,14 +1908,11 @@ function updateMovement(id){
     else{
       updated.categoria=d.categoria;updated.tipo=d.tipo;
       const importeRaw=Number(d.importe);const monedaGasto=d.monedaGasto||'MXN';
-      if(monedaGasto==='EUR'){
-        const fx=_fxCache||LS.get('fxCache');const eurmxn=fx?.eurmxn||settings.tipoEUR;
-        updated.importe=Math.round(importeRaw*eurmxn*100)/100;
-        updated.monedaOrig='EUR';
-        updated.notas=(d.notas?d.notas+' · ':'')+'€'+importeRaw+' → $'+updated.importe+' MXN (TC '+eurmxn.toFixed(2)+')';
-      } else {
-        updated.importe=importeRaw;updated.monedaOrig='MXN';updated.notas=d.notas||'';
-      }
+      {const _fx=_fxCache||LS.get('fxCache');const _eurmxn=(_fx?.eurmxn)||settings.tipoEUR||17;const _usdmxn=(_fx?.usdmxn)||settings.tipoCambio||17;const _gbpmxn=_usdmxn/(_fx?.usdgbp||0.78);
+      if(monedaGasto==='EUR'){updated.importe=Math.round(importeRaw*_eurmxn*100)/100;updated.monedaOrig='EUR';updated.notas=(d.notas?d.notas+' · ':'')+'€'+importeRaw+' → $'+updated.importe+' MXN (TC '+_eurmxn.toFixed(2)+')';}
+      else if(monedaGasto==='USD'){updated.importe=Math.round(importeRaw*_usdmxn*100)/100;updated.monedaOrig='USD';updated.notas=(d.notas?d.notas+' · ':'')+'US$'+importeRaw+' → $'+updated.importe+' MXN (TC '+_usdmxn.toFixed(2)+')';}
+      else if(monedaGasto==='GBP'){updated.importe=Math.round(importeRaw*_gbpmxn*100)/100;updated.monedaOrig='GBP';updated.notas=(d.notas?d.notas+' · ':'')+'£'+importeRaw+' → $'+updated.importe+' MXN (TC '+_gbpmxn.toFixed(2)+')';}
+      else{updated.importe=importeRaw;updated.monedaOrig='MXN';updated.notas=d.notas||'';}}
     }
     return updated;
   });
