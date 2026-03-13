@@ -599,6 +599,9 @@ platforms = platforms.map(p => ({tasaAnual:0, fechaInicio:today(), moneda:'MXN',
 let currentTab = 'dashboard';
 let movFilter = {seccion:'todas', search:''};
 let _gastosMonth = null; // null = current month, format 'YYYY-MM'
+let _aiChatOpen = false;
+let _aiMessages = []; // {role:'user'|'assistant', content:'...'}
+let _aiLoading = false;
 let chartInstances = {};
 let _lastLocalSave = 0;
 let _chartRange = 'all';
@@ -2864,6 +2867,36 @@ function renderAjustes(){
         <button class="btn btn-secondary" style="width:100%;font-size:13px" onclick="openArchivarModal()">🗜️ Archivar movimientos antiguos</button>
       </div>
     </div>
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">🤖 Asistente IA</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">Conecta tu propia API key para usar el asistente financiero. El asistente tiene acceso a todos tus datos (plataformas, inversiones, gastos, metas) pero nunca los envía a terceros salvo a la API que elijas.</div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Proveedor</label>
+          <select class="form-input" style="width:100%" onchange="settings.aiProvider=this.value;LS.set('settings',settings)" id="aiProviderSelect">
+            <option value="gemini" ${(settings.aiProvider||'gemini')==='gemini'?'selected':''}>Gemini (Google) — gemini-2.0-flash · Gratis</option>
+            <option value="groq" ${(settings.aiProvider||'gemini')==='groq'?'selected':''}>Groq — llama-3.3-70b · Gratis</option>
+            <option value="deepseek" ${(settings.aiProvider||'gemini')==='deepseek'?'selected':''}>DeepSeek — deepseek-chat · Casi gratis</option>
+            <option value="openrouter" ${(settings.aiProvider||'gemini')==='openrouter'?'selected':''}>OpenRouter — acceso a múltiples modelos</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">API Key</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="password" class="form-input" style="flex:1;font-family:monospace;font-size:13px" id="aiKeyInput" placeholder="AIza... / gsk_... / sk-... / sk-or-..." value="${settings.aiKey||''}" oninput="settings.aiKey=this.value.trim();LS.set('settings',settings)">
+            <button class="btn btn-primary btn-sm" onclick="testAiKey()">🧪 Probar</button>
+            ${settings.aiKey?'<span style="font-size:13px;color:var(--green)">✅</span>':''}
+          </div>
+          <div id="aiKeyTestResult" style="margin-top:6px;font-size:12px"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);line-height:1.6">
+          🔑 <strong>Gemini:</strong> <a href="https://aistudio.google.com" target="_blank" style="color:var(--blue)">aistudio.google.com</a> · Get API key → gratis<br>
+          🔑 <strong>Groq:</strong> <a href="https://console.groq.com" target="_blank" style="color:var(--blue)">console.groq.com</a> · gratis con Llama 3.3<br>
+          🔑 <strong>DeepSeek:</strong> <a href="https://platform.deepseek.com" target="_blank" style="color:var(--blue)">platform.deepseek.com</a> · muy barato<br>
+          🔑 <strong>OpenRouter:</strong> <a href="https://openrouter.ai/keys" target="_blank" style="color:var(--blue)">openrouter.ai/keys</a> · modelos gratuitos disponibles
+        </div>
+      </div>
+    </div>
     <div class="card" style="margin-top:16px"><div class="card-title">⚠️ Zona de Peligro</div><button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="resetAll()">🗑 Resetear Todo</button></div>
     ${isAdmin ? adminFirebaseRulesHTML : ''}
   `;
@@ -2892,6 +2925,280 @@ async function testAlphaVantage(){
 }
 
 async function testFinnhub(){const finEl=document.getElementById('finnhubKeyInput');const k=(finEl?finEl.value.trim():'')||settings.finnhubKey||'';if(k){settings.finnhubKey=k;saveAll();}const el=document.getElementById('finnhubTestResult');if(!k){el.innerHTML='<span style="color:var(--red)">⚠️ Ingresa tu API key</span>';return;}el.innerHTML='<span class="spinner"></span> Probando...';try{const r=await fetch(`https://finnhub.io/api/v1/quote?symbol=AAPL&token=${k}`),d=await r.json();if(d.c&&d.c>0)el.innerHTML=`<span style="color:var(--green)">✅ AAPL: $${d.c.toFixed(2)}</span>`;else el.innerHTML='<span style="color:var(--orange)">⚠️ Respuesta inesperada</span>';}catch(e){el.innerHTML=`<span style="color:var(--red)">❌ ${e.message}</span>`;}}
+
+// ============================================
+// AI ASSISTANT
+// ============================================
+
+function _buildAiContext() {
+  try {
+    const tc = settings.tipoCambio || 17;
+    const plats = calcPlatforms();
+    const tickers = getTickerPositions();
+    const totalPlats = plats.reduce((s,p)=>s+platSaldoToMXN(p),0);
+    const totalInv = tickers.reduce((s,t)=>s+((t.valorActual||t.costoPosicion||0)*(t.moneda==='MXN'?1:tc)),0);
+    const patrimonio = totalPlats + totalInv;
+
+    // Gastos mes actual
+    const now = new Date();
+    const mesKey = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+    const gastosM = movements.filter(m=>m.seccion==='gastos'&&m.fecha&&m.fecha.startsWith(mesKey));
+    const totalGastos = gastosM.reduce((s,m)=>s+(m.importe||0),0);
+    const bycat = {};
+    gastosM.forEach(m=>{bycat[catName(m.categoria)]=(bycat[m.categoria]||0)+(m.importe||0);});
+
+    // Ingresos
+    const ing = settings.ingresos||{};
+    const sueldo = ing.sueldo||ing.sueldoRaw||0;
+    const totalIng = sueldo+(ing.extrasEUR||0)+(ing.otrosEUR||0);
+
+    // Top plats
+    const topPlats = [...plats].sort((a,b)=>platSaldoToMXN(b)-platSaldoToMXN(a)).slice(0,5)
+      .map(p=>`${p.name} (${p.type}): ${fmtPlat(p.saldo,p.moneda)}, rend ${p.rendimiento>=0?'+':''}${fmtPlat(p.rendimiento,p.moneda)}`).join('; ');
+
+    // Top inversiones
+    const topInv = tickers.filter(t=>t.cantActual>0).slice(0,5)
+      .map(t=>`${t.ticker} (${t.type}): ×${t.cantActual}, G/P ${t.gpNoRealizada!=null?(t.gpNoRealizada>=0?'+':'')+t.gpNoRealizada.toFixed(0)+' '+t.moneda:'sin precio'}`).join('; ');
+
+    // Metas
+    const metasSummary = goals.slice(0,4).map(g=>`${g.nombre}: meta ${fmt(g.meta)}`).join('; ');
+
+    // Balance mes
+    const balance = totalIng - totalGastos;
+
+    return `Eres un asistente financiero personal para la app Finanzas Pro. Tienes acceso a los datos reales del usuario. Responde en español, de forma concisa y amigable. NO des consejos de inversión formales. SÍ puedes analizar los datos y dar observaciones útiles.
+
+DATOS DEL USUARIO (${new Date().toLocaleDateString('es-ES')}):
+- Patrimonio total: ${fmt(patrimonio)} MXN (plataformas: ${fmt(totalPlats)}, inversiones: ${fmt(totalInv)})
+- Tipo de cambio: USD/MXN = ${tc}
+- Ingreso mensual estimado: €${totalIng.toFixed(0)} EUR
+- Gastos este mes (${mesKey}): €${totalGastos.toFixed(0)} EUR
+- Balance del mes: €${balance.toFixed(0)} EUR (${totalIng>0?((balance/totalIng)*100).toFixed(0):'—'}% ahorro)
+- Top plataformas: ${topPlats||'ninguna'}
+- Inversiones abiertas: ${topInv||'ninguna'}
+- Metas: ${metasSummary||'sin metas'}
+- Número de movimientos registrados: ${movements.length}
+- Recurrentes activos: ${recurrentes.filter(r=>r.activo!==false).length}`;
+  } catch(e) {
+    return 'Eres un asistente financiero personal. Responde en español de forma concisa y amigable.';
+  }
+}
+
+async function testAiKey() {
+  const provider = settings.aiProvider || 'claude';
+  const key = settings.aiKey || '';
+  const el = document.getElementById('aiKeyTestResult');
+  if (!el) return;
+  if (!key) { el.innerHTML = '<span style="color:var(--red)">⚠️ Ingresa tu API key primero</span>'; return; }
+  el.innerHTML = '<span class="spinner"></span> Probando...';
+  try {
+    const result = await _aiCall([{role:'user',content:'Responde solo: OK'}], true);
+    if (result) {
+      settings.aiKey = key;
+      LS.set('settings', settings);
+      const pname = provider==='gemini'?'Gemini':provider==='groq'?'Groq':provider==='deepseek'?'DeepSeek':'OpenRouter';
+      el.innerHTML = '<span style="color:var(--green)">✅ Conexión exitosa — ' + pname + ' listo</span>';
+    }
+  } catch(e) {
+    el.innerHTML = '<span style="color:var(--red)">❌ ' + e.message + '</span>';
+  }
+}
+
+async function _aiCall(messages, test=false) {
+  const provider = settings.aiProvider || 'gemini';
+  const key = settings.aiKey || '';
+  if (!key) throw new Error('No hay API key configurada. Ve a Ajustes → Asistente IA.');
+
+  const systemPrompt = _buildAiContext();
+  const maxTokens = test ? 10 : 1024;
+
+  if (provider === 'gemini') {
+    // Gemini: alternating user/model, no consecutive same role
+    const rawMsgs = messages.map(m=>({role:m.role==='assistant'?'model':'user', parts:[{text:m.content}]}));
+    // Gemini requires alternating roles — merge consecutive same-role messages
+    const geminiMsgs = [];
+    for (const msg of rawMsgs) {
+      if (geminiMsgs.length > 0 && geminiMsgs[geminiMsgs.length-1].role === msg.role) {
+        geminiMsgs[geminiMsgs.length-1].parts[0].text += '
+' + msg.parts[0].text;
+      } else {
+        geminiMsgs.push(msg);
+      }
+    }
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        system_instruction: {parts:[{text:systemPrompt}]},
+        contents: geminiMsgs,
+        generationConfig: {maxOutputTokens: maxTokens}
+      })
+    });
+    if (!r.ok) { const err = await r.json().catch(()=>({})); throw new Error(err?.error?.message || 'Error Gemini ' + r.status); }
+    const d = await r.json();
+    return d.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+  } else if (provider === 'groq') {
+    const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: maxTokens,
+        messages: [{role:'system',content:systemPrompt}, ...messages.map(m=>({role:m.role,content:m.content}))]
+      })
+    });
+    if (!r.ok) { const err = await r.json().catch(()=>({})); throw new Error(err?.error?.message || 'Error Groq ' + r.status); }
+    const d = await r.json();
+    return d.choices?.[0]?.message?.content || '';
+
+  } else if (provider === 'deepseek') {
+    const r = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        max_tokens: maxTokens,
+        messages: [{role:'system',content:systemPrompt}, ...messages.map(m=>({role:m.role,content:m.content}))]
+      })
+    });
+    if (!r.ok) { const err = await r.json().catch(()=>({})); throw new Error(err?.error?.message || 'Error DeepSeek ' + r.status); }
+    const d = await r.json();
+    return d.choices?.[0]?.message?.content || '';
+
+  } else if (provider === 'openrouter') {
+    const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+key,
+        'HTTP-Referer': window.location.origin,
+        'X-Title': 'Finanzas Pro'
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.0-flash-exp:free',
+        max_tokens: maxTokens,
+        messages: [{role:'system',content:systemPrompt}, ...messages.map(m=>({role:m.role,content:m.content}))]
+      })
+    });
+    if (!r.ok) { const err = await r.json().catch(()=>({})); throw new Error(err?.error?.message || 'Error OpenRouter ' + r.status); }
+    const d = await r.json();
+    return d.choices?.[0]?.message?.content || '';
+  }
+
+  throw new Error('Proveedor desconocido: ' + provider);
+}
+
+function _renderAiChat() {
+  const panel = document.getElementById('aiChatPanel');
+  if (!panel) return;
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const hasKey = !!(settings.aiKey);
+  const provider = settings.aiProvider || 'claude';
+  const providerLabel = provider==='gemini'?'Gemini ✦':provider==='groq'?'Groq ✦':provider==='deepseek'?'DeepSeek ✦':'OpenRouter ✦';
+
+  const msgsHtml = _aiMessages.length === 0
+    ? `<div style="text-align:center;padding:32px 20px;color:var(--text2)">
+        <div style="font-size:32px;margin-bottom:10px">✦</div>
+        <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:6px">Asistente Financiero</div>
+        <div style="font-size:12px;line-height:1.6">Pregúntame sobre tus finanzas.<br>Tengo acceso a todos tus datos.</div>
+        <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
+          ${['¿Cómo va mi balance este mes?','¿Cuál es mi plataforma con mejor rendimiento?','¿Cuánto llevo invertido en total?','¿Voy bien con mis metas?']
+            .map(s=>`<button onclick="window._aiSendSuggestion('${s}')" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:12px;cursor:pointer;color:var(--text);text-align:left;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--border)'">${s}</button>`).join('')}
+        </div>
+      </div>`
+    : _aiMessages.map(m => {
+        const isUser = m.role === 'user';
+        return `<div style="display:flex;flex-direction:column;align-items:${isUser?'flex-end':'flex-start'};margin-bottom:12px">
+          <div style="max-width:85%;padding:10px 14px;border-radius:${isUser?'16px 16px 4px 16px':'16px 16px 16px 4px'};background:${isUser?'var(--blue)':'var(--card2)'};color:${isUser?'#fff':'var(--text)'};font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;border:${isUser?'none':'1px solid var(--border)'}">
+            ${escHtml(m.content)}
+          </div>
+        </div>`;
+      }).join('') + (_aiLoading ? `<div style="display:flex;align-items:flex-start;margin-bottom:12px"><div style="background:var(--card2);border:1px solid var(--border);border-radius:16px 16px 16px 4px;padding:12px 16px;display:flex;gap:5px;align-items:center"><span style="width:6px;height:6px;border-radius:50%;background:var(--text3);animation:aiDot 1.2s infinite 0s"></span><span style="width:6px;height:6px;border-radius:50%;background:var(--text3);animation:aiDot 1.2s infinite 0.2s"></span><span style="width:6px;height:6px;border-radius:50%;background:var(--text3);animation:aiDot 1.2s infinite 0.4s"></span></div></div>` : '');
+
+  panel.innerHTML = `
+    <div style="display:flex;flex-direction:column;height:100%">
+      <!-- Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--border);flex-shrink:0">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:15px">✦</div>
+          <div>
+            <div style="font-size:14px;font-weight:700">${providerLabel}</div>
+            <div style="font-size:10px;color:${hasKey?'var(--green)':'var(--orange)'}">${hasKey?'● Conectado':'● Sin API key · configura en Ajustes'}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          ${_aiMessages.length>0?`<button onclick="window._aiClear()" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--text3);padding:4px 8px;border-radius:8px;border:1px solid var(--border)" title="Limpiar chat">🗑 Limpiar</button>`:''}
+          <button onclick="window.toggleAiChat()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text2);width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background='none'">✕</button>
+        </div>
+      </div>
+      <!-- Messages -->
+      <div id="aiMsgsContainer" style="flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column">
+        ${msgsHtml}
+      </div>
+      <!-- Input -->
+      <div style="padding:12px 14px;border-top:1px solid var(--border);flex-shrink:0">
+        <div style="display:flex;gap:8px;align-items:flex-end">
+          <textarea id="aiInput" placeholder="${hasKey?'Pregunta algo sobre tus finanzas...':'Configura tu API key en Ajustes primero'}" ${hasKey?'':'disabled'} style="flex:1;resize:none;border-radius:12px;padding:10px 14px;font-size:13px;font-family:var(--font);background:var(--card2);border:1px solid var(--border);color:var(--text);outline:none;max-height:100px;min-height:40px;line-height:1.5;overflow-y:auto" rows="1"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();window._aiSend();}"
+            oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"
+          ></textarea>
+          <button onclick="window._aiSend()" ${hasKey&&!_aiLoading?'':'disabled'} style="width:38px;height:38px;border-radius:50%;background:var(--blue);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;opacity:${hasKey&&!_aiLoading?'1':'0.4'}">↑</button>
+        </div>
+        <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:6px">Datos enviados a ${providerLabel.replace(' ✦','')} · no se almacenan</div>
+      </div>
+    </div>`;
+
+  // scroll to bottom
+  setTimeout(() => {
+    const c = document.getElementById('aiMsgsContainer');
+    if (c) c.scrollTop = c.scrollHeight;
+  }, 30);
+}
+
+window.toggleAiChat = function() {
+  _aiChatOpen = !_aiChatOpen;
+  const panel = document.getElementById('aiChatPanel');
+  const btn = document.getElementById('aiFab');
+  if (panel) {
+    panel.style.transform = _aiChatOpen ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.95)';
+    panel.style.opacity = _aiChatOpen ? '1' : '0';
+    panel.style.pointerEvents = _aiChatOpen ? 'auto' : 'none';
+  }
+  if (btn) btn.style.transform = _aiChatOpen ? 'scale(0.9)' : 'scale(1)';
+  if (_aiChatOpen) _renderAiChat();
+};
+
+window._aiSend = async function() {
+  const inp = document.getElementById('aiInput');
+  if (!inp) return;
+  const text = inp.value.trim();
+  if (!text || _aiLoading) return;
+  inp.value = '';
+  inp.style.height = 'auto';
+  _aiMessages.push({role:'user', content:text});
+  _aiLoading = true;
+  _renderAiChat();
+  try {
+    const reply = await _aiCall(_aiMessages);
+    _aiMessages.push({role:'assistant', content:reply});
+  } catch(e) {
+    _aiMessages.push({role:'assistant', content:'⚠️ Error: ' + e.message});
+  }
+  _aiLoading = false;
+  _renderAiChat();
+};
+
+window._aiSendSuggestion = function(text) {
+  const inp = document.getElementById('aiInput');
+  if (inp) { inp.value = text; }
+  window._aiSend();
+};
+
+window._aiClear = function() {
+  _aiMessages = [];
+  _renderAiChat();
+};
 
 function updateNav(patrimonio,totalMXN,totalUSD,tc,totalRend,deltaHoy,deltaHoyPct){
   const el1=document.getElementById('navTotal'),el2=document.getElementById('navSub');
