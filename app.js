@@ -1197,13 +1197,13 @@ function renderDashboard(){
     return movsSaldoActual.length === 0 && (p.tasaAnual||0) === 0;
   });
   const tickerList=getTickerPositions();
-  const tickerListUSD=tickerList.filter(t=>t.moneda!=='MXN');
-  const tickerListMXN=tickerList.filter(t=>t.moneda==='MXN');
-  const totalUSDCurrent=tickerListUSD.reduce((s,t)=>s+(t.valorActual||t.costoPosicion||0),0);
-  const totalInvertidoUSD=tickerListUSD.reduce((s,t)=>s+t.costoTotal,0);
-  const totalMXNCurrent=tickerListMXN.reduce((s,t)=>s+(t.valorActual||t.costoPosicion||0),0);
-  const gpNoRealizadaTotal=tickerList.reduce((s,t)=>s+(t.gpNoRealizada||0)*(t.moneda==='MXN'?1:tc),0);
-  const gpRealizadaTotal=tickerList.reduce((s,t)=>s+(t.gpRealizada||0)*(t.moneda==='MXN'?1:tc),0);
+  const tickerListUSD=tickerList.filter(tk=>tk.moneda!=='MXN');
+  const tickerListMXN=tickerList.filter(tk=>tk.moneda==='MXN');
+  const totalUSDCurrent=tickerListUSD.reduce((s,tk)=>s+(tk.valorActual||tk.costoPosicion||0),0);
+  const totalInvertidoUSD=tickerListUSD.reduce((s,tk)=>s+tk.costoTotal,0);
+  const totalMXNCurrent=tickerListMXN.reduce((s,tk)=>s+(tk.valorActual||tk.costoPosicion||0),0);
+  const gpNoRealizadaTotal=tickerList.reduce((s,tk)=>s+(tk.gpNoRealizada||0)*(tk.moneda==='MXN'?1:tc),0);
+  const gpRealizadaTotal=tickerList.reduce((s,tk)=>s+(tk.gpRealizada||0)*(tk.moneda==='MXN'?1:tc),0);
 
   const ingresos=settings.ingresos||{};
   const monedaSueldo = ingresos.monedaSueldo || 'EUR';
@@ -1246,7 +1246,7 @@ function renderDashboard(){
   const salud=pctAhorro>=0.2?'🟢 Optimal':pctAhorro>=0.1?'🟡 Acceptable':pctAhorro>=0?'🟠 Tight':t('deficit');
   const byCat={};mesG.forEach(m=>{byCat[m.categoria]=(byCat[m.categoria]||0)+toDisplayCur(m);});
   const topCats=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const totalInvMXN=tickerListUSD.reduce((s,t)=>s+(t.valorActual||t.costoPosicion||0)*tc,0)+totalMXNCurrent;
+  const totalInvMXN=tickerListUSD.reduce((s,tk)=>s+(tk.valorActual||tk.costoPosicion||0)*tc,0)+totalMXNCurrent;
   const patrimonio=totalMXN+totalInvMXN;
   const budgets=settings.budgets||{};
   const totalPresupuesto=EXPENSE_CATS.reduce((s,c)=>s+(budgets[c.id]||0),0);
@@ -1293,11 +1293,11 @@ function renderDashboard(){
     return s + toMXN(p.saldoInicial||0) + toMXN(p.aportacion||0) - toMXN(p.retiro||0);
   }, 0);
   const tickers2 = getTickerPositions();
-  const capitalInvHoy = tickers2.reduce((s,t) => s + (t.moneda==='MXN' ? t.costoPosicion : t.costoPosicion*tc2), 0);
+  const capitalInvHoy = tickers2.reduce((s,tk2) => s + (tk2.moneda==='MXN' ? tk2.costoPosicion : tk2.costoPosicion*tc2), 0);
   const capitalHoy = capitalPlatsHoy + capitalInvHoy;
-  const tickers2Rend = tickers2.reduce((s,t) => {
-    const gp = t.gpNoRealizada !== null ? t.gpNoRealizada : 0;
-    return s + (t.moneda === 'MXN' ? gp : gp * tc2);
+  const tickers2Rend = tickers2.reduce((s,tk2) => {
+    const gp = tk2.gpNoRealizada !== null ? tk2.gpNoRealizada : 0;
+    return s + (tk2.moneda === 'MXN' ? gp : gp * tc2);
   }, 0);
   const patrimonioRendPuro = plats.reduce((s,p) => s + (p.rendimiento||0), 0) + tickers2Rend;
 
@@ -1471,7 +1471,7 @@ function renderDashboard(){
         <div style="display:flex;align-items:center;gap:12px">
           <div class="chart-container" style="height:140px;width:140px;flex-shrink:0"><canvas id="chartDistro"></canvas></div>
           <div style="flex:1">
-            ${(()=>{const at={};plats.forEach(p=>{at[p.type]=(at[p.type]||0)+platSaldoToMXN(p);});tickerList.forEach(t=>{if(t.cantActual>0){const v=(t.valorActual||t.costoPosicion)*(t.moneda==='MXN'?1:tc);at[t.type+' USD']=(at[t.type+' USD']||0)+v;}});const sorted=Object.entries(at).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);const total=sorted.reduce((s,[,v])=>s+v,0)||1;return sorted.map(([k,v],i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0"><span style="display:flex;align-items:center;gap:5px;font-size:11px"><span style="width:7px;height:7px;border-radius:2px;background:${COLORS[i%COLORS.length]};display:inline-block;flex-shrink:0"></span>${k}</span><span style="font-size:11px;font-weight:700">${((v/total)*100).toFixed(1)}%</span></div>`).join('');})()}
+            ${(()=>{const at={};plats.forEach(p=>{at[p.type]=(at[p.type]||0)+platSaldoToMXN(p);});tickerList.forEach(tk=>{if(tk.cantActual>0){const v=(tk.valorActual||tk.costoPosicion)*(tk.moneda==='MXN'?1:tc);at[tk.type+' USD']=(at[tk.type+' USD']||0)+v;}});const sorted=Object.entries(at).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);const total=sorted.reduce((s,[,v])=>s+v,0)||1;return sorted.map(([k,v],i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0"><span style="display:flex;align-items:center;gap:5px;font-size:11px"><span style="width:7px;height:7px;border-radius:2px;background:${COLORS[i%COLORS.length]};display:inline-block;flex-shrink:0"></span>${k}</span><span style="font-size:11px;font-weight:700">${((v/total)*100).toFixed(1)}%</span></div>`).join('');})()}
           </div>
         </div>
       </div>
@@ -1482,10 +1482,10 @@ function renderDashboard(){
           <div style="flex:1">
             ${(()=>{
               const inv={};
-              tickerList.forEach(t=>{
-                if(t.cantActual>0){
-                  const v=(t.valorActual||t.costoPosicion)*(t.moneda==='MXN'?1:tc);
-                  inv[t.type]=(inv[t.type]||0)+v;
+              tickerList.forEach(tk=>{
+                if(tk.cantActual>0){
+                  const v=(tk.valorActual||tk.costoPosicion)*(tk.moneda==='MXN'?1:tc);
+                  inv[tk.type]=(inv[tk.type]||0)+v;
                 }
               });
               const totalPlats=totalMXN;
@@ -1697,13 +1697,13 @@ function renderDashboard(){
     }
 
     const at={};plats.forEach(p=>{at[p.type]=(at[p.type]||0)+platSaldoToMXN(p);});
-    tickerList.forEach(t=>{if(t.cantActual>0){const v=(t.valorActual||t.costoPosicion)*(t.moneda==='MXN'?1:tc);at[t.type]=(at[t.type]||0)+v;}});
+    tickerList.forEach(tk=>{if(tk.cantActual>0){const v=(tk.valorActual||tk.costoPosicion)*(tk.moneda==='MXN'?1:tc);at[tk.type]=(at[tk.type]||0)+v;}});
     const de=Object.entries(at).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
     const ctxD=document.getElementById('chartDistro');
     if(ctxD&&de.length>0){if(chartInstances.chartDistro){chartInstances.chartDistro.destroy();delete chartInstances.chartDistro;}chartInstances.chartDistro=new Chart(ctxD,{type:'doughnut',data:{labels:de.map(([k])=>k),datasets:[{data:de.map(([,v])=>v),backgroundColor:de.map((_,i)=>COLORS[i%COLORS.length]),borderWidth:2,borderColor:isDark?'#1C1C1E':'#fff',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',cornerRadius:12,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>' '+ctx.label+': '+((ctx.parsed/de.reduce((s,[,v])=>s+v,0)*100)).toFixed(1)+'%'}}}}});}
 
     const inv={};
-    tickerList.forEach(t=>{if(t.cantActual>0){const v=(t.valorActual||t.costoPosicion)*(t.moneda==='MXN'?1:tc);inv[t.type]=(inv[t.type]||0)+v;}});
+    tickerList.forEach(tk=>{if(tk.cantActual>0){const v=(tk.valorActual||tk.costoPosicion)*(tk.moneda==='MXN'?1:tc);inv[tk.type]=(inv[tk.type]||0)+v;}});
     if(totalMXN>0) inv['Platforms']=totalMXN;
     const invE=Object.entries(inv).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
     const ctxI=document.getElementById('chartInvTipo');
