@@ -123,19 +123,21 @@ async function fetchAlphaVantagePrice(ticker, targetMoneda) {
   const k = settings.alphaVantageKey || ''; if (!k) return null;
   const base = ticker.toUpperCase().replace(/\.(L|DE|AS|PA|MI|SW|LON|DEX)$/i, '');
 
-  // Recordar qué sufijo funciona para cada ticker — evita probar los 4 cada vez
   const suffixKey = 'av_suffix_' + base;
   const knownSuffix = LS.get(suffixKey);
-  const symbols = knownSuffix ? [base + knownSuffix] : [base+'.LON', base+'.DEX', base+'.EPA', base+'.AMS'];
-  const symbolsUSD = knownSuffix ? [base + knownSuffix] : [base+'.LON', base];
-  const allSymbols = targetMoneda === 'MXN' ? symbols : (knownSuffix ? [base + knownSuffix] : [...symbols, base]);
 
-  // Asegurar que tengamos tipos de cambio frescos ANTES de convertir
+  // Siempre probamos sufijos europeos + base USD — el orden prioriza europeos
+  // pero si el ETF cotiza en USD en Londres (VUAA), la currency del response lo detecta
+  const allSymbols = knownSuffix
+    ? [base + knownSuffix, base]  // probar siempre base como fallback aunque haya sufijo guardado
+    : [base+'.LON', base+'.DEX', base+'.EPA', base+'.AMS', base];
+
+  // Asegurar tipos de cambio frescos
   if (!_fxCache || !_fxCache.gbpmxn) await fetchFX();
-  const fx = _fxCache || LS.get('fxCache');
-  const tc = (fx?.usdmxn) || settings.tipoCambio || 20;
-  const eurmxn = (fx?.eurmxn) || settings.tipoEUR || 21.5;
-  const gbpmxn = (fx?.gbpmxn) || settings.tipoGBP || 25.5;
+  const fx    = _fxCache || LS.get('fxCache');
+  const tc     = (fx?.usdmxn) || settings.tipoCambio || 20;
+  const eurmxn = (fx?.eurmxn) || settings.tipoEUR    || 21.5;
+  const gbpmxn = (fx?.gbpmxn) || settings.tipoGBP    || 25.5;
   const usdgbp = (fx?.usdgbp) || 0.79;
   const usdeur = (fx?.usdeur) || 0.92;
   console.log(`[AlphaVantage] FX listo — USD/MXN:${tc} GBP/MXN:${gbpmxn}`);
@@ -151,19 +153,34 @@ async function fetchAlphaVantagePrice(ticker, targetMoneda) {
       let price = parseFloat(q['05. price']);
       if (!price || price <= 0) continue;
 
-      // Guardar qué sufijo funcionó para este ticker
-      const suffix = sym.replace(base, '');
-      if (suffix) LS.set(suffixKey, suffix);
+      // Detectar moneda real desde la respuesta de Alpha Vantage
+      const currency = (q['08. currency'] || '').toUpperCase();
+      const hasSuffix = sym !== base;
 
-      console.log(`[AlphaVantage] ${sym} = ${price} raw → ${targetMoneda}`);
-      if (targetMoneda === 'MXN') {
-        if (sym.includes('.LON')) price = (price / 100) * gbpmxn; // GBp → GBP → MXN
-        else if (sym.includes('.DEX') || sym.includes('.EPA') || sym.includes('.AMS')) price = price * eurmxn;
-        else price = price * tc;
-      } else if (targetMoneda === 'USD') {
-        if (sym.includes('.LON')) price = (price / 100) / usdgbp; // GBp → GBP → USD
-        else if (sym.includes('.DEX') || sym.includes('.EPA') || sym.includes('.AMS')) price = price / usdeur;
+      // GBp (peniques) solo si es mercado LON y la moneda es GBP (no USD ni EUR)
+      const isGBp = sym.includes('.LON') && (currency === 'GBP' || currency === 'GBX');
+      const isEUR = currency === 'EUR' || sym.includes('.DEX') || sym.includes('.EPA') || sym.includes('.AMS');
+
+      // Guardar sufijo solo si realmente cotiza en moneda local (no USD en bolsa europea)
+      if (hasSuffix && (isGBp || isEUR)) {
+        LS.set(suffixKey, sym.replace(base, ''));
+      } else if (!hasSuffix) {
+        // Encontrado como ticker base USD — limpiar sufijo guardado si existía
+        LS.set(suffixKey, null);
       }
+
+      console.log(`[AlphaVantage] ${sym} = ${price} raw (currency=${currency||'?'}, isGBp=${isGBp}, isEUR=${isEUR}) → ${targetMoneda}`);
+
+      if (targetMoneda === 'MXN') {
+        if (isGBp)      price = (price / 100) * gbpmxn; // GBp → GBP → MXN
+        else if (isEUR) price = price * eurmxn;          // EUR → MXN
+        else            price = price * tc;               // USD → MXN (incluye ETFs USD en LSE)
+      } else if (targetMoneda === 'USD') {
+        if (isGBp)      price = (price / 100) / usdgbp;  // GBp → GBP → USD
+        else if (isEUR) price = price / usdeur;           // EUR → USD
+        // currency === USD: sin conversión
+      }
+
       console.log(`[AlphaVantage] ${sym} = ${price} ${targetMoneda} ✅`);
       return price;
     } catch(e) { console.warn('[AlphaVantage] error:', sym, e); }
@@ -171,6 +188,8 @@ async function fetchAlphaVantagePrice(ticker, targetMoneda) {
   }
   return null;
 }
+
+
 
 
 async function fetchFX() {
