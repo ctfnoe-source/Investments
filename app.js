@@ -134,6 +134,41 @@ const I18N = {
     costoPosicion:'costo compra', posiciones2:'posiciones',
     sobreCapital:'sobre capital invertido', sinHistorial:'sin historial aún',
     segunPlaneado:'según planeado', real:'real',
+    // Claves faltantes respecto a EN
+    realGain:'Ganancia Real', projection:'Proyección', totalNetGain:'Ganancia Neta Total',
+    on:'sobre', ofHistory:'de historial', today:'Hoy', accumulatedSurplus:'Sobrante Acumulado',
+    platforms:'Plataformas', investments:'Inversiones', monthlyIncome:'Ingreso Mensual',
+    initialBalance:'Saldo Ini.', days:'Días', contributions:'Aport.', withdrawals:'Retiros',
+    expenses:'Gastos', actualReturn:'Rend. Real', currentBalance:'Saldo Actual',
+    returnPct:'Rend. %', portPct:'% Port.',
+    openPositions:'Posiciones Abiertas', closedPositions:'Posiciones Cerradas',
+    byAssetType:'Por Tipo de Activo', byCurrency:'Por Moneda',
+    adminPanel:'Panel de Admin', manageUsers:'Gestionar usuarios',
+    pendingAccess:'Acceso pendiente', active:'Activo', revoke:'Revocar', delete:'Eliminar',
+    aiAssistant:'Asistente IA', noApiKey:'Sin clave API — configura en Ajustes',
+    connected:'Conectado', disconnected:'Desconectado', send:'Enviar', clear:'Limpiar',
+    suggestions:'Sugerencias',
+    howIsMyBalance:'¿Cómo está mi balance este mes?',
+    bestPlatform:'¿Cuál es mi mejor plataforma?',
+    totalInvested:'¿Cuánto llevo invertido en total?',
+    goalsProgress:'¿Voy bien con mis metas?',
+    financialAssistant:'Asistente Financiero',
+    askFinances:'Pregúntame sobre tus finanzas.<br>Tengo acceso a todos tus datos.',
+    askPlaceholder:'Pregunta algo sobre tus finanzas...',
+    configKeyFirst:'Configura tu clave API en Ajustes primero',
+    dataSentTo:'Datos enviados a',
+    notStored:'· no almacenados',
+    notConfigured:'No configurado',
+    accessPending:'Acceso pendiente',
+    platformsWithoutBalance:'plataforma(s) sin "Saldo Actual" — su rendimiento cuenta como $0',
+    returnOnlyWithBalance:'Solo se contabiliza con "Saldo Actual" o tasa auto.',
+    noOpenPositions:'Sin posiciones abiertas',
+    registerFirstPurchase:'Registra tu primera compra para ver tu portafolio aquí',
+    firstTrade:'+ Primera operación',
+    historicalArchiveUntil:'Archivo histórico hasta',
+    accumulatedGL:'G/P Acumulada',
+    connecting:'Conectando...',
+    errorSigningIn:'Error al iniciar sesión.',
   },
   en: {
     tabDashboard:'📊 Dashboard', tabMovimientos:'📋 Transactions', tabPlataformas:'🏦 Platforms',
@@ -295,6 +330,23 @@ const I18N = {
     sgInversiones:['How much have I invested in total?','What is my best investment?','Am I well diversified?','How much have I gained or lost?'],
     sgPlataformas:['Which is my best platform?','Where is most of my capital?','Which platform has the best return?','Compare my platforms'],
     sgMetas:['Am I on track with my goals?','When will I reach my nearest goal?','How much do I need to save per month?','Which goal is furthest away?'],
+    financialAssistant:'Financial Assistant',
+    askFinances:'Ask me about your finances.<br>I have access to all your data.',
+    askPlaceholder:'Ask something about your finances...',
+    configKeyFirst:'Configure your API key in Settings first',
+    dataSentTo:'Data sent to',
+    notStored:'· not stored',
+    notConfigured:'Not configured',
+    accessPending:'Access pending',
+    platformsWithoutBalance:'platform(s) without "Current Balance" — return counted as $0',
+    returnOnlyWithBalance:'Only accounted with "Current Balance" or auto rate.',
+    noOpenPositions:'No open positions',
+    registerFirstPurchase:'Register your first purchase to see your portfolio here',
+    firstTrade:'+ First trade',
+    historicalArchiveUntil:'Historical archive until',
+    accumulatedGL:'Accumulated G/L',
+    connecting:'Connecting...',
+    errorSigningIn:'Error signing in.',
   }
 };
 let _lang = LS.get('lang') || 'en'; // Default to English
@@ -404,7 +456,11 @@ function setOfflineBanner(state) {
   else { b.className = 'offline-banner'; }
 }
 
-function queueSave(data) { _offlineQueue = [{ data, ts: Date.now() }]; LS.set('offlineQueue', _offlineQueue); }
+function queueSave(data) {
+  _offlineQueue.push({ data, ts: Date.now() });
+  if (_offlineQueue.length > 20) _offlineQueue = _offlineQueue.slice(-20);
+  LS.set('offlineQueue', _offlineQueue);
+}
 
 async function flushOfflineQueue() {
   if (!_offlineQueue.length) return;
@@ -1137,24 +1193,18 @@ function calcPlatforms() {
 function recalcularPlatformas(){ platforms = platforms.map(p => ({tasaAnual:0, fechaInicio:today(), moneda:'MXN', ...p})); }
 
 function applyRecurrentes() {
-  const now=new Date();
-  const cm=now.getMonth()+1, cy=now.getFullYear(), cd=now.getDate();
+  const cm=new Date().getMonth()+1, cy=new Date().getFullYear();
   const applied=settings.recurrentesApplied||{};
   const key=`${cy}-${cm}`;
-  // Solo bloquear si YA se aplicó el lote mensual completo — no bloqueamos recurrentes nuevos
-  const fullyApplied = applied[key] === true;
+  if(applied[key]) return 0;
   let count=0;
   recurrentes.filter(r=>r.activo).forEach(r=>{
     const exists=movements.some(m=>m.seccion==='gastos'&&m.recurrenteId===r.id&&m.fecha.startsWith(`${cy}-${String(cm).padStart(2,'0')}`));
     if(!exists){
       const dia=r.dia||1;
-      // Aplicar si: el lote mensual aún no corrió (inicio de mes normal),
-      // o si el día del recurrente ya pasó/llegó este mes (recurrente añadido tarde)
-      if(!fullyApplied || dia <= cd){
-        const fechaMov=`${cy}-${String(cm).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
-        movements.unshift({id:uid(),seccion:'gastos',fecha:fechaMov,categoria:r.categoria,tipo:'Gasto',importe:r.importe,notas:r.nombre+' (auto)',recurrenteId:r.id,esRecurrente:true});
-        count++;
-      }
+      const fechaMov=`${cy}-${String(cm).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+      movements.unshift({id:uid(),seccion:'gastos',fecha:fechaMov,categoria:r.categoria,tipo:'Gasto',importe:r.importe,notas:r.nombre+' (auto)',recurrenteId:r.id,esRecurrente:true});
+      count++;
     }
   });
   if(count>0){ if(!settings.recurrentesApplied)settings.recurrentesApplied={}; settings.recurrentesApplied[key]=true; LS.set('movements',movements);LS.set('settings',settings); }
@@ -1389,7 +1439,7 @@ function renderDashboard(){
   const platsSinActualizarHtml = platsSinActualizar.length > 0
     ? `<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:rgba(10,132,255,0.05);border:1px solid rgba(10,132,255,0.15);border-radius:10px;font-size:13px;margin-bottom:16px">
         <span style="font-size:16px">ℹ️</span>
-        <span><strong style="color:var(--blue)">${platsSinActualizar.length} platform${platsSinActualizar.length>1?'s':''}</strong> without "Current Balance" registered: their return is counted as <strong>$0</strong>. To see actual gains/losses, add a "Current Balance" movement to each. <em style="color:var(--text3)">(${platsSinActualizar.slice(0,4).map(p=>p.name).join(', ')}${platsSinActualizar.length>4?'…':''})</em></span>
+        <span><strong style="color:var(--blue)">${platsSinActualizar.length} ${t('platformsWithoutBalance')}</strong>. To see actual gains/losses, add a "Current Balance" movement to each. <em style="color:var(--text3)">(${platsSinActualizar.slice(0,4).map(p=>p.name).join(', ')}${platsSinActualizar.length>4?'…':''})</em></span>
       </div>`
     : '';
 
@@ -1557,16 +1607,16 @@ function renderDashboard(){
             <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2);margin-bottom:4px">📈 Net Worth Evolution</div>
             <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
               <div style="font-size:18px;font-weight:800;letter-spacing:-0.03em;color:${pctCol(patrimonioRendPuro)};line-height:1">${fmt(patrimonioRendPuro)}</div>
-              <span style="font-size:12px;color:var(--text2)">total net gain</span>
+              <span style="font-size:12px;color:var(--text2)">${t('totalNetGain')}</span>
             </div>
             <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap">
               <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px">
                 <span style="display:inline-block;width:18px;height:3px;background:linear-gradient(90deg,#30D158,#34D35A);border-radius:2px;box-shadow:0 0 6px rgba(48,209,88,0.4)"></span>
-                Real Gain
+                ${t('realGain')}
               </span>
               <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px">
                 <span style="display:inline-flex;gap:2px;align-items:center"><span style="width:4px;height:2px;background:rgba(10,132,255,0.65);border-radius:1px"></span><span style="width:4px;height:2px;background:rgba(10,132,255,0.65);border-radius:1px"></span><span style="width:4px;height:2px;background:rgba(10,132,255,0.65);border-radius:1px"></span></span>
-                Projection ${(re*100).toFixed(0)}%/year
+                ${t('projection')} ${(re*100).toFixed(0)}%/year
               </span>
             </div>
           </div>
@@ -1590,7 +1640,7 @@ function renderDashboard(){
             <div style="text-align:right">
               <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--purple);margin-bottom:2px">${t('cagrReal')}</div>
               <div style="font-size:20px;font-weight:800;letter-spacing:-0.03em;color:${pctCol(rendAnualReal)};line-height:1">${rendAnualReal>=0?'+':''}${(rendAnualReal*100).toFixed(1)}%</div>
-              <div style="font-size:10px;color:var(--text2);margin-top:4px">annualized · ${Math.round((new Date(hist[hist.length-1].date)-new Date(hist[0].date))/(1000*60*60*24))}d of history</div>
+              <div style="font-size:10px;color:var(--text2);margin-top:4px">annualized · ${Math.round((new Date(hist[hist.length-1].date)-new Date(hist[0].date))/(1000*60*60*24))}d ${t('ofHistory')}</div>
             </div>` : ''}
           </div>
         </div>
@@ -1744,7 +1794,7 @@ function renderDashboard(){
       chartInstances.chartEvo=new Chart(ctxE,{type:'line',data:{
         datasets:[
           {
-            label:'Real Gain',
+            label:t('realGain'),
             data:realDates.map((d,i)=>({x:d,y:realVals[i]})),
             borderColor:'#30D158',
             backgroundColor: gradReal,
@@ -1761,7 +1811,7 @@ function renderDashboard(){
             pointHoverBorderWidth:2,
           },
           {
-            label:'Projection '+((re*100).toFixed(0))+'% annual',
+            label:t('projection')+' '+((re*100).toFixed(0))+'% annual',
             data:projDates.map((d,i)=>({x:d,y:projVals[i]})),
             borderColor:'rgba(10,132,255,0.65)',
             backgroundColor:'transparent',
@@ -2136,9 +2186,9 @@ function saveMovement(sec){
   else{if(!d.importe)return;mov.categoria=d.categoria;mov.tipo=d.tipo;
     const importeRaw=Number(d.importe);const monedaGasto=d.monedaGasto||'MXN';
     {const _fx=_fxCache||LS.get('fxCache');const _eurmxn=(_fx?.eurmxn)||settings.tipoEUR||17;const _usdmxn=(_fx?.usdmxn)||settings.tipoCambio||17;const _gbpmxn=_usdmxn/(_fx?.usdgbp||0.78);
-    if(monedaGasto==='EUR'){mov.importe=Math.round(importeRaw*_eurmxn*100)/100;mov.monedaOrig='EUR';mov.montoOriginal=importeRaw;mov.notas=(d.notas?d.notas+' · ':'')+'€'+importeRaw+' → $'+mov.importe+' MXN (FX '+_eurmxn.toFixed(2)+')';}
-    else if(monedaGasto==='USD'){mov.importe=Math.round(importeRaw*_usdmxn*100)/100;mov.monedaOrig='USD';mov.montoOriginal=importeRaw;mov.notas=(d.notas?d.notas+' · ':'')+'US$'+importeRaw+' → $'+mov.importe+' MXN (FX '+_usdmxn.toFixed(2)+')';}
-    else if(monedaGasto==='GBP'){mov.importe=Math.round(importeRaw*_gbpmxn*100)/100;mov.monedaOrig='GBP';mov.montoOriginal=importeRaw;mov.notas=(d.notas?d.notas+' · ':'')+'£'+importeRaw+' → $'+mov.importe+' MXN (FX '+_gbpmxn.toFixed(2)+')';}
+    if(monedaGasto==='EUR'){mov.importe=Math.round(importeRaw*_eurmxn*100)/100;mov.monedaOrig='EUR';mov.notas=(d.notas?d.notas+' · ':'')+'€'+importeRaw+' → $'+mov.importe+' MXN (FX '+_eurmxn.toFixed(2)+')';}
+    else if(monedaGasto==='USD'){mov.importe=Math.round(importeRaw*_usdmxn*100)/100;mov.monedaOrig='USD';mov.notas=(d.notas?d.notas+' · ':'')+'US$'+importeRaw+' → $'+mov.importe+' MXN (FX '+_usdmxn.toFixed(2)+')';}
+    else if(monedaGasto==='GBP'){mov.importe=Math.round(importeRaw*_gbpmxn*100)/100;mov.monedaOrig='GBP';mov.notas=(d.notas?d.notas+' · ':'')+'£'+importeRaw+' → $'+mov.importe+' MXN (FX '+_gbpmxn.toFixed(2)+')';}
     else{mov.importe=importeRaw;mov.monedaOrig='MXN';mov.notas=d.notas||'';}}
   }
   movements=[mov,...movements];saveAll(mov.id);closeModal();
@@ -2160,6 +2210,27 @@ function deleteMovement(id){
   saveAll(null, deletedIds.join('|'));
 }
 
+function getImporteOriginal(m) {
+  if (!m.monedaOrig || m.monedaOrig === 'MXN') return m.importe;
+  // Campo dedicado (movimientos nuevos)
+  if (m.montoOriginal != null) return m.montoOriginal;
+  // Fallback regex para movimientos antiguos sin montoOriginal
+  const _fx = _fxCache || LS.get('fxCache');
+  if (m.monedaOrig === 'EUR') {
+    const match = m.notas && m.notas.match(/€([\d.]+)/);
+    return match ? Number(match[1]) : Math.round(m.importe / getEurMxn() * 100) / 100;
+  }
+  if (m.monedaOrig === 'USD') {
+    const match = m.notas && m.notas.match(/US\$([\d.]+)/);
+    return match ? Number(match[1]) : Math.round(m.importe / ((_fx?.usdmxn) || settings.tipoCambio || 17) * 100) / 100;
+  }
+  if (m.monedaOrig === 'GBP') {
+    const match = m.notas && m.notas.match(/£([\d.]+)/);
+    return match ? Number(match[1]) : Math.round(m.importe / 20 * 100) / 100;
+  }
+  return m.importe;
+}
+
 function openEditMovModal(id){
   const m=movements.find(x=>x.id===id);if(!m)return;const sec=m.seccion;
   openModal(`
@@ -2176,7 +2247,7 @@ function openEditMovModal(id){
         <div class="form-group"><label class="form-label">Notes</label><input class="form-input" name="notas" value="${escHtml(m.notas||'')}"></div>
       `:`
         <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" name="fecha" value="${m.fecha}" required></div><div class="form-group"><label class="form-label">Type</label><select class="form-select" name="tipo"><option ${m.tipo==='Gasto'?'selected':''}>Gasto</option><option ${m.tipo==='Ingreso'?'selected':''}>Ingreso</option></select></div></div>
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Category</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}" ${m.categoria===c.id?'selected':''}>${c.icon} ${c.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Amount</label><input type="number" step="any" class="form-input" name="importe" value="${(()=>{if(m.monedaOrig&&m.monedaOrig!=='MXN'){if(m.montoOriginal!=null)return m.montoOriginal;const _fx=_fxCache||LS.get('fxCache');if(m.monedaOrig==='EUR'){const match=m.notas&&m.notas.match(/€([\d.]+)/);return match?Number(match[1]):Math.round(m.importe/getEurMxn()*100)/100;}if(m.monedaOrig==='USD'){const match=m.notas&&m.notas.match(/US\$([\d.]+)/);return match?Number(match[1]):Math.round(m.importe/((_fx?.usdmxn)||settings.tipoCambio||17)*100)/100;}if(m.monedaOrig==='GBP'){const match=m.notas&&m.notas.match(/£([\d.]+)/);return match?Number(match[1]):Math.round(m.importe/20*100)/100;}}return m.importe;})()" required></div><div class="form-group"><label class="form-label">Currency</label><select class="form-select" name="monedaGasto"><option value="MXN" ${(m.monedaOrig||'MXN')==='MXN'?'selected':''}>MXN 🇲🇽</option><option value="EUR" ${m.monedaOrig==='EUR'?'selected':''}>EUR 🇪🇺</option><option value="USD" ${m.monedaOrig==='USD'?'selected':''}>USD 🇺🇸</option><option value="GBP" ${m.monedaOrig==='GBP'?'selected':''}>GBP 🇬🇧</option></select></div></div>
+        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Category</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}" ${m.categoria===c.id?'selected':''}>${c.icon} ${c.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Amount</label><input type="number" step="any" class="form-input" name="importe" value="${getImporteOriginal(m)}" required></div><div class="form-group"><label class="form-label">Currency</label><select class="form-select" name="monedaGasto"><option value="MXN" ${(m.monedaOrig||'MXN')==='MXN'?'selected':''}>MXN 🇲🇽</option><option value="EUR" ${m.monedaOrig==='EUR'?'selected':''}>EUR 🇪🇺</option><option value="USD" ${m.monedaOrig==='USD'?'selected':''}>USD 🇺🇸</option><option value="GBP" ${m.monedaOrig==='GBP'?'selected':''}>GBP 🇬🇧</option></select></div></div>
         <div class="form-group"><label class="form-label">Notes</label><input class="form-input" name="notas" value="${escHtml(m.notas||'')}"></div>
       `}
       <div style="display:flex;gap:10px;margin-top:16px"><button type="submit" class="btn btn-primary" style="flex:1;padding:14px">💾 Save</button><button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button></div>
@@ -2194,9 +2265,9 @@ function updateMovement(id){
       updated.categoria=d.categoria;updated.tipo=d.tipo;
       const importeRaw=Number(d.importe);const monedaGasto=d.monedaGasto||'MXN';
       {const _fx=_fxCache||LS.get('fxCache');const _eurmxn=(_fx?.eurmxn)||settings.tipoEUR||17;const _usdmxn=(_fx?.usdmxn)||settings.tipoCambio||17;const _gbpmxn=_usdmxn/(_fx?.usdgbp||0.78);
-      if(monedaGasto==='EUR'){updated.importe=Math.round(importeRaw*_eurmxn*100)/100;updated.monedaOrig='EUR';updated.montoOriginal=importeRaw;updated.notas=(d.notas?d.notas+' · ':'')+'€'+importeRaw+' → $'+updated.importe+' MXN (FX '+_eurmxn.toFixed(2)+')';}
-      else if(monedaGasto==='USD'){updated.importe=Math.round(importeRaw*_usdmxn*100)/100;updated.monedaOrig='USD';updated.montoOriginal=importeRaw;updated.notas=(d.notas?d.notas+' · ':'')+'US$'+importeRaw+' → $'+updated.importe+' MXN (FX '+_usdmxn.toFixed(2)+')';}
-      else if(monedaGasto==='GBP'){updated.importe=Math.round(importeRaw*_gbpmxn*100)/100;updated.monedaOrig='GBP';updated.montoOriginal=importeRaw;updated.notas=(d.notas?d.notas+' · ':'')+'£'+importeRaw+' → $'+updated.importe+' MXN (FX '+_gbpmxn.toFixed(2)+')';}
+      if(monedaGasto==='EUR'){updated.importe=Math.round(importeRaw*_eurmxn*100)/100;updated.monedaOrig='EUR';updated.notas=(d.notas?d.notas+' · ':'')+'€'+importeRaw+' → $'+updated.importe+' MXN (FX '+_eurmxn.toFixed(2)+')';}
+      else if(monedaGasto==='USD'){updated.importe=Math.round(importeRaw*_usdmxn*100)/100;updated.monedaOrig='USD';updated.notas=(d.notas?d.notas+' · ':'')+'US$'+importeRaw+' → $'+updated.importe+' MXN (FX '+_usdmxn.toFixed(2)+')';}
+      else if(monedaGasto==='GBP'){updated.importe=Math.round(importeRaw*_gbpmxn*100)/100;updated.monedaOrig='GBP';updated.notas=(d.notas?d.notas+' · ':'')+'£'+importeRaw+' → $'+updated.importe+' MXN (FX '+_gbpmxn.toFixed(2)+')';}
       else{updated.importe=importeRaw;updated.monedaOrig='MXN';updated.notas=d.notas||'';}}
     }
     return updated;
@@ -2254,7 +2325,7 @@ function renderPlataformas(){
       ` : `
       <div class="table-wrap">
         <table>
-          <thead><tr><th>#</th><th>${t('plataforma')}</th><th>Currency ✏️</th><th>${t('tipo')}</th><th>Init. bal. ✏️</th><th>⚡ Rate % ✏️</th><th>Since ✏️</th><th>${t('dias')}</th><th>+ ${t('aportaciones')} 🔍</th><th>${t('retiros')}</th><th>${t('gastos')}</th><th style="color:var(--teal)">⚡ Auto</th><th>${t('rendReal')}</th><th>${t('saldoActualTh')}</th><th>${t('rend')}</th><th>${t('pctPort')}</th><th></th></tr></thead>
+          <thead><tr><th>#</th><th>${t('plataforma')}</th><th>${t('byCurrency')} ✏️</th><th>${t('tipo')}</th><th>${t('initialBalance')} ✏️</th><th>⚡ ${t('tasaPct')} ✏️</th><th>${t('desde')} ✏️</th><th>${t('dias')}</th><th>+ ${t('aportaciones')} 🔍</th><th>${t('retiros')}</th><th>${t('gastos')}</th><th style="color:var(--teal)">⚡ Auto</th><th>${t('rendReal')}</th><th>${t('saldoActualTh')}</th><th>${t('rend')}</th><th>${t('pctPort')}</th><th></th></tr></thead>
           <tbody>
             ${plats.map((p,i)=>{
               const cur=p.moneda||'MXN';
@@ -2273,7 +2344,7 @@ function renderPlataformas(){
     </div>
     <div style="margin-top:12px;padding:12px 16px;background:var(--card2);border-radius:10px;font-size:12px;color:var(--text2);line-height:1.6">
       <strong>Currency:</strong> Each platform handles its own currency (MXN, USD, EUR). Click on the Currency column to change it.<br>
-      <strong>Return:</strong> Only accounted with "Current Balance" or auto rate.
+      <strong>Return:</strong> ${t('returnOnlyWithBalance')}
     </div>
   `;
 }
@@ -2445,7 +2516,7 @@ function renderGastos(){
           <button onclick="window.gastosNavMonth(-1)" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:3px 10px;font-size:16px;cursor:pointer;line-height:1;color:var(--text2)">‹</button>
           <span style="font-size:14px;font-weight:700;min-width:110px;text-align:center">${t('months')[cm-1]} ${cy}</span>
           <button onclick="window.gastosNavMonth(1)" ${isCurrentMonth?'disabled style="opacity:0.3;cursor:default;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:3px 10px;font-size:16px;line-height:1"':'style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:3px 10px;font-size:16px;cursor:pointer;line-height:1;color:var(--text2)"'}>›</button>
-          ${!isCurrentMonth?`<button onclick="window.gastosNavToday()" style="background:none;border:1px solid var(--blue);color:var(--blue);border-radius:10px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer">Today</button>`:''}
+          ${!isCurrentMonth?`<button onclick="window.gastosNavToday()" style="background:none;border:1px solid var(--blue);color:var(--blue);border-radius:10px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer">${t('today')}</button>`:''}
         </div>
       </div>
       <button class="btn btn-secondary" onclick="switchTab('movimientos');openMovModal('gastos')">+ Expense</button>
@@ -2526,7 +2597,7 @@ function renderGastos(){
         <tbody>
           ${sobranteRows.join('')}
           <tr style="font-weight:800;background:var(--card2);border-top:2px solid var(--border2)">
-            <td>Accumulated</td><td colspan="2"></td>
+            <td>${t('accumulatedSurplus')}</td><td colspan="2"></td>
             <td style="color:var(--teal);font-weight:800">${fmtEUR(acumTotal)}</td>
           </tr>
         </tbody>
@@ -2730,7 +2801,7 @@ function renderInversiones(){
 
   document.getElementById('page-inversiones').innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
-      <div><div class="section-title">📈 Investments</div><div class="section-sub">${abiertas.length} open positions · ${cerradas.length} closed</div></div>
+      <div><div class="section-title">📈 ${t('investments')}</div><div class="section-sub">${abiertas.length} ${t('openPositions').toLowerCase()} · ${cerradas.length} ${t('closedPositions').toLowerCase()}</div></div>
       <button class="btn btn-primary btn-sm" onclick="openMovModal('inversiones')">+ Trade</button>
     </div>
 
@@ -2739,7 +2810,7 @@ function renderInversiones(){
       <div class="card stat" style="border-top:3px solid var(--blue)">
         <div class="stat-label">${t('costoTotal')}</div>
         <div class="stat-value">${fmt(totalCosto)}</div>
-        <div class="stat-sub">${abiertas.length} positions</div>
+        <div class="stat-sub">${abiertas.length} ${t('posiciones2')}</div>
       </div>
       <div class="card stat" style="border-top:3px solid var(--green)">
         <div class="stat-label">${t('valorActual')}</div>
@@ -2754,14 +2825,14 @@ function renderInversiones(){
       <div class="card stat" style="border-top:3px solid ${pctCol(gpRealTotal)}">
         <div class="stat-label">${t('gpRealizada')}</div>
         <div class="stat-value" style="color:${pctCol(gpRealTotal)}">${gpRealTotal>=0?'+':''}${fmt(gpRealTotal)}</div>
-        <div class="stat-sub">${cerradas.length} closed positions</div>
+        <div class="stat-sub">${cerradas.length} ${t('closedPositions').toLowerCase()}</div>
       </div>
     </div>
 
     <!-- Diversificación -->
     <div class="grid-2" style="margin-bottom:16px">
       <div class="card">
-        <div class="card-title">🥧 By Asset Type</div>
+        <div class="card-title">${t('porTipoActivo')}</div>
         ${tipoEntries.map(([tipo, val]) => {
           const pct = totalValor > 0 ? val/totalValor : 0;
           const color = TIPO_COLORS[tipo] || 'var(--text2)';
@@ -2775,7 +2846,7 @@ function renderInversiones(){
         }).join('')}
       </div>
       <div class="card">
-        <div class="card-title">🌍 By Currency</div>
+        <div class="card-title">${t('porMoneda')}</div>
         ${Object.entries(porMoneda).sort((a,b)=>b[1]-a[1]).map(([mon, val]) => {
           const pct = totalValor > 0 ? val/totalValor : 0;
           const color = mon==='MXN'?'var(--green)':mon==='USD'?'var(--blue)':'var(--purple)';
@@ -2793,7 +2864,7 @@ function renderInversiones(){
     <!-- Tabla de posiciones abiertas -->
     <div class="card" style="margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-        <div class="card-title" style="margin:0">📂 Open Positions</div>
+        <div class="card-title" style="margin:0">${t('posicionesAbiertas')}</div>
       </div>
       <div style="max-height:520px;overflow-y:auto;margin:0 -4px;padding:0 4px">
       ${abiertas.length > 0 ? abiertas.sort((a,b) => {
@@ -2834,14 +2905,14 @@ function renderInversiones(){
             </div>
           </div>
         </div>`;
-      }).join('') : `<div style="text-align:center;color:var(--text2);padding:48px 24px"><div style="font-size:40px;margin-bottom:12px">📈</div><div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">No open positions</div><div style="font-size:13px;margin-bottom:20px">Register your first purchase to see your portfolio here</div><button class="btn btn-primary" onclick="openMovModal('inversiones')">+ First trade</button></div>`}
+      }).join('') : `<div style="text-align:center;color:var(--text2);padding:48px 24px"><div style="font-size:40px;margin-bottom:12px">📈</div><div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">${t('noOpenPositions')}</div><div style="font-size:13px;margin-bottom:20px">${t('registerFirstPurchase')}</div><button class="btn btn-primary" onclick="openMovModal('inversiones')">${t('firstTrade')}</button></div>`}
       </div>
     </div>
 
     <!-- Posiciones cerradas -->
     ${cerradas.length > 0 ? `
     <div class="card">
-      <div class="card-title">🔒 Closed Positions</div>
+      <div class="card-title">${t('posicionesCerradas')}</div>
       ${cerradas.map(t => {
         const tipoClass = t.type==='Acción'?'badge-green':t.type==='ETF'?'badge-blue':t.type==='Crypto'?'badge-orange':'badge-gray';
         return `<div class="list-item">
@@ -3110,7 +3181,7 @@ function ejecutarArchivado(cutoffStr) {
       tipoPlat: 'Saldo Archivado',
       monto: saldoArchivado,
       gananciaHistorica: gananciaArchivada,
-      desc: `Historical archive until ${cutoffStr} · Accumulated G/L: ${gananciaArchivada >= 0 ? '+' : ''}${fmtPlat(gananciaArchivada, p.moneda)}`,
+      desc: `${t('historicalArchiveUntil')} ${cutoffStr} · ${t('accumulatedGL')}: ${gananciaArchivada >= 0 ? '+' : ''}${fmtPlat(gananciaArchivada, p.moneda)}`,
     });
   });
 
@@ -3511,15 +3582,15 @@ function _renderAiChat() {
   const provider = settings.aiProvider || 'claude';
   const keys = settings.aiKeys||{};
   const activeProviders = ['groq','gemini','deepseek','openrouter'].filter(p=>!!keys[p]);
-  const providerLabel = activeProviders.length === 0 ? 'Not configured' :
+  const providerLabel = activeProviders.length === 0 ? t('notConfigured') :
     activeProviders.length === 1 ? (activeProviders[0].charAt(0).toUpperCase()+activeProviders[0].slice(1)+' ✦') :
     (_aiLastProvider ? (_aiLastProvider.charAt(0).toUpperCase()+_aiLastProvider.slice(1)+' ✦') : activeProviders.length + ' providers ✦');
 
   const msgsHtml = _aiMessages.length === 0
     ? `<div style="text-align:center;padding:32px 20px;color:var(--text2)">
         <div style="font-size:32px;margin-bottom:10px">✦</div>
-        <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:6px">Financial Assistant</div>
-        <div style="font-size:12px;line-height:1.6">Ask me about your finances.<br>I have access to all your data.</div>
+        <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:6px">${t('financialAssistant')}</div>
+        <div style="font-size:12px;line-height:1.6">${t('askFinances')}</div>
         <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
           ${(_getAiSuggestions()||[]).map(s=>`<button onclick="window._aiSendSuggestion(${JSON.stringify(s)})" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:12px;cursor:pointer;color:var(--text);text-align:left;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--border)'">${s}</button>`).join('')}
         </div>
@@ -3541,11 +3612,11 @@ function _renderAiChat() {
           <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:15px">✦</div>
           <div>
             <div style="font-size:14px;font-weight:700">${providerLabel}</div>
-            <div style="font-size:10px;color:${hasKey?'var(--green)':'var(--orange)'}">${hasKey?'● Connected':'● No API key · configure in Settings'}</div>
+            <div style="font-size:10px;color:${hasKey?'var(--green)':'var(--orange)'}">${hasKey?t('connected'):t('noApiKey')}</div>
           </div>
         </div>
         <div style="display:flex;gap:8px;align-items:center">
-          ${_aiMessages.length>0?`<button onclick="window._aiClear()" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--text3);padding:4px 8px;border-radius:8px;border:1px solid var(--border)" title="Clear chat">🗑 Clear</button>`:''}
+          ${_aiMessages.length>0?`<button onclick="window._aiClear()" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--text3);padding:4px 8px;border-radius:8px;border:1px solid var(--border)" title="${t('clear')}">🗑 ${t('clear')}</button>`:''}
           <button onclick="window.toggleAiChat()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text2);width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background='none'">✕</button>
         </div>
       </div>
@@ -3556,13 +3627,13 @@ function _renderAiChat() {
       <!-- Input -->
       <div style="padding:12px 14px;border-top:1px solid var(--border);flex-shrink:0">
         <div style="display:flex;gap:8px;align-items:flex-end">
-          <textarea id="aiInput" placeholder="${hasKey?'Ask something about your finances...':'Configure your API key in Settings first'}" ${hasKey?'':'disabled'} style="flex:1;resize:none;border-radius:12px;padding:10px 14px;font-size:13px;font-family:var(--font);background:var(--card2);border:1px solid var(--border);color:var(--text);outline:none;max-height:100px;min-height:40px;line-height:1.5;overflow-y:auto" rows="1"
+          <textarea id="aiInput" placeholder="${hasKey?t('askPlaceholder'):t('configKeyFirst')}" ${hasKey?'':'disabled'} style="flex:1;resize:none;border-radius:12px;padding:10px 14px;font-size:13px;font-family:var(--font);background:var(--card2);border:1px solid var(--border);color:var(--text);outline:none;max-height:100px;min-height:40px;line-height:1.5;overflow-y:auto" rows="1"
             onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();window._aiSend();}"
             oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"
           ></textarea>
           <button onclick="window._aiSend()" ${hasKey&&!_aiLoading?'':'disabled'} style="width:38px;height:38px;border-radius:50%;background:var(--blue);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;opacity:${hasKey&&!_aiLoading?'1':'0.4'}">↑</button>
         </div>
-        <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:6px">Data sent to ${providerLabel.replace(' ✦','')} · not stored</div>
+        <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:6px">${t('dataSentTo')} ${providerLabel.replace(' ✦','')} ${t('notStored')}</div>
       </div>
     </div>`;
 
@@ -4025,7 +4096,7 @@ function showPending(user){
     el.style.cssText = 'position:fixed;inset:0;background:var(--bg,#f2f2f7);display:flex;align-items:center;justify-content:center;z-index:9998;font-family:var(--font,"DM Sans",sans-serif)';
     el.innerHTML = `<div style="background:var(--card,#fff);border-radius:24px;padding:40px 32px;max-width:380px;width:90%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.12)">
       <div style="font-size:48px;margin-bottom:16px">⏳</div>
-      <div style="font-size:20px;font-weight:800;letter-spacing:-0.02em;margin-bottom:8px">Access pending</div>
+      <div style="font-size:20px;font-weight:800;letter-spacing:-0.02em;margin-bottom:8px">${t('accessPending')}</div>
       <div style="font-size:14px;color:#666;line-height:1.6;margin-bottom:24px">Your account is waiting for approval.<br>The administrator will be notified and will grant you access soon.</div>
       <div style="font-size:12px;color:#999;margin-bottom:24px;word-break:break-all">${user.email}</div>
       <button onclick="window.signOutUser()" style="padding:10px 24px;border-radius:20px;border:1px solid #ddd;background:none;cursor:pointer;font-size:13px;font-weight:600">← Sign out</button>
