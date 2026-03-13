@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Finanzas Pro — Dashboard Financiero</title>
   <meta name="theme-color" content="#0A84FF">
+
+  <!-- PWA: instalar como app -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Finanzas Pro">
+  <link rel="apple-touch-icon" href="icon-192.png">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
@@ -94,5 +102,79 @@
 </div>
 
 <script type="module" src="app.js"></script>
+
+<!-- PWA: registro del service worker + banner de instalación -->
+<div id="pwaInstallBanner" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9000;background:var(--card,#fff);border:1px solid var(--border,#e5e5ea);border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,0.18);padding:16px 20px;max-width:340px;width:calc(100% - 40px);font-family:'DM Sans',sans-serif;display:none;align-items:center;gap:14px">
+  <div style="font-size:36px;flex-shrink:0">💼</div>
+  <div style="flex:1;min-width:0">
+    <div style="font-size:14px;font-weight:800;letter-spacing:-0.02em;margin-bottom:2px">Instalar Finanzas Pro</div>
+    <div style="font-size:12px;color:#666;line-height:1.4">Accede desde tu pantalla de inicio, sin navegador y sin internet.</div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+    <button id="pwaInstallBtn" style="padding:7px 16px;border-radius:14px;border:none;background:#0A84FF;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Instalar</button>
+    <button id="pwaDismissBtn" style="padding:5px 10px;border-radius:14px;border:1px solid #ddd;background:none;color:#888;font-size:11px;cursor:pointer;font-family:inherit">Ahora no</button>
+  </div>
+</div>
+
+<script>
+// ── Service Worker ─────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(reg => {
+        console.log('[PWA] Service Worker registrado:', reg.scope);
+        // Si hay una nueva versión esperando, avisamos al SW que tome control
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // Nueva versión disponible — recargar silenciosamente
+              console.log('[PWA] Nueva versión disponible, actualizando...');
+              newWorker.postMessage('SKIP_WAITING');
+              window.location.reload();
+            }
+          });
+        });
+      })
+      .catch(err => console.warn('[PWA] Error registrando SW:', err));
+  });
+}
+
+// ── Banner de instalación ──────────────────────────────────────────────────
+let _pwaPrompt = null;
+const _pwaBanner = document.getElementById('pwaInstallBanner');
+const _pwaInstallBtn = document.getElementById('pwaInstallBtn');
+const _pwaDismissBtn = document.getElementById('pwaDismissBtn');
+
+// El navegador dispara este evento cuando la app es instalable
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _pwaPrompt = e;
+  // No mostrar si el usuario ya lo rechazó antes
+  if (!localStorage.getItem('pwa_dismissed')) {
+    setTimeout(() => { _pwaBanner.style.display = 'flex'; }, 3000);
+  }
+});
+
+_pwaInstallBtn && _pwaInstallBtn.addEventListener('click', async () => {
+  if (!_pwaPrompt) return;
+  _pwaPrompt.prompt();
+  const { outcome } = await _pwaPrompt.userChoice;
+  console.log('[PWA] Resultado instalación:', outcome);
+  _pwaPrompt = null;
+  _pwaBanner.style.display = 'none';
+});
+
+_pwaDismissBtn && _pwaDismissBtn.addEventListener('click', () => {
+  _pwaBanner.style.display = 'none';
+  localStorage.setItem('pwa_dismissed', '1');
+});
+
+// Cuando ya está instalada como app
+window.addEventListener('appinstalled', () => {
+  console.log('[PWA] App instalada correctamente');
+  _pwaBanner.style.display = 'none';
+});
+</script>
 </body>
 </html>
