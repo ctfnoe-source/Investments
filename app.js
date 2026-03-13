@@ -343,11 +343,17 @@ async function fetchPrice(ticker, type, moneda) {
       const derived = cachedMXN.price / tcLive;
       if (isPriceReasonable(derived, ticker.toUpperCase())) { price = derived; source = 'mxn-cache-converted'; }
     }
+    // Intentar Alpha Vantage primero si el sufijo guardado es europeo (.LON, .DEX, etc.)
+    // Esto evita que Finnhub devuelva precios incorrectos para ETFs europeos sin referencia
+    const knownEuropeanSuffix = LS.get('av_suffix_' + ticker.toUpperCase());
+    const isLikelyEuropean = knownEuropeanSuffix && (knownEuropeanSuffix.includes('.LON') || knownEuropeanSuffix.includes('.DEX') || knownEuropeanSuffix.includes('.EPA') || knownEuropeanSuffix.includes('.AMS'));
+    if (price === null && isLikelyEuropean && settings.alphaVantageKey) {
+      price = await fetchAlphaVantagePrice(ticker, moneda); if (price !== null) source = 'alphavantage';
+    }
     if (price === null) {
       const finnhubPrice = await fetchStockPrice(ticker);
       if (finnhubPrice !== null) {
         // Validar precio de Finnhub contra cache MXN si existe
-        // ETFs europeos como VUAA a veces devuelven precios incorrectos en Finnhub
         const cachedMXN2 = getCachedPrice(ticker.toUpperCase() + '_MXN');
         const fx2 = _fxCache || LS.get('fxCache');
         const tcLive2 = (fx2?.usdmxn) || settings.tipoCambio;
@@ -364,7 +370,7 @@ async function fetchPrice(ticker, type, moneda) {
         }
       }
     }
-    // Alpha Vantage para ETFs europeos (VUAA, etc.) que Finnhub no tiene
+    // Alpha Vantage como último recurso si Finnhub no lo encontró o fue descartado
     if (price === null && settings.alphaVantageKey) { price = await fetchAlphaVantagePrice(ticker, moneda); if (price !== null) source = 'alphavantage'; }
   }
   if (price !== null) { setCachedPrice(cacheKey, price, source); return {price, source, cached:false, ts:Date.now()}; }
@@ -1088,8 +1094,7 @@ function renderDashboard(){
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         ${!hasFinnhub&&priceSummary.total>0?`<span style="font-size:11px;color:var(--orange)">⚠️ Acciones USA/ETF requieren Finnhub key</span>`:''}
         ${(()=>{const fx=_fxCache||LS.get('fxCache');if(fx&&isCacheFresh(fx.ts))return`<span style="font-size:11px;color:var(--teal)">💱 USD $${fx.usdmxn?.toFixed(2)} · EUR $${fx.eurmxn?.toFixed(2)}</span>`;return`<span style="font-size:11px;color:var(--text3)">💱 USD $${tc} (manual)</span>`;})()}
-        <button class="btn btn-primary btn-sm" onclick="updateAllPrices(false)" ${priceUpdateState.loading?'disabled':''} id="btnUpdate">${btnLabel}</button>
-        <button class="btn btn-secondary btn-sm" onclick="updateAllPrices(true)" ${priceUpdateState.loading?'disabled':''}>↺ Forzar</button>
+        <button class="btn btn-primary btn-sm" onclick="updateAllPrices(true)" ${priceUpdateState.loading?'disabled':''} id="btnUpdate">${btnLabel}</button>
       </div>
     </div>
 
