@@ -136,6 +136,13 @@ async function flushOfflineQueue() {
 window.addEventListener('online', () => { _isOnline = true; flushOfflineQueue(); });
 window.addEventListener('offline', () => { _isOnline = false; setOfflineBanner('offline'); });
 
+// Re-render on resize (isMobile() layout)
+let _resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => { renderPageInternal(currentTab); }, 300);
+});
+
 function toggleDark() {
   const dark = document.documentElement.getAttribute('data-theme') === 'dark';
   document.documentElement.setAttribute('data-theme', dark ? 'light' : 'dark');
@@ -365,7 +372,8 @@ async function forceUpdateFX() {
     const d = await r.json();
     const gbpmxn = d.rates.MXN / d.rates.GBP;
     const result = { usdmxn: d.rates.MXN, usdeur: d.rates.EUR, eurmxn: d.rates.MXN / d.rates.EUR, gbpmxn, usdgbp: d.rates.GBP, ts: Date.now(), _live: true };
-    if (result.usdmxn >= 15 && result.usdmxn <= 30) {
+    const anchor2 = settings.tipoCambio || 18;
+    if (result.usdmxn >= anchor2 * 0.65 && result.usdmxn <= anchor2 * 1.45) {
       LS.set('fxCache', result);
       _fxCache = result;
       settings.tipoCambio = Math.round(result.usdmxn * 100) / 100;
@@ -600,6 +608,7 @@ let currentTab = 'dashboard';
 let movFilter = {seccion:'todas', search:''};
 let _gastosMonth = null; // null = current month, format 'YYYY-MM'
 let _aiChatOpen = false;
+let _aiLastProvider = null;
 let _aiMessages = []; // {role:'user'|'assistant', content:'...'}
 let _aiLoading = false;
 let chartInstances = {};
@@ -1857,7 +1866,7 @@ function openEditMovModal(id){
         <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="notas" value="${escHtml(m.notas||'')}"></div>
       `:`
         <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${m.fecha}" required></div><div class="form-group"><label class="form-label">Tipo</label><select class="form-select" name="tipo"><option ${m.tipo==='Gasto'?'selected':''}>Gasto</option><option ${m.tipo==='Ingreso'?'selected':''}>Ingreso</option></select></div></div>
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Categoría</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}" ${m.categoria===c.id?'selected':''}>${c.icon} ${c.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Importe</label><input type="number" step="any" class="form-input" name="importe" value="${m.importe}" required></div><div class="form-group"><label class="form-label">Moneda</label><select class="form-select" name="monedaGasto"><option value="MXN" ${(m.monedaOrig||'MXN')==='MXN'?'selected':''}>MXN 🇲🇽</option><option value="EUR" ${m.monedaOrig==='EUR'?'selected':''}>EUR 🇪🇺</option></select></div></div>
+        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Categoría</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}" ${m.categoria===c.id?'selected':''}>${c.icon} ${c.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Importe</label><input type="number" step="any" class="form-input" name="importe" value="${m.monedaOrig==='EUR'?((m.notas&&m.notas.match(/€([\.\d]+)/)?Number(m.notas.match(/€([\.\d]+)/)[1]):Math.round(m.importe/getEurMxn()*100)/100)):m.importe}" required></div><div class="form-group"><label class="form-label">Moneda</label><select class="form-select" name="monedaGasto"><option value="MXN" ${(m.monedaOrig||'MXN')==='MXN'?'selected':''}>MXN 🇲🇽</option><option value="EUR" ${m.monedaOrig==='EUR'?'selected':''}>EUR 🇪🇺</option></select></div></div>
         <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="notas" value="${escHtml(m.notas||'')}"></div>
       `}
       <div style="display:flex;gap:10px;margin-top:16px"><button type="submit" class="btn btn-primary" style="flex:1;padding:14px">💾 Guardar</button><button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button></div>
@@ -2904,6 +2913,7 @@ function renderAjustes(){
         })()}
       </div>
 
+    </div>
     <div class="card" style="margin-top:16px"><div class="card-title">⚠️ Zona de Peligro</div><button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="resetAll()">🗑 Resetear Todo</button></div>
     ${isAdmin ? adminFirebaseRulesHTML : ''}
   `;
@@ -2952,7 +2962,7 @@ function _buildAiContext() {
     const gastosM = movements.filter(m=>m.seccion==='gastos'&&m.fecha&&m.fecha.startsWith(mesKey));
     const totalGastos = gastosM.reduce((s,m)=>s+(m.importe||0),0);
     const bycat = {};
-    gastosM.forEach(m=>{bycat[catName(m.categoria)]=(bycat[m.categoria]||0)+(m.importe||0);});
+    gastosM.forEach(m=>{bycat[m.categoria]=(bycat[m.categoria]||0)+(m.importe||0);});
 
     // Ingresos
     const ing = settings.ingresos||{};
@@ -3828,6 +3838,7 @@ window.addGoal = addGoal;
 window.deleteGoal = deleteGoal;
 window.testFinnhub = testFinnhub;
 window.testAlphaVantage = testAlphaVantage;
+window.testAiKey = testAiKey;
 window.exportData = exportData;
 window.importData = importData;
 window.resetAll = resetAll;
