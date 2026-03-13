@@ -1113,18 +1113,18 @@ function getTickerPositions(){
       if(m.tipoMov==='Venta'){tickers[key].brokers[broker].cantV+=m.cantidad||0;}
     }
   });
-  return Object.values(tickers).map(tk_pos=>{
-    tk_pos.cantActual=tk_pos.cantC-tk_pos.cantV;tk_pos.precioCostoPromedio=tk_pos.cantC>0?tk_pos.costoTotal/tk_pos.cantC:0;
+  return Object.values(tickers).map(t=>{
+    t.cantActual=t.cantC-t.cantV;t.precioCostoPromedio=t.cantC>0?t.costoTotal/t.cantC:0;
     // Resolve per-broker available quantities
-    tk_pos.brokersSaldo=Object.entries(tk_pos.brokers).map(([br,b])=>({broker:br,cantActual:Math.max(0,b.cantC-b.cantV),precioCostoPromedio:b.cantC>0?b.costoTotal/b.cantC:0})).filter(b=>b.cantActual>0);
-    const pi=getPriceInfo(tk_pos.ticker,tk_pos.type,tk_pos.moneda);
-    tk_pos.precioActual=pi.price;tk_pos.priceLabel=pi.label;tk_pos.priceCssClass=pi.cssClass;tk_pos.priceTooltip=pi.tooltip||'';
-    tk_pos.valorActual=tk_pos.precioActual&&tk_pos.cantActual>0?tk_pos.cantActual*tk_pos.precioActual:null;
-    tk_pos.costoPosicion=tk_pos.cantActual*tk_pos.precioCostoPromedio;
-    tk_pos.gpNoRealizada=tk_pos.valorActual!==null?tk_pos.valorActual-tk_pos.costoPosicion:null;
-    tk_pos.pctNoRealizada=tk_pos.costoPosicion>0&&tk_pos.gpNoRealizada!==null?tk_pos.gpNoRealizada/tk_pos.costoPosicion:null;
-    tk_pos.gpRealizada=tk_pos.cantV>0?tk_pos.ventasTotal-(tk_pos.precioCostoPromedio*tk_pos.cantV):0;
-    return tk_pos;
+    t.brokersSaldo=Object.entries(t.brokers).map(([br,b])=>({broker:br,cantActual:Math.max(0,b.cantC-b.cantV),precioCostoPromedio:b.cantC>0?b.costoTotal/b.cantC:0})).filter(b=>b.cantActual>0);
+    const pi=getPriceInfo(t.ticker,t.type,t.moneda);
+    t.precioActual=pi.price;t.priceLabel=pi.label;t.priceCssClass=pi.cssClass;t.priceTooltip=pi.tooltip||'';
+    t.valorActual=t.precioActual&&t.cantActual>0?t.cantActual*t.precioActual:null;
+    t.costoPosicion=t.cantActual*t.precioCostoPromedio;
+    t.gpNoRealizada=t.valorActual!==null?t.valorActual-t.costoPosicion:null;
+    t.pctNoRealizada=t.costoPosicion>0&&t.gpNoRealizada!==null?t.gpNoRealizada/t.costoPosicion:null;
+    t.gpRealizada=t.cantV>0?t.ventasTotal-(t.precioCostoPromedio*t.cantV):0;
+    return t;
   });
 }
 
@@ -2575,8 +2575,8 @@ function deleteRecurrente(id){if(!confirm('Delete this recurring expense?'))retu
 function renderInversiones(){
   const tc = settings.tipoCambio || 18;
   const tickers = getTickerPositions();
-  const abiertas = tickers.filter(t => t.cantActual > 0);
-  const cerradas = tickers.filter(t => t.cantActual <= 0);
+  const abiertas = tickers.filter(pos => pos.cantActual > 0);
+  const cerradas = tickers.filter(pos => pos.cantActual <= 0);
 
   const totalCosto = abiertas.reduce((s,t) => s + t.costoPosicion * (t.moneda==='MXN'?1:tc), 0);
   const totalValor = abiertas.reduce((s,t) => s + (t.valorActual||t.costoPosicion||0) * (t.moneda==='MXN'?1:tc), 0);
@@ -2585,7 +2585,7 @@ function renderInversiones(){
   const gpRealTotal = cerradas.reduce((s,t) => s + (t.gpRealizada||0) * (t.moneda==='MXN'?1:tc), 0);
 
   const porTipo = {};
-  abiertas.forEach(t => {
+  abiertas.forEach(pos => {
     const tipo = t.type || 'Otro';
     const val = (t.valorActual||t.costoPosicion||0) * (t.moneda==='MXN'?1:tc);
     porTipo[tipo] = (porTipo[tipo]||0) + val;
@@ -2594,7 +2594,7 @@ function renderInversiones(){
   const TIPO_COLORS = {'ETF':'var(--blue)','Acción':'var(--green)','Crypto':'var(--orange)','Bono':'var(--teal)','Otro':'var(--text2)'};
 
   const porMoneda = {};
-  abiertas.forEach(t => {
+  abiertas.forEach(pos => {
     const val = (t.valorActual||t.costoPosicion||0) * (t.moneda==='MXN'?1:tc);
     porMoneda[t.moneda||'USD'] = (porMoneda[t.moneda||'USD']||0) + val;
   });
@@ -2614,7 +2614,7 @@ function renderInversiones(){
       <div class="card stat" style="border-top:3px solid var(--green)">
         <div class="stat-label">${t('valorActual')}</div>
         <div class="stat-value">${fmt(totalValor)}</div>
-        <div class="stat-sub">${abiertas.some(t=>t.gpNoRealizada!==null)?t('preciosHoy'):t('costoCompra')}</div>
+        <div class="stat-sub">${abiertas.some(pos=>pos.gpNoRealizada!==null)?t('preciosHoy'):t('costoCompra')}</div>
       </div>
       <div class="card stat" style="border-top:3px solid ${pctCol(totalGP)}">
         <div class="stat-label">${t('gpNoRealizada')}</div>
