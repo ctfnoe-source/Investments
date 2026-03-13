@@ -1,7 +1,7 @@
 // ==================== SERVICE WORKER — Finanzas Pro ====================
 // Versión de caché — cambia este número cada vez que hagas un deploy
 // para que los usuarios reciban la versión más reciente automáticamente.
-const CACHE_VERSION = 'finanzas-pro-v3';
+const CACHE_VERSION = 'finanzas-pro-v4';
 
 // Archivos que se cachean al instalar la app (shell de la aplicación)
 const SHELL_FILES = [
