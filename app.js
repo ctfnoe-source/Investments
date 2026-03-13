@@ -3065,13 +3065,26 @@ async function _aiCallSingle(provider, key, messages, test=false) {
     return d.choices?.[0]?.message?.content || '';
 
   } else if (provider === 'openrouter') {
-    const freeModels = [
-      'deepseek/deepseek-chat-v3-0324:free',
-      'meta-llama/llama-3.3-70b-instruct:free',
-      'google/gemini-2.0-flash-exp:free',
-      'mistralai/mistral-7b-instruct:free',
-      'qwen/qwen3-8b:free',
-    ];
+    // Obtener lista de modelos gratuitos disponibles en tiempo real
+    let freeModels = [];
+    try {
+      const modelsResp = await fetch('https://openrouter.ai/api/v1/models', {
+        headers: { 'Authorization': 'Bearer ' + key }
+      });
+      if (modelsResp.ok) {
+        const modelsData = await modelsResp.json();
+        freeModels = (modelsData.data || [])
+          .filter(m => m.id.endsWith(':free') && m.context_length >= 4096)
+          .sort((a, b) => (b.context_length || 0) - (a.context_length || 0))
+          .slice(0, 6)
+          .map(m => m.id);
+        console.log('[OpenRouter] Modelos gratuitos disponibles:', freeModels);
+      }
+    } catch(e) { console.warn('[OpenRouter] No se pudo obtener lista de modelos:', e.message); }
+    // Fallback hardcodeado si la lista falla
+    if (freeModels.length === 0) {
+      freeModels = ['deepseek/deepseek-chat-v3-0324:free', 'meta-llama/llama-3.3-70b-instruct:free', 'mistralai/mistral-7b-instruct:free'];
+    }
     let lastErr = null;
     for (const model of freeModels) {
       try {
@@ -3080,11 +3093,11 @@ async function _aiCallSingle(provider, key, messages, test=false) {
           headers:{'Content-Type':'application/json','Authorization':'Bearer '+key,'HTTP-Referer':window.location.origin,'X-Title':'Finanzas Pro'},
           body: JSON.stringify({model, max_tokens:maxTokens, messages:[{role:'system',content:systemPrompt},...messages.map(m=>({role:m.role,content:m.content}))]})
         });
-        if (!r.ok) { const e=await r.json().catch(()=>({})); lastErr=new Error(e?.error?.message||'Error '+r.status); continue; }
+        if (!r.ok) { const e=await r.json().catch(()=>({})); lastErr=new Error(e?.error?.message||'Error '+r.status); console.warn('[OpenRouter]', model, 'falló:', r.status); continue; }
         const d = await r.json();
         const text = d.choices?.[0]?.message?.content;
         if (text) { console.log('[OpenRouter] Modelo usado:', model); return text; }
-      } catch(e) { lastErr=e; }
+      } catch(e) { lastErr=e; console.warn('[OpenRouter]', model, 'error:', e.message); }
     }
     throw lastErr || new Error('Todos los modelos de OpenRouter fallaron');
   }
@@ -3430,6 +3443,7 @@ function renderPageInternal(tab){
 }
 function renderPage(tab){renderPageInternal(tab);}
 window.renderPage=renderPage;
+window.saveAll=saveAll;
 window.forceUpdateFX=forceUpdateFX;
 window.showAportaciones = showAportaciones;
 
