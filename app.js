@@ -3540,10 +3540,27 @@ function updateNav(patrimonio,totalMXN,totalUSD,tc,totalRend,deltaHoy,deltaHoyPc
   if(el2)el2.innerHTML=`<span>🇲🇽 ${fmt(totalMXN)}</span><span>🇺🇸 ${fmt(totalUSD,'USD')}</span><span>💱 $${tc}</span>${eurStr}${deltaStr}`;
 }
 function updateNavUser(user){
-  const el=document.getElementById('navUser');if(!el)return;
-  const darkBtn=`<button class="dark-toggle" onclick="toggleDark()" title="Dark mode" style="margin-right:4px"><span class="dark-toggle-icon dark-toggle-moon">🌙</span><span class="dark-toggle-icon dark-toggle-sun">☀️</span></button>`;
-  const langBtn=`<button id="langToggleBtn" onclick="toggleLang()" title="Switch language" style="margin-right:4px;background:var(--card2);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;color:var(--text)">${_lang==='es'?'🌐 EN':'🌐 ES'}</button>`;
-  if(user)el.innerHTML=`${darkBtn}${langBtn}${user.photoURL?`<img src="${user.photoURL}" class="nav-avatar">`:`<div class="nav-avatar-placeholder">${(user.displayName||user.email||'U')[0].toUpperCase()}</div>`}<button class="btn-signout" onclick="window.signOutUser()">${t('salir')}</button>`;
+  const el=document.getElementById('navUser');if(!el||!user)return;
+  // Only update user-specific parts (avatar + signout).
+  // The lang button and dark toggle already live in static HTML — never rebuild them.
+  let avatarEl=document.getElementById('navAvatar');
+  let signoutEl=document.getElementById('navSignout');
+  if(!avatarEl){
+    avatarEl=document.createElement('div');
+    avatarEl.id='navAvatar';
+    el.appendChild(avatarEl);
+  }
+  if(!signoutEl){
+    signoutEl=document.createElement('button');
+    signoutEl.id='navSignout';
+    signoutEl.className='btn-signout';
+    signoutEl.onclick=()=>window.signOutUser();
+    el.appendChild(signoutEl);
+  }
+  avatarEl.innerHTML=user.photoURL
+    ?`<img src="${user.photoURL}" class="nav-avatar">`
+    :`<div class="nav-avatar-placeholder">${(user.displayName||user.email||'U')[0].toUpperCase()}</div>`;
+  signoutEl.textContent=t('salir');
 }
 
 function exportData(){const data={platforms,movements,goals,settings,recurrentes,patrimonioHistory,exportDate:new Date().toISOString(),version:'4.4'};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`finanzas-pro-${today()}.json`;a.click();URL.revokeObjectURL(url);}
