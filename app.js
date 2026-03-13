@@ -110,6 +110,12 @@ const I18N = {
     verDetalle:'Ver detalle', ocultar:'Ocultar',
     mostrarTodas:'Mostrar todas', mostrarMenos:'Mostrar menos',
     probar:'🧪 Probar', salir:'Salir',
+    hideValues:'Ocultar valores', showValues:'Mostrar valores',
+    sgDashboard:['¿Cómo está mi balance este mes?','¿Cuál es mi mejor plataforma?','¿Cuánto llevo invertido?','¿Voy bien con mis metas?'],
+    sgGastos:['¿En qué categoría gasto más?','¿Estoy dentro del presupuesto?','Resume mis gastos recurrentes','¿Cómo puedo reducir gastos?'],
+    sgInversiones:['¿Cuánto llevo invertido en total?','¿Cuál es mi mejor inversión?','¿Estoy bien diversificado?','¿Cuánto he ganado o perdido?'],
+    sgPlataformas:['¿Cuál es mi mejor plataforma?','¿Dónde tengo más capital concentrado?','¿Qué plataforma rinde más?','Compara mis plataformas'],
+    sgMetas:['¿Voy bien con mis metas?','¿Cuándo alcanzaré mi próxima meta?','¿Cuánto necesito ahorrar por mes?','¿Qué meta está más lejos?'],
 
     gastoReal:'💳 Gasto Real', disponible:'✅ Disponible', presupuestoLabel:'📋 Presupuesto',
     // Ajustes
@@ -283,6 +289,12 @@ const I18N = {
     bestPlatform: 'Which is my best performing platform?',
     totalInvested: 'How much have I invested in total?',
     goalsProgress: 'Am I on track with my goals?',
+    hideValues: 'Hide values', showValues: 'Show values',
+    sgDashboard:['How is my balance this month?','Which is my best platform?','How much have I invested?','Am I on track with my goals?'],
+    sgGastos:['Which category do I spend most on?','Am I within budget?','Summarize my recurring expenses','How can I reduce expenses?'],
+    sgInversiones:['How much have I invested in total?','What is my best investment?','Am I well diversified?','How much have I gained or lost?'],
+    sgPlataformas:['Which is my best platform?','Where is most of my capital?','Which platform has the best return?','Compare my platforms'],
+    sgMetas:['Am I on track with my goals?','When will I reach my nearest goal?','How much do I need to save per month?','Which goal is furthest away?'],
   }
 };
 let _lang = LS.get('lang') || 'en'; // Default to English
@@ -319,6 +331,67 @@ function _applyLangToNav() {
   if(btn) btn.textContent = _lang === 'es' ? '🌐 EN' : '🌐 ES';
 }
 window.toggleLang = toggleLang;
+
+function toggleValues() {
+  _valuesHidden = !_valuesHidden;
+  LS.set('valuesHidden', _valuesHidden);
+  const btn = document.getElementById('hideValuesBtn');
+  if (btn) {
+    btn.textContent = _valuesHidden ? '🙈' : '👁';
+    btn.title = _valuesHidden ? t('showValues') : t('hideValues');
+    btn.style.opacity = _valuesHidden ? '0.5' : '1';
+  }
+  if (typeof renderPageInternal === 'function') renderPageInternal(currentTab);
+}
+window.toggleValues = toggleValues;
+
+function _getAiSuggestions() {
+  const tab = window.currentTab || 'dashboard';
+  const map = { gastos:'sgGastos', inversiones:'sgInversiones', plataformas:'sgPlataformas', metas:'sgMetas' };
+  return t(map[tab] || 'sgDashboard') || [];
+}
+
+function _renderMd(raw) {
+  let s = raw.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  s = s.replace(/```[\w]*\n?([\s\S]*?)```/g, (_,c) =>
+    '<pre style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:11px;overflow-x:auto;margin:6px 0;font-family:monospace;white-space:pre">' + c.trim() + '</pre>');
+  s = s.replace(/`([^`]+)`/g,'<code style="background:var(--card2);border-radius:4px;padding:1px 5px;font-size:11px;font-family:monospace">$1</code>');
+  s = s.replace(/\*\*([^*\n]+)\*\*/g,'<strong>$1</strong>');
+  s = s.replace(/\*([^*\n]+)\*/g,'<em>$1</em>');
+  s = s.replace(/^### (.+)$/gm,'<div style="font-size:13px;font-weight:700;margin:8px 0 3px">$1</div>');
+  s = s.replace(/^## (.+)$/gm,'<div style="font-size:14px;font-weight:700;margin:10px 0 4px">$1</div>');
+  s = s.replace(/((?:^[-*] .+\n?)+)/gm, block => {
+    const items = block.trim().split('\n').map(l=>l.replace(/^[-*] /,''));
+    return '<ul style="margin:4px 0 4px 4px;padding-left:16px;font-size:13px;line-height:1.7">'+items.map(i=>'<li>'+i+'</li>').join('')+'</ul>';
+  });
+  s = s.replace(/((?:^\d+\. .+\n?)+)/gm, block => {
+    const items = block.trim().split('\n').map(l=>l.replace(/^\d+\.\s/,''));
+    return '<ol style="margin:4px 0 4px 4px;padding-left:16px;font-size:13px;line-height:1.7">'+items.map(i=>'<li>'+i+'</li>').join('')+'</ol>';
+  });
+  s = s.replace(/\n/g,'<br>');
+  s = s.replace(/(<\/(?:ul|ol|pre|div)>)<br>/g,'$1');
+  return s;
+}
+
+async function _runProactiveAiAlert() {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    if (LS.get('lastProactiveAlert') === today) return;
+    const hasKey = Object.values(settings.aiKeys||{}).some(v=>!!v);
+    if (!hasKey) return;
+    LS.set('lastProactiveAlert', today);
+    const prompt = _lang === 'es'
+      ? 'Dame un resumen financiero muy breve: patrimonio actual, balance del mes y UN consejo concreto. Máximo 4 líneas.'
+      : 'Give me a very brief financial summary: current net worth, month balance, and ONE concrete tip. Max 4 lines.';
+    const reply = await _aiCall([{role:'user', content:prompt}]);
+    if (!reply) return;
+    const notif = document.createElement('div');
+    notif.style.cssText = 'position:fixed;top:70px;right:20px;z-index:9999;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 18px;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,0.15);font-size:13px;line-height:1.6;color:var(--text);transition:opacity 0.5s';
+    notif.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span>✦</span><strong style="font-size:12px">' + (t('sgDashboard') ? (_lang==='es'?'Resumen del día':'Daily summary') : 'Daily summary') + '</strong><button onclick="this.parentElement.parentElement.remove()" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:16px;color:var(--text3)">✕</button></div>' + _renderMd(reply);
+    document.body.appendChild(notif);
+    setTimeout(() => { notif.style.opacity='0'; setTimeout(()=>notif.remove(),500); }, 9000);
+  } catch(e) { /* silencioso */ }
+}
 
 function setOfflineBanner(state) {
   const b = document.getElementById('offlineBanner');
@@ -767,6 +840,7 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
 const isMobile = () => window.innerWidth <= 768;
 
 function fmt(n, cur) {
+  if (typeof _valuesHidden !== 'undefined' && _valuesHidden) return '••••';
   if (n == null || isNaN(n)) {
     if (cur === 'USD') return 'US$0';
     if (cur === 'EUR') return '€0';
@@ -814,7 +888,8 @@ let movFilter = {seccion:'todas', search:''};
 let _gastosMonth = null; // null = current month, format 'YYYY-MM'
 let _aiChatOpen = false;
 let _aiLastProvider = null;
-let _aiMessages = []; // {role:'user'|'assistant', content:'...'}
+let _aiMessages = LS.get('aiHistory') || [];
+let _valuesHidden = LS.get('valuesHidden') || false;
 let _aiLoading = false;
 let chartInstances = {};
 let _lastLocalSave = 0;
@@ -3434,15 +3509,14 @@ function _renderAiChat() {
         <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:6px">Financial Assistant</div>
         <div style="font-size:12px;line-height:1.6">Ask me about your finances.<br>I have access to all your data.</div>
         <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
-          ${[t('howIsMyBalance'), t('bestPlatform'), t('totalInvested'), t('goalsProgress')]
-            .map(s=>`<button onclick="window._aiSendSuggestion('${s}')" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:12px;cursor:pointer;color:var(--text);text-align:left;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--border)'">${s}</button>`).join('')}
+          ${(_getAiSuggestions()||[]).map(s=>`<button onclick="window._aiSendSuggestion(${JSON.stringify(s)})" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:12px;cursor:pointer;color:var(--text);text-align:left;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--border)'">${s}</button>`).join('')}
         </div>
       </div>`
     : _aiMessages.map(m => {
         const isUser = m.role === 'user';
         return `<div style="display:flex;flex-direction:column;align-items:${isUser?'flex-end':'flex-start'};margin-bottom:12px">
           <div style="max-width:85%;padding:10px 14px;border-radius:${isUser?'16px 16px 4px 16px':'16px 16px 16px 4px'};background:${isUser?'var(--blue)':'var(--card2)'};color:${isUser?'#fff':'var(--text)'};font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;border:${isUser?'none':'1px solid var(--border)'}">
-            ${escHtml(m.content)}
+            ${isUser ? escHtml(m.content) : _renderMd(m.content)}
           </div>
         </div>`;
       }).join('') + (_aiLoading ? `<div style="display:flex;align-items:flex-start;margin-bottom:12px"><div style="background:var(--card2);border:1px solid var(--border);border-radius:16px 16px 16px 4px;padding:12px 16px;display:flex;gap:5px;align-items:center"><span style="width:6px;height:6px;border-radius:50%;background:var(--text3);animation:aiDot 1.2s infinite 0s"></span><span style="width:6px;height:6px;border-radius:50%;background:var(--text3);animation:aiDot 1.2s infinite 0.2s"></span><span style="width:6px;height:6px;border-radius:50%;background:var(--text3);animation:aiDot 1.2s infinite 0.4s"></span></div></div>` : '');
@@ -3513,6 +3587,7 @@ window._aiSend = async function() {
   try {
     const reply = await _aiCall(_aiMessages);
     _aiMessages.push({role:'assistant', content:reply});
+    LS.set('aiHistory', _aiMessages.slice(-40));
   } catch(e) {
     _aiMessages.push({role:'assistant', content:'⚠️ Error: ' + e.message});
   }
@@ -3528,6 +3603,7 @@ window._aiSendSuggestion = function(text) {
 
 window._aiClear = function() {
   _aiMessages = [];
+  LS.set('aiHistory', []);
   _renderAiChat();
 };
 
@@ -3544,9 +3620,10 @@ function updateNavUser(user){
   // Solo actualiza el slot de avatar+signout — lang/dark/fbStatus son HTML estático
   const slot=document.getElementById('navUserExtra');
   if(!slot)return;
-  slot.innerHTML=user.photoURL
+  const hideBtn = `<button id="hideValuesBtn" onclick="window.toggleValues()" title="${_valuesHidden?t('showValues'):t('hideValues')}" style="background:var(--card2);border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-size:14px;cursor:pointer;opacity:${_valuesHidden?'0.5':'1'};flex-shrink:0">${_valuesHidden?'🙈':'👁'}</button>`;
+  slot.innerHTML=(hideBtn)+(user.photoURL
     ?`<img src="${user.photoURL}" class="nav-avatar"><button class="btn-signout" onclick="window.signOutUser()">${t('salir')}</button>`
-    :`<div class="nav-avatar-placeholder">${(user.displayName||user.email||'U')[0].toUpperCase()}</div><button class="btn-signout" onclick="window.signOutUser()">${t('salir')}</button>`;
+    :`<div class="nav-avatar-placeholder">${(user.displayName||user.email||'U')[0].toUpperCase()}</div><button class="btn-signout" onclick="window.signOutUser()">${t('salir')}</button>`);
 }
 
 function exportData(){const data={platforms,movements,goals,settings,recurrentes,patrimonioHistory,exportDate:new Date().toISOString(),version:'4.4'};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`finanzas-pro-${today()}.json`;a.click();URL.revokeObjectURL(url);}
@@ -4117,6 +4194,7 @@ onAuthStateChanged(auth,async user=>{
     if(typeof updateNavUser==='function') updateNavUser(user);
     showApp(); setupFirestore(uid);
     if(window.renderPage) window.renderPage(window.currentTab||'dashboard');
+    setTimeout(()=>{ _runProactiveAiAlert(); }, 4000);
     setTimeout(()=>{
       if(typeof updateFX==='function') updateFX();
       if(typeof flushOfflineQueue==='function') flushOfflineQueue();
