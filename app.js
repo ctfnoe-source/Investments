@@ -2118,9 +2118,9 @@ function renderGastos(){
     const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
     const gM = expMovs.filter(mv => mv.tipo==='Gasto' && mv.fecha?.startsWith(key));
     const iM = expMovs.filter(mv => mv.tipo==='Ingreso' && mv.fecha?.startsWith(key));
-    const tG = gM.reduce((s,mv)=>s+toEUR(mv),0);
-    const tI = iM.reduce((s,mv)=>s+toEUR(mv),0);
-    const ingR = tI>0 ? tI : (sueldoEUR+extrasEUR+otrosEUR);
+    const tG = eurToMon(gM.reduce((s,mv)=>s+toEUR(mv),0));
+    const tI = eurToMon(iM.reduce((s,mv)=>s+toEUR(mv),0));
+    const ingR = tI>0 ? tI : eurToMon(sueldoEUR+extrasEUR+otrosEUR);
     const sob = Math.round((ingR-tG)*100)/100;
     if(sob>0) acumTotal += sob;
     mesConDatos++;
@@ -2135,14 +2135,17 @@ function renderGastos(){
   }
 
   const catRows=EXPENSE_CATS.map(cat=>{
-    const pres=budgets[cat.id]||0,real=byCat[cat.id]||0,rest=pres-real;
+    const presEUR=budgets[cat.id]||0,realEUR=byCat[cat.id]||0;
+    const pres=eurToMon(presEUR),real=eurToMon(realEUR),rest=pres-real;
     // Ocultar categorías sin presupuesto y sin gastos reales (a menos que el usuario pida verlas)
-    if (!window._showAllCats && pres===0 && real===0) return '';
-    const pctUso=pres>0?(real/pres*100):0;const pctIng=totalIngPlaneadoEUR>0?(pres/totalIngPlaneadoEUR*100).toFixed(1)+'%':'—';
+    if (!window._showAllCats && presEUR===0 && realEUR===0) return '';
+    const pctUso=pres>0?(real/pres*100):0;const pctIng=totalIngPlaneadoEUR>0?(presEUR/totalIngPlaneadoEUR*100).toFixed(1)+'%':'—';
     const barC=pctUso>100?'var(--red)':pctUso>85?'var(--orange)':'var(--green)';
     const restStr=pres>0?(rest>=0?'+':'')+fmtEUR(rest):'—';const restCol=rest>=0?'var(--green)':'var(--red)';
     const barHtml=pres>0?`<div style="display:flex;align-items:center;gap:6px"><div class="progress-bg" style="flex:1;height:6px"><div class="progress-fill" style="background:${barC};width:${Math.min(pctUso,100).toFixed(0)}%"></div></div><span style="font-size:10px;font-weight:700;color:${pctUso>100?'var(--red)':'var(--text2)'}"> ${pctUso.toFixed(0)}%</span></div>`:`<span style="font-size:10px;color:var(--text3)">sin asignar</span>`;
-    return`<tr><td style="font-weight:600">${cat.icon} ${cat.name}</td><td><input type="number" class="form-input" style="width:100px;padding:5px 8px;font-size:13px;font-weight:700;text-align:right" value="${pres||''}" placeholder="0" onchange="updateBudget('${cat.id}',this.value)"></td><td style="font-size:12px;color:var(--text2)">${pctIng}</td><td style="font-weight:600;${real>pres&&pres>0?'color:var(--red)':''}">${fmtEUR(real)}</td><td style="font-weight:600;color:${restCol}">${restStr}</td><td style="width:150px">${barHtml}</td></tr>`;
+    // El input de presupuesto muestra en moneda del usuario pero guarda en EUR internamente
+    const presDisplay=presEUR?Math.round(eurToMon(presEUR)*100)/100:'';
+    return`<tr><td style="font-weight:600">${cat.icon} ${cat.name}</td><td><input type="number" class="form-input" style="width:100px;padding:5px 8px;font-size:13px;font-weight:700;text-align:right" value="${presDisplay}" placeholder="0" onchange="updateBudget('${cat.id}',this.value,${JSON.stringify(monedaMostrar)})"></td><td style="font-size:12px;color:var(--text2)">${pctIng}</td><td style="font-weight:600;${real>pres&&pres>0?'color:var(--red)':''}">${fmtEUR(real)}</td><td style="font-weight:600;color:${restCol}">${restStr}</td><td style="width:150px">${barHtml}</td></tr>`;
   }).join('');
   const hiddenCatCount = EXPENSE_CATS.filter(cat=>(budgets[cat.id]||0)===0 && (byCat[cat.id]||0)===0).length;
   const hiddenHint = (!window._showAllCats && hiddenCatCount>0) ? `<tr><td colspan="6" style="text-align:center;padding:10px 0;font-size:11px;color:var(--text3)">${hiddenCatCount} categorías sin asignar ocultas · <button class="btn btn-sm" style="font-size:11px;padding:2px 8px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="window._showAllCats=true;renderGastos()">Mostrar todas</button></td></tr>` : '';
@@ -2312,7 +2315,22 @@ function renderGastos(){
   `;
 }
 
-function updateBudget(catId,value){if(!settings.budgets)settings.budgets={};settings.budgets[catId]=Number(value)||0;saveAll();}
+function updateBudget(catId,value,moneda){
+  if(!settings.budgets)settings.budgets={};
+  let valEUR=Number(value)||0;
+  // Convertir de moneda del usuario a EUR para almacenar internamente
+  if(moneda&&moneda!=='EUR'){
+    const fx=_fxCache||LS.get('fxCache');
+    const eurmxn=getEurMxn();
+    const usdeur=fx?.usdeur||(settings.tipoCambio&&settings.tipoEUR?settings.tipoCambio/settings.tipoEUR:0.88);
+    const gbpeur=fx?(fx.usdeur/(fx.usdgbp||1)):1.17;
+    if(moneda==='MXN') valEUR=valEUR/eurmxn;
+    else if(moneda==='USD') valEUR=valEUR*usdeur;
+    else if(moneda==='GBP') valEUR=valEUR*gbpeur;
+  }
+  settings.budgets[catId]=Math.round(valEUR*100)/100;
+  saveAll();
+}
 function updateIngreso(tipo,value){if(!settings.ingresos)settings.ingresos={};settings.ingresos[tipo]=Number(value)||0;saveAll();}
 function updateIngresoConMoneda(tipo,value,moneda){
   if(!settings.ingresos)settings.ingresos={};
@@ -3321,7 +3339,8 @@ function updateNav(patrimonio,totalMXN,totalUSD,tc,totalRend,deltaHoy,deltaHoyPc
 function updateNavUser(user){
   const el=document.getElementById('navUser');if(!el)return;
   const darkBtn=`<button class="dark-toggle" onclick="toggleDark()" title="Modo oscuro" style="margin-right:4px"><span class="dark-toggle-icon dark-toggle-moon">🌙</span><span class="dark-toggle-icon dark-toggle-sun">☀️</span></button>`;
-  if(user)el.innerHTML=`${darkBtn}${user.photoURL?`<img src="${user.photoURL}" class="nav-avatar">`:`<div class="nav-avatar-placeholder">${(user.displayName||user.email||'U')[0].toUpperCase()}</div>`}<button class="btn-signout" onclick="window.signOutUser()">Salir</button>`;
+  const langBtn=`<button id="langToggleBtn" onclick="toggleLang()" title="Cambiar idioma" style="margin-right:4px;background:var(--card2);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;color:var(--text)">${_lang==='es'?'🌐 EN':'🌐 ES'}</button>`;
+  if(user)el.innerHTML=`${darkBtn}${langBtn}${user.photoURL?`<img src="${user.photoURL}" class="nav-avatar">`:`<div class="nav-avatar-placeholder">${(user.displayName||user.email||'U')[0].toUpperCase()}</div>`}<button class="btn-signout" onclick="window.signOutUser()">Salir</button>`;
 }
 
 function exportData(){const data={platforms,movements,goals,settings,recurrentes,patrimonioHistory,exportDate:new Date().toISOString(),version:'4.4'};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`finanzas-pro-${today()}.json`;a.click();URL.revokeObjectURL(url);}
