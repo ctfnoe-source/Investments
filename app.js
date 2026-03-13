@@ -26,11 +26,10 @@ const I18N = {
     sinMovs:'Sin movimientos este mes',
     catHeader:['Categoría','Presupuesto','% ingreso','Real','Restante','Uso'],
     sinAsignar:'sin presupuesto asignado',
-    asignar:'asignar',
-    usado:'usado',
+    asignar:'asignar', usado:'usado',
     catOcultas1:'categorías ocultas', catOcultas2:'Mostrar todas',
     catOcultasSA:'categorías sin asignar ocultas',
-    // offline banner
+    // offline/sync
     offlineMsg:'Sin internet — cambios guardados localmente',
     syncingMsg:'Sincronizando cambios pendientes…',
     syncedMsg:'¡Sincronizado!',
@@ -45,6 +44,90 @@ const I18N = {
     accessBtn:'← Cerrar sesión',
     // months
     months:['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],
+    // Dashboard
+    patrimonioTotal:'Patrimonio Total', patrimonioReal:'Patrimonio Real',
+    valorPlataformas:'🏦 Valor Plataformas', rendPlataformas:'🏦 Rend. Plataformas',
+    valorInversiones:'📈 Valor Inversiones', gpNoRealizada:'📈 G/P No Realizada',
+    rentabilidadTotal:'📊 Rentabilidad Total', concentracion:'📊 Concentración',
+    gastosMes:'💳 Gastos Mes', balanceMes:'💳 Balance Mes',
+    ingresoMensual:'Ingreso Mensual', saldoActual:'Saldo Actual',
+    proyeccion:'Proyección', topPlataformas:t('topPlataformas'),
+    gastosPorCat:'💳 Gastos por categoría',
+    sinGastosEsteMes:'Sin gastos este mes', sinInversiones:'Sin inversiones registradas',
+    sinPreciosDia:'Sin precios del día — presiona Actualizar',
+    actualizarPrecios:t('actualizarPrecios'), actualizando:'⏳ Actualizando...',
+    ahorro:'ahorro', est:'est.',
+    saludFinanciera:'Salud Financiera', resumenMes:'Resumen del Mes',
+    // Estados
+    lograda:t('lograda'), casi:t('casi'), inicio:t('inicio'), enProceso:t('enProceso'),
+    cerrada:'CERRADA', activo:'Activo',
+    deficit:t('deficit'), sobrePresupuesto:t('sobrePresupuesto'), dentroDelPlan:t('dentroDelPlan'),
+    // Tipos de movimiento
+    gasto:'Gasto', ingreso:'Ingreso', transferencia:'↔ Transferencia',
+    transferenciaEntrada:'Transferencia entrada', transferenciaSalida:'Transferencia salida',
+    todo:'Todo', todos:'Todos',
+    // Card titles
+    capitalSobrantePorMes:t('capitalSobrantePorMes'),
+    progresoDeMetas:t('progresoDeMetas'),
+    inversionesPorTipo:t('inversionesPorTipo'),
+    distribucionPorTipo:t('distribucionPorTipo'),
+    posicionesAbiertas:t('posicionesAbiertas'),
+    posicionesCerradas:t('posicionesCerradas'),
+    lineaDeTiempo:t('lineaDeTiempo'),
+    rendimientoEsperado:t('rendimientoEsperado'),
+    porMoneda:t('porMoneda'),
+    porTipoActivo:t('porTipoActivo'),
+    posiciones:t('posiciones'),
+    // Plataformas
+    agregarPlataforma:'+ Agregar Plataforma', editarPlataforma:'Editar Plataforma',
+    sinPlataformas:'No tienes plataformas registradas.',
+    agregarPrimera:'+ Agregar primera plataforma',
+    archivarMovAnt:'🗜️ Archivar movimientos antiguos',
+    // Inversiones
+    agregarInversion:'+ Agregar movimiento',
+    costoTotal:'💰 Costo Total', valorActual:'📊 Valor Actual',
+    gpRealizada:'✅ G/P Realizada', gpTotal:'G/P Total',
+    cagrReal:'CAGR Real',
+    // Metas
+    agregarMeta:'+ Nueva Meta', editarMeta:'Editar Meta',
+    sinMetas:'Sin metas registradas. ¡Crea tu primera meta!',
+    aportacion:'Aportación', retiro:'Retiro',
+    saldoArchivado:'Saldo Archivado', sinFecha:'Sin fecha',
+    // Table headers
+    fecha:'Fecha', importe:'Importe', notas:'Notas', tipo:'Tipo',
+    categoria:'Categoría', descripcion:'Descripción', seccion:'Sección',
+    plataforma:'Plataforma', moneda:'Moneda', monto:'Monto',
+    mes:'Mes', sobrante:'Sobrante', ingresoRef:'Ingreso ref.',
+    gastos:'Gastos', aportaciones:'+ Aport.', rend:'Rend %',
+    rendReal:'Rend. Real', saldoIni:'Saldo Ini.', tasaPct:'⚡ Tasa %',
+    pctPort:'% Port.', detalle:'Detalle', dias:'Días', extra:'Extra',
+    desde:'Desde', retiros:'Retiros', saldoActualTh:'Saldo Actual',
+    // Buttons
+    agregar:'+ Agregar', editar:'✏️ Editar', eliminar:'× Eliminar',
+    guardar:'Guardar', cancelar:'Cancelar', cerrar:'✕',
+    exportar:'📤 Exportar', importar:'📥 Importar',
+    transferirSobrante:t('transferirSobrante'),
+    verDetalle:'Ver detalle', ocultar:'Ocultar',
+    mostrarTodas:'Mostrar todas', mostrarMenos:'Mostrar menos',
+    probar:'🧪 Probar', salir:'Salir',
+
+    gastoReal:'💳 Gasto Real', disponible:'✅ Disponible', presupuestoLabel:'📋 Presupuesto',
+    // Ajustes
+    cuenta:'👤 Cuenta', tipoCambio:'💱 Tipo de Cambio',
+    asistenteia:'🤖 Asistente IA', zonaPeligro:'⚠️ Zona de Peligro',
+    exportarImportar:'💾 Exportar / Importar',
+    reglasFb:'🔐 Reglas Firebase',
+    apiKeyFinnhub:'🔑 API Key — Finnhub',
+    apiKeyAlpha:'🔑 API Key — Alpha Vantage',
+    modelosGratis:'Modelos gratis', casiGratis:'Casi gratis',
+    usuario:'Usuario',
+    // Categorías de activos
+    accion:'Acción', crypto:'Crypto', bono:'Bono', otro:'Otro',
+    // Misc
+    rendimientoSobre:'rendimiento total', preciosHoy:'precios hoy',
+    costoPosicion:'costo compra', posiciones2:'posiciones',
+    sobreCapital:'sobre capital invertido', sinHistorial:'sin historial aún',
+    segunPlaneado:'según planeado', real:'real',
   },
   en: {
     tabDashboard:'📊 Dashboard', tabMovimientos:'📋 Transactions', tabPlataformas:'🏦 Platforms',
@@ -60,8 +143,7 @@ const I18N = {
     sinMovs:'No transactions this month',
     catHeader:['Category','Budget','% income','Actual','Remaining','Usage'],
     sinAsignar:'no budget assigned',
-    asignar:'assign',
-    usado:'used',
+    asignar:'assign', usado:'used',
     catOcultas1:'categories hidden', catOcultas2:'Show all',
     catOcultasSA:'unassigned categories hidden',
     offlineMsg:'No internet — changes saved locally',
@@ -75,6 +157,90 @@ const I18N = {
     accessSub:'This application is private.<br>Your account does not have access.',
     accessBtn:'← Sign out',
     months:['January','February','March','April','May','June','July','August','September','October','November','December'],
+    // Dashboard
+    patrimonioTotal:'Total Net Worth', patrimonioReal:'Real Net Worth',
+    valorPlataformas:'🏦 Platform Value', rendPlataformas:'🏦 Platform Return',
+    valorInversiones:'📈 Investment Value', gpNoRealizada:'📈 Unrealized G/L',
+    rentabilidadTotal:'📊 Total Return', concentracion:'📊 Concentration',
+    gastosMes:'💳 Expenses', balanceMes:'💳 Month Balance',
+    ingresoMensual:'Monthly Income', saldoActual:'Current Balance',
+    proyeccion:'Projection', topPlataformas:'🏆 Top Platforms',
+    gastosPorCat:'💳 Expenses by category',
+    sinGastosEsteMes:'No expenses this month', sinInversiones:'No investments registered',
+    sinPreciosDia:'No prices today — press Update',
+    actualizarPrecios:'🔄 Update prices', actualizando:'⏳ Updating...',
+    ahorro:'savings', est:'est.',
+    saludFinanciera:'Financial Health', resumenMes:'Month Summary',
+    // States
+    lograda:'🏆 ACHIEVED', casi:'🔥 Almost', inicio:'💤 Starting', enProceso:'⏳ In progress',
+    cerrada:'CLOSED', activo:'Active',
+    deficit:'🔴 Deficit', sobrePresupuesto:'🟡 Over budget', dentroDelPlan:'🟢 On track',
+    // Movement types
+    gasto:'Expense', ingreso:'Income', transferencia:'↔ Transfer',
+    transferenciaEntrada:'Transfer in', transferenciaSalida:'Transfer out',
+    todo:'All', todos:'All',
+    // Card titles
+    capitalSobrantePorMes:'💰 Monthly Surplus',
+    progresoDeMetas:'🎯 Goals Progress',
+    inversionesPorTipo:'💼 Investments by Type',
+    distribucionPorTipo:'📊 Distribution by Type',
+    posicionesAbiertas:'📂 Open Positions',
+    posicionesCerradas:'🔒 Closed Positions',
+    lineaDeTiempo:'📅 Timeline',
+    rendimientoEsperado:'📈 Expected Annual Return',
+    porMoneda:'🌍 By Currency',
+    porTipoActivo:'🥧 By Asset Type',
+    posiciones:'📊 Positions',
+    // Platforms
+    agregarPlataforma:'+ Add Platform', editarPlataforma:'Edit Platform',
+    sinPlataformas:'No platforms registered.',
+    agregarPrimera:'+ Add first platform',
+    archivarMovAnt:'🗜️ Archive old movements',
+    // Investments
+    agregarInversion:'+ Add movement',
+    costoTotal:'💰 Total Cost', valorActual:'📊 Current Value',
+    gpRealizada:'✅ Realized G/L', gpTotal:'Total G/L',
+    cagrReal:'Real CAGR',
+    // Goals
+    agregarMeta:'+ New Goal', editarMeta:'Edit Goal',
+    sinMetas:'No goals yet. Create your first goal!',
+    aportacion:'Contribution', retiro:'Withdrawal',
+    saldoArchivado:'Archived Balance', sinFecha:'No date',
+    // Table headers
+    fecha:'Date', importe:'Amount', notas:'Notes', tipo:'Type',
+    categoria:'Category', descripcion:'Description', seccion:'Section',
+    plataforma:'Platform', moneda:'Currency', monto:'Amount',
+    mes:'Month', sobrante:'Surplus', ingresoRef:'Ref. income',
+    gastos:'Expenses', aportaciones:'+ Contrib.', rend:'Return %',
+    rendReal:'Real Return', saldoIni:'Init. bal.', tasaPct:'⚡ Rate %',
+    pctPort:'% Port.', detalle:'Detail', dias:'Days', extra:'Extra',
+    desde:'Since', retiros:'Withdrawals', saldoActualTh:'Current Balance',
+    // Buttons
+    agregar:'+ Add', editar:'✏️ Edit', eliminar:'× Delete',
+    guardar:'Save', cancelar:'Cancel', cerrar:'✕',
+    exportar:'📤 Export', importar:'📥 Import',
+    transferirSobrante:'💸 Transfer surplus →',
+    verDetalle:'View detail', ocultar:'Hide',
+    mostrarTodas:'Show all', mostrarMenos:'Show less',
+    probar:'🧪 Test', salir:'Sign out',
+    // Settings
+    cuenta:'👤 Account', tipoCambio:'💱 Exchange Rate',
+    asistenteia:'🤖 AI Assistant', zonaPeligro:'⚠️ Danger Zone',
+    exportarImportar:'💾 Export / Import',
+    reglasFb:'🔐 Firebase Rules',
+    apiKeyFinnhub:'🔑 API Key — Finnhub',
+    apiKeyAlpha:'🔑 API Key — Alpha Vantage',
+    modelosGratis:'Free models', casiGratis:'Almost free',
+    usuario:'User',
+
+    gastoReal:'💳 Actual Expenses', disponible:'✅ Available', presupuestoLabel:'📋 Budget',
+    // Asset categories
+    accion:'Stock', crypto:'Crypto', bono:'Bond', otro:'Other',
+    // Misc
+    rendimientoSobre:'total return', preciosHoy:"today's prices",
+    costoPosicion:'purchase cost', posiciones2:'positions',
+    sobreCapital:'on invested capital', sinHistorial:'no history yet',
+    segunPlaneado:'as planned', real:'actual',
   }
 };
 let _lang = LS.get('lang') || 'es';
@@ -986,7 +1152,7 @@ function showAportaciones(platformId) {
   const p = plats.find(p => p.id === platformId);
   if (!p || !p.aportacionesDetalle || p.aportacionesDetalle.length === 0) { alert('No hay movimientos de aportación para esta plataforma.'); return; }
   let html = `<div class="modal-header"><div class="modal-title">📋 Detalle de Aportaciones - ${p.name}</div><button class="modal-close" onclick="closeModal()">✕</button></div>`;
-  html += '<table style="width:100%"><thead><tr><th>Fecha</th><th>Tipo</th><th>Monto</th><th>Descripción</th></tr></thead><tbody>';
+  html += `<table style="width:100%"><thead><tr><th>${t('fecha')}</th><th>${t('tipo')}</th><th>${t('monto')}</th><th>${t('descripcion')}</th></tr></thead><tbody>`;
   p.aportacionesDetalle.forEach(d => { html += `<tr><td>${d.fecha}</td><td>${d.tipo}</td><td>${fmtPlat(d.monto, p.moneda)}</td><td>${d.desc || '—'}</td></tr>`; });
   html += '</tbody></table>';
   openModal(html);
@@ -1083,7 +1249,7 @@ function renderDashboard(){
   const ingReferenciaBalance=totIngMes>0?totIngMes:eurToDash(ingresoMensualEUR);
   const balMes=ingReferenciaBalance-totGastoMes;
   const pctAhorro=ingReferenciaBalance>0?balMes/ingReferenciaBalance:0;
-  const salud=pctAhorro>=0.2?'🟢 Óptima':pctAhorro>=0.1?'🟡 Aceptable':pctAhorro>=0?'🟠 Ajustada':'🔴 Déficit';
+  const salud=pctAhorro>=0.2?'🟢 Óptima':pctAhorro>=0.1?'🟡 Aceptable':pctAhorro>=0?'🟠 Ajustada':t('deficit');
   const byCat={};mesG.forEach(m=>{byCat[m.categoria]=(byCat[m.categoria]||0)+toDisplayCur(m);});
   const topCats=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,5);
   const totalInvMXN=tickerListUSD.reduce((s,t)=>s+(t.valorActual||t.costoPosicion||0)*tc,0)+totalMXNCurrent;
@@ -1095,8 +1261,8 @@ function renderDashboard(){
   const hasFinnhub=!!(settings.finnhubKey);
   const bannerStatus=priceSummary.live>0
     ?`<span class="price-banner-dot dot-live"></span><strong style="color:var(--green)">${priceSummary.live}/${priceSummary.total} precios actualizados hoy</strong>`
-    :`<span class="price-banner-dot dot-none"></span><span style="color:var(--text2)">${priceSummary.total>0?'Sin precios del día — presiona Actualizar':'Sin inversiones registradas'}</span>`;
-  const btnLabel=priceUpdateState.loading?`<span class="spinner"></span> Actualizando...`:'🔄 Actualizar precios';
+    :`<span class="price-banner-dot dot-none"></span><span style="color:var(--text2)">${priceSummary.total>0?t('sinPreciosDia'):t('sinInversiones')}</span>`;
+  const btnLabel=priceUpdateState.loading?`<span class="spinner"></span> Actualizando...`:t('actualizarPrecios');
   const alerts=getBudgetAlerts();
   const alertsHtml=alerts.length>0?`<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">${alerts.map(a=>`<div style="padding:10px 16px;background:${a.level==='error'?'rgba(255,69,58,0.06)':'rgba(255,159,10,0.06)'};border:1px solid ${a.level==='error'?'rgba(255,69,58,0.2)':'rgba(255,159,10,0.2)'};border-radius:10px;font-size:13px">${a.msg}</div>`).join('')}</div>`:'';
   const platsSinActualizarHtml = platsSinActualizar.length > 0
@@ -1251,14 +1417,14 @@ function renderDashboard(){
     </div>
 
     <div class="grid-8" style="margin-bottom:16px">
-      <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">🏦 Valor Plataformas</div><div class="stat-value">${fmt(totalMXN)}</div><div class="stat-sub"><span style="color:${pctCol(totalRend)};font-weight:700">${fmtPct(invInicial?totalRend/invInicial:0)}</span> rendimiento</div></div>
-      <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">🏦 Rend. Plataformas</div><div class="stat-value" style="color:${pctCol(totalRend)}">${fmt(totalRend)}</div><div class="stat-sub">${platsConTasa>0?`<span style="color:var(--teal)">⚡${fmt(totalRendAuto)} auto</span>`:'rendimiento total'}</div></div>
-      <div class="card stat" style="border-top:3px solid var(--green)"><div class="stat-label">📈 Valor Inversiones</div><div class="stat-value">${fmt(totalInvMXN)}</div><div class="stat-sub">${tickerList.length} posiciones · ${priceSummary.live>0?'precios hoy':'costo compra'}</div></div>
-      <div class="card stat" style="border-top:3px solid var(--green)"><div class="stat-label">📈 G/P No Realizada</div><div class="stat-value" style="color:${pctCol(gpNoRealizadaTotal)}">${fmt(gpNoRealizadaTotal)}</div><div class="stat-sub">${fmtPct(totalInvertidoUSD?gpNoRealizadaTotal/(totalInvertidoUSD*tc):0)} sobre invertido</div></div>
-      <div class="card stat" style="border-top:3px solid var(--purple)"><div class="stat-label">📊 Rentabilidad Total</div><div class="stat-value" style="color:${rentabilidadTotal!==null?pctCol(rentabilidadTotal):'var(--text2)'}">${rentabilidadTotal!==null?(rentabilidadTotal>=0?'+':'')+(rentabilidadTotal*100).toFixed(2)+'%':'—'}</div><div class="stat-sub">${rentabilidadTotal!==null?'sobre capital invertido':'sin historial aún'}</div></div>
-      <div class="card stat" style="border-top:3px solid var(--purple)"><div class="stat-label">📊 Concentración</div><div class="stat-value" style="font-size:14px">${topPlat?.name||'—'}</div><div class="stat-sub"><span style="color:var(--orange);font-weight:700">${(maxConc*100).toFixed(1)}%</span> · ${riskLvl}</div></div>
-      <div class="card stat" style="border-top:3px solid var(--orange)"><div class="stat-label">💳 Gastos Mes ${curLabel}</div><div class="stat-value" style="color:${totGastoMes>0?'var(--red)':'var(--text)'}">${fmtD(totGastoMes)}</div><div class="stat-sub">${totalPresupuesto>0?(pctPresUsado*100).toFixed(0)+'% presupuesto':totIngMes>0||ingresoMensualEUR>0?fmtD(totIngMes>0?totIngMes:ingresoMensualEUR)+' ingreso':''}</div></div>
-      <div class="card stat" style="border-top:3px solid var(--orange)"><div class="stat-label">💳 Balance Mes ${curLabel}</div><div class="stat-value" style="color:${pctCol(balMes)}">${fmtD(balMes)}</div><div class="stat-sub">${(pctAhorro*100).toFixed(0)}% ahorro${totIngMes===0&&ingresoMensualEUR>0?' (est.)':''}</div></div>
+      <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">${t('valorPlataformas')}</div><div class="stat-value">${fmt(totalMXN)}</div><div class="stat-sub"><span style="color:${pctCol(totalRend)};font-weight:700">${fmtPct(invInicial?totalRend/invInicial:0)}</span> rendimiento</div></div>
+      <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">${t('rendPlataformas')}</div><div class="stat-value" style="color:${pctCol(totalRend)}">${fmt(totalRend)}</div><div class="stat-sub">${platsConTasa>0?`<span style="color:var(--teal)">⚡${fmt(totalRendAuto)} auto</span>`:t('rendimientoSobre')}</div></div>
+      <div class="card stat" style="border-top:3px solid var(--green)"><div class="stat-label">${t('valorInversiones')}</div><div class="stat-value">${fmt(totalInvMXN)}</div><div class="stat-sub">${tickerList.length} posiciones · ${priceSummary.live>0?t('preciosHoy'):t('costoPosicion')}</div></div>
+      <div class="card stat" style="border-top:3px solid var(--green)"><div class="stat-label">${t('gpNoRealizada')}</div><div class="stat-value" style="color:${pctCol(gpNoRealizadaTotal)}">${fmt(gpNoRealizadaTotal)}</div><div class="stat-sub">${fmtPct(totalInvertidoUSD?gpNoRealizadaTotal/(totalInvertidoUSD*tc):0)} sobre invertido</div></div>
+      <div class="card stat" style="border-top:3px solid var(--purple)"><div class="stat-label">${t('rentabilidadTotal')}</div><div class="stat-value" style="color:${rentabilidadTotal!==null?pctCol(rentabilidadTotal):'var(--text2)'}">${rentabilidadTotal!==null?(rentabilidadTotal>=0?'+':'')+(rentabilidadTotal*100).toFixed(2)+'%':'—'}</div><div class="stat-sub">${rentabilidadTotal!==null?t('sobreCapital'):t('sinHistorial')}</div></div>
+      <div class="card stat" style="border-top:3px solid var(--purple)"><div class="stat-label">${t('concentracion')}</div><div class="stat-value" style="font-size:14px">${topPlat?.name||'—'}</div><div class="stat-sub"><span style="color:var(--orange);font-weight:700">${(maxConc*100).toFixed(1)}%</span> · ${riskLvl}</div></div>
+      <div class="card stat" style="border-top:3px solid var(--orange)"><div class="stat-label">${t('gastosMes')} ${curLabel}</div><div class="stat-value" style="color:${totGastoMes>0?'var(--red)':'var(--text)'}">${fmtD(totGastoMes)}</div><div class="stat-sub">${totalPresupuesto>0?(pctPresUsado*100).toFixed(0)+'% presupuesto':totIngMes>0||ingresoMensualEUR>0?fmtD(totIngMes>0?totIngMes:ingresoMensualEUR)+' ingreso':''}</div></div>
+      <div class="card stat" style="border-top:3px solid var(--orange)"><div class="stat-label">${t('balanceMes')} ${curLabel}</div><div class="stat-value" style="color:${pctCol(balMes)}">${fmtD(balMes)}</div><div class="stat-sub">${(pctAhorro*100).toFixed(0)}% ${t('ahorro')}${totIngMes===0&&ingresoMensualEUR>0?` (${t('est')})`:''}</div></div>
     </div>
 
     ${maxConc>0.25?`<div style="display:flex;align-items:center;gap:10px;padding:12px 20px;background:rgba(255,159,10,0.06);border:1px solid rgba(255,159,10,0.15);border-radius:12px;margin-bottom:16px;font-size:13px"><span style="font-size:18px">⚠️</span><span><strong>${topPlat?.name}</strong> concentra el <strong style="color:var(--orange)">${(maxConc*100).toFixed(1)}%</strong> de tu portafolio.</span></div>`:''}
@@ -1285,7 +1451,7 @@ function renderDashboard(){
           </div>
           <div style="display:flex;gap:24px;align-items:flex-start">
             <div style="text-align:right">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2);margin-bottom:2px">Patrimonio Total</div>
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2);margin-bottom:2px">${t('patrimonioTotal')}</div>
               <div style="font-size:18px;font-weight:800;letter-spacing:-0.03em;color:var(--text);line-height:1">${fmt(patrimonio)}</div>
             </div>
             <div style="width:1px;background:var(--border);align-self:stretch;margin:2px 0"></div>
@@ -1301,7 +1467,7 @@ function renderDashboard(){
             ${rendAnualReal !== null ? `
             <div style="width:1px;background:var(--border);align-self:stretch;margin:2px 0"></div>
             <div style="text-align:right">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--purple);margin-bottom:2px">CAGR Real</div>
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--purple);margin-bottom:2px">${t('cagrReal')}</div>
               <div style="font-size:20px;font-weight:800;letter-spacing:-0.03em;color:${pctCol(rendAnualReal)};line-height:1">${rendAnualReal>=0?'+':''}${(rendAnualReal*100).toFixed(1)}%</div>
               <div style="font-size:10px;color:var(--text2);margin-top:4px">anualizado · ${Math.round((new Date(hist[hist.length-1].date)-new Date(hist[0].date))/(1000*60*60*24))}d de historial</div>
             </div>` : ''}
@@ -1345,7 +1511,7 @@ function renderDashboard(){
               const sorted=Object.entries(inv).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
               const total=sorted.reduce((s,[,v])=>s+v,0)||1;
               const gpTotal=gpNoRealizadaTotal+gpRealizadaTotal;
-              const gpRow=`<div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border)"><div style="font-size:10px;color:var(--text2)">G/P Total</div><div style="font-size:14px;font-weight:800;color:${pctCol(gpTotal)}">${gpTotal>=0?'+':''}${fmt(gpTotal)}</div></div>`;
+              const gpRow=`<div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border)"><div style="font-size:10px;color:var(--text2)">${t('gpTotal')}</div><div style="font-size:14px;font-weight:800;color:${pctCol(gpTotal)}">${gpTotal>=0?'+':''}${fmt(gpTotal)}</div></div>`;
               return sorted.map(([k,v],i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0"><span style="display:flex;align-items:center;gap:5px;font-size:11px"><span style="width:7px;height:7px;border-radius:2px;background:${COLORS[i%COLORS.length]};display:inline-block;flex-shrink:0"></span>${k}</span><span style="font-size:11px;font-weight:700">${((v/total)*100).toFixed(1)}%</span></div>`).join('')+gpRow;
             })()}
           </div>
@@ -1364,7 +1530,7 @@ function renderDashboard(){
               <div style="margin-top:6px;padding-top:6px;border-top:0.5px solid var(--border);display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">Total</span><span style="font-weight:800;color:var(--red)">${fmtD(totGastoMes)}</span></div>
             </div>
           </div>`
-        :'<div style="text-align:center;color:var(--text2);padding:24px;font-size:13px">Sin gastos este mes</div>'}
+        :`<div style="text-align:center;color:var(--text2);padding:24px;font-size:13px">${t('sinGastosEsteMes')}</div>`}
       </div>
     </div>
 
@@ -1391,7 +1557,7 @@ function renderDashboard(){
           return`<div class="list-item">
             <div style="display:flex;align-items:center;gap:8px">
               <span class="badge ${tipoClass}">${t.ticker}</span>
-              <div><div style="font-size:13px;font-weight:600">${t.type} <span class="badge badge-gray" style="font-size:9px">${monedaLabel}</span>${t.cantActual<=0?' <span class="badge badge-gray" style="font-size:9px">CERRADA</span>':''}</div><div style="font-size:10px;color:var(--text2)">×${t.cantActual} · <span class="${t.priceCssClass}">${t.priceLabel}</span></div></div>
+              <div><div style="font-size:13px;font-weight:600">${t.type} <span class="badge badge-gray" style="font-size:9px">${monedaLabel}</span>${t.cantActual<=0?` <span class="badge badge-gray" style="font-size:9px">${t('cerrada')}</span>`:''}</div><div style="font-size:10px;color:var(--text2)">×${t.cantActual} · <span class="${t.priceCssClass}">${t.priceLabel}</span></div></div>
             </div>
             <div style="text-align:right"><div style="font-size:13px;font-weight:700;color:${pctCol(t.gpNoRealizada)}">${t.gpNoRealizada!==null?(t.gpNoRealizada>=0?'+':'')+fmtFull(t.gpNoRealizada):'—'}</div><div style="font-size:10px;font-weight:600;color:${pctCol(t.pctNoRealizada)}">${t.gpNoRealizada!==null?fmtPct(t.pctNoRealizada):'sin precio'}</div></div>
           </div>`;
@@ -1405,7 +1571,7 @@ function renderDashboard(){
         <div class="card-title" style="margin:0">🎯 Progreso de Metas</div>
         <button class="btn btn-secondary btn-sm" onclick="switchTab('metas')">Ver todas →</button>
       </div>
-      ${goals.length>0?`<div class="grid-2">${goals.slice(0,4).map(g=>{let actual=0;const patrimonioTotal=totalMXN+totalInvMXN;if(g.clase==='Patrimonio Total'||g.clase==='Todos')actual=patrimonioTotal;else if(g.clase==='Plataformas')actual=totalMXN;else if(g.clase==='Inversiones')actual=totalInvMXN;else if(g.clase==='Ingreso Mensual')actual=ingresoMensualEUR;else actual=patrimonioTotal;const pct=g.meta>0?actual/g.meta:0;const sc=pct>=1?'var(--green)':pct>=0.8?'var(--orange)':pct>=0.3?'var(--blue)':'var(--text2)';const st=pct>=1?'🏆 LOGRADA':pct>=0.8?'🔥 Casi':pct>=0.3?'⏳ En proceso':'💤 Inicio';return`<div style="padding:12px;background:var(--card2);border-radius:12px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:13px;font-weight:700">${g.nombre}</div><span style="font-size:11px;font-weight:700;color:${sc}">${st}</span></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:6px"><span style="font-weight:700;color:var(--text)">${fmt(actual)}</span><span>meta: ${fmt(g.meta)}</span></div><div class="progress-bg"><div class="progress-fill" style="background:${sc};width:${Math.min(pct*100,100).toFixed(1)}%"></div></div><div style="text-align:right;font-size:11px;font-weight:800;color:${sc};margin-top:4px">${(pct*100).toFixed(1)}%</div></div>`;}).join('')}</div>`:`<div style="text-align:center;padding:24px;color:var(--text2);font-size:13px">Sin metas — <button class="btn btn-primary btn-sm" onclick="switchTab('metas')">Crear →</button></div>`}
+      ${goals.length>0?`<div class="grid-2">${goals.slice(0,4).map(g=>{let actual=0;const patrimonioTotal=totalMXN+totalInvMXN;if(g.clase==='Patrimonio Total'||g.clase==='Todos')actual=patrimonioTotal;else if(g.clase==='Plataformas')actual=totalMXN;else if(g.clase==='Inversiones')actual=totalInvMXN;else if(g.clase==='Ingreso Mensual')actual=ingresoMensualEUR;else actual=patrimonioTotal;const pct=g.meta>0?actual/g.meta:0;const sc=pct>=1?'var(--green)':pct>=0.8?'var(--orange)':pct>=0.3?'var(--blue)':'var(--text2)';const st=pct>=1?t('lograda'):pct>=0.8?t('casi'):pct>=0.3?t('enProceso'):t('inicio');return`<div style="padding:12px;background:var(--card2);border-radius:12px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:13px;font-weight:700">${g.nombre}</div><span style="font-size:11px;font-weight:700;color:${sc}">${st}</span></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:6px"><span style="font-weight:700;color:var(--text)">${fmt(actual)}</span><span>meta: ${fmt(g.meta)}</span></div><div class="progress-bg"><div class="progress-fill" style="background:${sc};width:${Math.min(pct*100,100).toFixed(1)}%"></div></div><div style="text-align:right;font-size:11px;font-weight:800;color:${sc};margin-top:4px">${(pct*100).toFixed(1)}%</div></div>`;}).join('')}</div>`:`<div style="text-align:center;padding:24px;color:var(--text2);font-size:13px">Sin metas — <button class="btn btn-primary btn-sm" onclick="switchTab('metas')">Crear →</button></div>`}
     </div>
 
   `;
@@ -1459,7 +1625,7 @@ function renderDashboard(){
       chartInstances.chartEvo=new Chart(ctxE,{type:'line',data:{
         datasets:[
           {
-            label:'Patrimonio Real',
+            label:t('patrimonioReal'),
             data:realDates.map((d,i)=>({x:d,y:realVals[i]})),
             borderColor:'#30D158',
             backgroundColor: gradReal,
@@ -1731,7 +1897,7 @@ function renderMovimientos(){
       <div style="font-size:13px;color:var(--text2);margin-bottom:24px">
         ${movFilter.search?'Prueba con otro término':'Registra plataformas, inversiones o gastos para llevar el control'}
       </div>
-      ${!movFilter.search?`<button class="btn btn-primary" onclick="openMovModal()">+ Agregar primer movimiento</button>`:''}
+      ${!movFilter.search?`<button class="btn btn-primary" onclick="openMovModal()">${t('agregar')} primer movimiento</button>`:''}
     </div>` : '';
   const emptyHtml = isEmpty ? `<tr><td colspan="8">${emptyContent}</td></tr>` : '';
 
@@ -1755,7 +1921,7 @@ function renderMovimientos(){
       ` : `
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Fecha</th><th>Sección</th><th>Detalle</th><th>Tipo</th><th>Monto</th><th>Extra</th><th>Notas</th><th style="width:70px"></th></tr></thead>
+          <thead><tr><th>${t('fecha')}</th><th>${t('seccion')}</th><th>Detalle</th><th>${t('tipo')}</th><th>${t('monto')}</th><th>Extra</th><th>${t('notas')}</th><th style="width:70px"></th></tr></thead>
           <tbody id="movTbody">${emptyHtml}</tbody>
         </table>
         <div id="movSentinel" style="height:4px"></div>
@@ -1969,7 +2135,7 @@ function renderPlataformas(){
       ` : `
       <div class="table-wrap">
         <table>
-          <thead><tr><th>#</th><th>Plataforma</th><th>Moneda ✏️</th><th>Tipo</th><th>Saldo Ini. ✏️</th><th>⚡ Tasa % ✏️</th><th>Desde ✏️</th><th>Días</th><th>+ Aport. 🔍</th><th>Retiros</th><th>Gastos</th><th style="color:var(--teal)">⚡ Auto</th><th>Rend. Real</th><th>Saldo Actual</th><th>Rend %</th><th>% Port.</th><th></th></tr></thead>
+          <thead><tr><th>#</th><th>${t('plataforma')}</th><th>Moneda ✏️</th><th>${t('tipo')}</th><th>Saldo Ini. ✏️</th><th>⚡ Tasa % ✏️</th><th>Desde ✏️</th><th>Días</th><th>+ Aport. 🔍</th><th>Retiros</th><th>Gastos</th><th style="color:var(--teal)">⚡ Auto</th><th>Rend. Real</th><th>Saldo Actual</th><th>Rend %</th><th>% Port.</th><th></th></tr></thead>
           <tbody>
             ${plats.map((p,i)=>{
               const cur=p.moneda||'MXN';
@@ -2100,7 +2266,7 @@ function renderGastos(){
   const byCat={};mesMovs.filter(m=>m.tipo==='Gasto').forEach(m=>{byCat[m.categoria]=(byCat[m.categoria]||0)+toEUR(m);});
   const barPct=totalIngPlaneadoEUR>0?Math.min((totGastoEUR/totalIngPlaneadoEUR)*100,100).toFixed(1):0;
   const barColor=totGastoEUR>totalIngPlaneadoEUR?'var(--red)':totGastoEUR>totalPresupuestoEUR?'var(--orange)':'var(--green)';
-  const barLabel=totGastoEUR>totalIngPlaneadoEUR?'🔴 Déficit':totGastoEUR>totalPresupuestoEUR?'🟡 Sobre presupuesto':'🟢 Dentro del plan';
+  const barLabel=totGastoEUR>totalIngPlaneadoEUR?t('deficit'):totGastoEUR>totalPresupuestoEUR?t('sobrePresupuesto'):t('dentroDelPlan');
   const totalRecurrente=recurrentes.filter(r=>r.activo).reduce((s,r)=>s+r.importe,0);
 
   // Fecha de inicio dinámica: primer movimiento de gastos, o primer día del mes actual
@@ -2217,13 +2383,13 @@ function renderGastos(){
 
     <div class="grid-4" style="margin-bottom:16px">
       <div class="card stat" style="border-top:3px solid var(--teal)">
-        <div class="stat-label">💰 Saldo Acumulado</div>
+        <div class="stat-label">${t('capitalSobrantePorMes')}</div>
         <div class="stat-value" style="color:${acumTotal>=0?'var(--teal)':'var(--red)'}">${fmtEUR(acumTotal)}</div>
         <div class="stat-sub">desde ${MONTHS[startDate.getMonth()]} ${startDate.getFullYear()} · ${mesConDatos} ${mesConDatos===1?'mes':'meses'}</div>
       </div>
-      <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">📋 Presupuesto</div><div class="stat-value">${fmtEUR(totalPresupuestoEUR)}</div><div class="stat-sub">${sinAsignarEUR>=0?`<span style="color:var(--green);font-weight:700">+${fmtEUR(sinAsignarEUR)} libre</span>`:`<span style="color:var(--red);font-weight:700">${fmtEUR(sinAsignarEUR)} excedido</span>`}</div></div>
-      <div class="card stat" style="border-top:3px solid var(--red)"><div class="stat-label">💳 Gasto Real</div><div class="stat-value" style="color:var(--red)">${fmtEUR(totGastoEUR)}</div><div class="stat-sub">registrado este mes</div></div>
-      <div class="card stat" style="border-top:3px solid ${disponibleEUR>=0?'var(--green)':'var(--red)'}"><div class="stat-label">✅ Disponible</div><div class="stat-value" style="color:${disponibleEUR>=0?'var(--green)':'var(--red)'}">${fmtEUR(disponibleEUR)}</div><div class="stat-sub">${totIngEUR>0?'real: '+fmtEUR(totIngEUR):'según planeado'}</div></div>
+      <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">${t('presupuestoLabel')||'📋 Presupuesto'}</div><div class="stat-value">${fmtEUR(totalPresupuestoEUR)}</div><div class="stat-sub">${sinAsignarEUR>=0?`<span style="color:var(--green);font-weight:700">+${fmtEUR(sinAsignarEUR)} libre</span>`:`<span style="color:var(--red);font-weight:700">${fmtEUR(sinAsignarEUR)} excedido</span>`}</div></div>
+      <div class="card stat" style="border-top:3px solid var(--red)"><div class="stat-label">${t('gastoReal')||'💳 Gasto Real'}</div><div class="stat-value" style="color:var(--red)">${fmtEUR(totGastoEUR)}</div><div class="stat-sub">registrado este mes</div></div>
+      <div class="card stat" style="border-top:3px solid ${disponibleEUR>=0?'var(--green)':'var(--red)'}"><div class="stat-label">${t('disponible')||'✅ Disponible'}</div><div class="stat-value" style="color:${disponibleEUR>=0?'var(--green)':'var(--red)'}">${fmtEUR(disponibleEUR)}</div><div class="stat-sub">${totIngEUR>0?'real: '+fmtEUR(totIngEUR):t('segunPlaneado')}</div></div>
     </div>
 
     ${totalIngPlaneadoEUR>0?`<div class="card" style="margin-bottom:16px;padding:16px 24px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-size:13px;font-weight:700">Uso del presupuesto global</div><div style="font-size:13px;font-weight:800;color:${barColor}">${barLabel}</div></div><div class="progress-bg" style="height:14px;border-radius:8px"><div class="progress-fill" style="height:14px;border-radius:8px;background:${barColor};width:${barPct}%"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-top:6px"><span>Gastado: ${fmtEUR(totGastoEUR)}</span><span>Presupuesto: ${fmtEUR(totalPresupuestoEUR)}</span><span>Ingreso: ${fmtEUR(totalIngPlaneadoEUR)}</span></div></div>`:''}
@@ -2237,7 +2403,7 @@ function renderGastos(){
         <button class="btn btn-sm" style="background:rgba(0,199,190,0.1);color:var(--teal);border:none;font-weight:700" onclick="switchTab('movimientos');openMovModal('transferencia')">💸 Transferir sobrante →</button>
       </div>
       <div class="table-wrap"><table>
-        <thead><tr><th>Mes</th><th>Ingreso ref.</th><th>Gastos</th><th>Sobrante</th></tr></thead>
+        <thead><tr><th>${t('mes')}</th><th>${t('ingresoRef')}</th><th>${t('gastos')}</th><th>${t('sobrante')}</th></tr></thead>
         <tbody>
           ${sobranteRows.join('')}
           <tr style="font-weight:800;background:var(--card2);border-top:2px solid var(--border2)">
@@ -2250,7 +2416,7 @@ function renderGastos(){
 
     <div class="card-flat" style="margin-bottom:16px">
       <div style="padding:16px 20px 0;display:flex;justify-content:space-between;align-items:center">
-        <div class="card-title" style="margin:0">Presupuesto por Categoría (${monSymbol})</div>
+        <div class="card-title" style="margin:0">${t('presupuestoTitulo')} (${monSymbol})</div>
       </div>
       ${isMobile() ? `
         <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">
@@ -2284,7 +2450,7 @@ function renderGastos(){
             return rows.join('') + ((!window._showAllCats && hiddenCount>0) ? `<div style="text-align:center;font-size:11px;color:var(--text3);padding:6px 0">${hiddenCount} categorías ocultas · <button class="btn btn-sm" style="font-size:11px;padding:2px 8px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="window._showAllCats=true;renderGastos()">Mostrar todas</button></div>` : '');
           })()}
         </div>
-      ` : `<div class="table-wrap"><table><thead><tr><th>Categoría</th><th>Presupuesto</th><th>% ingreso</th><th>Real</th><th>Restante</th><th>Uso</th></tr></thead><tbody>${catRows||`<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--text2);font-size:13px">Asigna presupuestos o registra gastos para verlos aquí</td></tr>`}${hiddenHint}<tr style="font-weight:800;background:var(--card2);border-top:2px solid var(--border2)"><td>TOTAL</td><td>${fmtEUR(totalPresupuestoEUR)}</td><td>${totalIngPlaneadoEUR>0?((totalPresupuestoEUR/totalIngPlaneadoEUR)*100).toFixed(1)+'%':'—'}</td><td style="color:${totGastoEUR>totalPresupuestoEUR?'var(--red)':'var(--text)'}">${fmtEUR(totGastoEUR)}</td><td style="color:${totalPresupuestoEUR-totGastoEUR>=0?'var(--green)':'var(--red)'}">${totalPresupuestoEUR>0?(totalPresupuestoEUR-totGastoEUR>=0?'+':'')+fmtEUR(totalPresupuestoEUR-totGastoEUR):'—'}</td><td>${totalPresupuestoEUR>0?`<span style="font-size:12px;font-weight:800">${(totGastoEUR/totalPresupuestoEUR*100).toFixed(0)}%</span>`:''}</td></tr></tbody></table></div>`}
+      ` : `<div class="table-wrap"><table><thead><tr><th>${t('catHeader')[0]}</th><th>${t('catHeader')[1]}</th><th>${t('catHeader')[2]}</th><th>${t('catHeader')[3]}</th><th>${t('catHeader')[4]}</th><th>${t('catHeader')[5]}</th></tr></thead><tbody>${catRows||`<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--text2);font-size:13px">Asigna presupuestos o registra gastos para verlos aquí</td></tr>`}${hiddenHint}<tr style="font-weight:800;background:var(--card2);border-top:2px solid var(--border2)"><td>TOTAL</td><td>${fmtEUR(totalPresupuestoEUR)}</td><td>${totalIngPlaneadoEUR>0?((totalPresupuestoEUR/totalIngPlaneadoEUR)*100).toFixed(1)+'%':'—'}</td><td style="color:${totGastoEUR>totalPresupuestoEUR?'var(--red)':'var(--text)'}">${fmtEUR(totGastoEUR)}</td><td style="color:${totalPresupuestoEUR-totGastoEUR>=0?'var(--green)':'var(--red)'}">${totalPresupuestoEUR>0?(totalPresupuestoEUR-totGastoEUR>=0?'+':'')+fmtEUR(totalPresupuestoEUR-totGastoEUR):'—'}</td><td>${totalPresupuestoEUR>0?`<span style="font-size:12px;font-weight:800">${(totGastoEUR/totalPresupuestoEUR*100).toFixed(0)}%</span>`:''}</td></tr></tbody></table></div>`}
     </div>
 
     <div class="card-flat">
@@ -2310,7 +2476,7 @@ function renderGastos(){
             </div>`).join('')
           : '<div style="text-align:center;color:var(--text2);padding:24px;font-size:13px">'+t('sinMovs')+'</div>'}
         </div>
-      ` : `<div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Categoría</th><th>Tipo</th><th>Importe €</th><th>Notas</th><th></th></tr></thead><tbody>${movRows}</tbody></table></div>`}
+      ` : `<div class="table-wrap"><table><thead><tr><th>${t('fecha')}</th><th>Categoría</th><th>${t('tipo')}</th><th>${t('importe')}</th><th>${t('notas')}</th><th></th></tr></thead><tbody>${movRows}</tbody></table></div>`}
     </div>
   `;
 }
@@ -2452,22 +2618,22 @@ function renderInversiones(){
     <!-- Stats superiores -->
     <div class="grid-4" style="margin-bottom:16px">
       <div class="card stat" style="border-top:3px solid var(--blue)">
-        <div class="stat-label">💰 Costo Total</div>
+        <div class="stat-label">${t('costoTotal')}</div>
         <div class="stat-value">${fmt(totalCosto)}</div>
         <div class="stat-sub">${abiertas.length} posiciones</div>
       </div>
       <div class="card stat" style="border-top:3px solid var(--green)">
-        <div class="stat-label">📊 Valor Actual</div>
+        <div class="stat-label">${t('valorActual')}</div>
         <div class="stat-value">${fmt(totalValor)}</div>
         <div class="stat-sub">a precios ${abiertas.some(t=>t.gpNoRealizada!==null)?'de hoy':'de compra'}</div>
       </div>
       <div class="card stat" style="border-top:3px solid ${pctCol(totalGP)}">
-        <div class="stat-label">📈 G/P No Realizada</div>
+        <div class="stat-label">${t('gpNoRealizada')}</div>
         <div class="stat-value" style="color:${pctCol(totalGP)}">${totalGP>=0?'+':''}${fmt(totalGP)}</div>
         <div class="stat-sub" style="color:${pctCol(totalGPPct)}">${fmtPct(totalGPPct)}</div>
       </div>
       <div class="card stat" style="border-top:3px solid ${pctCol(gpRealTotal)}">
-        <div class="stat-label">✅ G/P Realizada</div>
+        <div class="stat-label">${t('gpRealizada')}</div>
         <div class="stat-value" style="color:${pctCol(gpRealTotal)}">${gpRealTotal>=0?'+':''}${fmt(gpRealTotal)}</div>
         <div class="stat-sub">${cerradas.length} posiciones cerradas</div>
       </div>
@@ -2608,7 +2774,7 @@ function renderMetas(){
     const restante=Math.max(g.meta-actual,0);
     const mesesEstimados=restante>0&&actual>0?Math.ceil(Math.log(g.meta/actual)/Math.log(1+re/12)):0;
     const sc=pct>=1?'var(--green)':pct>=0.8?'var(--orange)':pct>=0.3?'var(--blue)':'var(--text2)';
-    const st=pct>=1?'🏆 LOGRADA':pct>=0.8?'🔥 Casi':pct>=0.3?'⏳ En proceso':'💤 Inicio';
+    const st=pct>=1?t('lograda'):pct>=0.8?t('casi'):pct>=0.3?t('enProceso'):t('inicio');
     const isEUR=g.clase==='Ingreso Mensual';
     const fmtVal=v=>isEUR?fmtEUR(v):fmt(v);
     // Fecha estimada de llegada
@@ -2637,7 +2803,7 @@ function renderMetas(){
     <div class="grid-4" style="margin-bottom:20px">
       ${statCard('🏦 Plataformas',fmt(totalMXN),'saldo total','var(--blue)','var(--blue)')}
       ${statCard('📈 Inversiones',fmt(totalInvMXN),'a precios actuales','#BF5AF2','#BF5AF2')}
-      ${statCard('💰 Patrimonio Total',fmt(patrimonioTotal),'todo incluido','var(--green)','var(--green)')}
+      ${statCard(`💰 ${t('patrimonioTotal')}`,fmt(patrimonioTotal),'todo incluido','var(--green)','var(--green)')}
       ${statCard('💳 Ingreso Mensual',fmtEUR(ingresoMensualEUR),'sueldo + extras','','var(--orange)')}
     </div>
 
@@ -2688,7 +2854,7 @@ function renderMetas(){
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
             <div>
               <div style="font-size:16px;font-weight:700">${g.nombre}</div>
-              <div style="font-size:11px;color:var(--text2)">${g.clase} · ${g.fechaLimite||'Sin fecha'}</div>
+              <div style="font-size:11px;color:var(--text2)">${g.clase} · ${g.fechaLimite||t('sinFecha')}</div>
             </div>
             <div style="display:flex;gap:6px;align-items:center">
               <span class="badge" style="background:${g.sc}18;color:${g.sc}">${g.st}</span>
@@ -2710,13 +2876,13 @@ function renderMetas(){
     </div>`}
   `;
 }
-function openGoalModal(){openModal(`<div class="modal-header"><div class="modal-title">Nueva Meta</div><button class="modal-close" onclick="closeModal()">✕</button></div><form onsubmit="addGoal();return false"><div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="gName" required></div><div class="form-row form-row-2"><div class="form-group"><label class="form-label">Clase</label><select class="form-select" id="gClase"><option>Patrimonio Total</option><option>Plataformas</option><option>Inversiones</option><option>Ingreso Mensual</option></select></div><div class="form-group"><label class="form-label">Meta</label><input type="number" class="form-input" id="gMeta" required></div></div><div class="form-group"><label class="form-label">Fecha Límite</label><input type="date" class="form-input" id="gFecha"></div><div class="form-group"><label class="form-label">Descripción</label><input class="form-input" id="gDesc"></div><button type="submit" class="btn btn-primary" style="width:100%;margin-top:16px">Crear Meta</button></form>`);}
+function openGoalModal(){openModal(`<div class="modal-header"><div class="modal-title">Nueva Meta</div><button class="modal-close" onclick="closeModal()">✕</button></div><form onsubmit="addGoal();return false"><div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="gName" required></div><div class="form-row form-row-2"><div class="form-group"><label class="form-label">Clase</label><select class="form-select" id="gClase"><option>${t('patrimonioTotal')}</option><option>Plataformas</option><option>Inversiones</option><option>Ingreso Mensual</option></select></div><div class="form-group"><label class="form-label">Meta</label><input type="number" class="form-input" id="gMeta" required></div></div><div class="form-group"><label class="form-label">Fecha Límite</label><input type="date" class="form-input" id="gFecha"></div><div class="form-group"><label class="form-label">Descripción</label><input class="form-input" id="gDesc"></div><button type="submit" class="btn btn-primary" style="width:100%;margin-top:16px">Crear Meta</button></form>`);}
 function openEditGoalModal(id){
   const g=goals.find(x=>x.id===id); if(!g) return;
   openModal(`<div class="modal-header"><div class="modal-title">✏️ Editar Meta</div><button class="modal-close" onclick="closeModal()">✕</button></div>
     <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="egName" value="${g.nombre||''}" required></div>
     <div class="form-row form-row-2">
-      <div class="form-group"><label class="form-label">Clase</label><select class="form-select" id="egClase"><option ${g.clase==='Patrimonio Total'?'selected':''}>Patrimonio Total</option><option ${g.clase==='Plataformas'?'selected':''}>Plataformas</option><option ${g.clase==='Inversiones'?'selected':''}>Inversiones</option><option ${g.clase==='Ingreso Mensual'?'selected':''}>Ingreso Mensual</option></select></div>
+      <div class="form-group"><label class="form-label">Clase</label><select class="form-select" id="egClase"><option ${g.clase==='Patrimonio Total'?'selected':''}>${t('patrimonioTotal')}</option><option ${g.clase==='Plataformas'?'selected':''}>Plataformas</option><option ${g.clase==='Inversiones'?'selected':''}>Inversiones</option><option ${g.clase==='Ingreso Mensual'?'selected':''}>Ingreso Mensual</option></select></div>
       <div class="form-group"><label class="form-label">Meta</label><input type="number" class="form-input" id="egMeta" value="${g.meta||''}" required></div>
     </div>
     <div class="form-group"><label class="form-label">Fecha Límite</label><input type="date" class="form-input" id="egFecha" value="${g.fechaLimite||''}"></div>
@@ -2798,7 +2964,7 @@ function openArchivarModal() {
 
 function ejecutarArchivado(cutoffStr) {
   const plats = calcPlatforms();
-  // Crear un movimiento "Saldo Archivado" por plataforma con el saldo y ganancia acumulada hasta la fecha de corte
+  // Crear un movimiento "${t('saldoArchivado')}" por plataforma con el saldo y ganancia acumulada hasta la fecha de corte
   const nuevosMovsArchivados = [];
   plats.forEach(p => {
     const movsPlat = movements.filter(m => m.seccion === 'plataformas' && m.platform === p.name && m.fecha < cutoffStr);
@@ -2836,7 +3002,7 @@ function ejecutarArchivado(cutoffStr) {
   ];
   saveAll();
   closeModal();
-  alert(`✅ Archivado completado. ${nuevosMovsArchivados.length} plataformas comprimidas.`);
+  alert('✅ Archivado completado. ${nuevosMovsArchivados.length} plataformas comprimidas.');
 }
 
 function renderAjustes(){
@@ -2846,7 +3012,7 @@ function renderAjustes(){
   const isAdmin = window._currentUser?.uid === ADMIN_UID;
   const adminFirebaseRulesHTML = isAdmin ? (
     '<div class="card" style="margin-top:16px;padding:16px 20px">' +
-    '<div class="card-title">🔐 Reglas Firebase</div>' +
+    `<div class="card-title">${t('reglasFb')}</div>` +
     '<div class="uid-box" onclick="navigator.clipboard.writeText(this.textContent.trim()).then(()=>this.style.borderColor=\'var(--green)\')" title="Clic para copiar" style="margin-top:6px;font-size:11px;white-space:pre">' +
     'rules_version = \'2\';\n' +
     'service cloud.firestore {\n' +
@@ -2879,16 +3045,16 @@ function renderAjustes(){
     </div>` : ''}
 
     <div class="card" style="margin-bottom:16px;border-top:3px solid var(--blue)">
-      <div class="card-title">👤 Cuenta</div>
+      <div class="card-title">${t('cuenta')}</div>
       <div style="display:flex;align-items:center;gap:16px;margin-top:8px;flex-wrap:wrap">
         ${currentUser?.photoURL?`<img src="${currentUser.photoURL}" style="width:48px;height:48px;border-radius:24px">`:`<div style="width:48px;height:48px;border-radius:24px;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff">👤</div>`}
-        <div style="flex:1"><div style="font-size:16px;font-weight:700">${currentUser?.displayName||'Usuario'}</div><div style="font-size:13px;color:var(--text2)">${currentUser?.email||''}</div></div>
+        <div style="flex:1"><div style="font-size:16px;font-weight:700">${currentUser?.displayName||t('usuario')}</div><div style="font-size:13px;color:var(--text2)">${currentUser?.email||''}</div></div>
         <button class="btn btn-danger btn-sm" onclick="window.signOutUser()">Cerrar sesión</button>
       </div>
     </div>
     <div class="grid-2" style="margin-bottom:16px">
       <div class="card">
-        <div class="card-title">💱 Tipo de Cambio</div>
+        <div class="card-title">${t('tipoCambio')}</div>
         <div id="tcCardContent">
           ${(()=>{
             const fx=_fxCache||LS.get('fxCache');
@@ -2915,28 +3081,28 @@ function renderAjustes(){
     <div class="grid-2" style="margin-bottom:16px">
       <div class="card">
         <div class="card-title">🔑 API Key — Finnhub <span style="font-weight:400;color:var(--text3)">(acciones USA)</span></div>
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px"><input type="text" class="form-input" style="flex:1;min-width:200px;font-family:monospace;font-size:13px" id="finnhubKeyInput" placeholder="Pega tu API key" value="${settings.finnhubKey||''}" oninput="window.settings.finnhubKey=this.value.trim();saveAll()"><button class="btn btn-primary" onclick="testFinnhub()">🧪 Probar</button>${hasFinnhub?`<span style="font-size:12px;color:var(--green)">✅</span>`:''}</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px"><input type="text" class="form-input" style="flex:1;min-width:200px;font-family:monospace;font-size:13px" id="finnhubKeyInput" placeholder="Pega tu API key" value="${settings.finnhubKey||''}" oninput="window.settings.finnhubKey=this.value.trim();saveAll()"><button class="btn btn-primary" onclick="testFinnhub()">${t('probar')}</button>${hasFinnhub?`<span style="font-size:12px;color:var(--green)">✅</span>`:''}</div>
         <div id="finnhubTestResult" style="margin-top:8px;font-size:12px"></div>
         <div style="margin-top:8px;font-size:11px;color:var(--text3)">Gratis en <a href="https://finnhub.io" target="_blank" style="color:var(--blue)">finnhub.io</a></div>
       </div>
 
       <div class="card">
         <div class="card-title">🔑 API Key — Alpha Vantage <span style="font-weight:400;color:var(--text3)">(VUAA.LON, ETFs Londres/Xetra)</span></div>
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px"><input type="text" class="form-input" style="flex:1;min-width:200px;font-family:monospace;font-size:13px" id="alphaVantageKeyInput" placeholder="Pega tu API key" value="${settings.alphaVantageKey||''}" oninput="window.settings.alphaVantageKey=this.value.trim();saveAll()"><button class="btn btn-primary" onclick="testAlphaVantage()">🧪 Probar</button>${settings.alphaVantageKey?`<span style="font-size:12px;color:var(--green)">✅</span>`:''}</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px"><input type="text" class="form-input" style="flex:1;min-width:200px;font-family:monospace;font-size:13px" id="alphaVantageKeyInput" placeholder="Pega tu API key" value="${settings.alphaVantageKey||''}" oninput="window.settings.alphaVantageKey=this.value.trim();saveAll()"><button class="btn btn-primary" onclick="testAlphaVantage()">${t('probar')}</button>${settings.alphaVantageKey?`<span style="font-size:12px;color:var(--green)">✅</span>`:''}</div>
         <div id="alphaVantageTestResult" style="margin-top:8px;font-size:12px"></div>
         <div style="margin-top:8px;font-size:11px;color:var(--text3)">Gratis en <a href="https://alphavantage.co" target="_blank" style="color:var(--blue)">alphavantage.co</a> · 25 req/día</div>
       </div>
     </div>
     <div class="grid-2">
-      <div class="card"><div class="card-title">💾 Exportar / Importar</div><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px"><button class="btn btn-primary" onclick="exportData()">📥 Exportar JSON (backup)</button><button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📤 Importar JSON (backup)</button><button class="btn btn-secondary" onclick="openImportCSVModal()">📊 Importar movimientos desde Excel/CSV</button><input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)"></div></div>
+      <div class="card"><div class="card-title">${t('exportarImportar')}</div><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px"><button class="btn btn-primary" onclick="exportData()">📥 Exportar JSON (backup)</button><button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📤 Importar JSON (backup)</button><button class="btn btn-secondary" onclick="openImportCSVModal()">📊 Importar movimientos desde Excel/CSV</button><input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)"></div></div>
       <div class="card">
-        <div class="card-title">🗜️ Archivar movimientos antiguos</div>
+        <div class="card-title">${t('archivarMovAnt')}</div>
         <div style="margin-top:8px;font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:14px">Comprime el historial antiguo de plataformas conservando saldo y ganancias acumuladas. Útil si quieres tener el historial más limpio.</div>
-        <button class="btn btn-secondary" style="width:100%;font-size:13px" onclick="openArchivarModal()">🗜️ Archivar movimientos antiguos</button>
+        <button class="btn btn-secondary" style="width:100%;font-size:13px" onclick="openArchivarModal()">${t('archivarMovAnt')}</button>
       </div>
     </div>
     <div class="card" style="margin-top:16px">
-      <div class="card-title">🤖 Asistente IA</div>
+      <div class="card-title">${t('asistenteia')}</div>
       <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">Conecta tu propia API key para usar el asistente financiero. El asistente tiene acceso a todos tus datos (plataformas, inversiones, gastos, metas) pero nunca los envía a terceros salvo a la API que elijas.</div>
       <div style="font-size:12px;color:var(--text2);margin-bottom:10px;padding:10px 12px;background:rgba(10,132,255,0.06);border-radius:10px;border:1px solid rgba(10,132,255,0.15)">
         ⚡ <strong>Fallback automático:</strong> El asistente usa las keys en orden Groq → Gemini → DeepSeek → OpenRouter. Si una falla, prueba la siguiente.
@@ -2946,8 +3112,8 @@ function renderAjustes(){
           const aiProviders=[
             {id:'groq',   label:'Groq',        badge:'Gratis',         ph:'gsk_...',    url:'https://console.groq.com',        urlLabel:'console.groq.com'},
             {id:'gemini', label:'Gemini',       badge:'Gratis',         ph:'AIza...',    url:'https://aistudio.google.com',     urlLabel:'aistudio.google.com'},
-            {id:'deepseek',label:'DeepSeek',    badge:'Casi gratis',    ph:'sk-...',     url:'https://platform.deepseek.com',   urlLabel:'platform.deepseek.com'},
-            {id:'openrouter',label:'OpenRouter',badge:'Modelos gratis', ph:'sk-or-...',  url:'https://openrouter.ai/keys',      urlLabel:'openrouter.ai/keys'},
+            {id:'deepseek',label:'DeepSeek',    badge:t('casiGratis'),    ph:'sk-...',     url:'https://platform.deepseek.com',   urlLabel:'platform.deepseek.com'},
+            {id:'openrouter',label:'OpenRouter',badge:t('modelosGratis'), ph:'sk-or-...',  url:'https://openrouter.ai/keys',      urlLabel:'openrouter.ai/keys'},
           ];
           return aiProviders.map(p=>{
             const val=(settings.aiKeys||{})[p.id]||'';
@@ -2964,7 +3130,7 @@ function renderAjustes(){
               '<div style="display:flex;gap:8px;align-items:center">'+
                 '<input type="password" class="form-input" id="aiKey_'+p.id+'" style="flex:1;font-family:monospace;font-size:12px" placeholder="'+p.ph+'" value="'+val+'" '+
                   'oninput="if(!window.settings.aiKeys)window.settings.aiKeys={};window.settings.aiKeys[\'' + p.id + '\']=this.value.trim();saveAll();this.closest(\'div\').style.borderColor=this.value?\'rgba(48,209,88,0.3)\':\'var(--border)\'">'+
-                '<button class="btn btn-sm" style="background:var(--card);border:1px solid var(--border);white-space:nowrap" onclick="testAiKey(\'' + p.id + '\')">🧪 Probar</button>'+
+                '<button class="btn btn-sm" style="background:var(--card);border:1px solid var(--border);white-space:nowrap" onclick="testAiKey(\'' + p.id + '\')">' + t('probar') + '</button>'+
               '</div>'+
               '<div id="aiKeyTestResult_'+p.id+'" style="margin-top:6px;font-size:11px"></div>'+
             '</div>';
@@ -2973,7 +3139,7 @@ function renderAjustes(){
       </div>
 
     </div>
-    <div class="card" style="margin-top:16px"><div class="card-title">⚠️ Zona de Peligro</div><button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="resetAll()">🗑 Resetear Todo</button></div>
+    <div class="card" style="margin-top:16px"><div class="card-title">${t('zonaPeligro')}</div><button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="resetAll()">🗑 Resetear Todo</button></div>
     ${isAdmin ? adminFirebaseRulesHTML : ''}
   `;
 }
@@ -3066,7 +3232,7 @@ RESUMEN FINANCIERO (${new Date().toLocaleDateString('es-ES')}):
 - Tipo de cambio: USD/MXN = ${tc}
 - Ingreso mensual estimado: EUR ${totalIng.toFixed(0)}
 - Gastos este mes (${mesKey}): EUR ${totalGastos.toFixed(0)} — por categoria: ${Object.entries(bycat).map(([k,v])=>k+': EUR '+v.toFixed(0)).join(', ')}
-- Balance del mes: EUR ${balance.toFixed(0)} (${totalIng>0?((balance/totalIng)*100).toFixed(0):'—'}% ahorro)
+- Balance del mes: EUR ${balance.toFixed(0)} (${totalIng>0?((balance/totalIng)*100).toFixed(0):'—'}% ${t('ahorro')})
 - Metas: ${metasSummary||'sin metas'}
 
 PLATAFORMAS:
@@ -3340,7 +3506,7 @@ function updateNavUser(user){
   const el=document.getElementById('navUser');if(!el)return;
   const darkBtn=`<button class="dark-toggle" onclick="toggleDark()" title="Modo oscuro" style="margin-right:4px"><span class="dark-toggle-icon dark-toggle-moon">🌙</span><span class="dark-toggle-icon dark-toggle-sun">☀️</span></button>`;
   const langBtn=`<button id="langToggleBtn" onclick="toggleLang()" title="Cambiar idioma" style="margin-right:4px;background:var(--card2);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;color:var(--text)">${_lang==='es'?'🌐 EN':'🌐 ES'}</button>`;
-  if(user)el.innerHTML=`${darkBtn}${langBtn}${user.photoURL?`<img src="${user.photoURL}" class="nav-avatar">`:`<div class="nav-avatar-placeholder">${(user.displayName||user.email||'U')[0].toUpperCase()}</div>`}<button class="btn-signout" onclick="window.signOutUser()">Salir</button>`;
+  if(user)el.innerHTML=`${darkBtn}${langBtn}${user.photoURL?`<img src="${user.photoURL}" class="nav-avatar">`:`<div class="nav-avatar-placeholder">${(user.displayName||user.email||'U')[0].toUpperCase()}</div>`}<button class="btn-signout" onclick="window.signOutUser()">${t('salir')}</button>`;
 }
 
 function exportData(){const data={platforms,movements,goals,settings,recurrentes,patrimonioHistory,exportDate:new Date().toISOString(),version:'4.4'};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`finanzas-pro-${today()}.json`;a.click();URL.revokeObjectURL(url);}
@@ -3373,7 +3539,7 @@ function openImportCSVModal(){
     <div style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.8">
       <strong>fecha</strong> — formato YYYY-MM-DD (ej: 2026-03-01)<br>
       <strong>seccion</strong> — <code>gastos</code> o <code>plataformas</code><br>
-      <strong>tipo</strong> — para gastos: <code>Gasto</code> o <code>Ingreso</code> · para plataformas: <code>Aportación</code>, <code>Retiro</code>, <code>Saldo Actual</code><br>
+      <strong>tipo</strong> — para gastos: <code>Gasto</code> o <code>Ingreso</code> · para plataformas: <code>${t('aportacion')}</code>, <code>${t('retiro')}</code>, <code>Saldo Actual</code><br>
       <strong>plataforma</strong> — nombre exacto de la plataforma (solo para sección plataformas)<br>
       <strong>importe</strong> — número sin símbolos (ej: 1500.00)<br>
       <strong>moneda</strong> — MXN, USD o EUR (opcional, default MXN)<br>
@@ -3606,7 +3772,7 @@ function setupFirestore(uid){
   _unsub=onSnapshot(DOC_REF, async snap=>{
     if(_ignoreSnap){_ignoreSnap=false;return;}
     if(!snap.exists()){
-      // Usuario nuevo — datos vacíos y guardar estructura inicial
+      // ${t('usuario')} nuevo — datos vacíos y guardar estructura inicial
       resetToEmpty();
       window.saveToFirebase(true);
       return;
@@ -3812,9 +3978,9 @@ window.openAdminPanel = async function(){
         </div>
       </div>
       <div style="display:flex;gap:6px;justify-content:flex-end">
-        ${!u.aprobado?`<button onclick="window.aprobarUsuario('${u.uid}')" style="padding:5px 12px;border-radius:14px;border:none;background:var(--green);color:#fff;font-size:11px;font-weight:700;cursor:pointer">Aprobar</button>`:''}
-        ${u.aprobado?`<button onclick="window.revocarUsuario('${u.uid}')" style="padding:5px 12px;border-radius:14px;border:none;background:var(--orange,#ff9f0a);color:#fff;font-size:11px;font-weight:700;cursor:pointer">Revocar</button>`:''}
-        <button onclick="window.eliminarUsuario('${u.uid}')" style="padding:5px 12px;border-radius:14px;border:none;background:var(--red,#ff453a);color:#fff;font-size:11px;font-weight:700;cursor:pointer">Eliminar</button>
+        ${!u.aprobado?`<button onclick="window.aprobar${t('usuario')}('${u.uid}')" style="padding:5px 12px;border-radius:14px;border:none;background:var(--green);color:#fff;font-size:11px;font-weight:700;cursor:pointer">Aprobar</button>`:''}
+        ${u.aprobado?`<button onclick="window.revocar${t('usuario')}('${u.uid}')" style="padding:5px 12px;border-radius:14px;border:none;background:var(--orange,#ff9f0a);color:#fff;font-size:11px;font-weight:700;cursor:pointer">Revocar</button>`:''}
+        <button onclick="window.eliminar${t('usuario')}('${u.uid}')" style="padding:5px 12px;border-radius:14px;border:none;background:var(--red,#ff453a);color:#fff;font-size:11px;font-weight:700;cursor:pointer">Eliminar</button>
       </div>
     </div>`).join('');
 
@@ -3833,19 +3999,19 @@ window.openAdminPanel = async function(){
   </div>`);
 };
 
-window.aprobarUsuario = async function(uid){
+window.aprobar${t('usuario')} = async function(uid){
   const { doc: _doc, setDoc: _setDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
   await _setDoc(_doc(db,'registros',uid), {aprobado:true}, {merge:true});
   window.openAdminPanel();
 };
 
-window.revocarUsuario = async function(uid){
+window.revocar${t('usuario')} = async function(uid){
   const { doc: _doc, setDoc: _setDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
   await _setDoc(_doc(db,'registros',uid), {aprobado:false}, {merge:true});
   window.openAdminPanel();
 };
 
-window.eliminarUsuario = async function(uid){
+window.eliminar${t('usuario')} = async function(uid){
   if(!confirm('¿Eliminar este usuario completamente? Se borrarán sus datos, perfil y registro de Firebase.')) return;
   const { doc: _doc, deleteDoc: _deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
   // Borrar en paralelo: datos, meta y registro
