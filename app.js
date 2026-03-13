@@ -2072,7 +2072,7 @@ function renderGastos(){
         <div class="card-title" style="margin:0">${t('ingresosMes')}</div>
         <div style="display:flex;align-items:center;gap:8px">
           <label style="font-size:11px;font-weight:600;color:var(--text2)">${t('monedaSueldo')}:</label>
-          <select class="form-select" style="padding:4px 10px;font-size:13px;font-weight:700;border-radius:10px;width:auto" id="selMonedaSueldo" onchange="updateIngresoConMoneda('sueldo',document.getElementById('inputSueldo').value,this.value)">
+          <select class="form-select" style="padding:4px 10px;font-size:13px;font-weight:700;border-radius:10px;width:auto" id="selMonedaSueldo" onchange="updateIngresoConMoneda('sueldo',document.getElementById('inputSueldo').value,this.value);renderGastos()">
             <option value="EUR" ${(ingresos.monedaSueldo||'EUR')==='EUR'?'selected':''}>🇪🇺 EUR</option>
             <option value="USD" ${ingresos.monedaSueldo==='USD'?'selected':''}>🇺🇸 USD</option>
             <option value="MXN" ${ingresos.monedaSueldo==='MXN'?'selected':''}>🇲🇽 MXN</option>
@@ -2081,10 +2081,27 @@ function renderGastos(){
         </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:8px">
-        <div><label class="form-label">${t('sueldoLabel')}</label><div style="display:flex;gap:6px;align-items:center"><input id="inputSueldo" type="number" class="form-input" placeholder="0" value="${ingresos.sueldoRaw||sueldoEUR||''}" onchange="updateIngresoConMoneda('sueldo',this.value,document.getElementById('selMonedaSueldo')?.value||(settings.ingresos?.monedaSueldo)||'EUR')" style="font-size:16px;font-weight:700;flex:1"><span class="sueldo-symbol" style="font-size:13px;font-weight:700;color:var(--text2)">${{EUR:'€',USD:'US$',MXN:'$',GBP:'£'}[ingresos.monedaSueldo||'EUR']||'€'}</span></div></div>
+        <div><label class="form-label">${t('sueldoLabel')}</label><div style="display:flex;gap:6px;align-items:center"><input id="inputSueldo" type="number" class="form-input" placeholder="0" value="${ingresos.sueldoRaw||sueldoEUR||''}" onchange="updateIngresoConMoneda('sueldo',this.value,document.getElementById('selMonedaSueldo')?.value||(settings.ingresos?.monedaSueldo)||'EUR');renderGastos()" style="font-size:16px;font-weight:700;flex:1"><span class="sueldo-symbol" style="font-size:13px;font-weight:700;color:var(--text2)">${{EUR:'€',USD:'US$',MXN:'$',GBP:'£'}[ingresos.monedaSueldo||'EUR']||'€'}</span></div></div>
         <div><label class="form-label">${t('extrasLabel')}</label><input type="number" class="form-input" placeholder="0" value="${extrasEUR||''}" onchange="if(!settings.ingresos)settings.ingresos={};settings.ingresos.extrasEUR=Number(this.value)||0;settings.ingresos.extras=Number(this.value)||0;saveAll()" style="font-size:16px;font-weight:700"></div>
         <div><label class="form-label">${t('otrosLabel')}</label><input type="number" class="form-input" placeholder="0" value="${otrosEUR||''}" onchange="if(!settings.ingresos)settings.ingresos={};settings.ingresos.otrosEUR=Number(this.value)||0;settings.ingresos.otros=Number(this.value)||0;saveAll()" style="font-size:16px;font-weight:700"></div>
-        <div style="background:var(--card2);border-radius:12px;padding:12px;text-align:center"><div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase">${t('totalLabel')}</div><div style="font-size:22px;font-weight:800;color:var(--green);margin-top:4px">${fmtEUR(totalIngPlaneadoEUR)}</div></div>
+        <div style="background:var(--card2);border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase">${t('totalLabel')}</div>
+          <div style="font-size:22px;font-weight:800;color:var(--green);margin-top:4px">${(()=>{
+            const mon=ingresos.monedaSueldo||'EUR';
+            const fx=_fxCache||LS.get('fxCache');
+            const eurmxn=getEurMxn();
+            const usdeur=fx?.usdeur||(settings.tipoEUR&&settings.tipoCambio?settings.tipoCambio/settings.tipoEUR:0.88);
+            const gbpeur=fx?((fx.usdeur||0.88)/(fx.usdgbp||0.79)):(settings.tipoGBP&&settings.tipoEUR?settings.tipoEUR/settings.tipoGBP:1.17);
+            let val=totalIngPlaneadoEUR;
+            if(mon==='MXN') val=totalIngPlaneadoEUR*eurmxn;
+            else if(mon==='USD') val=totalIngPlaneadoEUR/usdeur;
+            else if(mon==='GBP') val=totalIngPlaneadoEUR/gbpeur;
+            const sym={EUR:'€',USD:'US$',MXN:'$',GBP:'£'}[mon]||'€';
+            const num=Math.round(val).toLocaleString('es-MX');
+            return (mon==='USD'||mon==='MXN'?sym+num:sym+num);
+          })()}</div>
+          ${(ingresos.monedaSueldo&&ingresos.monedaSueldo!=='EUR')?`<div style="font-size:10px;color:var(--text3);margin-top:2px">= ${fmtEUR(totalIngPlaneadoEUR)} EUR</div>`:''}
+        </div>
       </div>
     </div>
 
@@ -3462,3 +3479,4 @@ window.renderMovimientos = renderMovimientos;
 window.updateAllPrices = updateAllPrices;
 window.toggleLang = toggleLang;
 window._applyLangToNav = _applyLangToNav;
+window.renderGastos = renderGastos;
