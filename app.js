@@ -2895,8 +2895,8 @@ function renderAjustes(){
               '</div>'+
               '<div style="display:flex;gap:8px;align-items:center">'+
                 '<input type="password" class="form-input" id="aiKey_'+p.id+'" style="flex:1;font-family:monospace;font-size:12px" placeholder="'+p.ph+'" value="'+val+'" '+
-                  'oninput="if(!settings.aiKeys)settings.aiKeys={};settings.aiKeys[''+p.id+'']=this.value.trim();LS.set('settings',settings);this.closest('div').style.borderColor=this.value?'rgba(48,209,88,0.3)':'var(--border)'">'+
-                '<button class="btn btn-sm" style="background:var(--card);border:1px solid var(--border);white-space:nowrap" onclick="testAiKey(''+p.id+'')">🧪 Probar</button>'+
+                  'oninput="if(!settings.aiKeys)settings.aiKeys={};settings.aiKeys[\'' + p.id + '\']=this.value.trim();LS.set(\'settings\',settings);this.closest(\'div\').style.borderColor=this.value?\'rgba(48,209,88,0.3)\':\'var(--border)\'">'+
+                '<button class="btn btn-sm" style="background:var(--card);border:1px solid var(--border);white-space:nowrap" onclick="testAiKey(\'' + p.id + '\')">🧪 Probar</button>'+
               '</div>'+
               '<div id="aiKeyTestResult_'+p.id+'" style="margin-top:6px;font-size:11px"></div>'+
             '</div>';
@@ -3018,8 +3018,7 @@ async function _aiCallSingle(provider, key, messages, test=false) {
     const geminiMsgs = [];
     for (const msg of rawMsgs) {
       if (geminiMsgs.length > 0 && geminiMsgs[geminiMsgs.length-1].role === msg.role) {
-        geminiMsgs[geminiMsgs.length-1].parts[0].text += '
-' + msg.parts[0].text;
+        geminiMsgs[geminiMsgs.length-1].parts[0].text += '\n' + msg.parts[0].text;
       } else { geminiMsgs.push(msg); }
     }
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
