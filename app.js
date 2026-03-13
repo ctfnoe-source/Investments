@@ -882,6 +882,7 @@ function loadFromRemote(remote){
   if(remote.recurrentes)recurrentes=remote.recurrentes;
   LS.set('platforms',platforms);LS.set('goals',goals);LS.set('settings',settings);
   LS.set('recurrentes',recurrentes);
+  window.settings = settings; // keep global ref in sync
   // movements y snapshots se cargan por separado via loadSubcollections
 }
 window.loadFromRemote = loadFromRemote;
@@ -890,6 +891,7 @@ window.currentTab = 'dashboard';
 
 function saveAll(changedMovId, deletedMovId, changedSnapDate){
   window.currentTab = currentTab;
+  window.settings = settings; // keep global ref in sync
   recalcularPlatformas();
   _lastLocalSave = Date.now();
   // Aplicar recurrentes aquí (efecto secundario controlado, no dentro del render)
@@ -2843,27 +2845,27 @@ function renderAjustes(){
               : '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:var(--orange)"><span style="width:7px;height:7px;border-radius:50%;background:var(--orange);display:inline-block"></span>Manual \xb7 presiona actualizar para valores en vivo</div>';
             return statusBadge
               + '<div style="display:flex;flex-direction:column;gap:10px">'
-              + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">\ud83c\uddfa\ud83c\uddf8 USD =</span><input type="number" step="0.01" id="inputTCUSD" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vUSD+'" onchange="settings.tipoCambio=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
-              + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">\ud83c\uddea\ud83c\uddfa EUR =</span><input type="number" step="0.01" id="inputTCEUR" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vEUR+'" onchange="settings.tipoEUR=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
-              + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">\ud83c\uddec\ud83c\udde7 GBP =</span><input type="number" step="0.01" id="inputTCGBP" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vGBP+'" onchange="settings.tipoGBP=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
+              + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">\ud83c\uddfa\ud83c\uddf8 USD =</span><input type="number" step="0.01" id="inputTCUSD" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vUSD+'" onchange="window.settings.tipoCambio=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
+              + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">\ud83c\uddea\ud83c\uddfa EUR =</span><input type="number" step="0.01" id="inputTCEUR" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vEUR+'" onchange="window.settings.tipoEUR=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
+              + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">\ud83c\uddec\ud83c\udde7 GBP =</span><input type="number" step="0.01" id="inputTCGBP" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vGBP+'" onchange="window.settings.tipoGBP=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
               + '<button class="btn btn-secondary btn-sm" onclick="forceUpdateFX()">🔄 Actualizar en vivo (BCE)</button>'
               + '</div>';
           })()}
         </div>
       </div>
-      <div class="card"><div class="card-title">📈 Rendimiento Esperado Anual</div><div style="display:flex;align-items:center;gap:10px;margin-top:8px"><input type="number" step="0.5" class="form-input" style="width:80px;font-size:20px;font-weight:700;text-align:center" value="${((settings.rendimientoEsperado||0.06)*100)}" onchange="settings.rendimientoEsperado=Number(this.value)/100;saveAll()"><span style="font-size:14px;color:var(--text2)">% anual</span></div></div>
+      <div class="card"><div class="card-title">📈 Rendimiento Esperado Anual</div><div style="display:flex;align-items:center;gap:10px;margin-top:8px"><input type="number" step="0.5" class="form-input" style="width:80px;font-size:20px;font-weight:700;text-align:center" value="${((settings.rendimientoEsperado||0.06)*100)}" onchange="window.settings.rendimientoEsperado=Number(this.value)/100;saveAll()"><span style="font-size:14px;color:var(--text2)">% anual</span></div></div>
     </div>
     <div class="grid-2" style="margin-bottom:16px">
       <div class="card">
         <div class="card-title">🔑 API Key — Finnhub <span style="font-weight:400;color:var(--text3)">(acciones USA)</span></div>
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px"><input type="text" class="form-input" style="flex:1;min-width:200px;font-family:monospace;font-size:13px" id="finnhubKeyInput" placeholder="Pega tu API key" value="${settings.finnhubKey||''}" oninput="settings.finnhubKey=this.value.trim();LS.set('settings',settings)"><button class="btn btn-primary" onclick="testFinnhub()">🧪 Probar</button>${hasFinnhub?`<span style="font-size:12px;color:var(--green)">✅</span>`:''}</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px"><input type="text" class="form-input" style="flex:1;min-width:200px;font-family:monospace;font-size:13px" id="finnhubKeyInput" placeholder="Pega tu API key" value="${settings.finnhubKey||''}" oninput="window.settings.finnhubKey=this.value.trim();window.LS.set('settings',window.settings)"><button class="btn btn-primary" onclick="testFinnhub()">🧪 Probar</button>${hasFinnhub?`<span style="font-size:12px;color:var(--green)">✅</span>`:''}</div>
         <div id="finnhubTestResult" style="margin-top:8px;font-size:12px"></div>
         <div style="margin-top:8px;font-size:11px;color:var(--text3)">Gratis en <a href="https://finnhub.io" target="_blank" style="color:var(--blue)">finnhub.io</a></div>
       </div>
 
       <div class="card">
         <div class="card-title">🔑 API Key — Alpha Vantage <span style="font-weight:400;color:var(--text3)">(VUAA.LON, ETFs Londres/Xetra)</span></div>
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px"><input type="text" class="form-input" style="flex:1;min-width:200px;font-family:monospace;font-size:13px" id="alphaVantageKeyInput" placeholder="Pega tu API key" value="${settings.alphaVantageKey||''}" oninput="settings.alphaVantageKey=this.value.trim();LS.set('settings',settings)"><button class="btn btn-primary" onclick="testAlphaVantage()">🧪 Probar</button>${settings.alphaVantageKey?`<span style="font-size:12px;color:var(--green)">✅</span>`:''}</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px"><input type="text" class="form-input" style="flex:1;min-width:200px;font-family:monospace;font-size:13px" id="alphaVantageKeyInput" placeholder="Pega tu API key" value="${settings.alphaVantageKey||''}" oninput="window.settings.alphaVantageKey=this.value.trim();window.LS.set('settings',window.settings)"><button class="btn btn-primary" onclick="testAlphaVantage()">🧪 Probar</button>${settings.alphaVantageKey?`<span style="font-size:12px;color:var(--green)">✅</span>`:''}</div>
         <div id="alphaVantageTestResult" style="margin-top:8px;font-size:12px"></div>
         <div style="margin-top:8px;font-size:11px;color:var(--text3)">Gratis en <a href="https://alphavantage.co" target="_blank" style="color:var(--blue)">alphavantage.co</a> · 25 req/día</div>
       </div>
@@ -2904,7 +2906,7 @@ function renderAjustes(){
               '</div>'+
               '<div style="display:flex;gap:8px;align-items:center">'+
                 '<input type="password" class="form-input" id="aiKey_'+p.id+'" style="flex:1;font-family:monospace;font-size:12px" placeholder="'+p.ph+'" value="'+val+'" '+
-                  'oninput="if(!settings.aiKeys)settings.aiKeys={};settings.aiKeys[\'' + p.id + '\']=this.value.trim();LS.set(\'settings\',settings);this.closest(\'div\').style.borderColor=this.value?\'rgba(48,209,88,0.3)\':\'var(--border)\'">'+
+                  'oninput="if(!window.settings.aiKeys)window.settings.aiKeys={};window.settings.aiKeys[\'' + p.id + '\']=this.value.trim();window.LS.set(\'settings\',window.settings);this.closest(\'div\').style.borderColor=this.value?\'rgba(48,209,88,0.3)\':\'var(--border)\'">'+
                 '<button class="btn btn-sm" style="background:var(--card);border:1px solid var(--border);white-space:nowrap" onclick="testAiKey(\'' + p.id + '\')">🧪 Probar</button>'+
               '</div>'+
               '<div id="aiKeyTestResult_'+p.id+'" style="margin-top:6px;font-size:11px"></div>'+
@@ -3839,6 +3841,8 @@ window.deleteGoal = deleteGoal;
 window.testFinnhub = testFinnhub;
 window.testAlphaVantage = testAlphaVantage;
 window.testAiKey = testAiKey;
+window.settings = settings;
+window.LS = LS;
 window.exportData = exportData;
 window.importData = importData;
 window.resetAll = resetAll;
