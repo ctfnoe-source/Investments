@@ -1137,18 +1137,24 @@ function calcPlatforms() {
 function recalcularPlatformas(){ platforms = platforms.map(p => ({tasaAnual:0, fechaInicio:today(), moneda:'MXN', ...p})); }
 
 function applyRecurrentes() {
-  const cm=new Date().getMonth()+1, cy=new Date().getFullYear();
+  const now=new Date();
+  const cm=now.getMonth()+1, cy=now.getFullYear(), cd=now.getDate();
   const applied=settings.recurrentesApplied||{};
   const key=`${cy}-${cm}`;
-  if(applied[key]) return 0;
+  // Solo bloquear si YA se aplicó el lote mensual completo — no bloqueamos recurrentes nuevos
+  const fullyApplied = applied[key] === true;
   let count=0;
   recurrentes.filter(r=>r.activo).forEach(r=>{
     const exists=movements.some(m=>m.seccion==='gastos'&&m.recurrenteId===r.id&&m.fecha.startsWith(`${cy}-${String(cm).padStart(2,'0')}`));
     if(!exists){
       const dia=r.dia||1;
-      const fechaMov=`${cy}-${String(cm).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
-      movements.unshift({id:uid(),seccion:'gastos',fecha:fechaMov,categoria:r.categoria,tipo:'Gasto',importe:r.importe,notas:r.nombre+' (auto)',recurrenteId:r.id,esRecurrente:true});
-      count++;
+      // Aplicar si: el lote mensual aún no corrió (inicio de mes normal),
+      // o si el día del recurrente ya pasó/llegó este mes (recurrente añadido tarde)
+      if(!fullyApplied || dia <= cd){
+        const fechaMov=`${cy}-${String(cm).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+        movements.unshift({id:uid(),seccion:'gastos',fecha:fechaMov,categoria:r.categoria,tipo:'Gasto',importe:r.importe,notas:r.nombre+' (auto)',recurrenteId:r.id,esRecurrente:true});
+        count++;
+      }
     }
   });
   if(count>0){ if(!settings.recurrentesApplied)settings.recurrentesApplied={}; settings.recurrentesApplied[key]=true; LS.set('movements',movements);LS.set('settings',settings); }
@@ -2130,9 +2136,9 @@ function saveMovement(sec){
   else{if(!d.importe)return;mov.categoria=d.categoria;mov.tipo=d.tipo;
     const importeRaw=Number(d.importe);const monedaGasto=d.monedaGasto||'MXN';
     {const _fx=_fxCache||LS.get('fxCache');const _eurmxn=(_fx?.eurmxn)||settings.tipoEUR||17;const _usdmxn=(_fx?.usdmxn)||settings.tipoCambio||17;const _gbpmxn=_usdmxn/(_fx?.usdgbp||0.78);
-    if(monedaGasto==='EUR'){mov.importe=Math.round(importeRaw*_eurmxn*100)/100;mov.monedaOrig='EUR';mov.notas=(d.notas?d.notas+' · ':'')+'€'+importeRaw+' → $'+mov.importe+' MXN (FX '+_eurmxn.toFixed(2)+')';}
-    else if(monedaGasto==='USD'){mov.importe=Math.round(importeRaw*_usdmxn*100)/100;mov.monedaOrig='USD';mov.notas=(d.notas?d.notas+' · ':'')+'US$'+importeRaw+' → $'+mov.importe+' MXN (FX '+_usdmxn.toFixed(2)+')';}
-    else if(monedaGasto==='GBP'){mov.importe=Math.round(importeRaw*_gbpmxn*100)/100;mov.monedaOrig='GBP';mov.notas=(d.notas?d.notas+' · ':'')+'£'+importeRaw+' → $'+mov.importe+' MXN (FX '+_gbpmxn.toFixed(2)+')';}
+    if(monedaGasto==='EUR'){mov.importe=Math.round(importeRaw*_eurmxn*100)/100;mov.monedaOrig='EUR';mov.montoOriginal=importeRaw;mov.notas=(d.notas?d.notas+' · ':'')+'€'+importeRaw+' → $'+mov.importe+' MXN (FX '+_eurmxn.toFixed(2)+')';}
+    else if(monedaGasto==='USD'){mov.importe=Math.round(importeRaw*_usdmxn*100)/100;mov.monedaOrig='USD';mov.montoOriginal=importeRaw;mov.notas=(d.notas?d.notas+' · ':'')+'US$'+importeRaw+' → $'+mov.importe+' MXN (FX '+_usdmxn.toFixed(2)+')';}
+    else if(monedaGasto==='GBP'){mov.importe=Math.round(importeRaw*_gbpmxn*100)/100;mov.monedaOrig='GBP';mov.montoOriginal=importeRaw;mov.notas=(d.notas?d.notas+' · ':'')+'£'+importeRaw+' → $'+mov.importe+' MXN (FX '+_gbpmxn.toFixed(2)+')';}
     else{mov.importe=importeRaw;mov.monedaOrig='MXN';mov.notas=d.notas||'';}}
   }
   movements=[mov,...movements];saveAll(mov.id);closeModal();
@@ -2170,7 +2176,7 @@ function openEditMovModal(id){
         <div class="form-group"><label class="form-label">Notes</label><input class="form-input" name="notas" value="${escHtml(m.notas||'')}"></div>
       `:`
         <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" name="fecha" value="${m.fecha}" required></div><div class="form-group"><label class="form-label">Type</label><select class="form-select" name="tipo"><option ${m.tipo==='Gasto'?'selected':''}>Gasto</option><option ${m.tipo==='Ingreso'?'selected':''}>Ingreso</option></select></div></div>
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Category</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}" ${m.categoria===c.id?'selected':''}>${c.icon} ${c.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Amount</label><input type="number" step="any" class="form-input" name="importe" value="${m.monedaOrig==='EUR'?(m.notas&&m.notas.match(/€([\d.]+)/)?Number(m.notas.match(/€([\d.]+)/)[1]):Math.round(m.importe/getEurMxn()*100)/100):m.monedaOrig==='USD'?(m.notas&&m.notas.match(/US\$([\d.]+)/)?Number(m.notas.match(/US\$([\d.]+)/)[1]):Math.round(m.importe/(((_fxCache||LS.get('fxCache'))?.usdmxn)||settings.tipoCambio||17)*100)/100):m.monedaOrig==='GBP'?(m.notas&&m.notas.match(/£([\d.]+)/)?Number(m.notas.match(/£([\d.]+)/)[1]):Math.round(m.importe/20*100)/100):m.importe}" required></div><div class="form-group"><label class="form-label">Currency</label><select class="form-select" name="monedaGasto"><option value="MXN" ${(m.monedaOrig||'MXN')==='MXN'?'selected':''}>MXN 🇲🇽</option><option value="EUR" ${m.monedaOrig==='EUR'?'selected':''}>EUR 🇪🇺</option><option value="USD" ${m.monedaOrig==='USD'?'selected':''}>USD 🇺🇸</option><option value="GBP" ${m.monedaOrig==='GBP'?'selected':''}>GBP 🇬🇧</option></select></div></div>
+        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Category</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}" ${m.categoria===c.id?'selected':''}>${c.icon} ${c.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Amount</label><input type="number" step="any" class="form-input" name="importe" value="${(()=>{if(m.monedaOrig&&m.monedaOrig!=='MXN'){if(m.montoOriginal!=null)return m.montoOriginal;const _fx=_fxCache||LS.get('fxCache');if(m.monedaOrig==='EUR'){const match=m.notas&&m.notas.match(/€([\d.]+)/);return match?Number(match[1]):Math.round(m.importe/getEurMxn()*100)/100;}if(m.monedaOrig==='USD'){const match=m.notas&&m.notas.match(/US\$([\d.]+)/);return match?Number(match[1]):Math.round(m.importe/((_fx?.usdmxn)||settings.tipoCambio||17)*100)/100;}if(m.monedaOrig==='GBP'){const match=m.notas&&m.notas.match(/£([\d.]+)/);return match?Number(match[1]):Math.round(m.importe/20*100)/100;}}return m.importe;})()" required></div><div class="form-group"><label class="form-label">Currency</label><select class="form-select" name="monedaGasto"><option value="MXN" ${(m.monedaOrig||'MXN')==='MXN'?'selected':''}>MXN 🇲🇽</option><option value="EUR" ${m.monedaOrig==='EUR'?'selected':''}>EUR 🇪🇺</option><option value="USD" ${m.monedaOrig==='USD'?'selected':''}>USD 🇺🇸</option><option value="GBP" ${m.monedaOrig==='GBP'?'selected':''}>GBP 🇬🇧</option></select></div></div>
         <div class="form-group"><label class="form-label">Notes</label><input class="form-input" name="notas" value="${escHtml(m.notas||'')}"></div>
       `}
       <div style="display:flex;gap:10px;margin-top:16px"><button type="submit" class="btn btn-primary" style="flex:1;padding:14px">💾 Save</button><button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button></div>
@@ -2188,9 +2194,9 @@ function updateMovement(id){
       updated.categoria=d.categoria;updated.tipo=d.tipo;
       const importeRaw=Number(d.importe);const monedaGasto=d.monedaGasto||'MXN';
       {const _fx=_fxCache||LS.get('fxCache');const _eurmxn=(_fx?.eurmxn)||settings.tipoEUR||17;const _usdmxn=(_fx?.usdmxn)||settings.tipoCambio||17;const _gbpmxn=_usdmxn/(_fx?.usdgbp||0.78);
-      if(monedaGasto==='EUR'){updated.importe=Math.round(importeRaw*_eurmxn*100)/100;updated.monedaOrig='EUR';updated.notas=(d.notas?d.notas+' · ':'')+'€'+importeRaw+' → $'+updated.importe+' MXN (FX '+_eurmxn.toFixed(2)+')';}
-      else if(monedaGasto==='USD'){updated.importe=Math.round(importeRaw*_usdmxn*100)/100;updated.monedaOrig='USD';updated.notas=(d.notas?d.notas+' · ':'')+'US$'+importeRaw+' → $'+updated.importe+' MXN (FX '+_usdmxn.toFixed(2)+')';}
-      else if(monedaGasto==='GBP'){updated.importe=Math.round(importeRaw*_gbpmxn*100)/100;updated.monedaOrig='GBP';updated.notas=(d.notas?d.notas+' · ':'')+'£'+importeRaw+' → $'+updated.importe+' MXN (FX '+_gbpmxn.toFixed(2)+')';}
+      if(monedaGasto==='EUR'){updated.importe=Math.round(importeRaw*_eurmxn*100)/100;updated.monedaOrig='EUR';updated.montoOriginal=importeRaw;updated.notas=(d.notas?d.notas+' · ':'')+'€'+importeRaw+' → $'+updated.importe+' MXN (FX '+_eurmxn.toFixed(2)+')';}
+      else if(monedaGasto==='USD'){updated.importe=Math.round(importeRaw*_usdmxn*100)/100;updated.monedaOrig='USD';updated.montoOriginal=importeRaw;updated.notas=(d.notas?d.notas+' · ':'')+'US$'+importeRaw+' → $'+updated.importe+' MXN (FX '+_usdmxn.toFixed(2)+')';}
+      else if(monedaGasto==='GBP'){updated.importe=Math.round(importeRaw*_gbpmxn*100)/100;updated.monedaOrig='GBP';updated.montoOriginal=importeRaw;updated.notas=(d.notas?d.notas+' · ':'')+'£'+importeRaw+' → $'+updated.importe+' MXN (FX '+_gbpmxn.toFixed(2)+')';}
       else{updated.importe=importeRaw;updated.monedaOrig='MXN';updated.notas=d.notas||'';}}
     }
     return updated;
@@ -3850,14 +3856,10 @@ function setFbStatus(s){let el=document.getElementById('fbStatus');if(!el)return
 function showApp(){document.getElementById('loginOverlay').classList.add('hidden');document.getElementById('mainNav').style.display='';document.getElementById('mainContainer').style.display='';document.getElementById('mobileNav').style.display='';document.getElementById('accessDenied').classList.remove('show');}
 function showLogin(msg){document.getElementById('loginOverlay').classList.remove('hidden');document.getElementById('mainNav').style.display='none';document.getElementById('mainContainer').style.display='none';document.getElementById('mobileNav').style.display='none';document.getElementById('accessDenied').classList.remove('show');if(msg){const el=document.getElementById('loginError');el.textContent=msg;el.style.display='block';}}
 
-window.signOutUser=async()=>{
-  if(_unsub){_unsub();_unsub=null;}
-  if(_unsubRegistro){_unsubRegistro();_unsubRegistro=null;}
-  await signOut(auth);window.location.reload();
-};
+window.signOutUser=async()=>{await signOut(auth);window.location.reload();};
 document.getElementById('btnGoogleLogin').addEventListener('click',async()=>{const btn=document.getElementById('btnGoogleLogin');btn.disabled=true;btn.innerHTML='<span style="display:inline-block;width:20px;height:20px;border:2px solid rgba(10,132,255,0.2);border-top-color:#0A84FF;border-radius:50%;animation:spin 0.7s linear infinite;margin-right:8px;vertical-align:middle"></span> Connecting...';try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(e){btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> Continue with Google';showLogin(e.code==='auth/popup-closed-by-user'?'':'Error signing in.');}});
 
-let _ignoreSnap=false,_saveTimeout=null,_unsub=null,_unsubRegistro=null;
+let _ignoreSnap=false,_saveTimeout=null,_unsub=null;
 
 async function loadSubcollections(uid){
   const { collection, getDocs: _getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
@@ -4205,27 +4207,6 @@ onAuthStateChanged(auth,async user=>{
     resetToEmpty(); // Limpiar memoria antes de cargar datos del nuevo usuario
     if(typeof updateNavUser==='function') updateNavUser(user);
     showApp(); setupFirestore(uid);
-
-    // Listener en tiempo real sobre registros/{uid} — detecta revocación o eliminación
-    if(_unsubRegistro){_unsubRegistro();_unsubRegistro=null;}
-    _unsubRegistro = onSnapshot(registroRef, (snap) => {
-      if(!snap.exists()){
-        // Documento eliminado (admin borró al usuario)
-        if(!isAdmin){
-          if(_unsub){_unsub();_unsub=null;}
-          if(_unsubRegistro){_unsubRegistro();_unsubRegistro=null;}
-          signOut(auth).then(()=>window.location.reload());
-        }
-        return;
-      }
-      const data = snap.data();
-      // Acceso revocado por el admin
-      if(!isAdmin && data.aprobado === false){
-        if(_unsub){_unsub();_unsub=null;}
-        if(_unsubRegistro){_unsubRegistro();_unsubRegistro=null;}
-        signOut(auth).then(()=>window.location.reload());
-      }
-    }, (err) => { console.error('[registro listener]', err); });
     if(window.renderPage) window.renderPage(window.currentTab||'dashboard');
     setTimeout(()=>{ _runProactiveAiAlert(); }, 4000);
     setTimeout(()=>{
@@ -4237,7 +4218,6 @@ onAuthStateChanged(auth,async user=>{
     // _unsub y showLogin ya los maneja signOutUser si fue cierre intencional
     // Esto cubre el caso de sesión expirada o revocada externamente
     if(_unsub){_unsub();_unsub=null;}
-    if(_unsubRegistro){_unsubRegistro();_unsubRegistro=null;}
     hidePending();
     if(document.getElementById('loginOverlay') && !document.getElementById('loginOverlay').classList.contains('hidden')) return;
     showLogin();
