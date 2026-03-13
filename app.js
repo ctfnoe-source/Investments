@@ -156,11 +156,12 @@ async function fetchAlphaVantagePrice(ticker, targetMoneda) {
 
       console.log(`[AlphaVantage] ${sym} = ${price} raw → ${targetMoneda}`);
       if (targetMoneda === 'MXN') {
-        if (sym.includes('.LON')) price = price * tc;
+        if (sym.includes('.LON')) price = (price / 100) * gbpmxn; // GBp → GBP → MXN
         else if (sym.includes('.DEX') || sym.includes('.EPA') || sym.includes('.AMS')) price = price * eurmxn;
         else price = price * tc;
       } else if (targetMoneda === 'USD') {
-        if (sym.includes('.DEX') || sym.includes('.EPA') || sym.includes('.AMS')) price = price / usdeur;
+        if (sym.includes('.LON')) price = (price / 100) / usdgbp; // GBp → GBP → USD
+        else if (sym.includes('.DEX') || sym.includes('.EPA') || sym.includes('.AMS')) price = price / usdeur;
       }
       console.log(`[AlphaVantage] ${sym} = ${price} ${targetMoneda} ✅`);
       return price;
@@ -210,6 +211,29 @@ async function updateFX() {
     _recalcAndSaveSnapshot();
   }
   return fx;
+}
+
+async function forceUpdateFX() {
+  LS.set("fxCache", null);
+  _fxCache = null;
+  const btn = document.querySelector("[onclick*=forceUpdateFX]");
+  if (btn) { btn.disabled = true; btn.textContent = "⏳ Actualizando..."; }
+  const fx = await fetchFX();
+  if (fx && fx.usdmxn) {
+    settings.tipoCambio = Math.round(fx.usdmxn * 100) / 100;
+    settings.tipoEUR   = Math.round(fx.eurmxn * 100) / 100;
+    settings.tipoGBP   = Math.round(fx.gbpmxn * 100) / 100;
+    LS.set("settings", settings);
+    const inpUSD = document.getElementById("inputTCUSD");
+    const inpEUR = document.getElementById("inputTCEUR");
+    const inpGBP = document.getElementById("inputTCGBP");
+    if (inpUSD) inpUSD.value = settings.tipoCambio;
+    if (inpEUR) inpEUR.value = settings.tipoEUR;
+    if (inpGBP) inpGBP.value = settings.tipoGBP;
+    updateNavFX();
+    _recalcAndSaveSnapshot();
+    renderPage("ajustes");
+  }
 }
 
 function updateNavFX() {
@@ -669,6 +693,9 @@ function saveAll(changedMovId, deletedMovId, changedSnapDate){
   window.currentTab = currentTab;
   recalcularPlatformas();
   _lastLocalSave = Date.now();
+  // Aplicar recurrentes aquí (efecto secundario controlado, no dentro del render)
+  const applied = applyRecurrentes();
+  if (applied > 0) window._recurrentesAppliedThisSession = applied;
   LS.set('platforms',platforms);LS.set('movements',movements);LS.set('goals',goals);LS.set('settings',settings);
   LS.set('recurrentes',recurrentes);LS.set('patrimonioHistory',patrimonioHistory);
   _recalcAndSaveSnapshot();
@@ -709,7 +736,7 @@ function statCard(label,value,sub,color,borderColor){
 
 function getTickerPositions(){
   const tickers={};
-  movements.filter(m=>m.seccion==='inversiones').forEach(m=>{
+  movements.filter(m=>m.seccion==='inversiones' && m.ticker).forEach(m=>{
     const t=m.ticker.toUpperCase();
     const moneda=(m.moneda||'USD').toUpperCase();
     const key = moneda==='MXN' ? t+'_MXN' : t;
@@ -859,7 +886,7 @@ function renderDashboard(){
     : '';
 
   _recalcAndSaveSnapshot();
-  const applied=applyRecurrentes();
+  const applied = window._recurrentesAppliedThisSession || 0;
 
   const hist=[...patrimonioHistory].sort((a,b)=>new Date(a.date)-new Date(b.date));
 
@@ -1558,8 +1585,8 @@ function saveMovement(sec){
   else if(sec==='inversiones'){if(!d.ticker||!d.cantidad||!d.precioUnit)return;mov.tipoActivo=d.tipoActivo;mov.ticker=d.ticker.toUpperCase();mov.broker=d.broker;mov.tipoMov=d.tipoMov;mov.cantidad=Number(d.cantidad);mov.precioUnit=Number(d.precioUnit);mov.montoTotal=mov.cantidad*mov.precioUnit;mov.moneda=d.moneda||'USD';mov.comision=Number(d.comision)||0;mov.notas=d.notas||'';}
   else{if(!d.importe)return;mov.categoria=d.categoria;mov.tipo=d.tipo;
     const importeRaw=Number(d.importe);const monedaGasto=d.monedaGasto||'MXN';
-    if(monedaGasto==='EUR'){const fx=_fxCache||LS.get('fxCache');const eurmxn=fx?.eurmxn||settings.tipoEUR||21.5;mov.importe=Math.round(importeRaw*eurmxn*100)/100;mov.notas=(d.notas?d.notas+' · ':'')+'€'+importeRaw+' → $'+mov.importe+' MXN (TC '+eurmxn.toFixed(2)+')';}
-    else{mov.importe=importeRaw;mov.notas=d.notas||'';}
+    if(monedaGasto==='EUR'){const fx=_fxCache||LS.get('fxCache');const eurmxn=fx?.eurmxn||settings.tipoEUR||21.5;mov.importe=Math.round(importeRaw*eurmxn*100)/100;mov.monedaOrig='EUR';mov.notas=(d.notas?d.notas+' · ':'')+'€'+importeRaw+' → $'+mov.importe+' MXN (TC '+eurmxn.toFixed(2)+')';}
+    else{mov.importe=importeRaw;mov.monedaOrig='MXN';mov.notas=d.notas||'';}
   }
   movements=[mov,...movements];saveAll(mov.id);closeModal();
 }
@@ -2524,7 +2551,7 @@ function renderAjustes(){
               + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">\ud83c\uddfa\ud83c\uddf8 USD =</span><input type="number" step="0.01" id="inputTCUSD" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vUSD+'" onchange="settings.tipoCambio=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
               + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">\ud83c\uddea\ud83c\uddfa EUR =</span><input type="number" step="0.01" id="inputTCEUR" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vEUR+'" onchange="settings.tipoEUR=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
               + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">\ud83c\uddec\ud83c\udde7 GBP =</span><input type="number" step="0.01" id="inputTCGBP" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vGBP+'" onchange="settings.tipoGBP=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
-              + '<button class="btn btn-secondary btn-sm" onclick="updateFX().then(()=>renderPage(\'ajustes\'))">🔄 Actualizar en vivo (BCE)</button>'
+              + '<button class="btn btn-secondary btn-sm" onclick="forceUpdateFX()">🔄 Actualizar en vivo (BCE)</button>'
               + '</div>';
           })()}
         </div>
@@ -2821,12 +2848,19 @@ let _ignoreSnap=false,_saveTimeout=null,_unsub=null;
 async function loadSubcollections(uid){
   const { collection, getDocs: _getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
   // Cargar las 3 subcolecciones de movimientos en paralelo
-  const [platSnap, invSnap, gasSnap, snapSnap] = await Promise.all([
-    _getDocs(collection(db, 'usuarios', uid, 'movimientos_plataformas')),
-    _getDocs(collection(db, 'usuarios', uid, 'movimientos_inversiones')),
-    _getDocs(collection(db, 'usuarios', uid, 'movimientos_gastos')),
-    _getDocs(collection(db, 'usuarios', uid, 'snapshots')),
-  ]);
+  let platSnap, invSnap, gasSnap, snapSnap;
+  try {
+    [platSnap, invSnap, gasSnap, snapSnap] = await Promise.all([
+      _getDocs(collection(db, 'usuarios', uid, 'movimientos_plataformas')),
+      _getDocs(collection(db, 'usuarios', uid, 'movimientos_inversiones')),
+      _getDocs(collection(db, 'usuarios', uid, 'movimientos_gastos')),
+      _getDocs(collection(db, 'usuarios', uid, 'snapshots')),
+    ]);
+  } catch(e) {
+    console.error('[loadSubcollections] Error al cargar subcolecciones, usando datos locales:', e);
+    setFbStatus('error');
+    return; // conservar datos en memoria y localStorage tal como están
+  }
   // Reconstruir array movements en memoria (misma estructura que antes)
   movements = [];
   platSnap.forEach(d => movements.push(d.data()));
