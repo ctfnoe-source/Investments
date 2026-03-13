@@ -74,6 +74,7 @@
         <span class="dark-toggle-icon dark-toggle-moon">🌙</span>
         <span class="dark-toggle-icon dark-toggle-sun">☀️</span>
       </button>
+      <span id="navUserExtra"></span> <!-- aquí se insertan avatar y botón de salir -->
     </div>
   </div>
 </nav>
@@ -124,12 +125,10 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./service-worker.js')
       .then(reg => {
         console.log('[PWA] Service Worker registrado:', reg.scope);
-        // Si hay una nueva versión esperando, avisamos al SW que tome control
         reg.addEventListener('updatefound', () => {
           const newWorker = reg.installing;
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // Nueva versión disponible — recargar silenciosamente
               console.log('[PWA] Nueva versión disponible, actualizando...');
               newWorker.postMessage('SKIP_WAITING');
               window.location.reload();
@@ -147,11 +146,9 @@ const _pwaBanner = document.getElementById('pwaInstallBanner');
 const _pwaInstallBtn = document.getElementById('pwaInstallBtn');
 const _pwaDismissBtn = document.getElementById('pwaDismissBtn');
 
-// El navegador dispara este evento cuando la app es instalable
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   _pwaPrompt = e;
-  // No mostrar si el usuario ya lo rechazó antes
   if (!localStorage.getItem('pwa_dismissed')) {
     setTimeout(() => { _pwaBanner.style.display = 'flex'; }, 3000);
   }
@@ -171,7 +168,6 @@ _pwaDismissBtn && _pwaDismissBtn.addEventListener('click', () => {
   localStorage.setItem('pwa_dismissed', '1');
 });
 
-// Cuando ya está instalada como app
 window.addEventListener('appinstalled', () => {
   console.log('[PWA] App instalada correctamente');
   _pwaBanner.style.display = 'none';
