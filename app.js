@@ -216,31 +216,39 @@ async function updateFX() {
 }
 
 async function forceUpdateFX() {
-  LS.set('fxCache', null);
-  _fxCache = null;
   const btn = document.querySelector('[onclick*=forceUpdateFX]');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Actualizando...'; }
-  const fx = await fetchFX();
-  if (fx && fx._live && fx.usdmxn) {
-    settings.tipoCambio = Math.round(fx.usdmxn * 100) / 100;
-    settings.tipoEUR   = Math.round(fx.eurmxn * 100) / 100;
-    settings.tipoGBP   = Math.round(fx.gbpmxn * 100) / 100;
-    LS.set('settings', settings);
-    updateNavFX();
-    _recalcAndSaveSnapshot();
-    renderPage('ajustes');
-  } else {
+  try {
+    const r = await fetch('https://api.frankfurter.app/latest?from=USD&to=MXN,EUR,GBP');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    const gbpmxn = d.rates.MXN / d.rates.GBP;
+    const result = { usdmxn: d.rates.MXN, usdeur: d.rates.EUR, eurmxn: d.rates.MXN / d.rates.EUR, gbpmxn, usdgbp: d.rates.GBP, ts: Date.now(), _live: true };
+    if (result.usdmxn >= 15 && result.usdmxn <= 30) {
+      LS.set('fxCache', result);
+      _fxCache = result;
+      settings.tipoCambio = Math.round(result.usdmxn * 100) / 100;
+      settings.tipoEUR   = Math.round(result.eurmxn * 100) / 100;
+      settings.tipoGBP   = Math.round(result.gbpmxn * 100) / 100;
+      LS.set('settings', settings);
+      updateNavFX();
+      _recalcAndSaveSnapshot();
+      renderPage('ajustes');
+    } else {
+      throw new Error('Valor fuera de rango: ' + result.usdmxn);
+    }
+  } catch(e) {
+    console.warn('[forceUpdateFX] Error:', e.message);
     if (btn) { btn.disabled = false; btn.textContent = '🔄 Actualizar en vivo (BCE)'; }
     const tcCard = document.getElementById('tcCardContent');
     if (tcCard) {
-      const errDiv = tcCard.querySelector('.fx-error');
-      if (!errDiv) {
-        const d = document.createElement('div');
-        d.className = 'fx-error';
-        d.style.cssText = 'color:var(--orange);font-size:12px;margin-top:8px';
-        d.textContent = '⚠️ No se pudo conectar con BCE. Verifica tu conexión.';
-        tcCard.appendChild(d);
-      }
+      const old = tcCard.querySelector('.fx-error');
+      if (old) old.remove();
+      const div = document.createElement('div');
+      div.className = 'fx-error';
+      div.style.cssText = 'color:var(--orange);font-size:12px;margin-top:8px';
+      div.textContent = '⚠️ No se pudo conectar con BCE: ' + e.message;
+      tcCard.appendChild(div);
     }
   }
 }
