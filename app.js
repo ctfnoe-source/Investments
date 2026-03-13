@@ -613,12 +613,13 @@ async function fetchFX() {
     return result;
   } catch(e) {
     console.warn('[FX] Error al contactar Frankfurter:', e.message);
-    (() => {
+    if (!_fxCache) {
       const t = settings.tipoCambio || 18;
-      const e = settings.tipoEUR || (t * 1.15);
+      const ev = settings.tipoEUR || (t * 1.15);
       const g = settings.tipoGBP || (t * 1.325);
-      return _fxCache || { usdmxn: t, usdeur: t > 0 ? e/t : 0.92, eurmxn: e, gbpmxn: g, usdgbp: t > 0 ? g/t : 0.79, ts: 0, _live: false };
-    })()
+      _fxCache = { usdmxn: t, usdeur: t > 0 ? ev/t : 0.92, eurmxn: ev, gbpmxn: g, usdgbp: t > 0 ? g/t : 0.79, ts: 0, _live: false };
+    }
+    return _fxCache;
   }
 }
 
@@ -2884,7 +2885,7 @@ function renderMetas(){
     else actual=patrimonioTotal;
     const pct=g.meta>0?Math.min(actual/g.meta,1):0;
     const restante=Math.max(g.meta-actual,0);
-    const mesesEstimados=restante>0&&actual>0?Math.ceil(Math.log(g.meta/actual)/Math.log(1+re/12)):0;
+    const mesesEstimados=restante>0&&actual>0?Math.ceil(Math.log(g.meta/Math.max(actual,1))/Math.log(1+re/12)):0;
     const sc=pct>=1?'var(--green)':pct>=0.8?'var(--orange)':pct>=0.3?'var(--blue)':'var(--text2)';
     const st=pct>=1?t('lograda'):pct>=0.8?t('casi'):pct>=0.3?t('enProceso'):t('inicio');
     const isEUR=g.clase==='Ingreso Mensual';
@@ -3393,28 +3394,31 @@ async function _aiCallSingle(provider, key, messages, test=false) {
         geminiMsgs[geminiMsgs.length-1].parts[0].text += '\n' + msg.parts[0].text;
       } else { geminiMsgs.push(msg); }
     }
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({system_instruction:{parts:[{text:systemPrompt}]}, contents:geminiMsgs, generationConfig:{maxOutputTokens:maxTokens}})
-    });
+    const _gCtrl=new AbortController();const _gTout=setTimeout(()=>_gCtrl.abort(),15000);
+    let r;try{r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},signal:_gCtrl.signal,
+      body:JSON.stringify({system_instruction:{parts:[{text:systemPrompt}]},contents:geminiMsgs,generationConfig:{maxOutputTokens:maxTokens}})
+    });}finally{clearTimeout(_gTout);}
     if (!r.ok) { const e=await r.json().catch(()=>({})); throw new Error(e?.error?.message||'Gemini error '+r.status); }
     const d = await r.json();
     return d.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
   } else if (provider === 'groq') {
-    const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body: JSON.stringify({model:'llama-3.3-70b-versatile', max_tokens:maxTokens, messages:[{role:'system',content:systemPrompt},...messages.map(m=>({role:m.role,content:m.content}))]})
-    });
+    const _grCtrl=new AbortController();const _grTout=setTimeout(()=>_grCtrl.abort(),15000);
+    let r;try{r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},signal:_grCtrl.signal,
+      body:JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:maxTokens,messages:[{role:'system',content:systemPrompt},...messages.map(m=>({role:m.role,content:m.content}))]})
+    });}finally{clearTimeout(_grTout);}
     if (!r.ok) { const e=await r.json().catch(()=>({})); throw new Error(e?.error?.message||'Groq error '+r.status); }
     const d = await r.json();
     return d.choices?.[0]?.message?.content || '';
 
   } else if (provider === 'deepseek') {
-    const r = await fetch('https://api.deepseek.com/chat/completions', {
-      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body: JSON.stringify({model:'deepseek-chat', max_tokens:maxTokens, messages:[{role:'system',content:systemPrompt},...messages.map(m=>({role:m.role,content:m.content}))]})
-    });
+    const _dsCtrl=new AbortController();const _dsTout=setTimeout(()=>_dsCtrl.abort(),15000);
+    let r;try{r=await fetch('https://api.deepseek.com/chat/completions',{
+      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},signal:_dsCtrl.signal,
+      body:JSON.stringify({model:'deepseek-chat',max_tokens:maxTokens,messages:[{role:'system',content:systemPrompt},...messages.map(m=>({role:m.role,content:m.content}))]})
+    });}finally{clearTimeout(_dsTout);}
     if (!r.ok) { const e=await r.json().catch(()=>({})); throw new Error(e?.error?.message||'DeepSeek error '+r.status); }
     const d = await r.json();
     return d.choices?.[0]?.message?.content || '';
@@ -3450,11 +3454,13 @@ async function _aiCallSingle(provider, key, messages, test=false) {
     let lastErr = null;
     for (const model of freeModels) {
       try {
-        const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        const _orCtrl=new AbortController();const _orTout=setTimeout(()=>_orCtrl.abort(),15000);
+        let r;try{r=await fetch('https://openrouter.ai/api/v1/chat/completions',{
           method:'POST',
           headers:{'Content-Type':'application/json','Authorization':'Bearer '+key,'HTTP-Referer':window.location.origin,'X-Title':'Finanzas Pro'},
-          body: JSON.stringify({model, max_tokens:maxTokens, messages:[{role:'system',content:systemPrompt},...messages.map(m=>({role:m.role,content:m.content}))]})
-        });
+          signal:_orCtrl.signal,
+          body:JSON.stringify({model,max_tokens:maxTokens,messages:[{role:'system',content:systemPrompt},...messages.map(m=>({role:m.role,content:m.content}))]})
+        });}finally{clearTimeout(_orTout);}
         if (r.status === 429) { console.warn('[OpenRouter]', model, 'failed: 429 (rate limited)'); lastErr=new Error('429'); continue; }
         if (!r.ok) { const e=await r.json().catch(()=>({})); lastErr=new Error(e?.error?.message||'Error '+r.status); console.warn('[OpenRouter]', model, 'failed:', r.status); continue; }
         const d = await r.json();
@@ -3908,7 +3914,7 @@ function resetToEmpty(){
   if(typeof goals !== 'undefined') goals = [];
   if(typeof recurrentes !== 'undefined') recurrentes = [];
   if(typeof patrimonioHistory !== 'undefined') patrimonioHistory = [];
-  if(typeof settings !== 'undefined') settings = {...(window.DEFAULT_SETTINGS||{tipoCambio:17.84,tipoEUR:20.52,tipoGBP:23.66,rendimientoEsperado:0.06,finnhubKey:''})};
+  if(typeof settings !== 'undefined') settings = typeof DEFAULT_SETTINGS !== 'undefined' ? {...DEFAULT_SETTINGS} : {tipoCambio:17.84,tipoEUR:20.52,tipoGBP:23.66,rendimientoEsperado:0.06,finnhubKey:''};
 }
 
 // Guarda TODOS los movimientos a subcolecciones (usado en import y reset)
@@ -3991,6 +3997,8 @@ window.saveToFirebase=async(forceImmediate=false, changedMovIds='', deletedMovId
     }catch(e){
       setFbStatus('error');console.error(e);
       if(!navigator.onLine){window.queueSave&&window.queueSave(window.getAppData&&window.getAppData());}
+    }finally{
+      _ignoreSnap = false;
     }
   };
   if(forceImmediate){await doSave();return;}
