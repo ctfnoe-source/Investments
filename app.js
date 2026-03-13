@@ -3978,9 +3978,9 @@ window.openAdminPanel = async function(){
         </div>
       </div>
       <div style="display:flex;gap:6px;justify-content:flex-end">
-        ${!u.aprobado?`<button onclick="window.aprobar${t('usuario')}('${u.uid}')" style="padding:5px 12px;border-radius:14px;border:none;background:var(--green);color:#fff;font-size:11px;font-weight:700;cursor:pointer">Aprobar</button>`:''}
-        ${u.aprobado?`<button onclick="window.revocar${t('usuario')}('${u.uid}')" style="padding:5px 12px;border-radius:14px;border:none;background:var(--orange,#ff9f0a);color:#fff;font-size:11px;font-weight:700;cursor:pointer">Revocar</button>`:''}
-        <button onclick="window.eliminar${t('usuario')}('${u.uid}')" style="padding:5px 12px;border-radius:14px;border:none;background:var(--red,#ff453a);color:#fff;font-size:11px;font-weight:700;cursor:pointer">Eliminar</button>
+        ${!u.aprobado?`<button onclick="window.aprobarUsuario('${u.uid}')" style="padding:5px 12px;border-radius:14px;border:none;background:var(--green);color:#fff;font-size:11px;font-weight:700;cursor:pointer">Aprobar</button>`:''}
+        ${u.aprobado?`<button onclick="window.revocarUsuario('${u.uid}')" style="padding:5px 12px;border-radius:14px;border:none;background:var(--orange,#ff9f0a);color:#fff;font-size:11px;font-weight:700;cursor:pointer">Revocar</button>`:''}
+        <button onclick="window.eliminarUsuario('${u.uid}')" style="padding:5px 12px;border-radius:14px;border:none;background:var(--red,#ff453a);color:#fff;font-size:11px;font-weight:700;cursor:pointer">Eliminar</button>
       </div>
     </div>`).join('');
 
@@ -3999,19 +3999,19 @@ window.openAdminPanel = async function(){
   </div>`);
 };
 
-window.aprobar${t('usuario')} = async function(uid){
+window.aprobarUsuario = async function(uid){
   const { doc: _doc, setDoc: _setDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
   await _setDoc(_doc(db,'registros',uid), {aprobado:true}, {merge:true});
   window.openAdminPanel();
 };
 
-window.revocar${t('usuario')} = async function(uid){
+window.revocarUsuario = async function(uid){
   const { doc: _doc, setDoc: _setDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
   await _setDoc(_doc(db,'registros',uid), {aprobado:false}, {merge:true});
   window.openAdminPanel();
 };
 
-window.eliminar${t('usuario')} = async function(uid){
+window.eliminarUsuario = async function(uid){
   if(!confirm('¿Eliminar este usuario completamente? Se borrarán sus datos, perfil y registro de Firebase.')) return;
   const { doc: _doc, deleteDoc: _deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
   // Borrar en paralelo: datos, meta y registro
