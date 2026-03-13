@@ -3060,14 +3060,28 @@ async function _aiCallSingle(provider, key, messages, test=false) {
     return d.choices?.[0]?.message?.content || '';
 
   } else if (provider === 'openrouter') {
-    const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key,'HTTP-Referer':window.location.origin,'X-Title':'Finanzas Pro'},
-      body: JSON.stringify({model:'meta-llama/llama-3.3-70b-instruct:free', max_tokens:maxTokens, messages:[{role:'system',content:systemPrompt},...messages.map(m=>({role:m.role,content:m.content}))]})
-    });
-    if (!r.ok) { const e=await r.json().catch(()=>({})); throw new Error(e?.error?.message||'Error OpenRouter '+r.status); }
-    const d = await r.json();
-    return d.choices?.[0]?.message?.content || '';
+    const freeModels = [
+      'deepseek/deepseek-chat-v3-0324:free',
+      'meta-llama/llama-3.3-70b-instruct:free',
+      'google/gemini-2.0-flash-exp:free',
+      'mistralai/mistral-7b-instruct:free',
+      'qwen/qwen3-8b:free',
+    ];
+    let lastErr = null;
+    for (const model of freeModels) {
+      try {
+        const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+key,'HTTP-Referer':window.location.origin,'X-Title':'Finanzas Pro'},
+          body: JSON.stringify({model, max_tokens:maxTokens, messages:[{role:'system',content:systemPrompt},...messages.map(m=>({role:m.role,content:m.content}))]})
+        });
+        if (!r.ok) { const e=await r.json().catch(()=>({})); lastErr=new Error(e?.error?.message||'Error '+r.status); continue; }
+        const d = await r.json();
+        const text = d.choices?.[0]?.message?.content;
+        if (text) { console.log('[OpenRouter] Modelo usado:', model); return text; }
+      } catch(e) { lastErr=e; }
+    }
+    throw lastErr || new Error('Todos los modelos de OpenRouter fallaron');
   }
   throw new Error('Proveedor desconocido: ' + provider);
 }
