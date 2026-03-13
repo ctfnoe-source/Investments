@@ -3066,6 +3066,13 @@ async function _aiCallSingle(provider, key, messages, test=false) {
 
   } else if (provider === 'openrouter') {
     // Obtener lista de modelos gratuitos disponibles en tiempo real
+    // Modelos probados que sí funcionan con system prompt
+    const provenModels = [
+      'meta-llama/llama-3.1-8b-instruct:free',
+      'mistralai/mistral-7b-instruct:free',
+      'deepseek/deepseek-r1-0528-qwen3-8b:free',
+      'microsoft/phi-3-mini-128k-instruct:free',
+    ];
     let freeModels = [];
     try {
       const modelsResp = await fetch('https://openrouter.ai/api/v1/models', {
@@ -3073,8 +3080,8 @@ async function _aiCallSingle(provider, key, messages, test=false) {
       });
       if (modelsResp.ok) {
         const modelsData = await modelsResp.json();
-        // Excluir modelos conocidos por saturarse (qwen3, etc)
-        const blacklist = ['qwen3','qwen/qwen3'];
+        // Excluir modelos saturados (429) o con formato incompatible (400 en system prompt)
+        const blacklist = ['qwen3', 'qwen/qwen3', 'gemma-3n', 'gemma-3', 'gemma-2'];
         freeModels = (modelsData.data || [])
           .filter(m => {
             if (!m.id.endsWith(':free')) return false;
@@ -3087,6 +3094,9 @@ async function _aiCallSingle(provider, key, messages, test=false) {
           .slice(0, 8)
           .map(m => m.id);
         console.log('[OpenRouter] Modelos gratuitos disponibles:', freeModels);
+        // Poner modelos probados primero, luego los dinámicos que no estén ya en la lista
+        const dynamic = freeModels.filter(m => !provenModels.includes(m));
+        freeModels = [...provenModels, ...dynamic].slice(0, 8);
       }
     } catch(e) { console.warn('[OpenRouter] No se pudo obtener lista de modelos:', e.message); }
     // Fallback hardcodeado si la lista falla
