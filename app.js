@@ -2990,12 +2990,11 @@ function _buildAiContext() {
     // Balance mes
     const balance = totalIng - totalGastos;
 
-    // Movimientos recientes — últimos 3 meses
-    const hace3meses = new Date(now.getFullYear(), now.getMonth()-2, 1).toISOString().slice(0,7);
+    // Todos los movimientos históricos
     const movRecientes = movements
-      .filter(m => m.fecha && m.fecha >= hace3meses)
+      .filter(m => m.fecha)
       .sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''))
-      .slice(0, 150)
+      .slice(0, 500)
       .map(m => `[${m.fecha}] ${m.seccion||''} | ${m.categoria||''} | ${m.concepto||m.descripcion||''} | ${m.monedaOrig||'MXN'} ${(m.importe||0).toFixed(2)}${m.notas?' ('+m.notas+')':''}`)
       .join('\n');
 
@@ -3027,7 +3026,7 @@ ${topInv||'ninguna'}
 RECURRENTES ACTIVOS:
 ${recurrentesList||'ninguno'}
 
-MOVIMIENTOS ULTIMOS 3 MESES (total historico: ${movements.length}):
+TODOS LOS MOVIMIENTOS (mostrando ${Math.min(movements.length,500)} de ${movements.length} totales):
 ${movRecientes||'sin movimientos'}`;
   } catch(e) {
     return 'Eres un asistente financiero personal. Responde en español de forma concisa y amigable.';
