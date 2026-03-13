@@ -174,15 +174,14 @@ async function fetchAlphaVantagePrice(ticker, targetMoneda) {
 
 async function fetchFX() {
   const cached = LS.get('fxCache');
-  // Caché válido: fresco (< 6h), tiene GBP, y USD/MXN entre 15 y 30
   const isValid = cached && isFxCacheFresh(cached.ts) && cached.gbpmxn && cached.usdmxn >= 15 && cached.usdmxn <= 30;
   if (isValid) { _fxCache = cached; return cached; }
   try {
     const r = await fetch('https://api.frankfurter.app/latest?from=USD&to=MXN,EUR,GBP');
-    if (!r.ok) throw new Error();
+    if (!r.ok) throw new Error('HTTP ' + r.status);
     const d = await r.json();
     const gbpmxn = d.rates.MXN / d.rates.GBP;
-    const result = { usdmxn: d.rates.MXN, usdeur: d.rates.EUR, eurmxn: d.rates.MXN / d.rates.EUR, gbpmxn, usdgbp: d.rates.GBP, ts: Date.now() };
+    const result = { usdmxn: d.rates.MXN, usdeur: d.rates.EUR, eurmxn: d.rates.MXN / d.rates.EUR, gbpmxn, usdgbp: d.rates.GBP, ts: Date.now(), _live: true };
     console.log(`[FX] Frankfurter: USD/MXN=${result.usdmxn.toFixed(4)}`);
     if (result.usdmxn >= 15 && result.usdmxn <= 30) {
       LS.set('fxCache', result);
@@ -191,7 +190,10 @@ async function fetchFX() {
       console.warn(`[FX] Valor fuera de rango, descartando: ${result.usdmxn}`);
     }
     return result;
-  } catch { return _fxCache || { usdmxn: settings.tipoCambio||20, usdeur: 0.92, eurmxn: (settings.tipoCambio||20)/0.92, gbpmxn: (settings.tipoCambio||20)*1.27, usdgbp: 0.79, ts: 0 }; }
+  } catch(e) {
+    console.warn('[FX] Error al contactar Frankfurter:', e.message);
+    return _fxCache || { usdmxn: settings.tipoCambio||20, usdeur: 0.92, eurmxn: (settings.tipoCambio||20)/0.92, gbpmxn: (settings.tipoCambio||20)*1.27, usdgbp: 0.79, ts: 0, _live: false };
+  }
 }
 
 async function updateFX() {
@@ -214,25 +216,32 @@ async function updateFX() {
 }
 
 async function forceUpdateFX() {
-  LS.set("fxCache", null);
+  LS.set('fxCache', null);
   _fxCache = null;
-  const btn = document.querySelector("[onclick*=forceUpdateFX]");
-  if (btn) { btn.disabled = true; btn.textContent = "⏳ Actualizando..."; }
+  const btn = document.querySelector('[onclick*=forceUpdateFX]');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Actualizando...'; }
   const fx = await fetchFX();
-  if (fx && fx.usdmxn) {
+  if (fx && fx._live && fx.usdmxn) {
     settings.tipoCambio = Math.round(fx.usdmxn * 100) / 100;
     settings.tipoEUR   = Math.round(fx.eurmxn * 100) / 100;
     settings.tipoGBP   = Math.round(fx.gbpmxn * 100) / 100;
-    LS.set("settings", settings);
-    const inpUSD = document.getElementById("inputTCUSD");
-    const inpEUR = document.getElementById("inputTCEUR");
-    const inpGBP = document.getElementById("inputTCGBP");
-    if (inpUSD) inpUSD.value = settings.tipoCambio;
-    if (inpEUR) inpEUR.value = settings.tipoEUR;
-    if (inpGBP) inpGBP.value = settings.tipoGBP;
+    LS.set('settings', settings);
     updateNavFX();
     _recalcAndSaveSnapshot();
-    renderPage("ajustes");
+    renderPage('ajustes');
+  } else {
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 Actualizar en vivo (BCE)'; }
+    const tcCard = document.getElementById('tcCardContent');
+    if (tcCard) {
+      const errDiv = tcCard.querySelector('.fx-error');
+      if (!errDiv) {
+        const d = document.createElement('div');
+        d.className = 'fx-error';
+        d.style.cssText = 'color:var(--orange);font-size:12px;margin-top:8px';
+        d.textContent = '⚠️ No se pudo conectar con BCE. Verifica tu conexión.';
+        tcCard.appendChild(d);
+      }
+    }
   }
 }
 
