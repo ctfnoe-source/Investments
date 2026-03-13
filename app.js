@@ -598,6 +598,7 @@ platforms = platforms.map(p => ({tasaAnual:0, fechaInicio:today(), moneda:'MXN',
 
 let currentTab = 'dashboard';
 let movFilter = {seccion:'todas', search:''};
+let _gastosMonth = null; // null = current month, format 'YYYY-MM'
 let chartInstances = {};
 let _lastLocalSave = 0;
 let _chartRange = 'all';
@@ -1317,8 +1318,19 @@ function renderDashboard(){
         </div>
       </div>
       <div class="card">
-        <div class="card-title">🔥 Top Gastos — ${MONTHS[cm-1]} ${curLabel}</div>
-        ${topCats.length>0?topCats.map(([id,v],i)=>{const medals=['🥇','🥈','🥉','4️⃣','5️⃣'];return`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:12px;border-bottom:${i<topCats.length-1?'0.5px solid var(--border)':'none'}"><span>${medals[i]} ${catName(id)}</span><span style="font-weight:700">${fmtD(v)}</span></div>`;}).join(''):'<div style="text-align:center;color:var(--text2);padding:24px;font-size:13px">Sin gastos este mes</div>'}
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div class="card-title" style="margin:0">💳 Gastos por categoría — ${MONTHS[cm-1]}</div>
+          <button class="btn btn-sm" style="font-size:11px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="switchTab('gastos')">Ver detalle →</button>
+        </div>
+        ${topCats.length>0?`
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="height:130px;width:130px;flex-shrink:0"><canvas id="chartGastosCat"></canvas></div>
+            <div style="flex:1;min-width:0">
+              ${topCats.map(([id,v],i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0"><span style="display:flex;align-items:center;gap:5px;font-size:11px;min-width:0"><span style="width:7px;height:7px;border-radius:2px;background:${COLORS[i%COLORS.length]};flex-shrink:0;display:inline-block"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${catName(id)}</span></span><span style="font-size:11px;font-weight:700;flex-shrink:0;margin-left:6px">${fmtD(v)}</span></div>`).join('')}
+              <div style="margin-top:6px;padding-top:6px;border-top:0.5px solid var(--border);display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">Total</span><span style="font-weight:800;color:var(--red)">${fmtD(totGastoMes)}</span></div>
+            </div>
+          </div>`
+        :'<div style="text-align:center;color:var(--text2);padding:24px;font-size:13px">Sin gastos este mes</div>'}
       </div>
     </div>
 
@@ -1527,6 +1539,40 @@ function renderDashboard(){
     const invE=Object.entries(inv).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
     const ctxI=document.getElementById('chartInvTipo');
     if(ctxI&&invE.length>0){if(chartInstances.chartInvTipo){chartInstances.chartInvTipo.destroy();delete chartInstances.chartInvTipo;}chartInstances.chartInvTipo=new Chart(ctxI,{type:'doughnut',data:{labels:invE.map(([k])=>k),datasets:[{data:invE.map(([,v])=>v),backgroundColor:invE.map((_,i)=>COLORS[i%COLORS.length]),borderWidth:2,borderColor:isDark?'#1C1C1E':'#fff',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',cornerRadius:12,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>{const total=invE.reduce((s,[,v])=>s+v,0);return ' '+ctx.label+': '+((ctx.parsed/total)*100).toFixed(1)+'% ('+fmt(ctx.parsed)+')';}}}}}});}
+
+    // Dona: gastos por categoría (reemplaza top gastos en dashboard)
+    const ctxGC = document.getElementById('chartGastosCat');
+    if(ctxGC && topCats.length > 0) {
+      if(chartInstances.chartGastosCat){chartInstances.chartGastosCat.destroy();delete chartInstances.chartGastosCat;}
+      chartInstances.chartGastosCat = new Chart(ctxGC, {
+        type:'doughnut',
+        data:{
+          labels: topCats.map(([id])=>catName(id)),
+          datasets:[{
+            data: topCats.map(([,v])=>v),
+            backgroundColor: topCats.map((_,i)=>COLORS[i%COLORS.length]),
+            borderWidth:2,
+            borderColor: isDark?'#1C1C1E':'#fff',
+            hoverOffset:6
+          }]
+        },
+        options:{
+          responsive:true, maintainAspectRatio:false, cutout:'62%',
+          plugins:{
+            legend:{display:false},
+            tooltip:{
+              backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',
+              cornerRadius:12, padding:10,
+              bodyFont:{family:'DM Sans',size:12},
+              callbacks:{label:ctx=>{
+                const total=topCats.reduce((s,[,v])=>s+v,0);
+                return ' '+ctx.label+': '+((ctx.parsed/total)*100).toFixed(1)+'% ('+fmtD(ctx.parsed)+')';
+              }}
+            }
+          }
+        }
+      });
+    }
   },50);
 }
 
@@ -1979,7 +2025,11 @@ function addPlatform(){
 // GASTOS
 // ============================================
 function renderGastos(){
-  const cm=new Date().getMonth()+1,cy=new Date().getFullYear();
+  // Month navigation: _gastosMonth is 'YYYY-MM' or null (= current month)
+  const _now = new Date();
+  const _gmParts = _gastosMonth ? _gastosMonth.split('-').map(Number) : [_now.getFullYear(), _now.getMonth()+1];
+  const cy = _gmParts[0], cm = _gmParts[1];
+  const isCurrentMonth = cy === _now.getFullYear() && cm === _now.getMonth()+1;
   const budgets=settings.budgets||{},ingresos=settings.ingresos||{};
   const expMovs=movements.filter(m=>m.seccion==='gastos');
   const mesMovs=expMovs.filter(m=>{const d=new Date(m.fecha);return d.getMonth()+1===cm&&d.getFullYear()===cy;});
@@ -2054,7 +2104,15 @@ function renderGastos(){
 
   document.getElementById('page-gastos').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-      <div><div class="section-title">${t('gastosTitulo')} 🇪🇺</div><div class="section-sub">${MONTHS[cm-1]} ${cy} · ${t('gastosSubtitulo')} ${t('gastosMoneda')}</div></div>
+      <div>
+        <div class="section-title">${t('gastosTitulo')}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+          <button onclick="window.gastosNavMonth(-1)" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:3px 10px;font-size:16px;cursor:pointer;line-height:1;color:var(--text2)">‹</button>
+          <span style="font-size:14px;font-weight:700;min-width:110px;text-align:center">${t('months')[cm-1]} ${cy}</span>
+          <button onclick="window.gastosNavMonth(1)" ${isCurrentMonth?'disabled style="opacity:0.3;cursor:default;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:3px 10px;font-size:16px;line-height:1"':'style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:3px 10px;font-size:16px;cursor:pointer;line-height:1;color:var(--text2)"'}>›</button>
+          ${!isCurrentMonth?`<button onclick="window.gastosNavToday()" style="background:none;border:1px solid var(--blue);color:var(--blue);border-radius:10px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer">Hoy</button>`:''}
+        </div>
+      </div>
       <button class="btn btn-secondary" onclick="switchTab('movimientos');openMovModal('gastos')">+ Gasto</button>
     </div>
     <div class="card" style="margin-bottom:16px;border-top:3px solid var(--purple)">
@@ -2180,7 +2238,7 @@ function renderGastos(){
     </div>
 
     <div class="card-flat">
-      <div style="padding:16px 20px 0"><div class="card-title">${t('movsTitulo')} — ${MONTHS[cm-1]} ${cy}</div></div>
+      <div style="padding:16px 20px 0"><div class="card-title">${t('movsTitulo')} — ${t('months')[cm-1]} ${cy}</div></div>
       ${isMobile() ? `
         <div style="padding:8px 12px;display:flex;flex-direction:column;gap:6px">
           ${mesMovs.length>0 ? mesMovs.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).map(m=>`
@@ -3480,3 +3538,26 @@ window.updateAllPrices = updateAllPrices;
 window.toggleLang = toggleLang;
 window._applyLangToNav = _applyLangToNav;
 window.renderGastos = renderGastos;
+
+// Month navigation helpers for gastos page
+window.gastosNavMonth = function(delta) {
+  const now = new Date();
+  let base;
+  if (_gastosMonth) {
+    const p = _gastosMonth.split('-').map(Number);
+    base = new Date(p[0], p[1]-1, 1);
+  } else {
+    base = new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+  base.setMonth(base.getMonth() + delta);
+  // Never go into the future
+  const cur = new Date(now.getFullYear(), now.getMonth(), 1);
+  if (base > cur) base = cur;
+  const isNow = base.getFullYear()===now.getFullYear() && base.getMonth()===now.getMonth();
+  _gastosMonth = isNow ? null : base.getFullYear()+'-'+String(base.getMonth()+1).padStart(2,'0');
+  renderGastos();
+};
+window.gastosNavToday = function() {
+  _gastosMonth = null;
+  renderGastos();
+};
