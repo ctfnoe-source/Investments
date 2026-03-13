@@ -90,8 +90,6 @@ function clearPriceCache(ticker, moneda) {
   let changed = false;
   Object.entries(c).forEach(([k, v]) => {
     if (v.source === 'coingecko') return;
-    // Borrar TODOS los precios MXN de acciones/ETFs al arrancar — pueden tener conversión incorrecta
-    if (k.endsWith('_MXN')) { delete c[k]; changed = true; console.warn(`[Cache] MXN limpiado al arrancar — ${k}: ${v.price}`); return; }
     if (!isPriceReasonable(v.price, k)) { delete c[k]; changed = true; console.warn(`[Cache] Inválido limpiado — ${k}: ${v.price}`); }
   });
   if (changed) setPriceCache(c);
