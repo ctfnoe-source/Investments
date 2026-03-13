@@ -1043,29 +1043,44 @@ function renderDashboard(){
   const gpRealizadaTotal=tickerList.reduce((s,t)=>s+(t.gpRealizada||0)*(t.moneda==='MXN'?1:tc),0);
 
   const ingresos=settings.ingresos||{};
-  const salaryIsEUR = ingresos.monedaSueldo === 'EUR';
+  const monedaSueldo = ingresos.monedaSueldo || 'EUR';
+  const salaryIsEUR = monedaSueldo === 'EUR';
   const sueldoEUR = salaryIsEUR ? (ingresos.sueldoRaw||0) : (ingresos.sueldo||0);
   const extrasEUR = ingresos.extrasEUR||ingresos.extras||0;
   const otrosEUR = ingresos.otrosEUR||ingresos.otros||0;
   const ingresoMensualEUR = sueldoEUR + extrasEUR + otrosEUR;
-  const dashCur = salaryIsEUR ? 'EUR' : 'MXN';
-  const fmtD = v => fmt(v, dashCur);
+  const dashCur = monedaSueldo; // usar la moneda real del sueldo
+  const fxD = _fxCache||LS.get('fxCache');
+  const usdeurD = fxD?.usdeur||(settings.tipoCambio&&settings.tipoEUR?settings.tipoCambio/settings.tipoEUR:0.88);
+  const gbpeurD = fxD?(fxD.usdeur/(fxD.usdgbp||1)):(settings.tipoGBP&&settings.tipoEUR?settings.tipoEUR/settings.tipoGBP:1.17);
+  // Convierte EUR a moneda del sueldo para el dashboard
+  const eurToDash = v => {
+    if(monedaSueldo==='EUR') return v;
+    if(monedaSueldo==='USD') return v/usdeurD;
+    if(monedaSueldo==='MXN') return v*eurmxn;
+    if(monedaSueldo==='GBP') return v/gbpeurD;
+    return v;
+  };
+  const dashSymbol = {EUR:'€',USD:'US$',MXN:'$',GBP:'£'}[monedaSueldo]||'€';
+  const fmtD = v => dashSymbol + eurToDash(Number(v||0)).toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:2});
 
   const expMovs=movements.filter(m=>m.seccion==='gastos');
   const mesG=expMovs.filter(m=>{const d=new Date(m.fecha);return d.getMonth()+1===cm&&d.getFullYear()===cy&&m.tipo==='Gasto';});
   const mesI=expMovs.filter(m=>{const d=new Date(m.fecha);return d.getMonth()+1===cm&&d.getFullYear()===cy&&m.tipo==='Ingreso';});
 
   const toDisplayCur = m => {
-    if (salaryIsEUR) {
-      if(m.notas&&m.notas.includes('€')&&m.notas.includes('→')){const match=m.notas.match(/€([\d.]+)/);if(match)return Number(match[1]);}
-      return Math.round(m.importe/eurmxn*100)/100;
-    }
-    return m.importe||0;
+    // Primero obtener valor en EUR
+    let valEUR;
+    if(m.monedaOrig==='EUR') { valEUR = m.importeEUR||m.importe; }
+    else if(m.notas&&m.notas.includes('€')&&m.notas.includes('→')){const match=m.notas.match(/€([\d.]+)/);valEUR=match?Number(match[1]):Math.round(m.importe/eurmxn*100)/100;}
+    else { valEUR = Math.round(m.importe/eurmxn*100)/100; }
+    // Luego convertir a moneda del sueldo
+    return eurToDash(valEUR);
   };
 
   const totGastoMes=mesG.reduce((s,m)=>s+toDisplayCur(m),0);
   const totIngMes=mesI.reduce((s,m)=>s+toDisplayCur(m),0);
-  const ingReferenciaBalance=totIngMes>0?totIngMes:ingresoMensualEUR;
+  const ingReferenciaBalance=totIngMes>0?totIngMes:eurToDash(ingresoMensualEUR);
   const balMes=ingReferenciaBalance-totGastoMes;
   const pctAhorro=ingReferenciaBalance>0?balMes/ingReferenciaBalance:0;
   const salud=pctAhorro>=0.2?'🟢 Óptima':pctAhorro>=0.1?'🟡 Aceptable':pctAhorro>=0?'🟠 Ajustada':'🔴 Déficit';
@@ -2055,8 +2070,21 @@ function renderGastos(){
   const sueldoEUR=ingresos.monedaSueldo==='EUR'?(ingresos.sueldoRaw||0):(ingresos.sueldo||0);
   const extrasEUR=ingresos.extrasEUR||ingresos.extras||0;
   const otrosEUR=ingresos.otrosEUR||ingresos.otros||0;
-  const fmtEUR=v=>'€'+Number(v||0).toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:2});
   const eurmxn=getEurMxn();
+  const monedaMostrar=ingresos.monedaSueldo||'EUR';
+  const fx=_fxCache||LS.get('fxCache');
+  const usdeur=fx?.usdeur||(settings.tipoCambio&&settings.tipoEUR?settings.tipoCambio/settings.tipoEUR:0.88);
+  const gbpeur=fx?(fx.usdeur/(fx.usdgbp||1)):(settings.tipoGBP&&settings.tipoEUR?settings.tipoEUR/settings.tipoGBP:1.17);
+  // Convierte valor EUR a moneda del sueldo para mostrar
+  const eurToMon=v=>{
+    if(monedaMostrar==='EUR') return v;
+    if(monedaMostrar==='USD') return v/usdeur;
+    if(monedaMostrar==='MXN') return v*eurmxn;
+    if(monedaMostrar==='GBP') return v/gbpeur;
+    return v;
+  };
+  const monSymbol={EUR:'€',USD:'US$',MXN:'$',GBP:'£'}[monedaMostrar]||'€';
+  const fmtEUR=v=>{const conv=eurToMon(Number(v||0));return monSymbol+conv.toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:2});};
   const toEUR=m=>{
     if(m.monedaOrig==='EUR') return m.importeEUR||m.importe;
     if(m.notas&&m.notas.includes('€')&&m.notas.includes('→')){const match=m.notas.match(/€([\d.]+)/);if(match)return Number(match[1]);}
@@ -2219,7 +2247,7 @@ function renderGastos(){
 
     <div class="card-flat" style="margin-bottom:16px">
       <div style="padding:16px 20px 0;display:flex;justify-content:space-between;align-items:center">
-        <div class="card-title" style="margin:0">Presupuesto por Categoría (€)</div>
+        <div class="card-title" style="margin:0">Presupuesto por Categoría (${monSymbol})</div>
       </div>
       ${isMobile() ? `
         <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">
@@ -2253,7 +2281,7 @@ function renderGastos(){
             return rows.join('') + ((!window._showAllCats && hiddenCount>0) ? `<div style="text-align:center;font-size:11px;color:var(--text3);padding:6px 0">${hiddenCount} categorías ocultas · <button class="btn btn-sm" style="font-size:11px;padding:2px 8px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="window._showAllCats=true;renderGastos()">Mostrar todas</button></div>` : '');
           })()}
         </div>
-      ` : `<div class="table-wrap"><table><thead><tr><th>Categoría</th><th>Presupuesto €</th><th>% ingreso</th><th>Real €</th><th>Restante</th><th>Uso</th></tr></thead><tbody>${catRows||`<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--text2);font-size:13px">Asigna presupuestos o registra gastos para verlos aquí</td></tr>`}${hiddenHint}<tr style="font-weight:800;background:var(--card2);border-top:2px solid var(--border2)"><td>TOTAL</td><td>${fmtEUR(totalPresupuestoEUR)}</td><td>${totalIngPlaneadoEUR>0?((totalPresupuestoEUR/totalIngPlaneadoEUR)*100).toFixed(1)+'%':'—'}</td><td style="color:${totGastoEUR>totalPresupuestoEUR?'var(--red)':'var(--text)'}">${fmtEUR(totGastoEUR)}</td><td style="color:${totalPresupuestoEUR-totGastoEUR>=0?'var(--green)':'var(--red)'}">${totalPresupuestoEUR>0?(totalPresupuestoEUR-totGastoEUR>=0?'+':'')+fmtEUR(totalPresupuestoEUR-totGastoEUR):'—'}</td><td>${totalPresupuestoEUR>0?`<span style="font-size:12px;font-weight:800">${(totGastoEUR/totalPresupuestoEUR*100).toFixed(0)}%</span>`:''}</td></tr></tbody></table></div>`}
+      ` : `<div class="table-wrap"><table><thead><tr><th>Categoría</th><th>Presupuesto</th><th>% ingreso</th><th>Real</th><th>Restante</th><th>Uso</th></tr></thead><tbody>${catRows||`<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--text2);font-size:13px">Asigna presupuestos o registra gastos para verlos aquí</td></tr>`}${hiddenHint}<tr style="font-weight:800;background:var(--card2);border-top:2px solid var(--border2)"><td>TOTAL</td><td>${fmtEUR(totalPresupuestoEUR)}</td><td>${totalIngPlaneadoEUR>0?((totalPresupuestoEUR/totalIngPlaneadoEUR)*100).toFixed(1)+'%':'—'}</td><td style="color:${totGastoEUR>totalPresupuestoEUR?'var(--red)':'var(--text)'}">${fmtEUR(totGastoEUR)}</td><td style="color:${totalPresupuestoEUR-totGastoEUR>=0?'var(--green)':'var(--red)'}">${totalPresupuestoEUR>0?(totalPresupuestoEUR-totGastoEUR>=0?'+':'')+fmtEUR(totalPresupuestoEUR-totGastoEUR):'—'}</td><td>${totalPresupuestoEUR>0?`<span style="font-size:12px;font-weight:800">${(totGastoEUR/totalPresupuestoEUR*100).toFixed(0)}%</span>`:''}</td></tr></tbody></table></div>`}
     </div>
 
     <div class="card-flat">
@@ -2541,7 +2569,13 @@ function renderMetas(){
   const extrasEUR=ingresos.extrasEUR||ingresos.extras||0;
   const otrosEUR=ingresos.otrosEUR||ingresos.otros||0;
   const ingresoMensualEUR=sueldoEUR+extrasEUR+otrosEUR;
-  const fmtEUR=v=>'€'+Number(v||0).toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:2});
+  const monedaMostrar2=ingresos.monedaSueldo||'EUR';
+  const monSymbol2={EUR:'€',USD:'US$',MXN:'$',GBP:'£'}[monedaMostrar2]||'€';
+  const fmtEUR=v=>{
+    let conv=Number(v||0);
+    if(monedaMostrar2!=='EUR'){const eurmxn2=getEurMxn();const fx2=_fxCache||LS.get('fxCache');const usdeur2=fx2?.usdeur||0.88;const gbpeur2=fx2?(fx2.usdeur/(fx2.usdgbp||1)):1.17;if(monedaMostrar2==='USD')conv=conv/usdeur2;else if(monedaMostrar2==='MXN')conv=conv*eurmxn2;else if(monedaMostrar2==='GBP')conv=conv/gbpeur2;}
+    return monSymbol2+conv.toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:2});
+  };
   const re=settings.rendimientoEsperado||0.06;
 
   // Calcular progreso de cada meta
