@@ -116,9 +116,18 @@ const I18N = {
     sgInversiones:['¿Cuánto llevo invertido en total?','¿Cuál es mi mejor inversión?','¿Estoy bien diversificado?','¿Cuánto he ganado o perdido?'],
     sgPlataformas:['¿Cuál es mi mejor plataforma?','¿Dónde tengo más capital concentrado?','¿Qué plataforma rinde más?','Compara mis plataformas'],
     sgMetas:['¿Voy bien con mis metas?','¿Cuándo alcanzaré mi próxima meta?','¿Cuánto necesito ahorrar por mes?','¿Qué meta está más lejos?'],
-
-    gastoReal:'💳 Gasto Real', disponible:'✅ Disponible', presupuestoLabel:'📋 Presupuesto',
+    // Secciones
+    seccionPlataformas:'Plataformas', seccionInversiones:'Inversiones', seccionGastos:'Gastos',
+    // Movimientos
+    movimientosTitulo:'Movimientos', movimientosSubtitulo:'Registro unificado',
+    nuevoMovimiento:'+ Nuevo', buscar:'Buscar...',
+    // Plataformas titulos
+    plataformasTitulo:'Plataformas', plataformasSubtitulo:'Bancos · SOFIPOs · ETFs · Fondos · CETES · Multi‑moneda',
+    transferenciaEntrePlataformas:'↔ Transferencia', nuevaPlataforma:'+ Plataforma',
     // Ajustes
+    expectedAnnualReturn:'Rendimiento esperado anual',
+    // Misc
+    gastoReal:'💳 Gasto Real', disponible:'✅ Disponible', presupuestoLabel:'📋 Presupuesto',
     cuenta:'👤 Cuenta', tipoCambio:'💱 Tipo de Cambio',
     asistenteia:'🤖 Asistente IA', zonaPeligro:'⚠️ Zona de Peligro',
     exportarImportar:'💾 Exportar / Importar',
@@ -127,9 +136,7 @@ const I18N = {
     apiKeyAlpha:'🔑 API Key — Alpha Vantage',
     modelosGratis:'Modelos gratis', casiGratis:'Casi gratis',
     usuario:'Usuario',
-    // Categorías de activos
     accion:'Acción', crypto:'Crypto', bono:'Bono', otro:'Otro',
-    // Misc
     rendimientoSobre:'rendimiento total', preciosHoy:'precios hoy',
     costoPosicion:'costo compra', posiciones2:'posiciones',
     sobreCapital:'sobre capital invertido', sinHistorial:'sin historial aún',
@@ -163,7 +170,6 @@ const I18N = {
     accessSub:'This application is private.<br>Your account does not have access.',
     accessBtn:'← Sign out',
     months:['January','February','March','April','May','June','July','August','September','October','November','December'],
-    // Dashboard
     patrimonioTotal:'Total Net Worth', patrimonioReal:'Real Net Worth',
     valorPlataformas:'🏦 Platform Value', rendPlataformas:'🏦 Platform Return',
     valorInversiones:'📈 Investment Value', gpNoRealizada:'📈 Unrealized G/L',
@@ -177,15 +183,12 @@ const I18N = {
     actualizarPrecios:'🔄 Update prices', actualizando:'⏳ Updating...',
     ahorro:'savings', est:'est.',
     saludFinanciera:'Financial Health', resumenMes:'Month Summary',
-    // States
     lograda:'🏆 ACHIEVED', casi:'🔥 Almost', inicio:'💤 Starting', enProceso:'⏳ In progress',
     cerrada:'CLOSED', activo:'Active',
     deficit:'🔴 Deficit', sobrePresupuesto:'🟡 Over budget', dentroDelPlan:'🟢 On track',
-    // Movement types
     gasto:'Expense', ingreso:'Income', transferencia:'↔ Transfer',
     transferenciaEntrada:'Transfer in', transferenciaSalida:'Transfer out',
     todo:'All', todos:'All',
-    // Card titles
     capitalSobrantePorMes:'💰 Monthly Surplus',
     progresoDeMetas:'🎯 Goals Progress',
     inversionesPorTipo:'💼 Investments by Type',
@@ -197,22 +200,18 @@ const I18N = {
     porMoneda:'🌍 By Currency',
     porTipoActivo:'🥧 By Asset Type',
     posiciones:'📊 Positions',
-    // Platforms
     agregarPlataforma:'+ Add Platform', editarPlataforma:'Edit Platform',
     sinPlataformas:'No platforms registered.',
     agregarPrimera:'+ Add first platform',
     archivarMovAnt:'🗜️ Archive old movements',
-    // Investments
     agregarInversion:'+ Add movement',
     costoTotal:'💰 Total Cost', valorActual:'📊 Current Value',
     gpRealizada:'✅ Realized G/L', gpTotal:'Total G/L',
     cagrReal:'Real CAGR',
-    // Goals
     agregarMeta:'+ New Goal', editarMeta:'Edit Goal',
     sinMetas:'No goals yet. Create your first goal!',
     aportacion:'Contribution', retiro:'Withdrawal',
     saldoArchivado:'Archived Balance', sinFecha:'No date',
-    // Table headers
     fecha:'Date', importe:'Amount', notas:'Notes', tipo:'Type',
     categoria:'Category', descripcion:'Description', seccion:'Section',
     plataforma:'Platform', moneda:'Currency', monto:'Amount',
@@ -221,7 +220,6 @@ const I18N = {
     rendReal:'Real Return', saldoIni:'Init. bal.', tasaPct:'⚡ Rate %',
     pctPort:'% Port.', detalle:'Detail', dias:'Days', extra:'Extra',
     desde:'Since', retiros:'Withdrawals', saldoActualTh:'Current Balance',
-    // Buttons
     agregar:'+ Add', editar:'✏️ Edit', eliminar:'× Delete',
     guardar:'Save', cancelar:'Cancel', cerrar:'✕',
     exportar:'📤 Export', importar:'📥 Import',
@@ -229,7 +227,19 @@ const I18N = {
     verDetalle:'View detail', ocultar:'Hide',
     mostrarTodas:'Show all', mostrarMenos:'Show less',
     probar:'🧪 Test', salir:'Sign out',
-    // Settings
+    hideValues:'Hide values', showValues:'Show values',
+    sgDashboard:['How is my balance this month?','Which is my best platform?','How much have I invested?','Am I on track with my goals?'],
+    sgGastos:['Which category do I spend most on?','Am I within budget?','Summarize my recurring expenses','How can I reduce expenses?'],
+    sgInversiones:['How much have I invested in total?','What is my best investment?','Am I well diversified?','How much have I gained or lost?'],
+    sgPlataformas:['Which is my best platform?','Where is most of my capital?','Which platform has the best return?','Compare my platforms'],
+    sgMetas:['Am I on track with my goals?','When will I reach my nearest goal?','How much do I need to save per month?','Which goal is furthest away?'],
+    seccionPlataformas:'Platforms', seccionInversiones:'Investments', seccionGastos:'Expenses',
+    movimientosTitulo:'Transactions', movimientosSubtitulo:'Unified log',
+    nuevoMovimiento:'+ New', buscar:'Search...',
+    plataformasTitulo:'Platforms', plataformasSubtitulo:'Banks · SOFIPOs · ETFs · Funds · CETES · Multi‑currency',
+    transferenciaEntrePlataformas:'↔ Transfer', nuevaPlataforma:'+ Platform',
+    expectedAnnualReturn:'Expected Annual Return',
+    gastoReal:'💳 Actual Expenses', disponible:'✅ Available', presupuestoLabel:'📋 Budget',
     cuenta:'👤 Account', tipoCambio:'💱 Exchange Rate',
     asistenteia:'🤖 AI Assistant', zonaPeligro:'⚠️ Danger Zone',
     exportarImportar:'💾 Export / Import',
@@ -238,72 +248,19 @@ const I18N = {
     apiKeyAlpha:'🔑 API Key — Alpha Vantage',
     modelosGratis:'Free models', casiGratis:'Almost free',
     usuario:'User',
-
-    gastoReal:'💳 Actual Expenses', disponible:'✅ Available', presupuestoLabel:'📋 Budget',
-    // Asset categories
     accion:'Stock', crypto:'Crypto', bono:'Bond', otro:'Other',
-    // Misc
     rendimientoSobre:'total return', preciosHoy:"today's prices",
     costoPosicion:'purchase cost', posiciones2:'positions',
     sobreCapital:'on invested capital', sinHistorial:'no history yet',
     segunPlaneado:'as planned', real:'actual',
-
-    // Additional keys for completeness
-    realGain: 'Real Gain',
-    projection: 'Projection',
-    totalNetGain: 'Total Net Gain',
-    on: 'on',
-    ofHistory: 'of history',
-    today: 'Today',
-    accumulatedSurplus: 'Accumulated Surplus',
-    platforms: 'Platforms',
-    investments: 'Investments',
-    monthlyIncome: 'Monthly Income',
-    initialBalance: 'Init. bal.',
-    days: 'Days',
-    contributions: 'Contrib.',
-    withdrawals: 'Withdrawals',
-    expenses: 'Expenses',
-    actualReturn: 'Real Return',
-    currentBalance: 'Current Balance',
-    returnPct: 'Return %',
-    portPct: '% Port.',
-    openPositions: 'Open Positions',
-    closedPositions: 'Closed Positions',
-    byAssetType: 'By Asset Type',
-    byCurrency: 'By Currency',
-    adminPanel: 'Admin Panel',
-    manageUsers: 'Manage users',
-    pendingAccess: 'Pending access',
-    active: 'Active',
-    revoke: 'Revoke',
-    delete: 'Delete',
-    aiAssistant: 'AI Assistant',
-    noApiKey: 'No API key — configure in Settings',
-    connected: 'Connected',
-    disconnected: 'Disconnected',
-    send: 'Send',
-    clear: 'Clear',
-    suggestions: 'Suggestions',
-    howIsMyBalance: 'How is my balance this month?',
-    bestPlatform: 'Which is my best performing platform?',
-    totalInvested: 'How much have I invested in total?',
-    goalsProgress: 'Am I on track with my goals?',
-    hideValues: 'Hide values', showValues: 'Show values',
-    sgDashboard:['How is my balance this month?','Which is my best platform?','How much have I invested?','Am I on track with my goals?'],
-    sgGastos:['Which category do I spend most on?','Am I within budget?','Summarize my recurring expenses','How can I reduce expenses?'],
-    sgInversiones:['How much have I invested in total?','What is my best investment?','Am I well diversified?','How much have I gained or lost?'],
-    sgPlataformas:['Which is my best platform?','Where is most of my capital?','Which platform has the best return?','Compare my platforms'],
-    sgMetas:['Am I on track with my goals?','When will I reach my nearest goal?','How much do I need to save per month?','Which goal is furthest away?'],
   }
 };
-let _lang = LS.get('lang') || 'en'; // Default to English
+let _lang = LS.get('lang') || 'en';
 function t(key) { return (I18N[_lang] || I18N.en)[key] || (I18N.en[key] || key); }
 function toggleLang() {
   _lang = _lang === 'es' ? 'en' : 'es';
   LS.set('lang', _lang);
   _applyLangToNav();
-  // Re-render current tab
   if(typeof renderPageInternal === 'function') renderPageInternal(currentTab);
 }
 function _applyLangToNav() {
@@ -311,22 +268,18 @@ function _applyLangToNav() {
     dashboard:'tabDashboard', movimientos:'tabMovimientos', plataformas:'tabPlataformas',
     inversiones:'tabInversiones', gastos:'tabGastos', metas:'tabMetas', ajustes:'tabAjustes'
   };
-  // Desktop tabs
   document.querySelectorAll('.nav-tab[data-tab]').forEach(btn => {
     const key = tabMap[btn.dataset.tab];
     if(key) btn.textContent = t(key);
   });
-  // Mobile tabs
   document.querySelectorAll('.mobile-nav-item[data-tab]').forEach(btn => {
     const key = tabMap[btn.dataset.tab];
     const label = btn.querySelector('.mob-label');
     if(key && label) {
-      // Strip the emoji prefix (first word) for mobile labels
       const full = t(key);
       label.textContent = full.replace(/^\S+\s+/, '');
     }
   });
-  // Lang button
   const btn = document.getElementById('langToggleBtn');
   if(btn) btn.textContent = _lang === 'es' ? '🌐 EN' : '🌐 ES';
 }
@@ -404,11 +357,7 @@ function setOfflineBanner(state) {
   else { b.className = 'offline-banner'; }
 }
 
-function queueSave(data) {
-  _offlineQueue.push({ data, ts: Date.now() });
-  if (_offlineQueue.length > 20) _offlineQueue = _offlineQueue.slice(-20);
-  LS.set('offlineQueue', _offlineQueue);
-}
+function queueSave(data) { _offlineQueue = [{ data, ts: Date.now() }]; LS.set('offlineQueue', _offlineQueue); }
 
 async function flushOfflineQueue() {
   if (!_offlineQueue.length) return;
@@ -421,7 +370,6 @@ async function flushOfflineQueue() {
 window.addEventListener('online', () => { _isOnline = true; flushOfflineQueue(); });
 window.addEventListener('offline', () => { _isOnline = false; setOfflineBanner('offline'); });
 
-// Re-render on resize (isMobile() layout)
 let _resizeTimer = null;
 window.addEventListener('resize', () => {
   clearTimeout(_resizeTimer);
@@ -443,10 +391,8 @@ function applyDarkMode() {
 applyDarkMode();
 
 function applyInitialLang() {
-  // Apply saved language to nav tabs and button on startup (no re-render needed here)
   _applyLangToNav();
 }
-// Run after DOM ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', applyInitialLang);
 } else {
@@ -461,24 +407,18 @@ function isFxCacheFresh(ts) { if (!ts) return false; return (Date.now() - ts) < 
 function getCachedPrice(t) { const c=getPriceCache(); return c[t]||null; }
 let _fxCache = null;
 
-// Validar que un precio sea razonable según moneda y tipo
 function isPriceReasonable(price, cacheKey) {
   if (!price || price <= 0 || !isFinite(price)) return false;
-  // Permitir override manual por ticker (para acciones muy caras como BRK.A)
-  const key = cacheKey.replace('_MXN','').toUpperCase();
-  const EXPENSIVE = ['BRK.A','NVR','MKTX','BKNG','CMG','ULTA','ORLY'];
   if (cacheKey.endsWith('_MXN')) {
-    // ETF/acción en MXN: mínimo $5, máximo $50,000,000 (cubre BRK.A convertido y acciones baratas)
-    return price >= 5 && price <= 50000000;
+    return price >= 100 && price <= 10000000;
   } else {
-    // ETF/acción en USD: mínimo $0.01 (penny stocks), máximo $1,000,000 (cubre BRK.A ~$700k)
-    return price >= 0.01 && price <= 1000000;
+    return price >= 0.5 && price <= 1000000;
   }
 }
 
 function setCachedPrice(t, p, s) {
   if (!isPriceReasonable(p, t)) {
-    console.warn(`[Cache] Precio inválido descartado — ${t}: ${p} (source: ${s})`);
+    // Silently discard
     return;
   }
   const c = getPriceCache();
@@ -492,19 +432,17 @@ function clearPriceCache(ticker, moneda) {
   delete c[key]; setPriceCache(c);
 }
 
-// Al arrancar: limpiar cualquier precio que no pase la validación
+// Clean corrupted prices at startup
 (function cleanCorruptedPrices(){
   const c = getPriceCache();
   let changed = false;
   Object.entries(c).forEach(([k, v]) => {
     if (v.source === 'coingecko') return;
-    if (!isPriceReasonable(v.price, k)) { delete c[k]; changed = true; console.warn(`[Cache] Inválido limpiado — ${k}: ${v.price}`); }
+    if (!isPriceReasonable(v.price, k)) { delete c[k]; changed = true; }
   });
   if (changed) setPriceCache(c);
-  // Limpiar fxCache si está expirado (>6h) o sin GBP o fuera de rango absoluto
   const fx = LS.get('fxCache');
   if (fx && (!fx.gbpmxn || !isFxCacheFresh(fx.ts) || fx.usdmxn < 14 || fx.usdmxn > 35)) {
-    console.warn(`[fxCache] Limpiando — USD/MXN: ${fx.usdmxn}`);
     LS.set('fxCache', null);
     _fxCache = null;
   }
@@ -528,17 +466,11 @@ async function fetchStockPrice(ticker) {
 async function fetchAlphaVantagePrice(ticker, targetMoneda) {
   const k = settings.alphaVantageKey || ''; if (!k) return null;
   const base = ticker.toUpperCase().replace(/\.(L|DE|AS|PA|MI|SW|LON|DEX)$/i, '');
-
   const suffixKey = 'av_suffix_' + base;
   const knownSuffix = LS.get(suffixKey);
-
-  // Siempre probamos sufijos europeos + base USD — el orden prioriza europeos
-  // pero si el ETF cotiza en USD en Londres (VUAA), la currency del response lo detecta
   const allSymbols = knownSuffix
-    ? [base + knownSuffix, base]  // probar siempre base como fallback aunque haya sufijo guardado
+    ? [base + knownSuffix, base]
     : [base+'.LON', base+'.DEX', base+'.EPA', base+'.AMS', base];
-
-  // Asegurar tipos de cambio frescos
   if (!_fxCache || !_fxCache.gbpmxn) await fetchFX();
   const fx    = _fxCache || LS.get('fxCache');
   const tc     = (fx?.usdmxn) || settings.tipoCambio || 18;
@@ -546,45 +478,35 @@ async function fetchAlphaVantagePrice(ticker, targetMoneda) {
   const gbpmxn = (fx?.gbpmxn) || settings.tipoGBP;
   const usdgbp = (fx?.usdgbp) || (settings.tipoGBP && settings.tipoCambio ? settings.tipoGBP/settings.tipoCambio : null);
   const usdeur = (fx?.usdeur) || (settings.tipoEUR && settings.tipoCambio ? settings.tipoEUR/settings.tipoCambio : null);
-
   for (const sym of allSymbols) {
     try {
       const r = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(sym)}&apikey=${k}`);
       if (!r.ok) continue;
       const d = await r.json();
-      if (d.Note || d.Information) { console.warn('[AlphaVantage] Límite alcanzado'); return null; }
+      if (d.Note || d.Information) { return null; }
       const q = d['Global Quote'];
       if (!q || !q['01. symbol'] || !q['05. price']) continue;
       let price = parseFloat(q['05. price']);
       if (!price || price <= 0) continue;
-
-      // Detectar moneda real desde la respuesta de Alpha Vantage
       const currency = (q['08. currency'] || '').toUpperCase();
       const hasSuffix = sym !== base;
-
-      // GBp (peniques) solo si es mercado LON y la moneda es GBP (no USD ni EUR)
       const isGBp = sym.includes('.LON') && (currency === 'GBP' || currency === 'GBX');
       const isEUR = currency === 'EUR' || sym.includes('.DEX') || sym.includes('.EPA') || sym.includes('.AMS');
-
-      // Guardar sufijo solo si realmente cotiza en moneda local (no USD en bolsa europea)
       if (hasSuffix && (isGBp || isEUR)) {
         LS.set(suffixKey, sym.replace(base, ''));
       } else if (!hasSuffix) {
-        // Encontrado como ticker base USD — limpiar sufijo guardado si existía
         LS.set(suffixKey, null);
       }
-
       if (targetMoneda === 'MXN') {
-        if (isGBp)      price = (price / 100) * gbpmxn; // GBp → GBP → MXN
-        else if (isEUR) price = price * eurmxn;          // EUR → MXN
-        else            price = price * tc;               // USD → MXN (incluye ETFs USD en LSE)
+        if (isGBp)      price = (price / 100) * gbpmxn;
+        else if (isEUR) price = price * eurmxn;
+        else            price = price * tc;
       } else if (targetMoneda === 'USD') {
-        if (isGBp)      price = (price / 100) / usdgbp;  // GBp → GBP → USD
-        else if (isEUR) price = price / usdeur;           // EUR → USD
-        // currency === USD: sin conversión
+        if (isGBp)      price = (price / 100) / usdgbp;
+        else if (isEUR) price = price / usdeur;
       }
       return price;
-    } catch(e) { console.warn('[AlphaVantage] error:', sym, e); }
+    } catch(e) { /* ignore */ }
     await new Promise(r => setTimeout(r, 300));
   }
   return null;
@@ -600,18 +522,14 @@ async function fetchFX() {
     const d = await r.json();
     const gbpmxn = d.rates.MXN / d.rates.GBP;
     const result = { usdmxn: d.rates.MXN, usdeur: d.rates.EUR, eurmxn: d.rates.MXN / d.rates.EUR, gbpmxn, usdgbp: d.rates.GBP, ts: Date.now(), _live: true };
-    // Validar contra el valor manual del usuario como ancla (±25% de tolerancia)
     const anchor = settings.tipoCambio || 18;
     const isPlausible = result.usdmxn >= anchor * 0.75 && result.usdmxn <= anchor * 1.25;
     if (isPlausible) {
       LS.set('fxCache', result);
       _fxCache = result;
-    } else {
-      console.warn(`[FX] Valor fuera de rango vs manual (${anchor}), descartando: ${result.usdmxn}`);
     }
     return result;
   } catch(e) {
-    console.warn('[FX] Error al contactar Frankfurter:', e.message);
     if (!_fxCache) {
       const t = settings.tipoCambio || 18;
       const ev = settings.tipoEUR || (t * 1.15);
@@ -665,7 +583,6 @@ async function forceUpdateFX() {
       throw new Error('Valor fuera de rango: ' + result.usdmxn);
     }
   } catch(e) {
-    console.warn('[forceUpdateFX] Error:', e.message);
     if (btn) { btn.disabled = false; btn.textContent = '🔄 Update live (ECB)'; }
     const tcCard = document.getElementById('tcCardContent');
     if (tcCard) {
@@ -706,16 +623,13 @@ async function fetchPrice(ticker, type, moneda) {
     if (price !== null) source = 'coingecko';
   }
   else if ((type === 'Acción' || type === 'ETF') && moneda === 'MXN') {
-    // 1. Finnhub primero — si lo encuentra no gasta cuota de Alpha Vantage
     let priceUSD = await fetchStockPrice(ticker);
     if (priceUSD !== null) {
       const fx = _fxCache || LS.get('fxCache');
       const tcLive = (fx?.usdmxn) || settings.tipoCambio || 18;
       price = priceUSD * tcLive; source = 'finnhub-converted';
     }
-    // 2. Alpha Vantage directo a MXN — solo si Finnhub no lo encontró
     if (price === null && settings.alphaVantageKey) { price = await fetchAlphaVantagePrice(ticker, 'MXN'); if (price !== null) source = 'alphavantage-mxn'; }
-    // 3. Fallback: caché USD × tipoCambio
     if (price === null) {
       const cachedUSD = getCachedPrice(ticker.toUpperCase());
       if (cachedUSD && isCacheFresh(cachedUSD.ts) && isPriceReasonable(cachedUSD.price, ticker.toUpperCase())) {
@@ -725,7 +639,6 @@ async function fetchPrice(ticker, type, moneda) {
         if (isPriceReasonable(derived, ticker.toUpperCase()+'_MXN')) { price = derived; source = 'usd-cache-converted'; }
       }
     }
-    // 4. Último recurso: Alpha Vantage USD × tipoCambio
     if (price === null && settings.alphaVantageKey) {
       const priceUSD2 = await fetchAlphaVantagePrice(ticker, 'USD');
       if (priceUSD2 !== null) {
@@ -736,7 +649,6 @@ async function fetchPrice(ticker, type, moneda) {
     }
   }
   else if (type === 'Acción' || type === 'ETF') {
-    // 0. Si ya tenemos precio MXN en caché hoy, derivar USD sin gastar llamada API
     const cachedMXN = getCachedPrice(ticker.toUpperCase() + '_MXN');
     if (cachedMXN && isCacheFresh(cachedMXN.ts) && isPriceReasonable(cachedMXN.price, ticker.toUpperCase()+'_MXN')) {
       const fx = _fxCache || LS.get('fxCache');
@@ -744,8 +656,6 @@ async function fetchPrice(ticker, type, moneda) {
       const derived = cachedMXN.price / tcLive;
       if (isPriceReasonable(derived, ticker.toUpperCase())) { price = derived; source = 'mxn-cache-converted'; }
     }
-    // Intentar Alpha Vantage primero si el sufijo guardado es europeo (.LON, .DEX, etc.)
-    // Esto evita que Finnhub devuelva precios incorrectos para ETFs europeos sin referencia
     const knownEuropeanSuffix = LS.get('av_suffix_' + ticker.toUpperCase());
     const isLikelyEuropean = knownEuropeanSuffix && (knownEuropeanSuffix.includes('.LON') || knownEuropeanSuffix.includes('.DEX') || knownEuropeanSuffix.includes('.EPA') || knownEuropeanSuffix.includes('.AMS'));
     if (price === null && isLikelyEuropean && settings.alphaVantageKey) {
@@ -754,7 +664,6 @@ async function fetchPrice(ticker, type, moneda) {
     if (price === null) {
       const finnhubPrice = await fetchStockPrice(ticker);
       if (finnhubPrice !== null) {
-        // Validar precio de Finnhub contra cache MXN si existe
         const cachedMXN2 = getCachedPrice(ticker.toUpperCase() + '_MXN');
         const fx2 = _fxCache || LS.get('fxCache');
         const tcLive2 = (fx2?.usdmxn) || settings.tipoCambio;
@@ -762,7 +671,7 @@ async function fetchPrice(ticker, type, moneda) {
           const expectedUSD = cachedMXN2.price / tcLive2;
           const ratio = finnhubPrice / expectedUSD;
           if (ratio < 0.1 || ratio > 10) {
-            console.warn(`[Finnhub] Precio sospechoso para ${ticker}: ${finnhubPrice} USD (esperado ~${expectedUSD.toFixed(2)}) — descartado`);
+            // discard
           } else {
             price = finnhubPrice; source = 'finnhub';
           }
@@ -771,11 +680,9 @@ async function fetchPrice(ticker, type, moneda) {
         }
       }
     }
-    // Alpha Vantage como último recurso si Finnhub no lo encontró o fue descartado
     if (price === null && settings.alphaVantageKey) { price = await fetchAlphaVantagePrice(ticker, moneda); if (price !== null) source = 'alphavantage'; }
   }
   if (price !== null) { setCachedPrice(cacheKey, price, source); return {price, source, cached:false, ts:Date.now()}; }
-  console.warn(`[fetchPrice] Sin precio para ${ticker} (${moneda}, ${type}) — todas las fuentes fallaron`);
   return null;
 }
 
@@ -789,7 +696,6 @@ async function updateAllPrices(forceRefresh=false) {
   const tickerSet = new Map();
   movements.forEach(m => { if (m.seccion === 'inversiones' && m.ticker) { const key = (m.moneda === 'MXN' ? m.ticker.toUpperCase() + '_MXN' : m.ticker.toUpperCase()); tickerSet.set(key, {type: m.tipoActivo, moneda: m.moneda||'USD', ticker: m.ticker.toUpperCase()}); } });
   if (forceRefresh) { const c = getPriceCache(); tickerSet.forEach((_, k) => { delete c[k]; }); setPriceCache(c); }
-  // Ordenar: USD primero, MXN después — así el cross-cache siempre encuentra el precio USD listo
   const tickerArr = [...tickerSet.entries()].sort((a, b) => {
     const aIsMXN = a[1].moneda === 'MXN' ? 1 : 0;
     const bIsMXN = b[1].moneda === 'MXN' ? 1 : 0;
@@ -878,14 +784,13 @@ let goals = LS.get('goals') || DEFAULT_GOALS;
 let settings = {...DEFAULT_SETTINGS, ...(LS.get('settings') || {})};
 let recurrentes = LS.get('recurrentes') || DEFAULT_RECURRENTES;
 let patrimonioHistory = LS.get('patrimonioHistory') || [];
-// Limpiar snapshots sintéticos de versiones anteriores
 (function(){ const f=patrimonioHistory.filter(s=>!s.synthetic); if(f.length!==patrimonioHistory.length){patrimonioHistory=f;LS.set('patrimonioHistory',patrimonioHistory);} })();
 
 platforms = platforms.map(p => ({tasaAnual:0, fechaInicio:today(), moneda:'MXN', ...p}));
 
 let currentTab = 'dashboard';
 let movFilter = {seccion:'todas', search:''};
-let _gastosMonth = null; // null = current month, format 'YYYY-MM'
+let _gastosMonth = null;
 let _aiChatOpen = false;
 let _aiLastProvider = null;
 let _aiMessages = LS.get('aiHistory') || [];
@@ -895,7 +800,6 @@ let chartInstances = {};
 let _lastLocalSave = 0;
 let _chartRange = 'all';
 
-// Intervalos unificados para el gráfico
 const CHART_INTERVALS = [
   { key:'1m',  label:'1 month',   months:1  },
   { key:'3m',  label:'3 months', months:3  },
@@ -984,19 +888,13 @@ function _recalcAndSaveSnapshot() {
     return s + (t.moneda === 'MXN' ? val : val * tc);
   }, 0);
   const patrimonioTotal = totalMXN + totalInvMXN;
-
-  // Ganancia real = suma de rendimientos individuales por plataforma + inversiones
-  // Esto es correcto porque cada plataforma ya descuenta aportaciones/retiros/transferencias
   const totalRendPlats = plats.reduce((s,p) => s + (p.rendimiento||0), 0);
   const totalRendInv = tickers.reduce((s,t) => {
     const gp = t.gpNoRealizada !== null ? t.gpNoRealizada : 0;
     return s + (t.moneda === 'MXN' ? gp : gp * tc);
   }, 0);
   const gananciaReal = totalRendPlats + totalRendInv;
-
-  // capital = patrimonio - ganancia real, para que value - capital = gananciaReal siempre
   const capitalBase = Math.max(0, Math.round(patrimonioTotal - gananciaReal));
-
   savePatrimonioSnapshot(patrimonioTotal, capitalBase);
 }
 
@@ -1009,31 +907,19 @@ function savePatrimonioSnapshot(value, capital) {
   LS.set('patrimonioHistory', patrimonioHistory);
 }
 
-// Reconstruye snapshots históricos desde movimientos pasados
-// Para cada fecha calcula el capital aportado hasta ese día.
-// La ganancia se interpola linealmente entre 0 y la ganancia real de hoy
-// para evitar el salto vertical al no tener precios históricos.
 function buildHistoricalSnapshots() {
   const tc = settings.tipoCambio || 18;
   const eurmxn = getEurMxn();
   const todayStr = today();
-
-  // Recopilar todas las fechas relevantes de movimientos pasados
   const fechas = new Set();
   movements.forEach(m => { if (m.fecha && m.fecha < todayStr) fechas.add(m.fecha); });
   platforms.forEach(p => { if (p.fechaInicio && p.fechaInicio < todayStr) fechas.add(p.fechaInicio); });
   if (fechas.size === 0) return;
-
-  // Eliminar todos los sintéticos anteriores — siempre se recalculan frescos
   patrimonioHistory = patrimonioHistory.filter(s => !s.synthetic);
-
   const fechasOrdenadas = [...fechas].sort();
-
-  // Calcular capital por fecha
   const capitalPorFecha = [];
   fechasOrdenadas.forEach(fecha => {
-    if (patrimonioHistory.find(s => s.date === fecha)) return; // hay snapshot real, no tocar
-
+    if (patrimonioHistory.find(s => s.date === fecha)) return;
     let capitalPlats = 0;
     platforms.forEach(p => {
       if (p.fechaInicio && p.fechaInicio > fecha) return;
@@ -1044,37 +930,26 @@ function buildHistoricalSnapshots() {
         if (m.tipoPlat === 'Retiro' || m.tipoPlat === 'Transferencia salida') capitalPlats -= toMXN(m.monto || 0);
       });
     });
-
     let capitalInv = 0;
     movements.filter(m => m.seccion === 'inversiones' && m.tipoMov === 'Compra' && m.fecha <= fecha)
       .forEach(m => { const monto = m.montoTotal || (m.cantidad||0)*(m.precioUnit||0); capitalInv += m.moneda==='MXN' ? monto : monto*tc; });
     movements.filter(m => m.seccion === 'inversiones' && m.tipoMov === 'Venta' && m.fecha <= fecha)
       .forEach(m => { const monto = m.montoTotal || (m.cantidad||0)*(m.precioUnit||0); capitalInv -= m.moneda==='MXN' ? monto : monto*tc; });
-
     const capital = Math.round(capitalPlats + Math.max(0, capitalInv));
     if (capital > 0) capitalPorFecha.push({ date: fecha, capital });
   });
-
   if (capitalPorFecha.length === 0) return;
-
-  // Ganancia real de hoy (del snapshot de hoy si existe)
   const todaySnap = patrimonioHistory.find(s => s.date === todayStr && !s.synthetic);
   const gananciaHoy = todaySnap ? todaySnap.value - (todaySnap.capital || todaySnap.value) : 0;
-
-  // Rango de tiempo para interpolación
   const fechaInicio = new Date(capitalPorFecha[0].date);
   const fechaHoy = new Date(todayStr);
   const diasTotal = Math.max(1, (fechaHoy - fechaInicio) / (1000*60*60*24));
-
-  // Crear snapshots sintéticos con ganancia interpolada
   capitalPorFecha.forEach(({ date, capital }) => {
     const diasDesdeInicio = (new Date(date) - fechaInicio) / (1000*60*60*24);
     const progreso = diasDesdeInicio / diasTotal;
     const gananciaInterpolada = Math.round(gananciaHoy * progreso);
     patrimonioHistory.push({ date, value: capital + gananciaInterpolada, capital, synthetic: true });
   });
-
-  // Ordenar y limpiar duplicados (reales tienen prioridad sobre sintéticos)
   patrimonioHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
   const seen = new Map();
   patrimonioHistory.forEach(s => { if (!seen.has(s.date) || !s.synthetic) seen.set(s.date, s); });
@@ -1097,42 +972,36 @@ function calcPlatforms() {
     let saldoBase = p.saldoInicial;
     let ultimoSaldoFecha = p.fechaInicio;
     let ultimoSaldoValor = p.saldoInicial;
-    let saldoBaseParaYield = p.saldoInicial;
     let totalAportaciones = 0, totalRetiros = 0, totalGastos = 0;
     let aportacionesDetalle = [];
     let rendimientoMov = 0;
-
     movs.forEach(m => {
       if (m.tipoPlat === 'Aportación' || m.tipoPlat === 'Transferencia entrada') {
-        saldoBase += m.monto; saldoBaseParaYield += m.monto; totalAportaciones += m.monto;
+        saldoBase += m.monto; totalAportaciones += m.monto;
         aportacionesDetalle.push({ fecha: m.fecha, monto: m.monto, tipo: m.tipoPlat, desc: m.desc });
       } else if (m.tipoPlat === 'Retiro' || m.tipoPlat === 'Transferencia salida') {
-        saldoBase -= m.monto; saldoBaseParaYield -= m.monto; totalRetiros += m.monto;
+        saldoBase -= m.monto; totalRetiros += m.monto;
       } else if (m.tipoPlat === 'Gasto') {
-        saldoBase -= m.monto; saldoBaseParaYield -= m.monto; totalGastos += m.monto;
+        saldoBase -= m.monto; totalGastos += m.monto;
       } else if (m.tipoPlat === 'Saldo Actual') {
         const saldoEsperado = saldoBase;
         rendimientoMov += (m.monto - saldoEsperado);
-        saldoBase = m.monto; saldoBaseParaYield = m.monto;
+        saldoBase = m.monto;
         ultimoSaldoFecha = m.fecha; ultimoSaldoValor = m.monto;
       } else if (m.tipoPlat === 'Saldo Archivado') {
-        // Movimiento de archivo: restaura saldo y suma ganancia histórica comprimida
         rendimientoMov += (m.gananciaHistorica || 0);
-        saldoBase = m.monto; saldoBaseParaYield = m.monto;
+        saldoBase = m.monto;
         ultimoSaldoFecha = m.fecha; ultimoSaldoValor = m.monto;
       }
     });
-
     const rendimientoAuto = calcAutoYield(p, ultimoSaldoValor, ultimoSaldoFecha);
     const saldoFinal = saldoBase + rendimientoAuto;
     const rendimientoTotal = rendimientoMov + rendimientoAuto;
     let diasDesdeRef = 0;
     if (ultimoSaldoFecha) { const diff = new Date() - new Date(ultimoSaldoFecha); diasDesdeRef = Math.max(0, Math.floor(diff / (1000*60*60*24))); }
-
     return { ...p, saldo: saldoFinal, aportacion: totalAportaciones, retiro: totalRetiros, gasto: totalGastos, rendimiento: rendimientoTotal, rendimientoManual: rendimientoMov, rendimientoAuto, diasDesdeRef, fechaRefAuto: ultimoSaldoFecha, aportacionesDetalle };
   });
 }
-
 
 function applyRecurrentes() {
   const now=new Date();
@@ -1163,14 +1032,12 @@ function loadFromRemote(remote){
   if(remote.settings){
     const localAiKeys = settings.aiKeys;
     settings={...DEFAULT_SETTINGS,...remote.settings};
-    // Preserve aiKeys from local if remote doesn't have them (keys saved locally but not yet synced)
     if(!settings.aiKeys && localAiKeys) settings.aiKeys = localAiKeys;
   }
   if(remote.recurrentes)recurrentes=remote.recurrentes;
   LS.set('platforms',platforms);LS.set('goals',goals);LS.set('settings',settings);
   LS.set('recurrentes',recurrentes);
-  window.settings = settings; // keep global ref in sync
-  // movements y snapshots se cargan por separado via loadSubcollections
+  window.settings = settings;
 }
 window.loadFromRemote = loadFromRemote;
 window.getAppData = () => ({platforms,movements,goals,settings,recurrentes,patrimonioHistory});
@@ -1178,9 +1045,8 @@ window.currentTab = 'dashboard';
 
 function saveAll(changedMovId, deletedMovId, changedSnapDate){
   window.currentTab = currentTab;
-  window.settings = settings; // keep global ref in sync
+  window.settings = settings;
   _lastLocalSave = Date.now();
-  // Aplicar recurrentes aquí (efecto secundario controlado, no dentro del render)
   const applied = applyRecurrentes();
   if (applied > 0) window._recurrentesAppliedThisSession = applied;
   LS.set('platforms',platforms);LS.set('movements',movements);LS.set('goals',goals);LS.set('settings',settings);
@@ -1308,7 +1174,6 @@ function renderDashboard(){
   const maxConc=topPlat?platSaldoToMXN(topPlat)/totalMXN:0;
   const riskLvl=maxConc>0.4?'🔴 HIGH':maxConc>0.25?'🟡 MEDIUM':'🟢 LOW';
   const platsConTasa=plats.filter(p=>(p.tasaAnual||0)>0).length;
-  // Plataformas sin "Saldo Actual" registrado — su rendimiento se cuenta como 0
   const todayIso = today();
   const platsSinActualizar = plats.filter(p => {
     const movsSaldoActual = movements.filter(m => m.seccion==='plataformas' && m.platform===p.name && m.tipoPlat==='Saldo Actual');
@@ -1330,11 +1195,10 @@ function renderDashboard(){
   const extrasEUR = ingresos.extrasEUR||ingresos.extras||0;
   const otrosEUR = ingresos.otrosEUR||ingresos.otros||0;
   const ingresoMensualEUR = sueldoEUR + extrasEUR + otrosEUR;
-  const dashCur = monedaSueldo; // usar la moneda real del sueldo
+  const dashCur = monedaSueldo;
   const fxD = _fxCache||LS.get('fxCache');
   const usdeurD = fxD?.usdeur||(settings.tipoCambio&&settings.tipoEUR?settings.tipoCambio/settings.tipoEUR:0.88);
   const gbpeurD = fxD?(fxD.usdeur/(fxD.usdgbp||1)):(settings.tipoGBP&&settings.tipoEUR?settings.tipoEUR/settings.tipoGBP:1.17);
-  // Convierte EUR a moneda del sueldo para el dashboard
   const eurToDash = v => {
     if(monedaSueldo==='EUR') return v;
     if(monedaSueldo==='USD') return v/usdeurD;
@@ -1350,11 +1214,9 @@ function renderDashboard(){
   const mesI=expMovs.filter(m=>{const d=new Date(m.fecha);return d.getMonth()+1===cm&&d.getFullYear()===cy&&m.tipo==='Ingreso';});
 
   const toDisplayCur = m => {
-    // Extraer valor original si está en notas
     if(m.monedaOrig==='EUR'){const match=m.notas&&m.notas.match(/€([\d.]+)/);const v=match?Number(match[1]):(m.importeEUR||Math.round(m.importe/eurmxn*100)/100);if(monedaSueldo==='EUR')return v;return eurToDash(v);}
     if(m.monedaOrig==='USD'){const match=m.notas&&m.notas.match(/US\$([\d.]+)/);const v=match?Number(match[1]):Math.round(m.importe/(usdeurD?(1/usdeurD)*eurmxn:eurmxn)*100)/100;if(monedaSueldo==='USD')return v;return eurToDash(v*usdeurD);}
     if(m.monedaOrig==='GBP'){const match=m.notas&&m.notas.match(/£([\d.]+)/);const v=match?Number(match[1]):Math.round(m.importe/((1/gbpeurD)*eurmxn)*100)/100;if(monedaSueldo==='GBP')return v;return eurToDash(v/gbpeurD);}
-    // MXN: convertir a moneda del sueldo
     const valEUR=Math.round(m.importe/eurmxn*100)/100;
     return eurToDash(valEUR);
   };
@@ -1396,22 +1258,16 @@ function renderDashboard(){
   const todaySnap = hist.find(s => s.date === todayStr);
   const prevSnap = hist.filter(s => s.date < todayStr).slice(-1)[0];
 
-  // RENDIMIENTO PURO: valor - capital en ese snapshot
-  // = cuánto has ganado/perdido sobre lo que tenías invertido en ese momento
-  // Cuando aportas más capital, la línea verde NO salta — solo sube si ganas
   function pureYield(snap) {
     if (!snap) return 0;
     const cap = snap.capital || snap.value;
-    return snap.value - cap; // ganancia neta sobre capital aportado
+    return snap.value - cap;
   }
 
-  // Para la GRÁFICA anclamos la línea verde en 0 al inicio y mostramos ganancia acumulada
-  // Así aportaciones no hacen saltar la línea — solo las ganancias la mueven
   function pureYieldAnchored(snap) {
     return snap.value - (snap.capital || snap.value);
   }
 
-  // Rendimiento puro actual
   const tc2 = settings.tipoCambio || 18;
   const eurmxn2 = getEurMxn();
   const plats2 = calcPlatforms();
@@ -1422,7 +1278,6 @@ function renderDashboard(){
   const tickers2 = getTickerPositions();
   const capitalInvHoy = tickers2.reduce((s,t) => s + (t.moneda==='MXN' ? t.costoPosicion : t.costoPosicion*tc2), 0);
   const capitalHoy = capitalPlatsHoy + capitalInvHoy;
-  // Ganancia neta real = rendimientos de plataformas + G/P no realizada de inversiones
   const tickers2Rend = tickers2.reduce((s,t) => {
     const gp = t.gpNoRealizada !== null ? t.gpNoRealizada : 0;
     return s + (t.moneda === 'MXN' ? gp : gp * tc2);
@@ -1461,8 +1316,6 @@ function renderDashboard(){
     if (histFiltered.length === 0) histFiltered = hist.slice(-2);
   }
   const realDatesFiltered = histFiltered.map(s => s.date);
-  // Línea verde = ganancia neta acumulada (valor - capital aportado en ese momento)
-  // Aportaciones NO la mueven, solo las ganancias reales sí
   const realValsFiltered = histFiltered.map(s => pureYieldAnchored(s));
 
   const curLabel = salaryIsEUR ? '🇪🇺 EUR' : '🇲🇽 MXN';
@@ -1494,25 +1347,20 @@ function renderDashboard(){
     </button>`;
   }).join('');
 
-  // Rentabilidad Total y CAGR usando snapshots históricos
-  // capital = lo que el usuario ha aportado realmente (patrimonio - ganancias reales)
-  let rendAnualReal = null;   // CAGR — solo si hay 30+ días
-  let rentabilidadTotal = null; // Rentabilidad acumulada total — siempre que haya capital
+  let rendAnualReal = null;
+  let rentabilidadTotal = null;
   if (hist.length >= 2) {
     const first = hist[0], last = hist[hist.length - 1];
     const diasTotal = (new Date(last.date) - new Date(first.date)) / (1000*60*60*24);
     const capitalActual = last.capital != null ? last.capital : last.value;
     const gananciaActual = last.value - capitalActual;
     if (capitalActual > 0) {
-      // Rentabilidad total acumulada: sin anualizar, siempre disponible
       rentabilidadTotal = gananciaActual / capitalActual;
-      // CAGR solo tiene sentido con 30+ dias de historial
       if (diasTotal >= 30) {
         rendAnualReal = Math.pow(1 + rentabilidadTotal, 365 / diasTotal) - 1;
       }
     }
   }
-  // Delta del patrimonio vs ayer
   const ayerSnap = hist.filter(s => s.date < todayStr).slice(-1)[0];
   const deltaHoy = ayerSnap ? patrimonio - ayerSnap.value : 0;
   const deltaHoyPct = ayerSnap && ayerSnap.value > 0 ? deltaHoy / ayerSnap.value : 0;
@@ -1623,7 +1471,6 @@ function renderDashboard(){
                   inv[t.type]=(inv[t.type]||0)+v;
                 }
               });
-              // También incluir plataformas agrupadas como "Plataformas"
               const totalPlats=totalMXN;
               if(totalPlats>0) inv['Platforms']=totalPlats;
               const sorted=Object.entries(inv).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
@@ -1704,20 +1551,12 @@ function renderDashboard(){
     const realDates = realDatesFiltered;
     const realVals = realValsFiltered;
 
-    // Proyección azul: crecimiento esperado del CAPITAL APORTADO al % anual configurado.
-    // Base = capitalHoy = saldoInicial + aportaciones - retiros (lo que realmente metiste).
-    // Reglas:
-    //   - Pérdidas/ganancias de mercado → línea azul NO se mueve (el dinero sigue invertido)
-    //   - Retiros → línea azul baja (salió dinero que ya no genera rendimiento)
-    //   - Aportaciones → línea azul sube
-    // La línea azul empieza en 0 (referencia) y muestra la ganancia adicional esperada.
-    // Si verde > azul = vas MEJOR que el % esperado ✅
     const now = new Date();
     const todayDateStr = now.toISOString().split('T')[0];
     const projDates=[];
     const projVals=[];
     projDates.push(todayDateStr);
-    projVals.push(0); // siempre arranca en $0 — las pérdidas pasadas no afectan la proyección futura
+    projVals.push(0);
     for(let i=1; i<=projMonths; i++){
       const d=new Date(now.getFullYear(), now.getMonth()+i, 1);
       projDates.push(d.toISOString().split('T')[0]);
@@ -1727,14 +1566,12 @@ function renderDashboard(){
     const ctxE=document.getElementById('chartEvo');
     if(ctxE){
       if(chartInstances.chartEvo){chartInstances.chartEvo.destroy();delete chartInstances.chartEvo;}
-      // Gradiente bajo la curva real
       const ctx2d = ctxE.getContext('2d');
       const gradReal = ctx2d.createLinearGradient(0, 0, 0, ctxE.offsetHeight || 240);
       gradReal.addColorStop(0, isDark ? 'rgba(48,209,88,0.18)' : 'rgba(48,209,88,0.13)');
       gradReal.addColorStop(0.7, isDark ? 'rgba(48,209,88,0.04)' : 'rgba(48,209,88,0.02)');
       gradReal.addColorStop(1, 'rgba(48,209,88,0)');
 
-      // pointRadius dinámico: visible si pocos puntos
       const dynRadius = realDates.length <= 12 ? 3 : realDates.length <= 30 ? 2 : 0;
       const dynLastRadius = realDates.length > 0 ? 5 : 0;
 
@@ -1848,7 +1685,6 @@ function renderDashboard(){
     const ctxD=document.getElementById('chartDistro');
     if(ctxD&&de.length>0){if(chartInstances.chartDistro){chartInstances.chartDistro.destroy();delete chartInstances.chartDistro;}chartInstances.chartDistro=new Chart(ctxD,{type:'doughnut',data:{labels:de.map(([k])=>k),datasets:[{data:de.map(([,v])=>v),backgroundColor:de.map((_,i)=>COLORS[i%COLORS.length]),borderWidth:2,borderColor:isDark?'#1C1C1E':'#fff',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',cornerRadius:12,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>' '+ctx.label+': '+((ctx.parsed/de.reduce((s,[,v])=>s+v,0)*100)).toFixed(1)+'%'}}}}});}
 
-    // Dona: inversiones por tipo de activo
     const inv={};
     tickerList.forEach(t=>{if(t.cantActual>0){const v=(t.valorActual||t.costoPosicion)*(t.moneda==='MXN'?1:tc);inv[t.type]=(inv[t.type]||0)+v;}});
     if(totalMXN>0) inv['Platforms']=totalMXN;
@@ -1856,7 +1692,6 @@ function renderDashboard(){
     const ctxI=document.getElementById('chartInvTipo');
     if(ctxI&&invE.length>0){if(chartInstances.chartInvTipo){chartInstances.chartInvTipo.destroy();delete chartInstances.chartInvTipo;}chartInstances.chartInvTipo=new Chart(ctxI,{type:'doughnut',data:{labels:invE.map(([k])=>k),datasets:[{data:invE.map(([,v])=>v),backgroundColor:invE.map((_,i)=>COLORS[i%COLORS.length]),borderWidth:2,borderColor:isDark?'#1C1C1E':'#fff',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',cornerRadius:12,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>{const total=invE.reduce((s,[,v])=>s+v,0);return ' '+ctx.label+': '+((ctx.parsed/total)*100).toFixed(1)+'% ('+fmt(ctx.parsed)+')';}}}}}});}
 
-    // Dona: gastos por categoría (reemplaza top gastos en dashboard)
     const ctxGC = document.getElementById('chartGastosCat');
     if(ctxGC && topCats.length > 0) {
       if(chartInstances.chartGastosCat){chartInstances.chartGastosCat.destroy();delete chartInstances.chartGastosCat;}
@@ -1940,8 +1775,8 @@ function _buildMovRow(m, transferGroups) {
           ${notas?`<div style="font-size:11px;color:var(--text3);margin-top:2px">${notas}</div>`:''}
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0">
-          <button class="edit-btn" onclick="openEditMovModal('${m.id}')" style="opacity:0.6">✏️</button>
-          <button class="del-btn" onclick="deleteMovement('${m.id}')">×</button>
+          <button class="edit-btn" onclick="openEditMovModal('${m.id}')" style="opacity:0.8">✏️</button>
+          <button class="del-btn" onclick="deleteMovement('${m.id}')" style="opacity:0.8">×</button>
         </div>
       </div>
     </div>`;
@@ -1998,7 +1833,6 @@ function renderMovimientos(){
   }).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
   _movPage=1;
 
-  // Guardar estado del input antes de re-renderizar
   const prevFocused = document.activeElement?.id === 'movSearchInput';
   const prevCursor = prevFocused ? document.getElementById('movSearchInput')?.selectionStart : null;
 
@@ -2008,27 +1842,27 @@ function renderMovimientos(){
     <div style="text-align:center;padding:56px 24px">
       <div style="font-size:44px;margin-bottom:14px">${noMovsAtAll?'📋':movFilter.search?'🔍':'📭'}</div>
       <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">
-        ${movFilter.search?'No results for "'+movFilter.search+'"':noMovsAtAll?'You have no movements yet':'No movements in this section'}
+        ${movFilter.search?t('noResultados', movFilter.search):noMovsAtAll?t('sinMovimientos'):t('sinMovimientosSeccion')}
       </div>
       <div style="font-size:13px;color:var(--text2);margin-bottom:24px">
-        ${movFilter.search?'Try another term':'Register platforms, investments or expenses to keep track'}
+        ${movFilter.search?t('intentaOtroTermino'):t('registraMovimientos')}
       </div>
-      ${!movFilter.search?`<button class="btn btn-primary" onclick="openMovModal()">${t('agregar')} first movement</button>`:''}
+      ${!movFilter.search?`<button class="btn btn-primary" onclick="openMovModal()">${t('agregar')} ${t('primerMovimiento')}</button>`:''}
     </div>` : '';
   const emptyHtml = isEmpty ? `<tr><td colspan="8">${emptyContent}</td></tr>` : '';
 
   document.getElementById('page-movimientos').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px">
       <div>
-        <div class="section-title">Transactions</div>
-        <div class="section-sub">Unified log · ${movements.length} total</div>
+        <div class="section-title">${t('movimientosTitulo')}</div>
+        <div class="section-sub">${t('movimientosSubtitulo')} · ${movements.length} total</div>
       </div>
-      <button class="btn btn-primary" onclick="openMovModal()">+ New</button>
+      <button class="btn btn-primary" onclick="openMovModal()">${t('nuevoMovimiento')}</button>
     </div>
     <div class="filter-pills">
-      ${['todas','plataformas','inversiones','gastos'].map(s=>`<button class="pill mov-pill ${movFilter.seccion===s?'active':''}" data-sec="${s}" onclick="movFilter.seccion='${s}';renderMovimientos()">${s==='todas'?'All':s==='plataformas'?'🏦 Platforms':s==='inversiones'?'📈 Investments':'💳 Expenses'}</button>`).join('')}
-      <input class="pill-search" id="movSearchInput" placeholder="Search..." value="${movFilter.search}" oninput="movFilter.search=this.value;renderMovimientos()">
-      <span style="font-size:12px;color:var(--text2);margin-left:4px">${_movFiltered.length} movements</span>
+      ${['todas','plataformas','inversiones','gastos'].map(s=>`<button class="pill mov-pill ${movFilter.seccion===s?'active':''}" data-sec="${s}" onclick="movFilter.seccion='${s}';renderMovimientos()">${s==='todas'?t('todo'):s==='plataformas'?t('seccionPlataformas'):s==='inversiones'?t('seccionInversiones'):t('seccionGastos')}</button>`).join('')}
+      <input class="pill-search" id="movSearchInput" placeholder="${t('buscar')}" value="${movFilter.search}" oninput="movFilter.search=this.value;renderMovimientos()">
+      <span style="font-size:12px;color:var(--text2);margin-left:4px">${_movFiltered.length} ${t('movimientos')}</span>
     </div>
     <div class="card-flat">
       ${isMobile() ? `
@@ -2037,7 +1871,7 @@ function renderMovimientos(){
       ` : `
       <div class="table-wrap">
         <table>
-          <thead><tr><th>${t('fecha')}</th><th>${t('seccion')}</th><th>Detail</th><th>${t('tipo')}</th><th>${t('monto')}</th><th>Extra</th><th>${t('notas')}</th><th style="width:70px"></th></tr></thead>
+          <thead><tr><th>${t('fecha')}</th><th>${t('seccion')}</th><th>${t('detalle')}</th><th>${t('tipo')}</th><th>${t('monto')}</th><th>${t('extra')}</th><th>${t('notas')}</th><th style="width:70px"></th></tr></thead>
           <tbody id="movTbody">${emptyHtml}</tbody>
         </table>
         <div id="movSentinel" style="height:4px"></div>
@@ -2050,7 +1884,6 @@ function renderMovimientos(){
     setTimeout(_setupMovScroll, 60);
   }
 
-  // Restaurar foco y cursor en el input de búsqueda
   if (prevFocused) {
     const inp = document.getElementById('movSearchInput');
     if (inp) { inp.focus(); if (prevCursor !== null) inp.setSelectionRange(prevCursor, prevCursor); }
@@ -2059,52 +1892,70 @@ function renderMovimientos(){
 function openMovModal(sec){
   const s=sec||'plataformas';
   openModal(`
-    <div class="modal-header"><div class="modal-title">New Movement</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-header"><div class="modal-title">${t('nuevoMovimiento')}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
     <div class="sec-tabs">
-      <button class="sec-tab ${s==='plataformas'?'active-plat':''}" onclick="closeModal();openMovModal('plataformas')">🏦 Platform</button>
-      <button class="sec-tab ${s==='inversiones'?'active-inv':''}" onclick="closeModal();openMovModal('inversiones')">📈 Investment</button>
-      <button class="sec-tab ${s==='gastos'?'active-gasto':''}" onclick="closeModal();openMovModal('gastos')">💳 Expense</button>
-      <button class="sec-tab ${s==='transferencia'?'active-transfer':''}" onclick="closeModal();openMovModal('transferencia')">↔ Transfer</button>
+      <button class="sec-tab ${s==='plataformas'?'active-plat':''}" onclick="closeModal();openMovModal('plataformas')">🏦 ${t('seccionPlataformas')}</button>
+      <button class="sec-tab ${s==='inversiones'?'active-inv':''}" onclick="closeModal();openMovModal('inversiones')">📈 ${t('seccionInversiones')}</button>
+      <button class="sec-tab ${s==='gastos'?'active-gasto':''}" onclick="closeModal();openMovModal('gastos')">💳 ${t('seccionGastos')}</button>
+      <button class="sec-tab ${s==='transferencia'?'active-transfer':''}" onclick="closeModal();openMovModal('transferencia')">↔ ${t('transferencia')}</button>
     </div>
     <form id="movForm" onsubmit="saveMovement('${s}');return false">
       ${s==='plataformas'?`
-        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" name="fecha" value="${today()}" required></div><div class="form-group"><label class="form-label">Platform</label><select class="form-select" name="platform" required><option value="">Select...</option>${platforms.map(p=>`<option value="${p.name}">${p.name} (${p.moneda||'MXN'})</option>`).join('')}</select></div></div>
-        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Type</label><select class="form-select" name="tipoPlat">${['Saldo Actual','Aportación','Retiro','Gasto'].map(t=>`<option>${t}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Amount</label><input type="number" step="any" class="form-input" name="monto" placeholder="0" required></div></div>
-        <div class="form-group"><label class="form-label">Description</label><input class="form-input" name="desc" placeholder="Optional..."></div>
+        <div class="form-row form-row-2">
+          <div class="form-group"><label class="form-label">${t('fecha')}</label><input type="date" class="form-input" name="fecha" value="${today()}" required></div>
+          <div class="form-group"><label class="form-label">${t('plataforma')}</label><select class="form-select" name="platform" required><option value="">${t('seleccionar')}...</option>${platforms.map(p=>`<option value="${p.name}">${p.name} (${p.moneda||'MXN'})</option>`).join('')}</select></div>
+        </div>
+        <div class="form-row form-row-2">
+          <div class="form-group"><label class="form-label">${t('tipo')}</label><select class="form-select" name="tipoPlat">${['Saldo Actual','Aportación','Retiro','Gasto'].map(t=>`<option>${t}</option>`).join('')}</select></div>
+          <div class="form-group"><label class="form-label">${t('monto')}</label><input type="number" step="any" class="form-input" name="monto" placeholder="0" required></div>
+        </div>
+        <div class="form-group"><label class="form-label">${t('descripcion')}</label><input class="form-input" name="desc" placeholder="${t('opcional')}..."></div>
       `:s==='inversiones'?`
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" name="fecha" value="${today()}" required></div><div class="form-group"><label class="form-label">Asset Type</label><select class="form-select" name="tipoActivo">${ASSET_TYPES.map(t=>`<option>${t}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Movement</label><select class="form-select" name="tipoMov">${['Compra','Venta','Dividendo','Comisión'].map(t=>`<option>${t}</option>`).join('')}</select></div></div>
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Ticker</label><input class="form-input" name="ticker" placeholder="AAPL, BTC..." required style="text-transform:uppercase"></div><div class="form-group"><label class="form-label">Broker</label><input list="brokerList" class="form-input" name="broker" required placeholder="Type..."><datalist id="brokerList">${BROKERS.map(b=>`<option value="${b}">`).join('')}</datalist></div><div class="form-group"><label class="form-label">Currency</label><select class="form-select" name="moneda"><option value="USD">USD 🇺🇸</option><option value="MXN">MXN 🇲🇽</option></select></div></div>
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Quantity</label><input type="number" step="any" class="form-input" name="cantidad" placeholder="0" required></div><div class="form-group"><label class="form-label">Unit Price</label><input type="number" step="any" class="form-input" name="precioUnit" placeholder="0.00" required></div><div class="form-group"><label class="form-label">Commission</label><input type="number" step="any" class="form-input" name="comision" value="0"></div></div>
-        <div class="form-group"><label class="form-label">Notes</label><input class="form-input" name="notas" placeholder="Optional..."></div>
+        <div class="form-row form-row-3">
+          <div class="form-group"><label class="form-label">${t('fecha')}</label><input type="date" class="form-input" name="fecha" value="${today()}" required></div>
+          <div class="form-group"><label class="form-label">${t('tipoActivo')}</label><select class="form-select" name="tipoActivo">${ASSET_TYPES.map(t=>`<option>${t}</option>`).join('')}</select></div>
+          <div class="form-group"><label class="form-label">${t('movimiento')}</label><select class="form-select" name="tipoMov">${['Compra','Venta','Dividendo','Comisión'].map(t=>`<option>${t}</option>`).join('')}</select></div>
+        </div>
+        <div class="form-row form-row-3">
+          <div class="form-group"><label class="form-label">${t('ticker')}</label><input class="form-input" name="ticker" placeholder="AAPL, BTC..." required style="text-transform:uppercase"></div>
+          <div class="form-group"><label class="form-label">${t('broker')}</label><input list="brokerList" class="form-input" name="broker" required placeholder="${t('escribir')}..."><datalist id="brokerList">${BROKERS.map(b=>`<option value="${b}">`).join('')}</datalist></div>
+          <div class="form-group"><label class="form-label">${t('moneda')}</label><select class="form-select" name="moneda"><option value="USD">USD 🇺🇸</option><option value="MXN">MXN 🇲🇽</option></select></div>
+        </div>
+        <div class="form-row form-row-3">
+          <div class="form-group"><label class="form-label">${t('cantidad')}</label><input type="number" step="any" class="form-input" name="cantidad" placeholder="0" required></div>
+          <div class="form-group"><label class="form-label">${t('precioUnitario')}</label><input type="number" step="any" class="form-input" name="precioUnit" placeholder="0.00" required></div>
+          <div class="form-group"><label class="form-label">${t('comision')}</label><input type="number" step="any" class="form-input" name="comision" value="0"></div>
+        </div>
+        <div class="form-group"><label class="form-label">${t('notas')}</label><input class="form-input" name="notas" placeholder="${t('opcional')}..."></div>
       `:s==='transferencia'?`
         <div class="form-group" style="margin-bottom:12px"><div style="display:flex;gap:8px">
-          <button type="button" id="btnTipoPlat" onclick="setTipoTransfer('plat')" style="flex:1;padding:10px;border-radius:10px;border:2px solid var(--cyan);background:rgba(100,210,255,0.12);color:var(--cyan);font-weight:700;font-size:12px;cursor:pointer;font-family:var(--font)">🏦 Between platforms</button>
-          <button type="button" id="btnTipoSob" onclick="setTipoTransfer('sob')" style="flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:var(--text2);font-weight:700;font-size:12px;cursor:pointer;font-family:var(--font)">💰 Surplus → Platform</button>
+          <button type="button" id="btnTipoPlat" onclick="setTipoTransfer('plat')" class="btn btn-secondary" style="flex:1">🏦 ${t('transferenciaEntrePlataformas')}</button>
+          <button type="button" id="btnTipoSob" onclick="setTipoTransfer('sob')" class="btn btn-secondary" style="flex:1">💰 ${t('transferirSobrante')}</button>
         </div></div>
         <div id="formTransferPlat">
-          <div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" name="fecha" value="${today()}" required></div>
+          <div class="form-group"><label class="form-label">${t('fecha')}</label><input type="date" class="form-input" name="fecha" value="${today()}" required></div>
           <div class="form-row form-row-2">
-            <div class="form-group"><label class="form-label">Source Account</label><select class="form-select" name="platOrigen"><option value="">Select...</option>${platforms.map(p=>`<option value="${p.name}">${p.name} (${p.moneda||'MXN'})</option>`).join('')}</select></div>
-            <div class="form-group"><label class="form-label">Destination Account</label><select class="form-select" name="platDestino"><option value="">Select...</option>${platforms.map(p=>`<option value="${p.name}">${p.name} (${p.moneda||'MXN'})</option>`).join('')}</select></div>
+            <div class="form-group"><label class="form-label">${t('origen')}</label><select class="form-select" name="platOrigen"><option value="">${t('seleccionar')}...</option>${platforms.map(p=>`<option value="${p.name}">${p.name} (${p.moneda||'MXN'})</option>`).join('')}</select></div>
+            <div class="form-group"><label class="form-label">${t('destino')}</label><select class="form-select" name="platDestino"><option value="">${t('seleccionar')}...</option>${platforms.map(p=>`<option value="${p.name}">${p.name} (${p.moneda||'MXN'})</option>`).join('')}</select></div>
           </div>
-          <div class="form-group"><label class="form-label">Amount</label><input type="number" step="any" class="form-input" name="monto" placeholder="0"></div>
-          <div class="form-group"><label class="form-label">Notes</label><input class="form-input" name="desc" placeholder="e.g. Transfer of liquidity..."></div>
+          <div class="form-group"><label class="form-label">${t('monto')}</label><input type="number" step="any" class="form-input" name="monto" placeholder="0"></div>
+          <div class="form-group"><label class="form-label">${t('notas')}</label><input class="form-input" name="desc" placeholder="${t('ejTransferencia')}..."></div>
         </div>
         <div id="formTransferSob" style="display:none">
           <div class="form-row form-row-2">
-            <div class="form-group"><label class="form-label">Surplus month</label><select class="form-select" name="mesSobrante" onchange="actualizarMontoSobrante(this.value)">${(()=>{const opts=[];const now=new Date();for(let i=0;i<6;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');opts.push('<option value="'+key+'">'+MONTHS[d.getMonth()]+' '+d.getFullYear()+'</option>');}return opts.join('');})()}</select></div>
-            <div class="form-group"><label class="form-label">Amount to transfer</label><input type="number" step="any" class="form-input" name="montoSob" id="inputMontoSob" placeholder="0"></div>
+            <div class="form-group"><label class="form-label">${t('mesSobrante')}</label><select class="form-select" name="mesSobrante" onchange="actualizarMontoSobrante(this.value)">${(()=>{const opts=[];const now=new Date();for(let i=0;i<6;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');opts.push('<option value="'+key+'">'+MONTHS[d.getMonth()]+' '+d.getFullYear()+'</option>');}return opts.join('');})()}</select></div>
+            <div class="form-group"><label class="form-label">${t('montoATransferir')}</label><input type="number" step="any" class="form-input" name="montoSob" id="inputMontoSob" placeholder="0"></div>
           </div>
-          <div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" name="fechaSob" value="${today()}"></div>
-          <div class="form-group"><label class="form-label">Destination platform</label><select class="form-select" name="platDestinoSob"><option value="">Select...</option>${platforms.map(p=>`<option value="${p.name}">${p.name} (${p.moneda||'MXN'})</option>`).join('')}</select></div>
-          <div class="form-group"><label class="form-label">Notes</label><input class="form-input" name="descSob" placeholder="e.g. March savings..."></div>
+          <div class="form-group"><label class="form-label">${t('fecha')}</label><input type="date" class="form-input" name="fechaSob" value="${today()}"></div>
+          <div class="form-group"><label class="form-label">${t('plataformaDestino')}</label><select class="form-select" name="platDestinoSob"><option value="">${t('seleccionar')}...</option>${platforms.map(p=>`<option value="${p.name}">${p.name} (${p.moneda||'MXN'})</option>`).join('')}</select></div>
+          <div class="form-group"><label class="form-label">${t('notas')}</label><input class="form-input" name="descSob" placeholder="${t('ejAhorro')}..."></div>
         </div>
       `:`
-        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" name="fecha" value="${today()}" required></div><div class="form-group"><label class="form-label">Type</label><select class="form-select" name="tipo"><option>Gasto</option><option>Ingreso</option></select></div></div>
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Category</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}">${c.icon} ${c.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Amount</label><input type="number" step="any" class="form-input" name="importe" placeholder="0" required></div><div class="form-group"><label class="form-label">Currency</label><select class="form-select" name="monedaGasto"><option value="MXN">MXN 🇲🇽</option><option value="EUR">EUR 🇪🇺</option><option value="USD">USD 🇺🇸</option><option value="GBP">GBP 🇬🇧</option></select></div></div>
-        <div class="form-group"><label class="form-label">Notes</label><input class="form-input" name="notas" placeholder="Optional..."></div>
+        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">${t('fecha')}</label><input type="date" class="form-input" name="fecha" value="${today()}" required></div><div class="form-group"><label class="form-label">${t('tipo')}</label><select class="form-select" name="tipo"><option>Gasto</option><option>Ingreso</option></select></div></div>
+        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">${t('categoria')}</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}">${c.icon} ${c.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">${t('importe')}</label><input type="number" step="any" class="form-input" name="importe" placeholder="0" required></div><div class="form-group"><label class="form-label">${t('moneda')}</label><select class="form-select" name="monedaGasto"><option value="MXN">MXN 🇲🇽</option><option value="EUR">EUR 🇪🇺</option><option value="USD">USD 🇺🇸</option><option value="GBP">GBP 🇬🇧</option></select></div></div>
+        <div class="form-group"><label class="form-label">${t('notas')}</label><input class="form-input" name="notas" placeholder="${t('opcional')}..."></div>
       `}
-      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:16px;padding:14px;font-size:15px">Save</button>
+      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:16px;padding:14px;font-size:15px">${t('guardar')}</button>
     </form>
   `);
 }
@@ -2157,45 +2008,26 @@ function deleteMovement(id){
   saveAll(null, deletedIds.join('|'));
 }
 
-function getImporteOriginal(m) {
-  if (!m.monedaOrig || m.monedaOrig === 'MXN') return m.importe;
-  if (m.montoOriginal != null) return m.montoOriginal;
-  const _fx = _fxCache || LS.get('fxCache');
-  if (m.monedaOrig === 'EUR') {
-    const match = m.notas && m.notas.match(/€([\d.]+)/);
-    return match ? Number(match[1]) : Math.round(m.importe / getEurMxn() * 100) / 100;
-  }
-  if (m.monedaOrig === 'USD') {
-    const match = m.notas && m.notas.match(/US\$([\d.]+)/);
-    return match ? Number(match[1]) : Math.round(m.importe / ((_fx?.usdmxn) || settings.tipoCambio || 17) * 100) / 100;
-  }
-  if (m.monedaOrig === 'GBP') {
-    const match = m.notas && m.notas.match(/£([\d.]+)/);
-    return match ? Number(match[1]) : Math.round(m.importe / 20 * 100) / 100;
-  }
-  return m.importe;
-}
-
 function openEditMovModal(id){
   const m=movements.find(x=>x.id===id);if(!m)return;const sec=m.seccion;
   openModal(`
-    <div class="modal-header"><div class="modal-title">✏️ Edit Movement</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-header"><div class="modal-title">✏️ ${t('editar')} ${t('movimiento')}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
     <form id="editForm" onsubmit="updateMovement('${id}');return false">
       ${sec==='plataformas'?`
-        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" name="fecha" value="${m.fecha}" required></div><div class="form-group"><label class="form-label">Platform</label><select class="form-select" name="platform" required>${platforms.map(p=>`<option value="${p.name}" ${m.platform===p.name?'selected':''}>${p.name}</option>`).join('')}</select></div></div>
-        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Type</label><select class="form-select" name="tipoPlat">${['Saldo Actual','Aportación','Retiro','Gasto'].map(t=>`<option ${m.tipoPlat===t?'selected':''}>${t}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Amount</label><input type="number" step="any" class="form-input" name="monto" value="${m.monto}" required></div></div>
-        <div class="form-group"><label class="form-label">Description</label><input class="form-input" name="desc" value="${escHtml(m.desc||'')}"></div>
+        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">${t('fecha')}</label><input type="date" class="form-input" name="fecha" value="${m.fecha}" required></div><div class="form-group"><label class="form-label">${t('plataforma')}</label><select class="form-select" name="platform" required>${platforms.map(p=>`<option value="${p.name}" ${m.platform===p.name?'selected':''}>${p.name}</option>`).join('')}</select></div></div>
+        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">${t('tipo')}</label><select class="form-select" name="tipoPlat">${['Saldo Actual','Aportación','Retiro','Gasto'].map(t=>`<option ${m.tipoPlat===t?'selected':''}>${t}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">${t('monto')}</label><input type="number" step="any" class="form-input" name="monto" value="${m.monto}" required></div></div>
+        <div class="form-group"><label class="form-label">${t('descripcion')}</label><input class="form-input" name="desc" value="${escHtml(m.desc||'')}"></div>
       `:sec==='inversiones'?`
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" name="fecha" value="${m.fecha}" required></div><div class="form-group"><label class="form-label">Asset Type</label><select class="form-select" name="tipoActivo">${ASSET_TYPES.map(t=>`<option ${m.tipoActivo===t?'selected':''}>${t}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Movement</label><select class="form-select" name="tipoMov">${['Compra','Venta','Dividendo','Comisión'].map(t=>`<option ${m.tipoMov===t?'selected':''}>${t}</option>`).join('')}</select></div></div>
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Ticker</label><input class="form-input" name="ticker" value="${m.ticker}" required style="text-transform:uppercase"></div><div class="form-group"><label class="form-label">Broker</label><input list="brokerListE" class="form-input" name="broker" value="${m.broker||''}"><datalist id="brokerListE">${BROKERS.map(b=>`<option value="${b}">`).join('')}</datalist></div><div class="form-group"><label class="form-label">Currency</label><select class="form-select" name="moneda"><option value="USD" ${(m.moneda||'USD')==='USD'?'selected':''}>USD</option><option value="MXN" ${m.moneda==='MXN'?'selected':''}>MXN</option></select></div></div>
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Quantity</label><input type="number" step="any" class="form-input" name="cantidad" value="${m.cantidad}" required></div><div class="form-group"><label class="form-label">Unit Price</label><input type="number" step="any" class="form-input" name="precioUnit" value="${m.precioUnit}" required></div><div class="form-group"><label class="form-label">Commission</label><input type="number" step="any" class="form-input" name="comision" value="${m.comision||0}"></div></div>
-        <div class="form-group"><label class="form-label">Notes</label><input class="form-input" name="notas" value="${escHtml(m.notas||'')}"></div>
+        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">${t('fecha')}</label><input type="date" class="form-input" name="fecha" value="${m.fecha}" required></div><div class="form-group"><label class="form-label">${t('tipoActivo')}</label><select class="form-select" name="tipoActivo">${ASSET_TYPES.map(t=>`<option ${m.tipoActivo===t?'selected':''}>${t}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">${t('movimiento')}</label><select class="form-select" name="tipoMov">${['Compra','Venta','Dividendo','Comisión'].map(t=>`<option ${m.tipoMov===t?'selected':''}>${t}</option>`).join('')}</select></div></div>
+        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">${t('ticker')}</label><input class="form-input" name="ticker" value="${m.ticker}" required style="text-transform:uppercase"></div><div class="form-group"><label class="form-label">${t('broker')}</label><input list="brokerListE" class="form-input" name="broker" value="${m.broker||''}"><datalist id="brokerListE">${BROKERS.map(b=>`<option value="${b}">`).join('')}</datalist></div><div class="form-group"><label class="form-label">${t('moneda')}</label><select class="form-select" name="moneda"><option value="USD" ${(m.moneda||'USD')==='USD'?'selected':''}>USD</option><option value="MXN" ${m.moneda==='MXN'?'selected':''}>MXN</option></select></div></div>
+        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">${t('cantidad')}</label><input type="number" step="any" class="form-input" name="cantidad" value="${m.cantidad}" required></div><div class="form-group"><label class="form-label">${t('precioUnitario')}</label><input type="number" step="any" class="form-input" name="precioUnit" value="${m.precioUnit}" required></div><div class="form-group"><label class="form-label">${t('comision')}</label><input type="number" step="any" class="form-input" name="comision" value="${m.comision||0}"></div></div>
+        <div class="form-group"><label class="form-label">${t('notas')}</label><input class="form-input" name="notas" value="${escHtml(m.notas||'')}"></div>
       `:`
-        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" name="fecha" value="${m.fecha}" required></div><div class="form-group"><label class="form-label">Type</label><select class="form-select" name="tipo"><option ${m.tipo==='Gasto'?'selected':''}>Gasto</option><option ${m.tipo==='Ingreso'?'selected':''}>Ingreso</option></select></div></div>
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Category</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}" ${m.categoria===c.id?'selected':''}>${c.icon} ${c.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Amount</label><input type="number" step="any" class="form-input" name="importe" value="${getImporteOriginal(m)}" required></div><div class="form-group"><label class="form-label">Currency</label><select class="form-select" name="monedaGasto"><option value="MXN" ${(m.monedaOrig||'MXN')==='MXN'?'selected':''}>MXN 🇲🇽</option><option value="EUR" ${m.monedaOrig==='EUR'?'selected':''}>EUR 🇪🇺</option><option value="USD" ${m.monedaOrig==='USD'?'selected':''}>USD 🇺🇸</option><option value="GBP" ${m.monedaOrig==='GBP'?'selected':''}>GBP 🇬🇧</option></select></div></div>
-        <div class="form-group"><label class="form-label">Notes</label><input class="form-input" name="notas" value="${escHtml(m.notas||'')}"></div>
+        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">${t('fecha')}</label><input type="date" class="form-input" name="fecha" value="${m.fecha}" required></div><div class="form-group"><label class="form-label">${t('tipo')}</label><select class="form-select" name="tipo"><option ${m.tipo==='Gasto'?'selected':''}>Gasto</option><option ${m.tipo==='Ingreso'?'selected':''}>Ingreso</option></select></div></div>
+        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">${t('categoria')}</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}" ${m.categoria===c.id?'selected':''}>${c.icon} ${c.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">${t('importe')}</label><input type="number" step="any" class="form-input" name="importe" value="${(()=>{if(m.monedaOrig&&m.monedaOrig!=='MXN'){if(m.montoOriginal!=null)return m.montoOriginal;const _fx=_fxCache||LS.get('fxCache');if(m.monedaOrig==='EUR'){const match=m.notas&&m.notas.match(/€([\d.]+)/);return match?Number(match[1]):Math.round(m.importe/getEurMxn()*100)/100;}if(m.monedaOrig==='USD'){const match=m.notas&&m.notas.match(/US\$([\d.]+)/);return match?Number(match[1]):Math.round(m.importe/((_fx?.usdmxn)||settings.tipoCambio||17)*100)/100;}if(m.monedaOrig==='GBP'){const match=m.notas&&m.notas.match(/£([\d.]+)/);return match?Number(match[1]):Math.round(m.importe/20*100)/100;}}return m.importe;})()}" required></div><div class="form-group"><label class="form-label">${t('moneda')}</label><select class="form-select" name="monedaGasto"><option value="MXN" ${(m.monedaOrig||'MXN')==='MXN'?'selected':''}>MXN 🇲🇽</option><option value="EUR" ${m.monedaOrig==='EUR'?'selected':''}>EUR 🇪🇺</option><option value="USD" ${m.monedaOrig==='USD'?'selected':''}>USD 🇺🇸</option><option value="GBP" ${m.monedaOrig==='GBP'?'selected':''}>GBP 🇬🇧</option></select></div></div>
+        <div class="form-group"><label class="form-label">${t('notas')}</label><input class="form-input" name="notas" value="${escHtml(m.notas||'')}"></div>
       `}
-      <div style="display:flex;gap:10px;margin-top:16px"><button type="submit" class="btn btn-primary" style="flex:1;padding:14px">💾 Save</button><button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button></div>
+      <div style="display:flex;gap:10px;margin-top:16px"><button type="submit" class="btn btn-primary" style="flex:1;padding:14px">💾 ${t('guardar')}</button><button type="button" class="btn btn-secondary" onclick="closeModal()">${t('cancelar')}</button></div>
     </form>
   `);
 }
@@ -2230,10 +2062,10 @@ function renderPlataformas(){
   const platsConTasa=plats.filter(p=>(p.tasaAnual||0)>0);
   document.getElementById('page-plataformas').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
-      <div><div class="section-title">Platforms</div><div class="section-sub">Banks · SOFIPOs · ETFs · Funds · CETES · Multi‑currency</div></div>
-      <div style="display:flex;gap:8px"><button class="btn btn-secondary btn-sm" onclick="openMovModal('transferencia')">↔ Transfer</button><button class="btn btn-secondary" onclick="openAddPlatformModal()">+ Platform</button></div>
+      <div><div class="section-title">${t('plataformasTitulo')}</div><div class="section-sub">${t('plataformasSubtitulo')}</div></div>
+      <div style="display:flex;gap:8px"><button class="btn btn-secondary btn-sm" onclick="openMovModal('transferencia')">↔ ${t('transferencia')}</button><button class="btn btn-secondary" onclick="openAddPlatformModal()">${t('nuevaPlataforma')}</button></div>
     </div>
-    ${platsConTasa.length>0?`<div class="yield-info" style="margin-bottom:16px">⚡ <strong>${platsConTasa.length} platforms</strong> with auto rate · Total auto return: <strong>${fmtFull(totalRendAuto)}</strong></div>`:''}
+    ${platsConTasa.length>0?`<div class="yield-info" style="margin-bottom:16px">⚡ <strong>${platsConTasa.length} ${t('plataformasConTasa')}</strong> · ${t('rendimientoAutoTotal')}: <strong>${fmtFull(totalRendAuto)}</strong></div>`:''}
     <div class="card-flat">
       ${isMobile() ? `
         <div style="display:flex;flex-direction:column;gap:10px;padding:12px">
@@ -2254,15 +2086,15 @@ function renderPlataformas(){
                 </div>
               </div>
               <div style="display:flex;gap:12px;font-size:11px;color:var(--text2);flex-wrap:wrap">
-                <span>Initial: <strong style="color:var(--text)">${fmtPlat(p.saldoInicial,cur)}</strong></span>
-                ${p.aportacion>0?`<span>+<strong style="color:var(--text)">${fmtPlat(p.aportacion,cur)}</strong> contrib.</span>`:''}
-                ${p.retiro>0?`<span>-<strong style="color:var(--text)">${fmtPlat(p.retiro,cur)}</strong> withdrawal</span>`:''}
+                <span>${t('saldoInicial')}: <strong style="color:var(--text)">${fmtPlat(p.saldoInicial,cur)}</strong></span>
+                ${p.aportacion>0?`<span>+<strong style="color:var(--text)">${fmtPlat(p.aportacion,cur)}</strong> ${t('aportaciones')}</span>`:''}
+                ${p.retiro>0?`<span>-<strong style="color:var(--text)">${fmtPlat(p.retiro,cur)}</strong> ${t('retiros')}</span>`:''}
                 ${rendAutoStr}
-                <span style="margin-left:auto;color:var(--text3)">${pctPort} portfolio</span>
+                <span style="margin-left:auto;color:var(--text3)">${pctPort} ${t('portfolio')}</span>
               </div>
               <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
-                <button class="btn btn-sm" style="font-size:11px;padding:4px 10px;background:none;border:1px solid var(--border);color:var(--text2)" onclick="openEditPlatModal('${p.id}')">✏️ Edit</button>
-                <button class="del-btn" style="font-size:18px" onclick="deletePlatform('${p.id}')">×</button>
+                <button class="btn btn-sm" style="font-size:11px;padding:4px 10px;background:none;border:1px solid var(--border);color:var(--text2)" onclick="openEditPlatModal('${p.id}')">✏️ ${t('editar')}</button>
+                <button class="del-btn" style="opacity:0.8;font-size:18px" onclick="deletePlatform('${p.id}')">×</button>
               </div>
             </div>`;
           }).join('')}
@@ -2270,7 +2102,7 @@ function renderPlataformas(){
       ` : `
       <div class="table-wrap">
         <table>
-          <thead><tr><th>#</th><th>${t('plataforma')}</th><th>Currency ✏️</th><th>${t('tipo')}</th><th>Init. bal. ✏️</th><th>⚡ Rate % ✏️</th><th>Since ✏️</th><th>${t('dias')}</th><th>+ ${t('aportaciones')} 🔍</th><th>${t('retiros')}</th><th>${t('gastos')}</th><th style="color:var(--teal)">⚡ Auto</th><th>${t('rendReal')}</th><th>${t('saldoActualTh')}</th><th>${t('rend')}</th><th>${t('pctPort')}</th><th></th></tr></thead>
+          <thead><tr><th>#</th><th>${t('plataforma')}</th><th>${t('moneda')} ✏️</th><th>${t('tipo')}</th><th>${t('saldoInicial')} ✏️</th><th>⚡ ${t('tasa')} % ✏️</th><th>${t('desde')} ✏️</th><th>${t('dias')}</th><th>+ ${t('aportaciones')} 🔍</th><th>${t('retiros')}</th><th>${t('gastos')}</th><th style="color:var(--teal)">⚡ ${t('auto')}</th><th>${t('rendReal')}</th><th>${t('saldoActualTh')}</th><th>${t('rend')}</th><th>${t('pctPort')}</th><th></th></tr></thead>
           <tbody>
             ${plats.map((p,i)=>{
               const cur=p.moneda||'MXN';
@@ -2288,15 +2120,14 @@ function renderPlataformas(){
       </div>`}
     </div>
     <div style="margin-top:12px;padding:12px 16px;background:var(--card2);border-radius:10px;font-size:12px;color:var(--text2);line-height:1.6">
-      <strong>Currency:</strong> Each platform handles its own currency (MXN, USD, EUR). Click on the Currency column to change it.<br>
-      <strong>Return:</strong> Only accounted with "Current Balance" or auto rate.
+      <strong>${t('moneda')}:</strong> ${t('cadaPlataformaMoneda')}<br>
+      <strong>${t('rendimiento')}:</strong> ${t('rendimientoExplicacion')}
     </div>
   `;
 }
 
 function editPlatField(id,field,el,inputType){
   const p=platforms.find(x=>x.id===id);if(!p)return;
-  const originalEl=el.cloneNode(true);
   let input;
   if(inputType==='date'){input=document.createElement('input');input.type='date';input.value=p[field]||today();input.className='form-input';input.style.cssText='width:130px;padding:4px 8px;font-size:12px';}
   else if(inputType==='percent'){input=document.createElement('input');input.type='number';input.step='0.01';input.min='0';input.max='100';input.value=p[field]||0;input.className='form-input';input.style.cssText='width:90px;padding:4px 8px;font-size:12px';input.placeholder='e.g. 13.5';}
@@ -2305,10 +2136,8 @@ function editPlatField(id,field,el,inputType){
     PLAT_MONEDAS.forEach(m=>{const opt=document.createElement('option');opt.value=m;opt.textContent=m==='MXN'?'🇲🇽 MXN':m==='USD'?'🇺🇸 USD':'🇪🇺 EUR';if(p[field]===m)opt.selected=true;input.appendChild(opt);});
   }
   else{input=document.createElement('input');input.type='number';input.step='any';input.value=p[field]||0;input.className='form-input';input.style.cssText='width:110px;padding:4px 8px;font-size:12px';}
-  let _committed=false;
-  const finish=()=>{if(_committed)return;_committed=true;const raw=input.value;let val=inputType==='date'||inputType==='moneda'?raw:(Number(raw)||0);platforms=platforms.map(x=>x.id!==id?x:{...x,[field]:val});saveAll();};
-  const cancel=()=>{if(_committed)return;_committed=true;input.replaceWith(originalEl);};
-  input.onblur=finish;input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();input.blur();}if(e.key==='Escape'){e.preventDefault();cancel();}};
+  const finish=()=>{const raw=input.value;let val=inputType==='date'||inputType==='moneda'?raw:(Number(raw)||0);platforms=platforms.map(x=>x.id!==id?x:{...x,[field]:val});saveAll();};
+  input.onblur=finish;input.onkeydown=e=>{if(e.key==='Enter')input.blur();if(e.key==='Escape')saveAll();};
   if(inputType==='moneda')input.onchange=finish;
   el.replaceWith(input);input.focus();
 }
@@ -2316,18 +2145,18 @@ function deletePlatform(id){if(!confirm('Delete this platform?'))return;platform
 
 function openEditPlatModal(id){
   const p = platforms.find(x=>x.id===id); if(!p) return;
-  openModal(`<div class="modal-header"><div class="modal-title">✏️ Edit Platform</div><button class="modal-close" onclick="closeModal()">✕</button></div>
-    <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="epName" value="${escHtml(p.name||'')}"></div>
+  openModal(`<div class="modal-header"><div class="modal-title">✏️ ${t('editar')} ${t('plataforma')}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="form-group"><label class="form-label">${t('nombre')}</label><input class="form-input" id="epName" value="${escHtml(p.name||'')}"></div>
     <div class="form-row form-row-2">
-      <div class="form-group"><label class="form-label">Type</label><select class="form-select" id="epType">${PLAT_TYPES.map(t=>`<option ${p.type===t?'selected':''}>${t}</option>`).join('')}</select></div>
-      <div class="form-group"><label class="form-label">Currency</label><select class="form-select" id="epMoneda"><option value="MXN" ${(p.moneda||'MXN')==='MXN'?'selected':''}>🇲🇽 MXN</option><option value="USD" ${p.moneda==='USD'?'selected':''}>🇺🇸 USD</option><option value="EUR" ${p.moneda==='EUR'?'selected':''}>🇪🇺 EUR</option></select></div>
+      <div class="form-group"><label class="form-label">${t('tipo')}</label><select class="form-select" id="epType">${PLAT_TYPES.map(t=>`<option ${p.type===t?'selected':''}>${t}</option>`).join('')}</select></div>
+      <div class="form-group"><label class="form-label">${t('moneda')}</label><select class="form-select" id="epMoneda"><option value="MXN" ${(p.moneda||'MXN')==='MXN'?'selected':''}>🇲🇽 MXN</option><option value="USD" ${p.moneda==='USD'?'selected':''}>🇺🇸 USD</option><option value="EUR" ${p.moneda==='EUR'?'selected':''}>🇪🇺 EUR</option></select></div>
     </div>
     <div class="form-row form-row-2">
-      <div class="form-group"><label class="form-label">Initial Balance</label><input type="number" step="any" class="form-input" id="epSaldo" value="${p.saldoInicial||0}"></div>
-      <div class="form-group"><label class="form-label">⚡ Annual Rate %</label><input type="number" step="0.01" min="0" max="100" class="form-input" id="epTasa" value="${p.tasaAnual||0}" placeholder="e.g. 13.5"></div>
+      <div class="form-group"><label class="form-label">${t('saldoInicial')}</label><input type="number" step="any" class="form-input" id="epSaldo" value="${p.saldoInicial||0}"></div>
+      <div class="form-group"><label class="form-label">⚡ ${t('tasaAnual')} %</label><input type="number" step="0.01" min="0" max="100" class="form-input" id="epTasa" value="${p.tasaAnual||0}" placeholder="e.g. 13.5"></div>
     </div>
-    <div class="form-group"><label class="form-label">Start Date</label><input type="date" class="form-input" id="epFecha" value="${p.fechaInicio||today()}"></div>
-    <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="saveEditPlat('${id}')">Save</button>`);
+    <div class="form-group"><label class="form-label">${t('fechaInicio')}</label><input type="date" class="form-input" id="epFecha" value="${p.fechaInicio||today()}"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="saveEditPlat('${id}')">${t('guardar')}</button>`);
 }
 function saveEditPlat(id){
   platforms = platforms.map(p => p.id!==id ? p : {
@@ -2344,13 +2173,13 @@ function saveEditPlat(id){
 window.openEditPlatModal = openEditPlatModal;
 window.saveEditPlat = saveEditPlat;
 function openAddPlatformModal(){
-  openModal(`<div class="modal-header"><div class="modal-title">New Platform</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+  openModal(`<div class="modal-header"><div class="modal-title">${t('nuevaPlataforma')}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
     <form onsubmit="addPlatform();return false">
-      <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="npName" placeholder="e.g. Banco Azteca" required></div>
-      <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Type</label><select class="form-select" id="npType">${PLAT_TYPES.map(t=>`<option>${t}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Group</label><select class="form-select" id="npGroup">${PLAT_GROUPS.map(g=>`<option>${g}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Currency</label><select class="form-select" id="npMoneda"><option value="MXN">🇲🇽 MXN</option><option value="USD">🇺🇸 USD</option><option value="EUR">🇪🇺 EUR</option></select></div></div>
-      <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Initial Balance</label><input type="number" class="form-input" id="npSaldo" placeholder="0" value="0"></div><div class="form-group"><label class="form-label">⚡ Annual Rate %</label><input type="number" step="0.01" min="0" max="100" class="form-input" id="npTasa" placeholder="e.g. 13.5" value="0"></div></div>
-      <div class="form-group"><label class="form-label">Start Date</label><input type="date" class="form-input" id="npFecha" value="${today()}"></div>
-      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:16px">Add</button>
+      <div class="form-group"><label class="form-label">${t('nombre')}</label><input class="form-input" id="npName" placeholder="e.g. Banco Azteca" required></div>
+      <div class="form-row form-row-3"><div class="form-group"><label class="form-label">${t('tipo')}</label><select class="form-select" id="npType">${PLAT_TYPES.map(t=>`<option>${t}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">${t('grupo')}</label><select class="form-select" id="npGroup">${PLAT_GROUPS.map(g=>`<option>${g}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">${t('moneda')}</label><select class="form-select" id="npMoneda"><option value="MXN">🇲🇽 MXN</option><option value="USD">🇺🇸 USD</option><option value="EUR">🇪🇺 EUR</option></select></div></div>
+      <div class="form-row form-row-2"><div class="form-group"><label class="form-label">${t('saldoInicial')}</label><input type="number" class="form-input" id="npSaldo" placeholder="0" value="0"></div><div class="form-group"><label class="form-label">⚡ ${t('tasaAnual')} %</label><input type="number" step="0.01" min="0" max="100" class="form-input" id="npTasa" placeholder="e.g. 13.5" value="0"></div></div>
+      <div class="form-group"><label class="form-label">${t('fechaInicio')}</label><input type="date" class="form-input" id="npFecha" value="${today()}"></div>
+      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:16px">${t('agregar')}</button>
     </form>`);
 }
 function addPlatform(){
@@ -2363,7 +2192,6 @@ function addPlatform(){
 // GASTOS
 // ============================================
 function renderGastos(){
-  // Month navigation: _gastosMonth is 'YYYY-MM' or null (= current month)
   const _now = new Date();
   const _gmParts = _gastosMonth ? _gastosMonth.split('-').map(Number) : [_now.getFullYear(), _now.getMonth()+1];
   const cy = _gmParts[0], cm = _gmParts[1];
@@ -2379,7 +2207,6 @@ function renderGastos(){
   const fx=_fxCache||LS.get('fxCache');
   const usdeur=fx?.usdeur||(settings.tipoCambio&&settings.tipoEUR?settings.tipoCambio/settings.tipoEUR:0.88);
   const gbpeur=fx?(fx.usdeur/(fx.usdgbp||1)):(settings.tipoGBP&&settings.tipoEUR?settings.tipoEUR/settings.tipoGBP:1.17);
-  // Convierte valor EUR a moneda del sueldo para mostrar
   const eurToMon=v=>{
     if(monedaMostrar==='EUR') return v;
     if(monedaMostrar==='USD') return v/usdeur;
@@ -2407,7 +2234,6 @@ function renderGastos(){
   const barLabel=totGastoEUR>totalIngPlaneadoEUR?t('deficit'):totGastoEUR>totalPresupuestoEUR?t('sobrePresupuesto'):t('dentroDelPlan');
   const totalRecurrente=recurrentes.filter(r=>r.activo).reduce((s,r)=>s+r.importe,0);
 
-  // Fecha de inicio dinámica: primer movimiento de gastos, o primer día del mes actual
   const firstMovFecha = expMovs.length > 0
     ? expMovs.reduce((min, m) => m.fecha < min ? m.fecha : min, expMovs[0].fecha)
     : today();
@@ -2441,20 +2267,18 @@ function renderGastos(){
   const catRows=EXPENSE_CATS.map(cat=>{
     const presEUR=budgets[cat.id]||0,realEUR=byCat[cat.id]||0;
     const pres=eurToMon(presEUR),real=eurToMon(realEUR),rest=pres-real;
-    // Ocultar categorías sin presupuesto y sin gastos reales (a menos que el usuario pida verlas)
     if (!window._showAllCats && presEUR===0 && realEUR===0) return '';
     const pctUso=pres>0?(real/pres*100):0;const pctIng=totalIngPlaneadoEUR>0?(presEUR/totalIngPlaneadoEUR*100).toFixed(1)+'%':'—';
     const barC=pctUso>100?'var(--red)':pctUso>85?'var(--orange)':'var(--green)';
     const restStr=pres>0?(rest>=0?'+':'')+fmtEUR(rest):'—';const restCol=rest>=0?'var(--green)':'var(--red)';
     const barHtml=pres>0?`<div style="display:flex;align-items:center;gap:6px"><div class="progress-bg" style="flex:1;height:6px"><div class="progress-fill" style="background:${barC};width:${Math.min(pctUso,100).toFixed(0)}%"></div></div><span style="font-size:10px;font-weight:700;color:${pctUso>100?'var(--red)':'var(--text2)'}"> ${pctUso.toFixed(0)}%</span></div>`:`<span style="font-size:10px;color:var(--text3)">unassigned</span>`;
-    // El input de presupuesto muestra en moneda del usuario pero guarda en EUR internamente
     const presDisplay=presEUR?Math.round(eurToMon(presEUR)*100)/100:'';
     return`<tr><td style="font-weight:600">${cat.icon} ${cat.name}</td><td><input type="number" class="form-input" style="width:100px;padding:5px 8px;font-size:13px;font-weight:700;text-align:right" value="${presDisplay}" placeholder="0" onchange="updateBudget('${cat.id}',this.value,${JSON.stringify(monedaMostrar)})"></td><td style="font-size:12px;color:var(--text2)">${pctIng}</td><td style="font-weight:600;${real>pres&&pres>0?'color:var(--red)':''}">${fmtEUR(real)}</td><td style="font-weight:600;color:${restCol}">${restStr}</td><td style="width:150px">${barHtml}</td></tr>`;
   }).join('');
   const hiddenCatCount = EXPENSE_CATS.filter(cat=>(budgets[cat.id]||0)===0 && (byCat[cat.id]||0)===0).length;
-  const hiddenHint = (!window._showAllCats && hiddenCatCount>0) ? `<tr><td colspan="6" style="text-align:center;padding:10px 0;font-size:11px;color:var(--text3)">${hiddenCatCount} unassigned categories hidden · <button class="btn btn-sm" style="font-size:11px;padding:2px 8px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="window._showAllCats=true;renderGastos()">Show all</button></td></tr>` : '';
+  const hiddenHint = (!window._showAllCats && hiddenCatCount>0) ? `<tr><td colspan="6" style="text-align:center;padding:10px 0;font-size:11px;color:var(--text3)">${hiddenCatCount} ${t('categoriasSinAsignar')} · <button class="btn btn-sm" style="font-size:11px;padding:2px 8px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="window._showAllCats=true;renderGastos()">${t('mostrarTodas')}</button></td></tr>` : '';
 
-  const movRows=mesMovs.length>0?mesMovs.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).map(m=>`<tr><td style="color:var(--text2);font-size:12px">${m.fecha}</td><td style="font-weight:500">${m.tipo==='Ingreso'?'💰 Income':catName(m.categoria)} ${m.esRecurrente?'<span class="badge badge-purple">🔄 Auto</span>':''}</td><td><span class="badge ${m.tipo==='Ingreso'?'badge-green':'badge-red'}">${m.tipo}</span></td><td style="font-weight:700">${fmtEUR(toEUR(m))}</td><td style="color:var(--text2);font-size:11px">${m.notas||'—'}</td><td><button class="edit-btn" onclick="openEditMovModal('${m.id}')">✏️</button><button class="del-btn" onclick="deleteMovement('${m.id}')">×</button></td></tr>`).join(''):`<tr><td colspan="6" style="text-align:center;color:var(--text2);padding:24px">No transactions this month</td></tr>`;
+  const movRows=mesMovs.length>0?mesMovs.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).map(m=>`<tr><td style="color:var(--text2);font-size:12px">${m.fecha}</td><td style="font-weight:500">${m.tipo==='Ingreso'?'💰 Income':catName(m.categoria)} ${m.esRecurrente?'<span class="badge badge-purple">🔄 Auto</span>':''}</td><td><span class="badge ${m.tipo==='Ingreso'?'badge-green':'badge-red'}">${m.tipo}</span></td><td style="font-weight:700">${fmtEUR(toEUR(m))}</td><td style="color:var(--text2);font-size:11px">${m.notas||'—'}</td><td><button class="edit-btn" onclick="openEditMovModal('${m.id}')">✏️</button><button class="del-btn" onclick="deleteMovement('${m.id}')">×</button></td></tr>`).join(''):`<tr><td colspan="6" style="text-align:center;color:var(--text2);padding:24px">${t('sinMovs')}</td></tr>`;
 
   document.getElementById('page-gastos').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
@@ -2464,10 +2288,10 @@ function renderGastos(){
           <button onclick="window.gastosNavMonth(-1)" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:3px 10px;font-size:16px;cursor:pointer;line-height:1;color:var(--text2)">‹</button>
           <span style="font-size:14px;font-weight:700;min-width:110px;text-align:center">${t('months')[cm-1]} ${cy}</span>
           <button onclick="window.gastosNavMonth(1)" ${isCurrentMonth?'disabled style="opacity:0.3;cursor:default;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:3px 10px;font-size:16px;line-height:1"':'style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:3px 10px;font-size:16px;cursor:pointer;line-height:1;color:var(--text2)"'}>›</button>
-          ${!isCurrentMonth?`<button onclick="window.gastosNavToday()" style="background:none;border:1px solid var(--blue);color:var(--blue);border-radius:10px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer">Today</button>`:''}
+          ${!isCurrentMonth?`<button onclick="window.gastosNavToday()" style="background:none;border:1px solid var(--blue);color:var(--blue);border-radius:10px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer">${t('hoy')}</button>`:''}
         </div>
       </div>
-      <button class="btn btn-secondary" onclick="switchTab('movimientos');openMovModal('gastos')">+ Expense</button>
+      <button class="btn btn-secondary" onclick="switchTab('movimientos');openMovModal('gastos')">+ ${t('gasto')}</button>
     </div>
     <div class="card" style="margin-bottom:16px;border-top:3px solid var(--purple)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -2517,35 +2341,35 @@ function renderGastos(){
       </div>
     </div>
 
-    ${totIngEUR===0&&totalIngPlaneadoEUR>0?`<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:rgba(10,132,255,0.06);border:1px solid rgba(10,132,255,0.15);border-radius:10px;margin-bottom:16px;font-size:12px;color:var(--text2)"><span>💡</span><span>Using planned income (€${fmtEUR(totalIngPlaneadoEUR)}) as reference. <button class="btn btn-sm" style="font-size:11px;padding:2px 8px;margin-left:4px;background:none;border:1px solid var(--border);cursor:pointer" onclick="switchTab('movimientos');openMovModal('gastos')">+ Register actual income</button></span></div>`:''}
+    ${totIngEUR===0&&totalIngPlaneadoEUR>0?`<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:rgba(10,132,255,0.06);border:1px solid rgba(10,132,255,0.15);border-radius:10px;margin-bottom:16px;font-size:12px;color:var(--text2)"><span>💡</span><span>${t('usandoIngresoPlaneado', fmtEUR(totalIngPlaneadoEUR))} <button class="btn btn-sm" style="font-size:11px;padding:2px 8px;margin-left:4px;background:none;border:1px solid var(--border);cursor:pointer" onclick="switchTab('movimientos');openMovModal('gastos')">+ ${t('registrarIngreso')}</button></span></div>`:''}
 
     <div class="grid-4" style="margin-bottom:16px">
       <div class="card stat" style="border-top:3px solid var(--teal)">
         <div class="stat-label">${t('capitalSobrantePorMes')}</div>
         <div class="stat-value" style="color:${acumTotal>=0?'var(--teal)':'var(--red)'}">${fmtEUR(acumTotal)}</div>
-        <div class="stat-sub">since ${MONTHS[startDate.getMonth()]} ${startDate.getFullYear()} · ${mesConDatos} ${mesConDatos===1?'month':'months'}</div>
+        <div class="stat-sub">${t('desde')} ${MONTHS[startDate.getMonth()]} ${startDate.getFullYear()} · ${mesConDatos} ${mesConDatos===1?t('mes'):t('meses')}</div>
       </div>
-      <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">${t('presupuestoLabel')||'📋 Budget'}</div><div class="stat-value">${fmtEUR(totalPresupuestoEUR)}</div><div class="stat-sub">${sinAsignarEUR>=0?`<span style="color:var(--green);font-weight:700">+${fmtEUR(sinAsignarEUR)} free</span>`:`<span style="color:var(--red);font-weight:700">${fmtEUR(sinAsignarEUR)} exceeded</span>`}</div></div>
-      <div class="card stat" style="border-top:3px solid var(--red)"><div class="stat-label">${t('gastoReal')||'💳 Actual Expenses'}</div><div class="stat-value" style="color:var(--red)">${fmtEUR(totGastoEUR)}</div><div class="stat-sub">registered this month</div></div>
-      <div class="card stat" style="border-top:3px solid ${disponibleEUR>=0?'var(--green)':'var(--red)'}"><div class="stat-label">${t('disponible')||'✅ Available'}</div><div class="stat-value" style="color:${disponibleEUR>=0?'var(--green)':'var(--red)'}">${fmtEUR(disponibleEUR)}</div><div class="stat-sub">${totIngEUR>0?'actual: '+fmtEUR(totIngEUR):t('segunPlaneado')}</div></div>
+      <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">${t('presupuestoLabel')}</div><div class="stat-value">${fmtEUR(totalPresupuestoEUR)}</div><div class="stat-sub">${sinAsignarEUR>=0?`<span style="color:var(--green);font-weight:700">+${fmtEUR(sinAsignarEUR)} ${t('libre')}</span>`:`<span style="color:var(--red);font-weight:700">${fmtEUR(sinAsignarEUR)} ${t('excedido')}</span>`}</div></div>
+      <div class="card stat" style="border-top:3px solid var(--red)"><div class="stat-label">${t('gastoReal')}</div><div class="stat-value" style="color:var(--red)">${fmtEUR(totGastoEUR)}</div><div class="stat-sub">${t('registradoEsteMes')}</div></div>
+      <div class="card stat" style="border-top:3px solid ${disponibleEUR>=0?'var(--green)':'var(--red)'}"><div class="stat-label">${t('disponible')}</div><div class="stat-value" style="color:${disponibleEUR>=0?'var(--green)':'var(--red)'}">${fmtEUR(disponibleEUR)}</div><div class="stat-sub">${totIngEUR>0?t('actual')+': '+fmtEUR(totIngEUR):t('segunPlaneado')}</div></div>
     </div>
 
-    ${totalIngPlaneadoEUR>0?`<div class="card" style="margin-bottom:16px;padding:16px 24px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-size:13px;font-weight:700">Budget usage</div><div style="font-size:13px;font-weight:800;color:${barColor}">${barLabel}</div></div><div class="progress-bg" style="height:14px;border-radius:8px"><div class="progress-fill" style="height:14px;border-radius:8px;background:${barColor};width:${barPct}%"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-top:6px"><span>Spent: ${fmtEUR(totGastoEUR)}</span><span>Budget: ${fmtEUR(totalPresupuestoEUR)}</span><span>Income: ${fmtEUR(totalIngPlaneadoEUR)}</span></div></div>`:''}
+    ${totalIngPlaneadoEUR>0?`<div class="card" style="margin-bottom:16px;padding:16px 24px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-size:13px;font-weight:700">${t('usoPresupuesto')}</div><div style="font-size:13px;font-weight:800;color:${barColor}">${barLabel}</div></div><div class="progress-bg" style="height:14px;border-radius:8px"><div class="progress-fill" style="height:14px;border-radius:8px;background:${barColor};width:${barPct}%"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-top:6px"><span>${t('gastado')}: ${fmtEUR(totGastoEUR)}</span><span>${t('presupuesto')}: ${fmtEUR(totalPresupuestoEUR)}</span><span>${t('ingreso')}: ${fmtEUR(totalIngPlaneadoEUR)}</span></div></div>`:''}
 
     <div class="card" style="margin-bottom:16px;border-top:3px solid var(--teal)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
         <div>
-          <div class="card-title" style="margin:0">💰 Monthly Surplus</div>
-          <div style="font-size:11px;color:var(--text2);margin-top:3px">What's left over · in EUR · since ${MONTHS[startDate.getMonth()]} ${startDate.getFullYear()}</div>
+          <div class="card-title" style="margin:0">💰 ${t('capitalSobrantePorMes')}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:3px">${t('sobranteExplicacion')} · ${t('enEUR')} · ${t('desde')} ${MONTHS[startDate.getMonth()]} ${startDate.getFullYear()}</div>
         </div>
-        <button class="btn btn-sm" style="background:rgba(0,199,190,0.1);color:var(--teal);border:none;font-weight:700" onclick="switchTab('movimientos');openMovModal('transferencia')">💸 Transfer surplus →</button>
+        <button class="btn btn-sm" style="background:rgba(0,199,190,0.1);color:var(--teal);border:none;font-weight:700" onclick="switchTab('movimientos');openMovModal('transferencia')">💸 ${t('transferirSobrante')}</button>
       </div>
       <div class="table-wrap"><table>
         <thead><tr><th>${t('mes')}</th><th>${t('ingresoRef')}</th><th>${t('gastos')}</th><th>${t('sobrante')}</th></tr></thead>
         <tbody>
           ${sobranteRows.join('')}
           <tr style="font-weight:800;background:var(--card2);border-top:2px solid var(--border2)">
-            <td>Accumulated</td><td colspan="2"></td>
+            <td>${t('acumulado')}</td><td colspan="2"></td>
             <td style="color:var(--teal);font-weight:800">${fmtEUR(acumTotal)}</td>
           </tr>
         </tbody>
@@ -2578,17 +2402,17 @@ function renderGastos(){
                     <div class="progress-fill" style="background:${barC};width:${Math.min(pctUso,100).toFixed(0)}%;height:5px"></div>
                   </div>
                   <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text2)">
-                    <span>${pctUso.toFixed(0)}% used</span>
+                    <span>${pctUso.toFixed(0)}% ${t('usado')}</span>
                     <span style="color:${rest>=0?'var(--green)':'var(--red)'};font-weight:700">${rest>=0?'+':''}${fmtEUR(rest)}</span>
                   </div>
-                `:`<div style="font-size:10px;color:var(--text3)">no budget assigned · <button class="btn btn-sm" style="font-size:10px;padding:1px 6px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="switchTab('ajustes')">assign</button></div>`}
+                `:`<div style="font-size:10px;color:var(--text3)">${t('sinAsignar')} · <button class="btn btn-sm" style="font-size:10px;padding:1px 6px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="switchTab('ajustes')">${t('asignar')}</button></div>`}
               </div>`;
             }).filter(Boolean);
             const hiddenCount = EXPENSE_CATS.filter(cat=>(budgets[cat.id]||0)===0&&(byCat[cat.id]||0)===0).length;
-            return rows.join('') + ((!window._showAllCats && hiddenCount>0) ? `<div style="text-align:center;font-size:11px;color:var(--text3);padding:6px 0">${hiddenCount} hidden categories · <button class="btn btn-sm" style="font-size:11px;padding:2px 8px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="window._showAllCats=true;renderGastos()">Show all</button></div>` : '');
+            return rows.join('') + ((!window._showAllCats && hiddenCount>0) ? `<div style="text-align:center;font-size:11px;color:var(--text3);padding:6px 0">${hiddenCount} ${t('categoriasOcultas')} · <button class="btn btn-sm" style="font-size:11px;padding:2px 8px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="window._showAllCats=true;renderGastos()">${t('mostrarTodas')}</button></div>` : '');
           })()}
         </div>
-      ` : `<div class="table-wrap"><table><thead><tr><th>${t('catHeader')[0]}</th><th>${t('catHeader')[1]}</th><th>${t('catHeader')[2]}</th><th>${t('catHeader')[3]}</th><th>${t('catHeader')[4]}</th><th>${t('catHeader')[5]}</th></tr></thead><tbody>${catRows||`<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--text2);font-size:13px">Assign budgets or register expenses to see them here</td></tr>`}${hiddenHint}<tr style="font-weight:800;background:var(--card2);border-top:2px solid var(--border2)"><td>TOTAL</td><td>${fmtEUR(totalPresupuestoEUR)}</td><td>${totalIngPlaneadoEUR>0?((totalPresupuestoEUR/totalIngPlaneadoEUR)*100).toFixed(1)+'%':'—'}</td><td style="color:${totGastoEUR>totalPresupuestoEUR?'var(--red)':'var(--text)'}">${fmtEUR(totGastoEUR)}</td><td style="color:${totalPresupuestoEUR-totGastoEUR>=0?'var(--green)':'var(--red)'}">${totalPresupuestoEUR>0?(totalPresupuestoEUR-totGastoEUR>=0?'+':'')+fmtEUR(totalPresupuestoEUR-totGastoEUR):'—'}</td><td>${totalPresupuestoEUR>0?`<span style="font-size:12px;font-weight:800">${(totGastoEUR/totalPresupuestoEUR*100).toFixed(0)}%</span>`:''}</td></tr></tbody></table></div>`}
+      ` : `<div class="table-wrap"><table><thead><tr><th>${t('catHeader')[0]}</th><th>${t('catHeader')[1]}</th><th>${t('catHeader')[2]}</th><th>${t('catHeader')[3]}</th><th>${t('catHeader')[4]}</th><th>${t('catHeader')[5]}</th></tr></thead><tbody>${catRows||`<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--text2);font-size:13px">${t('asignarPresupuestos')}</td></tr>`}${hiddenHint}<tr style="font-weight:800;background:var(--card2);border-top:2px solid var(--border2)"><td>TOTAL</td><td>${fmtEUR(totalPresupuestoEUR)}</td><td>${totalIngPlaneadoEUR>0?((totalPresupuestoEUR/totalIngPlaneadoEUR)*100).toFixed(1)+'%':'—'}</td><td style="color:${totGastoEUR>totalPresupuestoEUR?'var(--red)':'var(--text)'}">${fmtEUR(totGastoEUR)}</td><td style="color:${totalPresupuestoEUR-totGastoEUR>=0?'var(--green)':'var(--red)'}">${totalPresupuestoEUR>0?(totalPresupuestoEUR-totGastoEUR>=0?'+':'')+fmtEUR(totalPresupuestoEUR-totGastoEUR):'—'}</td><td>${totalPresupuestoEUR>0?`<span style="font-size:12px;font-weight:800">${(totGastoEUR/totalPresupuestoEUR*100).toFixed(0)}%</span>`:''}</td></tr></tbody></table></div>`}
     </div>
 
     <div class="card-flat">
@@ -2607,14 +2431,14 @@ function renderGastos(){
               <div style="display:flex;justify-content:space-between;align-items:center">
                 <span style="font-size:11px;color:var(--text2)">${m.fecha}${m.notas?` · ${escHtml(m.notas)}`:''}</span>
                 <div style="display:flex;gap:4px">
-                  <button class="edit-btn" onclick="openEditMovModal('${m.id}')" style="opacity:0.6">✏️</button>
-                  <button class="del-btn" onclick="deleteMovement('${m.id}')">×</button>
+                  <button class="edit-btn" onclick="openEditMovModal('${m.id}')" style="opacity:0.8">✏️</button>
+                  <button class="del-btn" onclick="deleteMovement('${m.id}')" style="opacity:0.8">×</button>
                 </div>
               </div>
             </div>`).join('')
           : '<div style="text-align:center;color:var(--text2);padding:24px;font-size:13px">'+t('sinMovs')+'</div>'}
         </div>
-      ` : `<div class="table-wrap"><table><thead><tr><th>${t('fecha')}</th><th>Category</th><th>${t('tipo')}</th><th>${t('importe')}</th><th>${t('notas')}</th><th></th></tr></thead><tbody>${movRows}</tbody></table></div>`}
+      ` : `<div class="table-wrap"><table><thead><tr><th>${t('fecha')}</th><th>${t('categoria')}</th><th>${t('tipo')}</th><th>${t('importe')}</th><th>${t('notas')}</th><th></th></tr></thead><tbody>${movRows}</tbody></table></div>`}
     </div>
   `;
 }
@@ -2622,7 +2446,6 @@ function renderGastos(){
 function updateBudget(catId,value,moneda){
   if(!settings.budgets)settings.budgets={};
   let valEUR=Number(value)||0;
-  // Convertir de moneda del usuario a EUR para almacenar internamente
   if(moneda&&moneda!=='EUR'){
     const fx=_fxCache||LS.get('fxCache');
     const eurmxn=getEurMxn();
@@ -2642,7 +2465,6 @@ function updateIngresoConMoneda(tipo,value,moneda){
   moneda=moneda||'EUR';
   settings.ingresos.monedaSueldo=moneda;
   settings.ingresos.sueldoRaw=raw;
-  // Convert to EUR for internal calculations (gastos page is EUR-based)
   const eurmxn=getEurMxn();
   const fx=_fxCache||LS.get('fxCache');
   const usdeur=fx?.usdeur||(settings.tipoEUR&&settings.tipoCambio?settings.tipoCambio/settings.tipoEUR:0.88);
@@ -2657,31 +2479,31 @@ function updateIngresoConMoneda(tipo,value,moneda){
 
 function openRecurrentesModal(){
   openModal(`
-    <div class="modal-header"><div class="modal-title">🔄 Recurring Expenses</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-header"><div class="modal-title">🔄 ${t('recurrentesTitulo')}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
     <div id="recList">
       ${recurrentes.map(r=>`
         <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--card2);border-radius:12px;margin-bottom:8px">
           <div style="font-size:20px">${r.icon||'📌'}</div>
-          <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">${r.nombre}</div><div style="font-size:11px;color:var(--text2)">${r.frecuencia} · day ${r.dia}</div></div>
+          <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">${r.nombre}</div><div style="font-size:11px;color:var(--text2)">${r.frecuencia} · ${t('dia')} ${r.dia}</div></div>
           <div style="font-size:15px;font-weight:800;color:var(--red);margin-right:8px">-${fmt(r.importe)}</div>
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0"><input type="checkbox" ${r.activo?'checked':''} onchange="toggleRecurrente('${r.id}',this.checked)" style="accent-color:var(--blue);width:16px;height:16px"><span style="font-size:11px;color:var(--text2)">${r.activo?'Active':'Off'}</span></label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0"><input type="checkbox" ${r.activo?'checked':''} onchange="toggleRecurrente('${r.id}',this.checked)" style="accent-color:var(--blue);width:16px;height:16px"><span style="font-size:11px;color:var(--text2)">${r.activo?t('activo'):t('inactivo')}</span></label>
           <button class="edit-btn" onclick="openEditRecurrenteModal('${r.id}')">✏️</button>
-          <button class="del-btn" onclick="deleteRecurrente('${r.id}')">×</button>
+          <button class="del-btn" onclick="deleteRecurrente('${r.id}')" style="opacity:0.8">×</button>
         </div>`).join('')}
     </div>
     <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
-      <div style="font-size:13px;font-weight:700;margin-bottom:12px">+ New recurring</div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px">+ ${t('nuevoRecurrente')}</div>
       <form id="recForm" onsubmit="addRecurrente();return false">
         <div class="form-row form-row-2">
-          <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="rCat" onchange="syncRecurrenteName()">${EXPENSE_CATS.map(c=>`<option value="${c.id}">${c.icon} ${c.name}</option>`).join('')}</select></div>
-          <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="rNombre" required></div>
+          <div class="form-group"><label class="form-label">${t('categoria')}</label><select class="form-select" id="rCat" onchange="syncRecurrenteName()">${EXPENSE_CATS.map(c=>`<option value="${c.id}">${c.icon} ${c.name}</option>`).join('')}</select></div>
+          <div class="form-group"><label class="form-label">${t('nombre')}</label><input class="form-input" id="rNombre" required></div>
         </div>
         <div class="form-row form-row-3">
-          <div class="form-group"><label class="form-label">Amount</label><input type="number" class="form-input" id="rImporte" required></div>
-          <div class="form-group"><label class="form-label">Frequency</label><select class="form-select" id="rFrec">${FRECUENCIAS.map(f=>`<option>${f}</option>`).join('')}</select></div>
-          <div class="form-group"><label class="form-label">Day</label><input type="number" class="form-input" id="rDia" value="1" min="1" max="28"></div>
+          <div class="form-group"><label class="form-label">${t('importe')}</label><input type="number" class="form-input" id="rImporte" required></div>
+          <div class="form-group"><label class="form-label">${t('frecuencia')}</label><select class="form-select" id="rFrec">${FRECUENCIAS.map(f=>`<option>${f}</option>`).join('')}</select></div>
+          <div class="form-group"><label class="form-label">${t('dia')}</label><input type="number" class="form-input" id="rDia" value="1" min="1" max="28"></div>
         </div>
-        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:4px">Add</button>
+        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:4px">${t('agregar')}</button>
       </form>
     </div>
   `);
@@ -2691,17 +2513,17 @@ function addRecurrente(){const nombre=document.getElementById('rNombre').value,i
 function toggleRecurrente(id,val){recurrentes=recurrentes.map(r=>r.id!==id?r:{...r,activo:val});saveAll();}
 function openEditRecurrenteModal(id){
   const r=recurrentes.find(x=>x.id===id); if(!r) return;
-  openModal(`<div class="modal-header"><div class="modal-title">✏️ Edit Recurring</div><button class="modal-close" onclick="closeModal()">✕</button></div>
-    <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="erNombre" value="${r.nombre||''}" required></div>
+  openModal(`<div class="modal-header"><div class="modal-title">✏️ ${t('editar')} ${t('recurrente')}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="form-group"><label class="form-label">${t('nombre')}</label><input class="form-input" id="erNombre" value="${r.nombre||''}" required></div>
     <div class="form-row form-row-2">
-      <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="erCat">${EXPENSE_CATS.map(c=>`<option value="${c.id}" ${r.categoria===c.id?'selected':''}>${c.icon} ${c.name}</option>`).join('')}</select></div>
-      <div class="form-group"><label class="form-label">Amount</label><input type="number" class="form-input" id="erImporte" value="${r.importe||''}" required></div>
+      <div class="form-group"><label class="form-label">${t('categoria')}</label><select class="form-select" id="erCat">${EXPENSE_CATS.map(c=>`<option value="${c.id}" ${r.categoria===c.id?'selected':''}>${c.icon} ${c.name}</option>`).join('')}</select></div>
+      <div class="form-group"><label class="form-label">${t('importe')}</label><input type="number" class="form-input" id="erImporte" value="${r.importe||''}" required></div>
     </div>
     <div class="form-row form-row-2">
-      <div class="form-group"><label class="form-label">Frequency</label><select class="form-select" id="erFrec">${FRECUENCIAS.map(f=>`<option ${r.frecuencia===f?'selected':''}>${f}</option>`).join('')}</select></div>
-      <div class="form-group"><label class="form-label">Day of month</label><input type="number" class="form-input" id="erDia" value="${r.dia||1}" min="1" max="28"></div>
+      <div class="form-group"><label class="form-label">${t('frecuencia')}</label><select class="form-select" id="erFrec">${FRECUENCIAS.map(f=>`<option ${r.frecuencia===f?'selected':''}>${f}</option>`).join('')}</select></div>
+      <div class="form-group"><label class="form-label">${t('dia')}</label><input type="number" class="form-input" id="erDia" value="${r.dia||1}" min="1" max="28"></div>
     </div>
-    <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="saveRecurrente('${id}')">Save</button>`);
+    <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="saveRecurrente('${id}')">${t('guardar')}</button>`);
 }
 function saveRecurrente(id){
   const nombre=document.getElementById('erNombre').value, importe=Number(document.getElementById('erImporte').value);
@@ -2712,9 +2534,6 @@ function saveRecurrente(id){
 function deleteRecurrente(id){if(!confirm('Delete this recurring expense?'))return;recurrentes=recurrentes.filter(r=>r.id!==id);saveAll();openRecurrentesModal();}
 
 // ============================================
-// METAS — FIX: Ingreso Mensual en EUR
-// ============================================
-// ============================================
 // INVERSIONES
 // ============================================
 function renderInversiones(){
@@ -2723,14 +2542,12 @@ function renderInversiones(){
   const abiertas = tickers.filter(t => t.cantActual > 0);
   const cerradas = tickers.filter(t => t.cantActual <= 0);
 
-  // Totales generales — costoPosicion = costo de la posición actual (no histórico acumulado)
   const totalCosto = abiertas.reduce((s,t) => s + t.costoPosicion * (t.moneda==='MXN'?1:tc), 0);
   const totalValor = abiertas.reduce((s,t) => s + (t.valorActual||t.costoPosicion||0) * (t.moneda==='MXN'?1:tc), 0);
   const totalGP = totalValor - totalCosto;
   const totalGPPct = totalCosto > 0 ? totalGP / totalCosto : 0;
   const gpRealTotal = cerradas.reduce((s,t) => s + (t.gpRealizada||0) * (t.moneda==='MXN'?1:tc), 0);
 
-  // Diversificación por tipo
   const porTipo = {};
   abiertas.forEach(t => {
     const tipo = t.type || 'Otro';
@@ -2740,7 +2557,6 @@ function renderInversiones(){
   const tipoEntries = Object.entries(porTipo).sort((a,b)=>b[1]-a[1]);
   const TIPO_COLORS = {'ETF':'var(--blue)','Acción':'var(--green)','Crypto':'var(--orange)','Bono':'var(--teal)','Otro':'var(--text2)'};
 
-  // Diversificación por moneda
   const porMoneda = {};
   abiertas.forEach(t => {
     const val = (t.valorActual||t.costoPosicion||0) * (t.moneda==='MXN'?1:tc);
@@ -2749,21 +2565,20 @@ function renderInversiones(){
 
   document.getElementById('page-inversiones').innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
-      <div><div class="section-title">📈 Investments</div><div class="section-sub">${abiertas.length} open positions · ${cerradas.length} closed</div></div>
-      <button class="btn btn-primary btn-sm" onclick="openMovModal('inversiones')">+ Trade</button>
+      <div><div class="section-title">📈 ${t('seccionInversiones')}</div><div class="section-sub">${abiertas.length} ${t('posicionesAbiertas')} · ${cerradas.length} ${t('posicionesCerradas')}</div></div>
+      <button class="btn btn-primary btn-sm" onclick="openMovModal('inversiones')">+ ${t('agregarMovimiento')}</button>
     </div>
 
-    <!-- Stats superiores -->
     <div class="grid-4" style="margin-bottom:16px">
       <div class="card stat" style="border-top:3px solid var(--blue)">
         <div class="stat-label">${t('costoTotal')}</div>
         <div class="stat-value">${fmt(totalCosto)}</div>
-        <div class="stat-sub">${abiertas.length} positions</div>
+        <div class="stat-sub">${abiertas.length} ${t('posiciones')}</div>
       </div>
       <div class="card stat" style="border-top:3px solid var(--green)">
         <div class="stat-label">${t('valorActual')}</div>
         <div class="stat-value">${fmt(totalValor)}</div>
-        <div class="stat-sub">at ${abiertas.some(t=>t.gpNoRealizada!==null)?'today\'s':'purchase'} prices</div>
+        <div class="stat-sub">${abiertas.some(t=>t.gpNoRealizada!==null)?t('preciosHoy'):t('costoCompra')}</div>
       </div>
       <div class="card stat" style="border-top:3px solid ${pctCol(totalGP)}">
         <div class="stat-label">${t('gpNoRealizada')}</div>
@@ -2773,14 +2588,13 @@ function renderInversiones(){
       <div class="card stat" style="border-top:3px solid ${pctCol(gpRealTotal)}">
         <div class="stat-label">${t('gpRealizada')}</div>
         <div class="stat-value" style="color:${pctCol(gpRealTotal)}">${gpRealTotal>=0?'+':''}${fmt(gpRealTotal)}</div>
-        <div class="stat-sub">${cerradas.length} closed positions</div>
+        <div class="stat-sub">${cerradas.length} ${t('posicionesCerradas')}</div>
       </div>
     </div>
 
-    <!-- Diversificación -->
     <div class="grid-2" style="margin-bottom:16px">
       <div class="card">
-        <div class="card-title">🥧 By Asset Type</div>
+        <div class="card-title">🥧 ${t('porTipoActivo')}</div>
         ${tipoEntries.map(([tipo, val]) => {
           const pct = totalValor > 0 ? val/totalValor : 0;
           const color = TIPO_COLORS[tipo] || 'var(--text2)';
@@ -2794,7 +2608,7 @@ function renderInversiones(){
         }).join('')}
       </div>
       <div class="card">
-        <div class="card-title">🌍 By Currency</div>
+        <div class="card-title">🌍 ${t('porMoneda')}</div>
         ${Object.entries(porMoneda).sort((a,b)=>b[1]-a[1]).map(([mon, val]) => {
           const pct = totalValor > 0 ? val/totalValor : 0;
           const color = mon==='MXN'?'var(--green)':mon==='USD'?'var(--blue)':'var(--purple)';
@@ -2809,10 +2623,9 @@ function renderInversiones(){
       </div>
     </div>
 
-    <!-- Tabla de posiciones abiertas -->
     <div class="card" style="margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-        <div class="card-title" style="margin:0">📂 Open Positions</div>
+        <div class="card-title" style="margin:0">📂 ${t('posicionesAbiertas')}</div>
       </div>
       <div style="max-height:520px;overflow-y:auto;margin:0 -4px;padding:0 4px">
       ${abiertas.length > 0 ? abiertas.sort((a,b) => {
@@ -2838,40 +2651,39 @@ function renderInversiones(){
             </div>
           </div>
           <div style="display:grid;grid-template-columns:${isMobile()?'repeat(2,1fr)':'repeat(4,1fr)'};gap:8px;font-size:11px">
-            <div><div style="color:var(--text2)">Quantity</div><div style="font-weight:700">${t.cantActual}</div></div>
-            <div><div style="color:var(--text2)">Avg. Buy</div><div style="font-weight:700">${t.moneda==='MXN'?'$':'US$'}${t.precioCostoPromedio.toFixed(2)}</div></div>
-            <div><div style="color:var(--text2)">Current Price</div><div style="font-weight:700" class="${t.priceCssClass}">${t.priceLabel}</div></div>
-            <div><div style="color:var(--text2)">% Portfolio</div><div style="font-weight:700">${(pctPort*100).toFixed(1)}%</div></div>
+            <div><div style="color:var(--text2)">${t('cantidad')}</div><div style="font-weight:700">${t.cantActual}</div></div>
+            <div><div style="color:var(--text2)">${t('precioMedio')}</div><div style="font-weight:700">${t.moneda==='MXN'?'$':'US$'}${t.precioCostoPromedio.toFixed(2)}</div></div>
+            <div><div style="color:var(--text2)">${t('precioActual')}</div><div style="font-weight:700" class="${t.priceCssClass}">${t.priceLabel}</div></div>
+            <div><div style="color:var(--text2)">% ${t('portfolio')}</div><div style="font-weight:700">${(pctPort*100).toFixed(1)}%</div></div>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center">
             <div style="height:4px;flex:1;background:var(--progress-bg);border-radius:3px;margin-right:12px">
               <div style="height:4px;border-radius:3px;background:${pctCol(gpMXN)};width:${Math.min(pctPort*100,100).toFixed(1)}%"></div>
             </div>
             <div style="text-align:right">
-              <span style="font-size:13px;font-weight:800;color:${pctCol(t.gpNoRealizada)}">${t.gpNoRealizada!==null?(t.gpNoRealizada>=0?'+':'')+fmtFull(t.gpNoRealizada)+' '+t.moneda:'no price'}</span>
+              <span style="font-size:13px;font-weight:800;color:${pctCol(t.gpNoRealizada)}">${t.gpNoRealizada!==null?(t.gpNoRealizada>=0?'+':'')+fmtFull(t.gpNoRealizada)+' '+t.moneda:t('sinPrecio')}</span>
               ${t.gpNoRealizada!==null?`<span style="font-size:11px;color:${pctCol(t.pctNoRealizada)};margin-left:6px;font-weight:600">${fmtPct(t.pctNoRealizada)}</span>`:''}
             </div>
           </div>
         </div>`;
-      }).join('') : `<div style="text-align:center;color:var(--text2);padding:48px 24px"><div style="font-size:40px;margin-bottom:12px">📈</div><div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">No open positions</div><div style="font-size:13px;margin-bottom:20px">Register your first purchase to see your portfolio here</div><button class="btn btn-primary" onclick="openMovModal('inversiones')">+ First trade</button></div>`}
+      }).join('') : `<div style="text-align:center;color:var(--text2);padding:48px 24px"><div style="font-size:40px;margin-bottom:12px">📈</div><div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">${t('sinPosicionesAbiertas')}</div><div style="font-size:13px;margin-bottom:20px">${t('registraPrimeraCompra')}</div><button class="btn btn-primary" onclick="openMovModal('inversiones')">+ ${t('primerMovimiento')}</button></div>`}
       </div>
     </div>
 
-    <!-- Posiciones cerradas -->
     ${cerradas.length > 0 ? `
     <div class="card">
-      <div class="card-title">🔒 Closed Positions</div>
+      <div class="card-title">🔒 ${t('posicionesCerradas')}</div>
       ${cerradas.map(t => {
         const tipoClass = t.type==='Acción'?'badge-green':t.type==='ETF'?'badge-blue':t.type==='Crypto'?'badge-orange':'badge-gray';
         return `<div class="list-item">
           <div style="display:flex;align-items:center;gap:8px">
             <span style="font-size:13px;font-weight:800;color:var(--text2)">${t.ticker}</span>
             <span class="badge ${tipoClass}">${t.type}</span>
-            <span style="font-size:11px;color:var(--text2)">cost ${fmtFull(t.costoTotal)} ${t.moneda}</span>
+            <span style="font-size:11px;color:var(--text2)">${t('costo')} ${fmtFull(t.costoTotal)} ${t.moneda}</span>
           </div>
           <div style="text-align:right">
             <div style="font-size:13px;font-weight:700;color:${pctCol(t.gpRealizada)}">${(t.gpRealizada||0)>=0?'+':''}${fmtFull(t.gpRealizada||0)} ${t.moneda}</div>
-            <div style="font-size:10px;color:var(--text2)">realized</div>
+            <div style="font-size:10px;color:var(--text2)">${t('realizada')}</div>
           </div>
         </div>`;
       }).join('')}
@@ -2900,7 +2712,6 @@ function renderMetas(){
   };
   const re=settings.rendimientoEsperado||0.06;
 
-  // Calcular progreso de cada meta
   const metasData = goals.map(g=>{
     let actual=0;
     if(g.clase==='Patrimonio Total'||g.clase==='Todos')actual=patrimonioTotal;
@@ -2915,7 +2726,6 @@ function renderMetas(){
     const st=pct>=1?t('lograda'):pct>=0.8?t('casi'):pct>=0.3?t('enProceso'):t('inicio');
     const isEUR=g.clase==='Ingreso Mensual';
     const fmtVal=v=>isEUR?fmtEUR(v):fmt(v);
-    // Fecha estimada de llegada
     let fechaEst='';
     if(pct<1&&mesesEstimados>0){
       const d=new Date();d.setMonth(d.getMonth()+mesesEstimados);
@@ -2924,7 +2734,6 @@ function renderMetas(){
     return {...g, actual, pct, restante, mesesEstimados, sc, st, fmtVal, fechaEst, isEUR};
   });
 
-  // Ordenar por fecha límite para el timeline
   const metasOrdenadas=[...metasData].sort((a,b)=>{
     if(!a.fechaLimite&&!b.fechaLimite)return 0;
     if(!a.fechaLimite)return 1;
@@ -2934,58 +2743,54 @@ function renderMetas(){
 
   document.getElementById('page-metas').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
-      <div><div class="section-title">🎯 Financial Goals</div><div class="section-sub">${goals.length} goals · expected return ${(re*100).toFixed(0)}% annual</div></div>
-      <button class="btn btn-primary" onclick="openGoalModal()">+ Goal</button>
+      <div><div class="section-title">🎯 ${t('agregarMeta')}</div><div class="section-sub">${goals.length} ${t('metas')} · ${t('rendimientoEsperado')} ${(re*100).toFixed(0)}% ${t('anual')}</div></div>
+      <button class="btn btn-primary" onclick="openGoalModal()">+ ${t('agregarMeta')}</button>
     </div>
 
     <div class="grid-4" style="margin-bottom:20px">
-      ${statCard('🏦 Platforms',fmt(totalMXN),'total balance','var(--blue)','var(--blue)')}
-      ${statCard('📈 Investments',fmt(totalInvMXN),'at current prices','#BF5AF2','#BF5AF2')}
-      ${statCard(`💰 ${t('patrimonioTotal')}`,fmt(patrimonioTotal),'everything included','var(--green)','var(--green)')}
-      ${statCard('💳 Monthly Income',fmtEUR(ingresoMensualEUR),'salary + extras','','var(--orange)')}
+      ${statCard('🏦 '+t('seccionPlataformas'),fmt(totalMXN),t('saldoTotal'),'var(--blue)','var(--blue)')}
+      ${statCard('📈 '+t('seccionInversiones'),fmt(totalInvMXN),t('aPreciosActuales'),'#BF5AF2','#BF5AF2')}
+      ${statCard(`💰 ${t('patrimonioTotal')}`,fmt(patrimonioTotal),t('todoIncluido'),'var(--green)','var(--green)')}
+      ${statCard('💳 '+t('ingresoMensual'),fmtEUR(ingresoMensualEUR),t('sueldoExtras'),'','var(--orange)')}
     </div>
 
     ${goals.length===0?`<div class="card" style="text-align:center;padding:48px;color:var(--text2)">
       <div style="font-size:40px;margin-bottom:12px">🎯</div>
-      <div style="font-size:16px;font-weight:700;margin-bottom:8px">No goals yet</div>
-      <div style="font-size:13px;margin-bottom:20px">Define your financial objectives and track your progress</div>
-      <button class="btn btn-primary" onclick="openGoalModal()">Create first goal</button>
+      <div style="font-size:16px;font-weight:700;margin-bottom:8px">${t('sinMetas')}</div>
+      <div style="font-size:13px;margin-bottom:20px">${t('defineMetas')}</div>
+      <button class="btn btn-primary" onclick="openGoalModal()">${t('crearPrimeraMeta')}</button>
     </div>` : `
 
-    <!-- TIMELINE -->
     <div class="card" style="margin-bottom:16px">
-      <div class="card-title">📅 Timeline</div>
+      <div class="card-title">📅 ${t('lineaDeTiempo')}</div>
       <div style="position:relative;padding:8px 0 4px">
-        <!-- línea vertical -->
         <div style="position:absolute;left:20px;top:0;bottom:0;width:2px;background:var(--border);border-radius:2px"></div>
         ${metasOrdenadas.map((g,i)=>`
           <div style="position:relative;padding-left:52px;margin-bottom:${i<metasOrdenadas.length-1?'24':'8'}px">
-            <!-- dot -->
             <div style="position:absolute;left:10px;top:4px;width:22px;height:22px;border-radius:50%;background:${g.sc};display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:800;z-index:1;box-shadow:0 0 0 3px var(--card)">${g.pct>=1?'✓':Math.round(g.pct*100)+'%'}</div>
             <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:4px">
               <div>
                 <div style="font-size:14px;font-weight:700">${g.nombre}</div>
-                <div style="font-size:11px;color:var(--text2);margin-top:1px">${g.clase}${g.fechaLimite?' · deadline '+g.fechaLimite:''}</div>
+                <div style="font-size:11px;color:var(--text2);margin-top:1px">${g.clase}${g.fechaLimite?' · '+t('fechaLimite')+' '+g.fechaLimite:''}</div>
               </div>
               <div style="text-align:right;flex-shrink:0">
                 <span class="badge" style="background:${g.sc}18;color:${g.sc}">${g.st}</span>
-                <div style="font-size:11px;color:var(--text2);margin-top:3px">${g.fechaEst?'~'+g.fechaEst:g.pct>=1?'Achieved!':''}</div>
+                <div style="font-size:11px;color:var(--text2);margin-top:3px">${g.fechaEst?'~'+g.fechaEst:g.pct>=1?t('lograda'):''}</div>
               </div>
             </div>
             <div style="margin-top:8px">
               <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
                 <span style="color:var(--text);font-weight:600">${g.fmtVal(g.actual)}</span>
-                <span style="color:var(--text2)">goal: ${g.fmtVal(g.meta)}</span>
+                <span style="color:var(--text2)">${t('meta')}: ${g.fmtVal(g.meta)}</span>
               </div>
               <div class="progress-bg" style="height:6px"><div class="progress-fill" style="background:${g.sc};width:${(g.pct*100).toFixed(1)}%;height:6px"></div></div>
             </div>
-            ${g.pct<1&&g.mesesEstimados>0?`<div style="font-size:11px;color:var(--text2);margin-top:6px">⏱ ~${g.mesesEstimados} months · left ${g.fmtVal(g.restante)}</div>`:''}
+            ${g.pct<1&&g.mesesEstimados>0?`<div style="font-size:11px;color:var(--text2);margin-top:6px">⏱ ~${g.mesesEstimados} ${t('meses')} · ${t('restan')} ${g.fmtVal(g.restante)}</div>`:''}
           </div>
         `).join('')}
       </div>
     </div>
 
-    <!-- CARDS GRID -->
     <div class="grid-2">
       ${metasData.map(g=>`
         <div class="card">
@@ -3006,7 +2811,7 @@ function renderMetas(){
           </div>
           <div class="progress-bg"><div class="progress-fill" style="background:${g.sc};width:${(g.pct*100).toFixed(1)}%"></div></div>
           <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:6px">
-            <span style="color:var(--text2)">${g.pct<1&&g.mesesEstimados>0?'⏱ ~'+g.mesesEstimados+' months':''}</span>
+            <span style="color:var(--text2)">${g.pct<1&&g.mesesEstimados>0?'⏱ ~'+g.mesesEstimados+' '+t('meses'):''}</span>
             <span style="font-weight:700;color:${g.sc}">${(g.pct*100).toFixed(1)}%</span>
           </div>
         </div>
@@ -3014,18 +2819,18 @@ function renderMetas(){
     </div>`}
   `;
 }
-function openGoalModal(){openModal(`<div class="modal-header"><div class="modal-title">New Goal</div><button class="modal-close" onclick="closeModal()">✕</button></div><form onsubmit="addGoal();return false"><div class="form-group"><label class="form-label">Name</label><input class="form-input" id="gName" required></div><div class="form-row form-row-2"><div class="form-group"><label class="form-label">Class</label><select class="form-select" id="gClase"><option>${t('patrimonioTotal')}</option><option>Platforms</option><option>Investments</option><option>Monthly Income</option></select></div><div class="form-group"><label class="form-label">Target</label><input type="number" class="form-input" id="gMeta" required></div></div><div class="form-group"><label class="form-label">Deadline</label><input type="date" class="form-input" id="gFecha"></div><div class="form-group"><label class="form-label">Description</label><input class="form-input" id="gDesc"></div><button type="submit" class="btn btn-primary" style="width:100%;margin-top:16px">Create Goal</button></form>`);}
+function openGoalModal(){openModal(`<div class="modal-header"><div class="modal-title">${t('nuevaMeta')}</div><button class="modal-close" onclick="closeModal()">✕</button></div><form onsubmit="addGoal();return false"><div class="form-group"><label class="form-label">${t('nombre')}</label><input class="form-input" id="gName" required></div><div class="form-row form-row-2"><div class="form-group"><label class="form-label">${t('clase')}</label><select class="form-select" id="gClase"><option>${t('patrimonioTotal')}</option><option>${t('seccionPlataformas')}</option><option>${t('seccionInversiones')}</option><option>${t('ingresoMensual')}</option></select></div><div class="form-group"><label class="form-label">${t('meta')}</label><input type="number" class="form-input" id="gMeta" required></div></div><div class="form-group"><label class="form-label">${t('fechaLimite')}</label><input type="date" class="form-input" id="gFecha"></div><div class="form-group"><label class="form-label">${t('descripcion')}</label><input class="form-input" id="gDesc"></div><button type="submit" class="btn btn-primary" style="width:100%;margin-top:16px">${t('crear')}</button></form>`);}
 function openEditGoalModal(id){
   const g=goals.find(x=>x.id===id); if(!g) return;
-  openModal(`<div class="modal-header"><div class="modal-title">✏️ Edit Goal</div><button class="modal-close" onclick="closeModal()">✕</button></div>
-    <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="egName" value="${g.nombre||''}" required></div>
+  openModal(`<div class="modal-header"><div class="modal-title">✏️ ${t('editar')} ${t('meta')}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="form-group"><label class="form-label">${t('nombre')}</label><input class="form-input" id="egName" value="${g.nombre||''}" required></div>
     <div class="form-row form-row-2">
-      <div class="form-group"><label class="form-label">Class</label><select class="form-select" id="egClase"><option ${g.clase==='Patrimonio Total'?'selected':''}>${t('patrimonioTotal')}</option><option ${g.clase==='Plataformas'?'selected':''}>Platforms</option><option ${g.clase==='Inversiones'?'selected':''}>Investments</option><option ${g.clase==='Ingreso Mensual'?'selected':''}>Monthly Income</option></select></div>
-      <div class="form-group"><label class="form-label">Target</label><input type="number" class="form-input" id="egMeta" value="${g.meta||''}" required></div>
+      <div class="form-group"><label class="form-label">${t('clase')}</label><select class="form-select" id="egClase"><option ${g.clase==='Patrimonio Total'?'selected':''}>${t('patrimonioTotal')}</option><option ${g.clase==='Plataformas'?'selected':''}>${t('seccionPlataformas')}</option><option ${g.clase==='Inversiones'?'selected':''}>${t('seccionInversiones')}</option><option ${g.clase==='Ingreso Mensual'?'selected':''}>${t('ingresoMensual')}</option></select></div>
+      <div class="form-group"><label class="form-label">${t('meta')}</label><input type="number" class="form-input" id="egMeta" value="${g.meta||''}" required></div>
     </div>
-    <div class="form-group"><label class="form-label">Deadline</label><input type="date" class="form-input" id="egFecha" value="${g.fechaLimite||''}"></div>
-    <div class="form-group"><label class="form-label">Description</label><input class="form-input" id="egDesc" value="${g.descripcion||''}"></div>
-    <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="saveGoal('${id}')">Save</button>`);
+    <div class="form-group"><label class="form-label">${t('fechaLimite')}</label><input type="date" class="form-input" id="egFecha" value="${g.fechaLimite||''}"></div>
+    <div class="form-group"><label class="form-label">${t('descripcion')}</label><input class="form-input" id="egDesc" value="${g.descripcion||''}"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="saveGoal('${id}')">${t('guardar')}</button>`);
 }
 function saveGoal(id){
   const nombre=document.getElementById('egName').value, meta=Number(document.getElementById('egMeta').value);
@@ -3040,10 +2845,8 @@ function deleteGoal(id){if(!confirm('Delete this goal?'))return;goals=goals.filt
 // AJUSTES
 // ============================================
 function estimateDocSize() {
-  // Doc principal: ya NO incluye movements ni snapshots (están en subcolecciones)
   const mainDoc = { platforms, goals, settings, recurrentes };
   const mainBytes = JSON.stringify(mainDoc).length;
-  // Subcolecciones (estimado por movimiento individual)
   const movBytes = JSON.stringify(movements).length;
   const snapBytes = JSON.stringify(patrimonioHistory).length;
   return { mainBytes, movBytes, snapBytes,
@@ -3054,7 +2857,6 @@ function getStorageInfo() {
   const est = estimateDocSize();
   const totalKb = est.totalBytes / 1024;
   const mainKb = est.mainBytes / 1024;
-  // El doc principal tiene límite de 1MB, los movimientos no tienen límite práctico
   const mainPct = (est.mainBytes / (1024 * 1024)) * 100;
   const color = mainPct >= 80 ? 'var(--red)' : mainPct >= 60 ? 'var(--orange)' : 'var(--green)';
   return { kb: totalKb, mainKb, mainPct, color,
@@ -3071,14 +2873,14 @@ function openArchivarModal() {
   const ahorroBytes = JSON.stringify(movsAArchivar).length;
 
   openModal(`
-    <div class="modal-header"><div class="modal-title">🗜️ Archive Old Movements</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-header"><div class="modal-title">🗜️ ${t('archivarMovAnt')}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
     <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">
-      All platform movements <strong>before ${cutoffStr}</strong> will be compressed into a single record per platform, preserving the balance and accumulated historical gain/loss.
+      ${t('archivoExplicacion', cutoffStr)}
     </div>
     <div style="background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px">
-      <div style="font-weight:700;margin-bottom:6px">📦 What will be archived:</div>
-      <div style="color:var(--text2)">${movsAArchivar.length} platform movements → <strong style="color:var(--green)">~${(ahorroBytes/1024).toFixed(1)} KB freed</strong></div>
-      <div style="color:var(--text2);margin-top:4px">Investment and expense movements are not affected.</div>
+      <div style="font-weight:700;margin-bottom:6px">📦 ${t('queSeArchivara')}</div>
+      <div style="color:var(--text2)">${movsAArchivar.length} ${t('movimientosPlataforma')} → <strong style="color:var(--green)">~${(ahorroBytes/1024).toFixed(1)} KB ${t('liberados')}</strong></div>
+      <div style="color:var(--text2);margin-top:4px">${t('inversionesGastosNoAfectados')}</div>
     </div>
     <div style="background:var(--card2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12px;max-height:200px;overflow-y:auto">
       ${plats.map(p => {
@@ -3086,28 +2888,26 @@ function openArchivarModal() {
         if (movsPlat.length === 0) return '';
         return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)">
           <span style="font-weight:600">${escHtml(p.name)}</span>
-          <span style="color:var(--text2)">${movsPlat.length} movs → balance <strong>${fmtPlat(p.saldo, p.moneda)}</strong> · G/L <strong style="color:${pctCol(p.rendimiento)}">${p.rendimiento>=0?'+':''}${fmtPlat(p.rendimiento, p.moneda)}</strong></span>
+          <span style="color:var(--text2)">${movsPlat.length} movs → ${t('saldo')} <strong>${fmtPlat(p.saldo, p.moneda)}</strong> · G/L <strong style="color:${pctCol(p.rendimiento)}">${p.rendimiento>=0?'+':''}${fmtPlat(p.rendimiento, p.moneda)}</strong></span>
         </div>`;
       }).join('')}
     </div>
     <div style="background:rgba(255,159,10,0.08);border:1px solid rgba(255,159,10,0.2);border-radius:10px;padding:10px 14px;margin-bottom:20px;font-size:12px;color:var(--text2)">
-      ⚠️ <strong>Recommended:</strong> Export a JSON backup before archiving.
+      ⚠️ <strong>${t('recomendado')}:</strong> ${t('exportarAntes')}
     </div>
     <div style="display:flex;gap:10px">
-      <button class="btn btn-secondary" onclick="exportData();closeModal();setTimeout(openArchivarModal,300)">📥 Export backup first</button>
-      <button class="btn btn-primary" style="flex:1" onclick="ejecutarArchivado('${cutoffStr}')">🗜️ Archive now</button>
+      <button class="btn btn-secondary" onclick="exportData();closeModal();setTimeout(openArchivarModal,300)">📥 ${t('exportarPrimero')}</button>
+      <button class="btn btn-primary" style="flex:1" onclick="ejecutarArchivado('${cutoffStr}')">🗜️ ${t('archivarAhora')}</button>
     </div>
   `);
 }
 
 function ejecutarArchivado(cutoffStr) {
   const plats = calcPlatforms();
-  // Crear un movimiento "${t('saldoArchivado')}" por plataforma con el saldo y ganancia acumulada hasta la fecha de corte
   const nuevosMovsArchivados = [];
   plats.forEach(p => {
     const movsPlat = movements.filter(m => m.seccion === 'plataformas' && m.platform === p.name && m.fecha < cutoffStr);
     if (movsPlat.length === 0) return;
-    // Recalcular saldo hasta cutoffStr para ese momento
     let saldoArchivado = p.saldoInicial;
     let gananciaArchivada = 0;
     movements.filter(m => m.seccion === 'plataformas' && m.platform === p.name && m.fecha < cutoffStr)
@@ -3132,15 +2932,13 @@ function ejecutarArchivado(cutoffStr) {
       desc: `Historical archive until ${cutoffStr} · Accumulated G/L: ${gananciaArchivada >= 0 ? '+' : ''}${fmtPlat(gananciaArchivada, p.moneda)}`,
     });
   });
-
-  // Eliminar movimientos viejos de plataformas y añadir los archivados
   movements = [
     ...nuevosMovsArchivados,
     ...movements.filter(m => m.seccion !== 'plataformas' || m.fecha >= cutoffStr)
   ];
   saveAll();
   closeModal();
-  alert('✅ Archiving complete. ${nuevosMovsArchivados.length} platforms compressed.');
+  alert(`✅ ${t('archivoCompletado', nuevosMovsArchivados.length)}`);
 }
 
 function renderAjustes(){
@@ -3171,15 +2969,15 @@ function renderAjustes(){
     '</div></div>'
   ) : '';
   document.getElementById('page-ajustes').innerHTML=`
-    <div class="section-title" style="margin-bottom:24px">⚙️ Settings</div>
+    <div class="section-title" style="margin-bottom:24px">⚙️ ${t('ajustes')}</div>
 
     ${isAdmin ? `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:rgba(191,90,242,0.06);border:1px solid rgba(191,90,242,0.2);border-radius:14px;margin-bottom:16px">
       <div style="display:flex;align-items:center;gap:10px">
         <span style="font-size:20px">👑</span>
-        <div><div style="font-size:13px;font-weight:700">Admin Panel</div><div style="font-size:11px;color:var(--text2)">Manage who has access to the app</div></div>
+        <div><div style="font-size:13px;font-weight:700">${t('adminPanel')}</div><div style="font-size:11px;color:var(--text2)">${t('manageUsersDesc')}</div></div>
       </div>
-      <button class="btn btn-primary btn-sm" onclick="window.openAdminPanel()">Manage users</button>
+      <button class="btn btn-primary btn-sm" onclick="window.openAdminPanel()">${t('manageUsers')}</button>
     </div>` : ''}
 
     <div class="card" style="margin-bottom:16px;border-top:3px solid var(--blue)">
@@ -3187,7 +2985,7 @@ function renderAjustes(){
       <div style="display:flex;align-items:center;gap:16px;margin-top:8px;flex-wrap:wrap">
         ${currentUser?.photoURL?`<img src="${currentUser.photoURL}" style="width:48px;height:48px;border-radius:24px">`:`<div style="width:48px;height:48px;border-radius:24px;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff">👤</div>`}
         <div style="flex:1"><div style="font-size:16px;font-weight:700">${currentUser?.displayName||t('usuario')}</div><div style="font-size:13px;color:var(--text2)">${currentUser?.email||''}</div></div>
-        <button class="btn btn-danger btn-sm" onclick="window.signOutUser()">Sign out</button>
+        <button class="btn btn-danger btn-sm" onclick="window.signOutUser()">${t('salir')}</button>
       </div>
     </div>
     <div class="grid-2" style="margin-bottom:16px">
@@ -3202,48 +3000,48 @@ function renderAjustes(){
             const vEUR=isLive&&fx.eurmxn?fx.eurmxn.toFixed(2):(settings.tipoEUR);
             const vGBP=isLive&&fx.gbpmxn?fx.gbpmxn.toFixed(2):(settings.tipoGBP);
             const statusBadge=isLive
-              ? '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:var(--green)"><span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block"></span>Live · ECB · updated '+ts+'</div>'
-              : '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:var(--orange)"><span style="width:7px;height:7px;border-radius:50%;background:var(--orange);display:inline-block"></span>Manual · press update for live rates</div>';
+              ? '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:var(--green)"><span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block"></span>${t('liveECB')} · '+ts+'</div>'
+              : '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:var(--orange)"><span style="width:7px;height:7px;border-radius:50%;background:var(--orange);display:inline-block"></span>${t('manual')} · '+t('pressUpdate')+'</div>';
             return statusBadge
               + '<div style="display:flex;flex-direction:column;gap:10px">'
               + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">\ud83c\uddfa\ud83c\uddf8 USD =</span><input type="number" step="0.01" id="inputTCUSD" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vUSD+'" onchange="window.settings.tipoCambio=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
               + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">\ud83c\uddea\ud83c\uddfa EUR =</span><input type="number" step="0.01" id="inputTCEUR" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vEUR+'" onchange="window.settings.tipoEUR=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
               + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">\ud83c\uddec\ud83c\udde7 GBP =</span><input type="number" step="0.01" id="inputTCGBP" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vGBP+'" onchange="window.settings.tipoGBP=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
-              + '<button class="btn btn-secondary btn-sm" onclick="forceUpdateFX()">🔄 Update live (ECB)</button>'
+              + '<button class="btn btn-secondary btn-sm" onclick="forceUpdateFX()">🔄 ${t('updateLive')}</button>'
               + '</div>';
           })()}
         </div>
       </div>
-      <div class="card"><div class="card-title">📈 Expected Annual Return</div><div style="display:flex;align-items:center;gap:10px;margin-top:8px"><input type="number" step="0.5" class="form-input" style="width:80px;font-size:20px;font-weight:700;text-align:center" value="${((settings.rendimientoEsperado||0.06)*100)}" onchange="window.settings.rendimientoEsperado=Number(this.value)/100;saveAll()"><span style="font-size:14px;color:var(--text2)">% annual</span></div></div>
+      <div class="card"><div class="card-title">📈 ${t('expectedAnnualReturn')}</div><div style="display:flex;align-items:center;gap:10px;margin-top:8px"><input type="number" step="0.5" class="form-input" style="width:80px;font-size:20px;font-weight:700;text-align:center" value="${((settings.rendimientoEsperado||0.06)*100)}" onchange="window.settings.rendimientoEsperado=Number(this.value)/100;saveAll()"><span style="font-size:14px;color:var(--text2)">% ${t('anual')}</span></div></div>
     </div>
     <div class="grid-2" style="margin-bottom:16px">
       <div class="card">
-        <div class="card-title">🔑 API Key — Finnhub <span style="font-weight:400;color:var(--text3)">(US stocks)</span></div>
+        <div class="card-title">🔑 ${t('apiKeyFinnhub')} <span style="font-weight:400;color:var(--text3)">(US stocks)</span></div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px"><input type="text" class="form-input" style="flex:1;min-width:200px;font-family:monospace;font-size:13px" id="finnhubKeyInput" placeholder="Paste your API key" value="${settings.finnhubKey||''}" oninput="window.settings.finnhubKey=this.value.trim();saveAll()"><button class="btn btn-primary" onclick="testFinnhub()">${t('probar')}</button>${hasFinnhub?`<span style="font-size:12px;color:var(--green)">✅</span>`:''}</div>
         <div id="finnhubTestResult" style="margin-top:8px;font-size:12px"></div>
-        <div style="margin-top:8px;font-size:11px;color:var(--text3)">Free at <a href="https://finnhub.io" target="_blank" style="color:var(--blue)">finnhub.io</a></div>
+        <div style="margin-top:8px;font-size:11px;color:var(--text3)">${t('freeAt')} <a href="https://finnhub.io" target="_blank" style="color:var(--blue)">finnhub.io</a></div>
       </div>
 
       <div class="card">
-        <div class="card-title">🔑 API Key — Alpha Vantage <span style="font-weight:400;color:var(--text3)">(VUAA.LON, London/Xetra ETFs)</span></div>
+        <div class="card-title">🔑 ${t('apiKeyAlpha')} <span style="font-weight:400;color:var(--text3)">(VUAA.LON, London/Xetra ETFs)</span></div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px"><input type="text" class="form-input" style="flex:1;min-width:200px;font-family:monospace;font-size:13px" id="alphaVantageKeyInput" placeholder="Paste your API key" value="${settings.alphaVantageKey||''}" oninput="window.settings.alphaVantageKey=this.value.trim();saveAll()"><button class="btn btn-primary" onclick="testAlphaVantage()">${t('probar')}</button>${settings.alphaVantageKey?`<span style="font-size:12px;color:var(--green)">✅</span>`:''}</div>
         <div id="alphaVantageTestResult" style="margin-top:8px;font-size:12px"></div>
-        <div style="margin-top:8px;font-size:11px;color:var(--text3)">Free at <a href="https://alphavantage.co" target="_blank" style="color:var(--blue)">alphavantage.co</a> · 25 req/day</div>
+        <div style="margin-top:8px;font-size:11px;color:var(--text3)">${t('freeAt')} <a href="https://alphavantage.co" target="_blank" style="color:var(--blue)">alphavantage.co</a> · 25 req/day</div>
       </div>
     </div>
     <div class="grid-2">
-      <div class="card"><div class="card-title">${t('exportarImportar')}</div><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px"><button class="btn btn-primary" onclick="exportData()">📥 Export JSON (backup)</button><button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📤 Import JSON (backup)</button><button class="btn btn-secondary" onclick="openImportCSVModal()">📊 Import from Excel/CSV</button><input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)"></div></div>
+      <div class="card"><div class="card-title">${t('exportarImportar')}</div><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px"><button class="btn btn-primary" onclick="exportData()">📥 ${t('exportar')} JSON (backup)</button><button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📤 ${t('importar')} JSON (backup)</button><button class="btn btn-secondary" onclick="openImportCSVModal()">📊 ${t('importarExcel')}</button><input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)"></div></div>
       <div class="card">
         <div class="card-title">${t('archivarMovAnt')}</div>
-        <div style="margin-top:8px;font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:14px">Compress old platform history while preserving balance and accumulated gains. Useful to keep history cleaner.</div>
+        <div style="margin-top:8px;font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:14px">${t('archivarDesc')}</div>
         <button class="btn btn-secondary" style="width:100%;font-size:13px" onclick="openArchivarModal()">${t('archivarMovAnt')}</button>
       </div>
     </div>
     <div class="card" style="margin-top:16px">
       <div class="card-title">${t('asistenteia')}</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">Connect your own API key to use the financial assistant. The assistant has access to all your data (platforms, investments, expenses, goals) but never sends it to third parties except to the API you choose.</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">${t('iaDesc')}</div>
       <div style="font-size:12px;color:var(--text2);margin-bottom:10px;padding:10px 12px;background:rgba(10,132,255,0.06);border-radius:10px;border:1px solid rgba(10,132,255,0.15)">
-        ⚡ <strong>Automatic fallback:</strong> The assistant tries keys in order Groq → Gemini → DeepSeek → OpenRouter. If one fails, it tries the next.
+        ⚡ <strong>${t('fallbackAuto')}</strong>
       </div>
       <div style="display:flex;flex-direction:column;gap:10px">
         ${(()=>{
@@ -3277,7 +3075,7 @@ function renderAjustes(){
       </div>
 
     </div>
-    <div class="card" style="margin-top:16px"><div class="card-title">${t('zonaPeligro')}</div><button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="resetAll()">🗑 Reset All</button></div>
+    <div class="card" style="margin-top:16px"><div class="card-title">${t('zonaPeligro')}</div><button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="resetAll()">🗑 ${t('resetAll')}</button></div>
     ${isAdmin ? adminFirebaseRulesHTML : ''}
   `;
 }
@@ -3319,7 +3117,6 @@ function _buildAiContext() {
     const totalInv = tickers.reduce((s,t)=>s+((t.valorActual||t.costoPosicion||0)*(t.moneda==='MXN'?1:tc)),0);
     const patrimonio = totalPlats + totalInv;
 
-    // Gastos mes actual
     const now = new Date();
     const mesKey = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
     const gastosM = movements.filter(m=>m.seccion==='gastos'&&m.fecha&&m.fecha.startsWith(mesKey));
@@ -3327,26 +3124,20 @@ function _buildAiContext() {
     const bycat = {};
     gastosM.forEach(m=>{bycat[m.categoria]=(bycat[m.categoria]||0)+(m.importe||0);});
 
-    // Ingresos
     const ing = settings.ingresos||{};
     const sueldo = ing.sueldo||ing.sueldoRaw||0;
     const totalIng = sueldo+(ing.extrasEUR||0)+(ing.otrosEUR||0);
 
-    // Top plats
     const topPlats = [...plats].sort((a,b)=>platSaldoToMXN(b)-platSaldoToMXN(a)).slice(0,5)
       .map(p=>`${p.name} (${p.type}): ${fmtPlat(p.saldo,p.moneda)}, return ${p.rendimiento>=0?'+':''}${fmtPlat(p.rendimiento,p.moneda)}`).join('; ');
 
-    // Top inversiones
     const topInv = tickers.filter(t=>t.cantActual>0).slice(0,5)
       .map(t=>`${t.ticker} (${t.type}): ×${t.cantActual}, G/L ${t.gpNoRealizada!=null?(t.gpNoRealizada>=0?'+':'')+t.gpNoRealizada.toFixed(0)+' '+t.moneda:'no price'}`).join('; ');
 
-    // Metas
     const metasSummary = goals.slice(0,4).map(g=>`${g.nombre}: goal ${fmt(g.meta)}, current ${fmt(g.actual||0)}`).join('; ');
 
-    // Balance mes
     const balance = totalIng - totalGastos;
 
-    // Todos los movimientos históricos
     const movRecientes = movements
       .filter(m => m.fecha)
       .sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''))
@@ -3354,13 +3145,11 @@ function _buildAiContext() {
       .map(m => `[${m.fecha}] ${m.seccion||''} | ${m.categoria||''} | ${m.concepto||m.descripcion||''} | ${m.monedaOrig||'MXN'} ${(m.importe||0).toFixed(2)}${m.notas?' ('+m.notas+')':''}`)
       .join('\n');
 
-    // Recurrentes
     const recurrentesList = recurrentes
       .filter(r => r.activo !== false)
       .map(r => `${r.nombre}: ${r.importe} ${r.moneda||'EUR'} / ${r.frecuencia||'month'} — ${r.categoria||''}`)
       .join('\n');
 
-    // Todas las plataformas
     const todasPlats = plats.map(p=>`${p.name} (${p.type}/${p.moneda}): balance ${fmtPlat(p.saldo,p.moneda)}, return ${p.rendimiento>=0?'+':''}${fmtPlat(p.rendimiento,p.moneda)}`).join('\n');
 
     return `You are a personal financial assistant for the Finanzas Pro app. You have access to the user's REAL data. Respond in Spanish, concisely and friendly. DO NOT give formal investment advice. You CAN analyze the data and give useful observations. When asked about specific movements, look for them in the provided list.
@@ -3406,7 +3195,6 @@ async function testAiKey(provider) {
   }
 }
 
-// Single provider call (used by both fallback orchestrator and test)
 async function _aiCallSingle(provider, key, messages, test=false) {
   const systemPrompt = _buildAiContext();
   const maxTokens = test ? 10 : 1024;
@@ -3449,8 +3237,6 @@ async function _aiCallSingle(provider, key, messages, test=false) {
     return d.choices?.[0]?.message?.content || '';
 
   } else if (provider === 'openrouter') {
-    // Obtener lista de modelos gratuitos disponibles en tiempo real
-    // Modelos probados que sí funcionan con system prompt
     let freeModels = [];
     try {
       const modelsResp = await fetch('https://openrouter.ai/api/v1/models', {
@@ -3469,11 +3255,9 @@ async function _aiCallSingle(provider, key, messages, test=false) {
           .sort((a, b) => (a.context_length || 0) - (b.context_length || 0))
           .slice(0, 10)
           .map(m => m.id);
-        console.log('[OpenRouter] Free models available:', freeModels);
       }
-    } catch(e) { console.warn('[OpenRouter] Could not get model list:', e.message); }
+    } catch(e) { /* ignore */ }
     if (freeModels.length === 0) {
-      // Fallback mínimo — solo si la API de modelos falla por red
       freeModels = ['liquid/lfm-2.5-1.2b-instruct:free'];
     }
     let lastErr = null;
@@ -3486,20 +3270,19 @@ async function _aiCallSingle(provider, key, messages, test=false) {
           signal:_orCtrl.signal,
           body:JSON.stringify({model,max_tokens:maxTokens,messages:[{role:'system',content:systemPrompt},...messages.map(m=>({role:m.role,content:m.content}))]})
         });}finally{clearTimeout(_orTout);}
-        if (r.status === 429) { console.warn('[OpenRouter]', model, 'failed: 429 (rate limited)'); lastErr=new Error('429'); continue; }
-        if (!r.ok) { const e=await r.json().catch(()=>({})); lastErr=new Error(e?.error?.message||'Error '+r.status); console.warn('[OpenRouter]', model, 'failed:', r.status); continue; }
+        if (r.status === 429) { lastErr=new Error('429'); continue; }
+        if (!r.ok) { const e=await r.json().catch(()=>({})); lastErr=new Error(e?.error?.message||'Error '+r.status); continue; }
         const d = await r.json();
         const text = d.choices?.[0]?.message?.content;
-        if (text) { console.log('[OpenRouter] Model used:', model); return text; }
-      } catch(e) { lastErr=e; console.warn('[OpenRouter]', model, 'error:', e.message); }
-      await new Promise(r => setTimeout(r, 500)); // pausa entre modelos para no saturar
+        if (text) { return text; }
+      } catch(e) { lastErr=e; }
+      await new Promise(r => setTimeout(r, 500));
     }
     throw lastErr || new Error('All OpenRouter models failed');
   }
   throw new Error('Unknown provider: ' + provider);
 }
 
-// Fallback orchestrator: tries Groq → Gemini → DeepSeek → OpenRouter
 async function _aiCall(messages, test=false) {
   const keys = settings.aiKeys || {};
   const order = ['groq','gemini','deepseek','openrouter'];
@@ -3511,11 +3294,10 @@ async function _aiCall(messages, test=false) {
     try {
       const result = await _aiCallSingle(provider, keys[provider], messages, test);
       if (result) {
-        _aiLastProvider = provider; // track which one worked
+        _aiLastProvider = provider;
         return result;
       }
     } catch(e) {
-      console.warn(`[AI] ${provider} failed:`, e.message);
       lastError = e;
     }
   }
@@ -3537,8 +3319,8 @@ function _renderAiChat() {
   const msgsHtml = _aiMessages.length === 0
     ? `<div style="text-align:center;padding:32px 20px;color:var(--text2)">
         <div style="font-size:32px;margin-bottom:10px">✦</div>
-        <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:6px">Financial Assistant</div>
-        <div style="font-size:12px;line-height:1.6">Ask me about your finances.<br>I have access to all your data.</div>
+        <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:6px">${t('financialAssistant')}</div>
+        <div style="font-size:12px;line-height:1.6">${t('iaAskMe')}</div>
         <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
           ${(_getAiSuggestions()||[]).map(s=>`<button onclick="window._aiSendSuggestion(${JSON.stringify(s)})" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:12px;cursor:pointer;color:var(--text);text-align:left;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--border)'">${s}</button>`).join('')}
         </div>
@@ -3554,38 +3336,34 @@ function _renderAiChat() {
 
   panel.innerHTML = `
     <div style="display:flex;flex-direction:column;height:100%">
-      <!-- Header -->
       <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--border);flex-shrink:0">
         <div style="display:flex;align-items:center;gap:10px">
           <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:15px">✦</div>
           <div>
             <div style="font-size:14px;font-weight:700">${providerLabel}</div>
-            <div style="font-size:10px;color:${hasKey?'var(--green)':'var(--orange)'}">${hasKey?'● Connected':'● No API key · configure in Settings'}</div>
+            <div style="font-size:10px;color:${hasKey?'var(--green)':'var(--orange)'}">${hasKey?'● Connected':'● '+t('noApiKey')}</div>
           </div>
         </div>
         <div style="display:flex;gap:8px;align-items:center">
-          ${_aiMessages.length>0?`<button onclick="window._aiClear()" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--text3);padding:4px 8px;border-radius:8px;border:1px solid var(--border)" title="Clear chat">🗑 Clear</button>`:''}
+          ${_aiMessages.length>0?`<button onclick="window._aiClear()" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--text3);padding:4px 8px;border-radius:8px;border:1px solid var(--border)" title="${t('clear')}">🗑 ${t('clear')}</button>`:''}
           <button onclick="window.toggleAiChat()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text2);width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background='none'">✕</button>
         </div>
       </div>
-      <!-- Messages -->
       <div id="aiMsgsContainer" style="flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column">
         ${msgsHtml}
       </div>
-      <!-- Input -->
       <div style="padding:12px 14px;border-top:1px solid var(--border);flex-shrink:0">
         <div style="display:flex;gap:8px;align-items:flex-end">
-          <textarea id="aiInput" placeholder="${hasKey?'Ask something about your finances...':'Configure your API key in Settings first'}" ${hasKey?'':'disabled'} style="flex:1;resize:none;border-radius:12px;padding:10px 14px;font-size:13px;font-family:var(--font);background:var(--card2);border:1px solid var(--border);color:var(--text);outline:none;max-height:100px;min-height:40px;line-height:1.5;overflow-y:auto" rows="1"
+          <textarea id="aiInput" placeholder="${hasKey?t('iaPlaceholder'):t('configureApiKeyFirst')}" ${hasKey?'':'disabled'} style="flex:1;resize:none;border-radius:12px;padding:10px 14px;font-size:13px;font-family:var(--font);background:var(--card2);border:1px solid var(--border);color:var(--text);outline:none;max-height:100px;min-height:40px;line-height:1.5;overflow-y:auto" rows="1"
             onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();window._aiSend();}"
             oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"
           ></textarea>
           <button onclick="window._aiSend()" ${hasKey&&!_aiLoading?'':'disabled'} style="width:38px;height:38px;border-radius:50%;background:var(--blue);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;opacity:${hasKey&&!_aiLoading?'1':'0.4'}">↑</button>
         </div>
-        <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:6px">Data sent to ${providerLabel.replace(' ✦','')} · not stored</div>
+        <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:6px">${t('dataSentTo')} ${providerLabel.replace(' ✦','')} · ${t('notStored')}</div>
       </div>
     </div>`;
 
-  // scroll to bottom
   setTimeout(() => {
     const c = document.getElementById('aiMsgsContainer');
     if (c) c.scrollTop = c.scrollHeight;
@@ -3648,7 +3426,6 @@ function updateNav(patrimonio,totalMXN,totalUSD,tc,totalRend,deltaHoy,deltaHoyPc
 }
 function updateNavUser(user){
   if(!user)return;
-  // Solo actualiza el slot de avatar+signout — lang/dark/fbStatus son HTML estático
   const slot=document.getElementById('navUserExtra');
   if(!slot)return;
   const hideBtn = `<button id="hideValuesBtn" onclick="window.toggleValues()" title="${_valuesHidden?t('showValues'):t('hideValues')}" style="background:var(--card2);border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-size:14px;cursor:pointer;opacity:${_valuesHidden?'0.5':'1'};flex-shrink:0">${_valuesHidden?'🙈':'👁'}</button>`;
@@ -3668,39 +3445,37 @@ function importData(input){const file=input.files[0];if(!file)return;const r=new
   if(d.recurrentes)recurrentes=d.recurrentes;
   if(d.patrimonioHistory)patrimonioHistory=d.patrimonioHistory;
   saveAll();
-  // saveAll() ya lanza saveToFirebase con debounce (1.5s).
-  // Esperamos 2s para que no colisionen y luego subimos todos los movimientos.
   if(typeof window.saveAllMovementsToFirebase==='function' && window._currentUser?.uid){
-    setTimeout(async () => { await window.saveAllMovementsToFirebase(); }, 2000);
+    await window.saveAllMovementsToFirebase();
   }
   alert('✅ Data imported');
 }catch(e){alert('❌ Invalid file: '+e.message);}};r.readAsText(file);}
 
 function openImportCSVModal(){
   openModal(`
-    <div class="modal-header"><div class="modal-title">📊 Import from Excel / CSV</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-header"><div class="modal-title">📊 ${t('importarExcel')}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
     <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">
-      Prepare your file with these columns (you can copy from Excel and save as .csv):
+      ${t('csvInstrucciones')}
     </div>
     <div style="background:var(--card2);border-radius:10px;padding:12px 14px;font-size:11px;font-family:monospace;color:var(--text);margin-bottom:16px;overflow-x:auto;white-space:nowrap">
       fecha | seccion | tipo | plataforma | importe | moneda | categoria | notas
     </div>
     <div style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.8">
-      <strong>fecha</strong> — format YYYY-MM-DD (e.g. 2026-03-01)<br>
+      <strong>fecha</strong> — ${t('formatoFecha')}<br>
       <strong>seccion</strong> — <code>gastos</code> or <code>plataformas</code><br>
-      <strong>tipo</strong> — for expenses: <code>Gasto</code> or <code>Ingreso</code> · for platforms: <code>${t('aportacion')}</code>, <code>${t('retiro')}</code>, <code>Saldo Actual</code><br>
-      <strong>plataforma</strong> — exact platform name (only for platform section)<br>
-      <strong>importe</strong> — number without symbols (e.g. 1500.00)<br>
-      <strong>moneda</strong> — MXN, USD or EUR (optional, default MXN)<br>
-      <strong>categoria</strong> — for expenses: alimentacion, transporte, etc. (optional)<br>
-      <strong>notas</strong> — free description (optional)
+      <strong>tipo</strong> — ${t('csvTipoExplicacion')}<br>
+      <strong>plataforma</strong> — ${t('csvPlataformaExplicacion')}<br>
+      <strong>importe</strong> — ${t('csvImporteExplicacion')}<br>
+      <strong>moneda</strong> — ${t('csvMonedaExplicacion')}<br>
+      <strong>categoria</strong> — ${t('csvCategoriaExplicacion')}<br>
+      <strong>notas</strong> — ${t('csvNotasExplicacion')}
     </div>
     <div style="margin-bottom:12px">
-      <button class="btn btn-secondary btn-sm" onclick="downloadCSVTemplate()">⬇️ Download sample template</button>
+      <button class="btn btn-secondary btn-sm" onclick="downloadCSVTemplate()">⬇️ ${t('descargarPlantilla')}</button>
     </div>
     <div style="border-top:1px solid var(--border);padding-top:16px">
       <input type="file" id="csvImportFile" accept=".csv,.txt" style="display:none" onchange="processCSVImport(this)">
-      <button class="btn btn-primary" style="width:100%" onclick="document.getElementById('csvImportFile').click()">📂 Select CSV file</button>
+      <button class="btn btn-primary" style="width:100%" onclick="document.getElementById('csvImportFile').click()">📂 ${t('seleccionarCSV')}</button>
     </div>
     <div id="csvImportResult" style="margin-top:12px;font-size:13px"></div>
   `);
@@ -3727,11 +3502,10 @@ function processCSVImport(input){
   const reader = new FileReader();
   reader.onload = e => {
     try {
-      const text = e.target.result.replace(/^\uFEFF/,''); // quitar BOM
+      const text = e.target.result.replace(/^\uFEFF/,'');
       const lines = text.split(/\r?\n/).filter(l => l.trim());
       if(lines.length < 2){ resultEl.innerHTML='<span style="color:var(--red)">❌ File is empty or only headers</span>'; return; }
 
-      // Detectar separador (coma o punto y coma)
       const sep = lines[0].includes(';') ? ';' : ',';
       const headers = lines[0].split(sep).map(h => h.trim().toLowerCase().replace(/['"]/g,''));
 
@@ -3766,7 +3540,6 @@ function processCSVImport(input){
         const categoria = parseVal(row, idxCat) || 'otros';
         const notas = parseVal(row, idxNotas);
 
-        // Validaciones
         if(!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)){ errores++; errorMsgs.push(`Row ${li+2}: invalid date "${fecha}"`); return; }
         if(!importe || importe <= 0){ errores++; errorMsgs.push(`Row ${li+2}: invalid amount "${importeRaw}"`); return; }
 
@@ -3800,7 +3573,7 @@ function processCSVImport(input){
       let html = `<div style="color:var(--green);font-weight:700;margin-bottom:8px">✅ ${importados} movements imported</div>`;
       if(errores > 0) html += `<div style="color:var(--orange);margin-bottom:6px">⚠️ ${errores} rows skipped due to errors</div>`;
       if(errorMsgs.length > 0) html += `<div style="font-size:11px;color:var(--text2);max-height:100px;overflow-y:auto">${errorMsgs.map(m=>`• ${m}`).join('<br>')}</div>`;
-      html += `<button class="btn btn-primary btn-sm" style="margin-top:12px;width:100%" onclick="closeModal()">View movements</button>`;
+      html += `<button class="btn btn-primary btn-sm" style="margin-top:12px;width:100%" onclick="closeModal()">${t('verMovimientos')}</button>`;
       resultEl.innerHTML = html;
 
     } catch(err){ resultEl.innerHTML=`<span style="color:var(--red)">❌ Error processing file: ${err.message}</span>`; }
@@ -3815,13 +3588,12 @@ window.ejecutarArchivado = ejecutarArchivado;
 
 function resetAll(){
   openModal(`
-    <div class="modal-header"><div class="modal-title" style="color:var(--red)">⚠️ Reset Everything</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-header"><div class="modal-title" style="color:var(--red)">⚠️ ${t('resetAll')}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
     <div style="font-size:14px;color:var(--text2);margin-bottom:20px;line-height:1.6">
-      This will delete <strong style="color:var(--text)">all your platforms, movements, goals and investments</strong>. This action cannot be undone.<br><br>
-      Type <strong style="color:var(--red)">RESET ALL</strong> to confirm:
+      ${t('resetConfirm')}
     </div>
     <input class="form-input" id="resetConfirmInput" placeholder="RESET ALL" oninput="document.getElementById('btnConfirmReset').disabled=this.value!=='RESET ALL'">
-    <button id="btnConfirmReset" class="btn btn-danger" style="width:100%;margin-top:16px" disabled onclick="confirmResetAll()">Delete everything permanently</button>
+    <button id="btnConfirmReset" class="btn btn-danger" style="width:100%;margin-top:16px" disabled onclick="confirmResetAll()">${t('deletePermanently')}</button>
   `);
 }
 function confirmResetAll(){
@@ -3833,7 +3605,6 @@ function confirmResetAll(){
   patrimonioHistory=[];
   LS.set('price_cache',{});
   saveAll();
-  // Limpiar en Firebase — doc principal y subcolecciones
   if(typeof window.saveToFirebase==='function') window.saveToFirebase(true);
   if(typeof window.saveAllMovementsToFirebase==='function') window.saveAllMovementsToFirebase();
   closeModal();
@@ -3857,11 +3628,8 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChang
 const firebaseConfig={apiKey:"AIzaSyDUAOlDXmkBRQNoYgmax9KOMjQrZd061Q8",authDomain:"control-de-inversion.firebaseapp.com",projectId:"control-de-inversion",storageBucket:"control-de-inversion.firebasestorage.app",messagingSenderId:"955139190781",appId:"1:955139190781:web:b73653484f5f96b7e23394"};
 const app=initializeApp(firebaseConfig),db=getFirestore(app),auth=getAuth(app);
 
-// ── MULTI-USUARIO ──────────────────────────────────────────────────────────
-// Tu UID de admin — cámbialo por el tuyo real de Firebase Auth
 const ADMIN_UID = 'vZBQ7d80yPSxbmar96UqPHXDpd32';
 
-// DOC_REF ahora es dinámico por usuario
 let DOC_REF = null;
 let USER_META_REF = null;
 
@@ -3879,8 +3647,7 @@ function showLogin(msg){document.getElementById('loginOverlay').classList.remove
 window.signOutUser=async()=>{
   if(_unsub){_unsub();_unsub=null;}
   if(_unsubRegistro){_unsubRegistro();_unsubRegistro=null;}
-  await signOut(auth);
-  window.location.reload();
+  await signOut(auth);window.location.reload();
 };
 document.getElementById('btnGoogleLogin').addEventListener('click',async()=>{const btn=document.getElementById('btnGoogleLogin');btn.disabled=true;btn.innerHTML='<span style="display:inline-block;width:20px;height:20px;border:2px solid rgba(10,132,255,0.2);border-top-color:#0A84FF;border-radius:50%;animation:spin 0.7s linear infinite;margin-right:8px;vertical-align:middle"></span> Connecting...';try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(e){btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> Continue with Google';showLogin(e.code==='auth/popup-closed-by-user'?'':'Error signing in.');}});
 
@@ -3888,7 +3655,6 @@ let _ignoreSnap=false,_saveTimeout=null,_unsub=null,_unsubRegistro=null;
 
 async function loadSubcollections(uid){
   const { collection, getDocs: _getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-  // Cargar las 3 subcolecciones de movimientos en paralelo
   let platSnap, invSnap, gasSnap, snapSnap;
   try {
     [platSnap, invSnap, gasSnap, snapSnap] = await Promise.all([
@@ -3898,21 +3664,17 @@ async function loadSubcollections(uid){
       _getDocs(collection(db, 'usuarios', uid, 'snapshots')),
     ]);
   } catch(e) {
-    console.error('[loadSubcollections] Error loading subcollections, using local data:', e);
     setFbStatus('error');
-    return; // conservar datos en memoria y localStorage tal como están
+    return;
   }
-  // Reconstruir array movements en memoria (misma estructura que antes)
   movements = [];
   platSnap.forEach(d => movements.push(d.data()));
   invSnap.forEach(d => movements.push(d.data()));
   gasSnap.forEach(d => movements.push(d.data()));
-  // Reconstruir patrimonioHistory
   patrimonioHistory = [];
   snapSnap.forEach(d => patrimonioHistory.push(d.data()));
   patrimonioHistory.sort((a,b) => a.date < b.date ? -1 : 1);
   patrimonioHistory = patrimonioHistory.slice(-3650);
-  // Guardar en localStorage para offline
   LS.set('movements', movements);
   LS.set('patrimonioHistory', patrimonioHistory);
   _recalcAndSaveSnapshot();
@@ -3926,20 +3688,17 @@ function setupFirestore(uid){
   _unsub=onSnapshot(DOC_REF, async snap=>{
     if(_ignoreSnap){_ignoreSnap=false;return;}
     if(!snap.exists()){
-      // ${t('usuario')} nuevo — datos vacíos y guardar estructura inicial
       resetToEmpty();
       window.saveToFirebase(true);
       return;
     }
     setFbStatus('ok');
     if(window.loadFromRemote) window.loadFromRemote(snap.data());
-    // Cargar movimientos y snapshots de sus subcolecciones
     await loadSubcollections(uid);
   },err=>{console.error(err);setFbStatus('error');});
 }
 
 function resetToEmpty(){
-  // Limpia todos los datos en memoria antes de cargar un nuevo usuario
   if(typeof platforms !== 'undefined') platforms = [];
   if(typeof movements !== 'undefined') movements = [];
   if(typeof goals !== 'undefined') goals = [];
@@ -3948,7 +3707,6 @@ function resetToEmpty(){
   if(typeof settings !== 'undefined') settings = typeof DEFAULT_SETTINGS !== 'undefined' ? {...DEFAULT_SETTINGS} : {tipoCambio:17.84,tipoEUR:20.52,tipoGBP:23.66,rendimientoEsperado:0.06,finnhubKey:''};
 }
 
-// Guarda TODOS los movimientos a subcolecciones (usado en import y reset)
 window.saveAllMovementsToFirebase = async function(){
   const uid = window._currentUser?.uid;
   if(!uid) return;
@@ -3956,25 +3714,22 @@ window.saveAllMovementsToFirebase = async function(){
     await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
   setFbStatus('syncing');
   try{
-    // Borrar subcolecciones existentes
     for(const subcol of ['movimientos_plataformas','movimientos_inversiones','movimientos_gastos','snapshots']){
       const snap = await _getDocs(collection(db,'usuarios',uid,subcol));
       await Promise.all(snap.docs.map(d => _deleteDoc(d.ref)));
     }
-    // Escribir todos los movimientos
     const saves = movements.map(mov => {
       const subcol = mov.seccion==='plataformas' ? 'movimientos_plataformas'
                    : mov.seccion==='inversiones' ? 'movimientos_inversiones'
                    : 'movimientos_gastos';
       return _setDoc(_doc(db,'usuarios',uid,subcol,mov.id), mov);
     });
-    // Escribir todos los snapshots
     const snapSaves = patrimonioHistory.map(s =>
       _setDoc(_doc(db,'usuarios',uid,'snapshots',s.date), s)
     );
     await Promise.all([...saves, ...snapSaves]);
     setFbStatus('ok');
-  }catch(e){ setFbStatus('error'); console.error(e); }
+  }catch(e){ setFbStatus('error'); }
 };
 
 window.saveToFirebase=async(forceImmediate=false, changedMovIds='', deletedMovIds='', changedSnapDate='')=>{
@@ -3987,7 +3742,6 @@ window.saveToFirebase=async(forceImmediate=false, changedMovIds='', deletedMovId
       const { collection, doc: _doc, setDoc: _setDoc, deleteDoc: _deleteDoc } =
         await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
 
-      // 1. Guardar doc principal (sin movements ni snapshots)
       const d = window.getAppData ? window.getAppData() : {};
       _ignoreSnap = true;
       await _setDoc(DOC_REF, {
@@ -3996,7 +3750,6 @@ window.saveToFirebase=async(forceImmediate=false, changedMovIds='', deletedMovId
         updatedAt: serverTimestamp(), device: navigator.userAgent.substring(0,60)
       });
 
-      // 2. Guardar/borrar movimientos individuales que cambiaron
       if(changedMovIds){
         for(const mid of changedMovIds.split('|')){
           const mov = movements.find(m=>m.id===mid);
@@ -4008,17 +3761,14 @@ window.saveToFirebase=async(forceImmediate=false, changedMovIds='', deletedMovId
         }
       }
 
-      // 3. Borrar movimientos eliminados
       if(deletedMovIds){
         for(const mid of deletedMovIds.split('|')){
-          // Intentar borrar de las 3 subcolecciones (no sabemos cuál sin el objeto)
           for(const subcol of ['movimientos_plataformas','movimientos_inversiones','movimientos_gastos']){
             try{ await _deleteDoc(_doc(db,'usuarios',uid,subcol,mid)); }catch(e){}
           }
         }
       }
 
-      // 4. Guardar snapshot del día si cambió
       const todaySnap = patrimonioHistory.find(s=>s.date===today());
       if(todaySnap){
         await _setDoc(_doc(db,'usuarios',uid,'snapshots',todaySnap.date), todaySnap);
@@ -4026,7 +3776,7 @@ window.saveToFirebase=async(forceImmediate=false, changedMovIds='', deletedMovId
 
       setFbStatus('ok');
     }catch(e){
-      setFbStatus('error');console.error(e);
+      setFbStatus('error');
       if(!navigator.onLine){window.queueSave&&window.queueSave(window.getAppData&&window.getAppData());}
     }finally{
       _ignoreSnap = false;
@@ -4036,7 +3786,6 @@ window.saveToFirebase=async(forceImmediate=false, changedMovIds='', deletedMovId
   clearTimeout(_saveTimeout);_saveTimeout=setTimeout(doSave,1500);
 };
 
-// ── Pantalla de espera de aprobación ───────────────────────────────────────
 function showPending(user){
   document.getElementById('loginOverlay').classList.add('hidden');
   document.getElementById('mainNav').style.display='none';
@@ -4050,10 +3799,10 @@ function showPending(user){
     el.style.cssText = 'position:fixed;inset:0;background:var(--bg,#f2f2f7);display:flex;align-items:center;justify-content:center;z-index:9998;font-family:var(--font,"DM Sans",sans-serif)';
     el.innerHTML = `<div style="background:var(--card,#fff);border-radius:24px;padding:40px 32px;max-width:380px;width:90%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.12)">
       <div style="font-size:48px;margin-bottom:16px">⏳</div>
-      <div style="font-size:20px;font-weight:800;letter-spacing:-0.02em;margin-bottom:8px">Access pending</div>
-      <div style="font-size:14px;color:#666;line-height:1.6;margin-bottom:24px">Your account is waiting for approval.<br>The administrator will be notified and will grant you access soon.</div>
+      <div style="font-size:20px;font-weight:800;letter-spacing:-0.02em;margin-bottom:8px">${t('accessPending')}</div>
+      <div style="font-size:14px;color:#666;line-height:1.6;margin-bottom:24px">${t('pendingExplanation')}</div>
       <div style="font-size:12px;color:#999;margin-bottom:24px;word-break:break-all">${user.email}</div>
-      <button onclick="window.signOutUser()" style="padding:10px 24px;border-radius:20px;border:1px solid #ddd;background:none;cursor:pointer;font-size:13px;font-weight:600">← Sign out</button>
+      <button onclick="window.signOutUser()" style="padding:10px 24px;border-radius:20px;border:1px solid #ddd;background:none;cursor:pointer;font-size:13px;font-weight:600">← ${t('salir')}</button>
     </div>`;
     document.body.appendChild(el);
   }
@@ -4064,7 +3813,6 @@ function hidePending(){
   if(el) el.style.display = 'none';
 }
 
-// ── Panel de admin para aprobar usuarios ────────────────────────────────────
 window.openAdminPanel = async function(){
   openModal('<div style="padding:8px 0"><div style="font-size:18px;font-weight:800;margin-bottom:16px">👑 Admin Panel</div><div style="text-align:center;padding:32px;color:var(--text2)"><span class="spinner"></span> Loading users...</div></div>');
 
@@ -4073,7 +3821,6 @@ window.openAdminPanel = async function(){
   const userMetas = [];
   snap.forEach(d => { if(d.id !== ADMIN_UID) userMetas.push({uid: d.id, ...d.data()}); });
 
-  // Cargar conteo de movimientos de cada usuario en paralelo
   const usageData = await Promise.all(userMetas.map(async u => {
     try {
       const [platSnap, invSnap, gasSnap, snapSnap] = await Promise.all([
@@ -4095,7 +3842,6 @@ window.openAdminPanel = async function(){
     }
   }));
 
-  // Pendientes primero, luego por total de movimientos desc
   usageData.sort((a,b) => {
     if(a.aprobado !== b.aprobado) return a.aprobado ? 1 : -1;
     return b.totalMovs - a.totalMovs;
@@ -4171,32 +3917,30 @@ window.eliminarUsuario = async function(uid){
   if(!confirm('Delete this user completely? Their data, profile and Firebase record will be removed.')) return;
   const { doc: _doc, deleteDoc: _deleteDoc, collection: _col, getDocs: _getDocs } =
     await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-  // 1. Borrar subcollecciones (Firestore no las borra automáticamente)
+
   const SUBCOLS = ['movimientos_plataformas','movimientos_inversiones','movimientos_gastos','snapshots'];
-  for (const sub of SUBCOLS) {
+  for (const subcol of SUBCOLS) {
     try {
-      const snap = await _getDocs(_col(db, 'usuarios', uid, sub));
+      const snap = await _getDocs(_col(db, 'usuarios', uid, subcol));
       await Promise.all(snap.docs.map(d => _deleteDoc(d.ref)));
-    } catch(e) { /* subcollección vacía o inexistente */ }
+    } catch(e) { /* ignore */ }
   }
-  // 2. Borrar documentos principales
+
   try {
     await Promise.all([
       _deleteDoc(_doc(db, 'registros', uid)),
       _deleteDoc(_doc(db, 'usuarios', uid, 'datos', 'main')),
       _deleteDoc(_doc(db, 'usuarios', uid, 'meta', 'perfil')),
     ]);
-  } catch(e) { /* documentos inexistentes */ }
+  } catch(e) { /* ignore */ }
   window.openAdminPanel();
 };
 
-// ── Auth principal ──────────────────────────────────────────────────────────
 onAuthStateChanged(auth,async user=>{
   if(user){
     window._currentUser=user;
     const uid = user.uid;
 
-    // Guardar/actualizar metadata del usuario
     const { setDoc: _setDoc, getDoc: _getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
     const metaRef = getMetaRef(uid);
     const metaSnap = await _getDoc(metaRef);
@@ -4209,21 +3953,17 @@ onAuthStateChanged(auth,async user=>{
       creadoEn: new Date().toISOString()
     };
     if(!metaSnap.exists()){
-      // Primera vez — crear perfil pendiente (o aprobado si es admin)
       await _setDoc(metaRef, perfilData);
-      // Escribir en índice central para que el admin pueda verlo
       await _setDoc(doc(db,'registros',uid), {
         uid, email: user.email, displayName: user.displayName,
         photoURL: user.photoURL, aprobado: isAdmin,
         creadoEn: new Date().toISOString()
       });
     } else {
-      // Actualizar datos frescos del perfil
       await _setDoc(metaRef, {email:user.email, displayName:user.displayName, photoURL:user.photoURL}, {merge:true});
       await _setDoc(doc(db,'registros',uid), {email:user.email, displayName:user.displayName}, {merge:true});
     }
 
-    // Leer estado de aprobación desde índice central (registros)
     const registroRef = doc(db, 'registros', uid);
     const registroSnap = await _getDoc(registroRef);
     const aprobado = registroSnap.exists() && registroSnap.data()?.aprobado === true;
@@ -4236,23 +3976,27 @@ onAuthStateChanged(auth,async user=>{
 
     hidePending();
     DOC_REF = getDocRef(uid);
-    resetToEmpty(); // Limpiar memoria antes de cargar datos del nuevo usuario
+    resetToEmpty();
     if(typeof updateNavUser==='function') updateNavUser(user);
     showApp(); setupFirestore(uid);
 
-    // Listener de revocación: cierra sesión si el admin quita el acceso
     if(_unsubRegistro){_unsubRegistro();_unsubRegistro=null;}
-    if(!isAdmin){
-      const { onSnapshot: _onSnap, doc: _docRevoke } =
-        await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-      _unsubRegistro = _onSnap(_docRevoke(db,'registros',uid), (snap) => {
-        if(!snap.exists() || snap.data()?.aprobado === false){
+    _unsubRegistro = onSnapshot(registroRef, (snap) => {
+      if(!snap.exists()){
+        if(!isAdmin){
           if(_unsub){_unsub();_unsub=null;}
           if(_unsubRegistro){_unsubRegistro();_unsubRegistro=null;}
           signOut(auth).then(()=>window.location.reload());
         }
-      });
-    }
+        return;
+      }
+      const data = snap.data();
+      if(!isAdmin && data.aprobado === false){
+        if(_unsub){_unsub();_unsub=null;}
+        if(_unsubRegistro){_unsubRegistro();_unsubRegistro=null;}
+        signOut(auth).then(()=>window.location.reload());
+      }
+    }, (err) => { console.error('[registro listener]', err); });
     if(window.renderPage) window.renderPage(window.currentTab||'dashboard');
     setTimeout(()=>{ _runProactiveAiAlert(); }, 4000);
     setTimeout(()=>{
@@ -4261,8 +4005,6 @@ onAuthStateChanged(auth,async user=>{
     },1200);
   }else{
     window._currentUser=null;
-    // _unsub y showLogin ya los maneja signOutUser si fue cierre intencional
-    // Esto cubre el caso de sesión expirada o revocada externamente
     if(_unsub){_unsub();_unsub=null;}
     if(_unsubRegistro){_unsubRegistro();_unsubRegistro=null;}
     hidePending();
@@ -4273,7 +4015,6 @@ onAuthStateChanged(auth,async user=>{
 window.addEventListener('online',()=>setFbStatus('ok'));
 window.addEventListener('offline',()=>setFbStatus('offline'));
 
-// Exportar funciones al ámbito global
 window.toggleDark = toggleDark;
 window.switchTab = switchTab;
 window.openModal = openModal;
@@ -4324,7 +4065,6 @@ window.toggleLang = toggleLang;
 window._applyLangToNav = _applyLangToNav;
 window.renderGastos = renderGastos;
 
-// Month navigation helpers for gastos page
 window.gastosNavMonth = function(delta) {
   const now = new Date();
   let base;
@@ -4335,7 +4075,6 @@ window.gastosNavMonth = function(delta) {
     base = new Date(now.getFullYear(), now.getMonth(), 1);
   }
   base.setMonth(base.getMonth() + delta);
-  // Never go into the future
   const cur = new Date(now.getFullYear(), now.getMonth(), 1);
   if (base > cur) base = cur;
   const isNow = base.getFullYear()===now.getFullYear() && base.getMonth()===now.getMonth();
