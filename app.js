@@ -135,11 +135,11 @@ async function fetchAlphaVantagePrice(ticker, targetMoneda) {
   // Asegurar tipos de cambio frescos
   if (!_fxCache || !_fxCache.gbpmxn) await fetchFX();
   const fx    = _fxCache || LS.get('fxCache');
-  const tc     = (fx?.usdmxn) || settings.tipoCambio || 20;
-  const eurmxn = (fx?.eurmxn) || settings.tipoEUR    || 21.5;
-  const gbpmxn = (fx?.gbpmxn) || settings.tipoGBP    || 25.5;
-  const usdgbp = (fx?.usdgbp) || 0.79;
-  const usdeur = (fx?.usdeur) || 0.92;
+  const tc     = (fx?.usdmxn) || settings.tipoCambio || 18;
+  const eurmxn = (fx?.eurmxn) || settings.tipoEUR;
+  const gbpmxn = (fx?.gbpmxn) || settings.tipoGBP;
+  const usdgbp = (fx?.usdgbp) || (settings.tipoGBP && settings.tipoCambio ? settings.tipoGBP/settings.tipoCambio : null);
+  const usdeur = (fx?.usdeur) || (settings.tipoEUR && settings.tipoCambio ? settings.tipoEUR/settings.tipoCambio : null);
   console.log(`[AlphaVantage] FX listo — USD/MXN:${tc} GBP/MXN:${gbpmxn}`);
 
   for (const sym of allSymbols) {
@@ -203,16 +203,24 @@ async function fetchFX() {
     const gbpmxn = d.rates.MXN / d.rates.GBP;
     const result = { usdmxn: d.rates.MXN, usdeur: d.rates.EUR, eurmxn: d.rates.MXN / d.rates.EUR, gbpmxn, usdgbp: d.rates.GBP, ts: Date.now(), _live: true };
     console.log(`[FX] Frankfurter: USD/MXN=${result.usdmxn.toFixed(4)}`);
-    if (result.usdmxn >= 15 && result.usdmxn <= 30) {
+    // Validar contra el valor manual del usuario como ancla (±25% de tolerancia)
+    const anchor = settings.tipoCambio || 18;
+    const isPlausible = result.usdmxn >= anchor * 0.75 && result.usdmxn <= anchor * 1.25;
+    if (isPlausible) {
       LS.set('fxCache', result);
       _fxCache = result;
     } else {
-      console.warn(`[FX] Valor fuera de rango, descartando: ${result.usdmxn}`);
+      console.warn(`[FX] Valor fuera de rango vs manual (${anchor}), descartando: ${result.usdmxn}`);
     }
     return result;
   } catch(e) {
     console.warn('[FX] Error al contactar Frankfurter:', e.message);
-    return _fxCache || { usdmxn: settings.tipoCambio||20, usdeur: 0.92, eurmxn: (settings.tipoCambio||20)/0.92, gbpmxn: (settings.tipoCambio||20)*1.27, usdgbp: 0.79, ts: 0, _live: false };
+    (() => {
+      const t = settings.tipoCambio || 18;
+      const e = settings.tipoEUR || (t * 1.15);
+      const g = settings.tipoGBP || (t * 1.325);
+      return _fxCache || { usdmxn: t, usdeur: t > 0 ? e/t : 0.92, eurmxn: e, gbpmxn: g, usdgbp: t > 0 ? g/t : 0.79, ts: 0, _live: false };
+    })()
   }
 }
 
@@ -303,7 +311,7 @@ async function fetchPrice(ticker, type, moneda) {
     let priceUSD = await fetchStockPrice(ticker);
     if (priceUSD !== null) {
       const fx = _fxCache || LS.get('fxCache');
-      const tcLive = (fx?.usdmxn) || settings.tipoCambio || 20;
+      const tcLive = (fx?.usdmxn) || settings.tipoCambio || 18;
       price = priceUSD * tcLive; source = 'finnhub-converted';
     }
     // 2. Alpha Vantage directo a MXN — solo si Finnhub no lo encontró
@@ -313,7 +321,7 @@ async function fetchPrice(ticker, type, moneda) {
       const cachedUSD = getCachedPrice(ticker.toUpperCase());
       if (cachedUSD && isCacheFresh(cachedUSD.ts) && isPriceReasonable(cachedUSD.price, ticker.toUpperCase())) {
         const fx = _fxCache || LS.get('fxCache');
-        const tcLive = (fx?.usdmxn) || settings.tipoCambio || 20;
+        const tcLive = (fx?.usdmxn) || settings.tipoCambio || 18;
         const derived = cachedUSD.price * tcLive;
         if (isPriceReasonable(derived, ticker.toUpperCase()+'_MXN')) { price = derived; source = 'usd-cache-converted'; }
       }
@@ -323,7 +331,7 @@ async function fetchPrice(ticker, type, moneda) {
       const priceUSD2 = await fetchAlphaVantagePrice(ticker, 'USD');
       if (priceUSD2 !== null) {
         const fx = _fxCache || LS.get('fxCache');
-        price = priceUSD2 * ((fx?.usdmxn) || settings.tipoCambio || 20);
+        price = priceUSD2 * ((fx?.usdmxn) || settings.tipoCambio || 18);
         source = 'alphavantage-usd-converted';
       }
     }
@@ -333,7 +341,7 @@ async function fetchPrice(ticker, type, moneda) {
     const cachedMXN = getCachedPrice(ticker.toUpperCase() + '_MXN');
     if (cachedMXN && isCacheFresh(cachedMXN.ts) && isPriceReasonable(cachedMXN.price, ticker.toUpperCase()+'_MXN')) {
       const fx = _fxCache || LS.get('fxCache');
-      const tcLive = (fx?.usdmxn) || settings.tipoCambio || 20;
+      const tcLive = (fx?.usdmxn) || settings.tipoCambio || 18;
       const derived = cachedMXN.price / tcLive;
       if (isPriceReasonable(derived, ticker.toUpperCase())) { price = derived; source = 'mxn-cache-converted'; }
     }
@@ -433,7 +441,7 @@ function fmtPlat(n, moneda) { return fmt(n, moneda || 'MXN'); }
 const DEFAULT_PLATFORMS=[];
 const DEFAULT_MOVS=[];
 const DEFAULT_GOALS=[];
-const DEFAULT_SETTINGS={tipoCambio:20,tipoEUR:21.5,tipoGBP:25.5,rendimientoEsperado:0.06,finnhubKey:''};
+const DEFAULT_SETTINGS={tipoCambio:17.84,tipoEUR:20.52,tipoGBP:23.66,rendimientoEsperado:0.06,finnhubKey:''};
 const DEFAULT_RECURRENTES=[];
 
 let platforms = LS.get('platforms') || DEFAULT_PLATFORMS;
@@ -527,7 +535,7 @@ function actualizarMontoSobrante(mesKey){
 }
 
 function _recalcAndSaveSnapshot() {
-  const tc = settings.tipoCambio || 20;
+  const tc = settings.tipoCambio || 18;
   const eurmxn = getEurMxn();
   const plats = calcPlatforms();
   const totalMXN = plats.reduce((s,p) => {
@@ -572,7 +580,7 @@ function savePatrimonioSnapshot(value, capital) {
 // La ganancia se interpola linealmente entre 0 y la ganancia real de hoy
 // para evitar el salto vertical al no tener precios históricos.
 function buildHistoricalSnapshots() {
-  const tc = settings.tipoCambio || 20;
+  const tc = settings.tipoCambio || 18;
   const eurmxn = getEurMxn();
   const todayStr = today();
 
@@ -827,11 +835,11 @@ window.showAportaciones = showAportaciones;
 function getEurMxn(){
   const fx=_fxCache||LS.get('fxCache');
   if(fx&&fx.eurmxn) return fx.eurmxn;
-  return settings.tipoEUR||21.5;
+  return settings.tipoEUR;
 }
 
 function platSaldoToMXN(p) {
-  const tc = settings.tipoCambio || 20;
+  const tc = settings.tipoCambio || 18;
   const eurmxn = getEurMxn();
   const saldo = p.saldo || 0;
   if (p.moneda === 'USD') return saldo * tc;
@@ -843,7 +851,7 @@ function platSaldoToMXN(p) {
 // RENDER DASHBOARD
 // ============================================
 function renderDashboard(){
-  const tc=settings.tipoCambio||20,re=settings.rendimientoEsperado||0.06;
+  const tc=settings.tipoCambio,re=settings.rendimientoEsperado||0.06;
   const eurmxn=getEurMxn();
   const cm=new Date().getMonth()+1,cy=new Date().getFullYear();
   const plats=calcPlatforms();
@@ -947,7 +955,7 @@ function renderDashboard(){
   }
 
   // Rendimiento puro actual
-  const tc2 = settings.tipoCambio || 20;
+  const tc2 = settings.tipoCambio || 18;
   const eurmxn2 = getEurMxn();
   const plats2 = calcPlatforms();
   const capitalPlatsHoy = plats2.reduce((s,p) => {
@@ -1622,7 +1630,7 @@ function saveMovement(sec){
   else if(sec==='inversiones'){if(!d.ticker||!d.cantidad||!d.precioUnit)return;mov.tipoActivo=d.tipoActivo;mov.ticker=d.ticker.toUpperCase();mov.broker=d.broker;mov.tipoMov=d.tipoMov;mov.cantidad=Number(d.cantidad);mov.precioUnit=Number(d.precioUnit);mov.montoTotal=mov.cantidad*mov.precioUnit;mov.moneda=d.moneda||'USD';mov.comision=Number(d.comision)||0;mov.notas=d.notas||'';}
   else{if(!d.importe)return;mov.categoria=d.categoria;mov.tipo=d.tipo;
     const importeRaw=Number(d.importe);const monedaGasto=d.monedaGasto||'MXN';
-    if(monedaGasto==='EUR'){const fx=_fxCache||LS.get('fxCache');const eurmxn=fx?.eurmxn||settings.tipoEUR||21.5;mov.importe=Math.round(importeRaw*eurmxn*100)/100;mov.monedaOrig='EUR';mov.notas=(d.notas?d.notas+' · ':'')+'€'+importeRaw+' → $'+mov.importe+' MXN (TC '+eurmxn.toFixed(2)+')';}
+    if(monedaGasto==='EUR'){const fx=_fxCache||LS.get('fxCache');const eurmxn=fx?.eurmxn||settings.tipoEUR;mov.importe=Math.round(importeRaw*eurmxn*100)/100;mov.monedaOrig='EUR';mov.notas=(d.notas?d.notas+' · ':'')+'€'+importeRaw+' → $'+mov.importe+' MXN (TC '+eurmxn.toFixed(2)+')';}
     else{mov.importe=importeRaw;mov.monedaOrig='MXN';mov.notas=d.notas||'';}
   }
   movements=[mov,...movements];saveAll(mov.id);closeModal();
@@ -1678,7 +1686,7 @@ function updateMovement(id){
       updated.categoria=d.categoria;updated.tipo=d.tipo;
       const importeRaw=Number(d.importe);const monedaGasto=d.monedaGasto||'MXN';
       if(monedaGasto==='EUR'){
-        const fx=_fxCache||LS.get('fxCache');const eurmxn=fx?.eurmxn||settings.tipoEUR||21.5;
+        const fx=_fxCache||LS.get('fxCache');const eurmxn=fx?.eurmxn||settings.tipoEUR;
         updated.importe=Math.round(importeRaw*eurmxn*100)/100;
         updated.monedaOrig='EUR';
         updated.notas=(d.notas?d.notas+' · ':'')+'€'+importeRaw+' → $'+updated.importe+' MXN (TC '+eurmxn.toFixed(2)+')';
@@ -2103,7 +2111,7 @@ function deleteRecurrente(id){if(!confirm('¿Eliminar este gasto recurrente?'))r
 // INVERSIONES
 // ============================================
 function renderInversiones(){
-  const tc = settings.tipoCambio || 20;
+  const tc = settings.tipoCambio || 18;
   const tickers = getTickerPositions();
   const abiertas = tickers.filter(t => t.cantActual > 0);
   const cerradas = tickers.filter(t => t.cantActual <= 0);
@@ -2265,7 +2273,7 @@ function renderInversiones(){
 }
 
 function renderMetas(){
-  const tc=settings.tipoCambio||20;
+  const tc=settings.tipoCambio;
   const plats=calcPlatforms();
   const totalMXN=plats.reduce((s,p)=>s+platSaldoToMXN(p),0);
   const tickerPos=getTickerPositions();
@@ -2577,9 +2585,9 @@ function renderAjustes(){
             const fx=_fxCache||LS.get('fxCache');
             const isLive=fx&&isCacheFresh(fx.ts);
             const ts=isLive?new Date(fx.ts).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}):'';
-            const vUSD=isLive&&fx.usdmxn?fx.usdmxn.toFixed(2):(settings.tipoCambio||20);
-            const vEUR=isLive&&fx.eurmxn?fx.eurmxn.toFixed(2):(settings.tipoEUR||21.5);
-            const vGBP=isLive&&fx.gbpmxn?fx.gbpmxn.toFixed(2):(settings.tipoGBP||25.5);
+            const vUSD=isLive&&fx.usdmxn?fx.usdmxn.toFixed(2):(settings.tipoCambio);
+            const vEUR=isLive&&fx.eurmxn?fx.eurmxn.toFixed(2):(settings.tipoEUR);
+            const vGBP=isLive&&fx.gbpmxn?fx.gbpmxn.toFixed(2):(settings.tipoGBP);
             const statusBadge=isLive
               ? '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:var(--green)"><span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block"></span>En vivo \xb7 BCE \xb7 actualizado '+ts+'</div>'
               : '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:var(--orange)"><span style="width:7px;height:7px;border-radius:50%;background:var(--orange);display:inline-block"></span>Manual \xb7 presiona actualizar para valores en vivo</div>';
@@ -2942,7 +2950,7 @@ function resetToEmpty(){
   if(typeof goals !== 'undefined') goals = [];
   if(typeof recurrentes !== 'undefined') recurrentes = [];
   if(typeof patrimonioHistory !== 'undefined') patrimonioHistory = [];
-  if(typeof settings !== 'undefined') settings = {...(window.DEFAULT_SETTINGS||{tipoCambio:20,tipoEUR:21.5,tipoGBP:25.5,rendimientoEsperado:0.06,finnhubKey:''})};
+  if(typeof settings !== 'undefined') settings = {...(window.DEFAULT_SETTINGS||{tipoCambio:17.84,tipoEUR:20.52,tipoGBP:23.66,rendimientoEsperado:0.06,finnhubKey:''})};
 }
 
 // Guarda TODOS los movimientos a subcolecciones (usado en import y reset)
