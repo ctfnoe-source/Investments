@@ -1114,17 +1114,17 @@ function getTickerPositions(){
     }
   });
   return Object.values(tickers).map(tkp=>{
-    t.cantActual=t.cantC-t.cantV;t.precioCostoPromedio=t.cantC>0?t.costoTotal/t.cantC:0;
+    tkp.cantActual=tkp.cantC-tkp.cantV;tkp.precioCostoPromedio=tkp.cantC>0?tkp.costoTotal/tkp.cantC:0;
     // Resolve per-broker available quantities
-    t.brokersSaldo=Object.entries(t.brokers).map(([br,b])=>({broker:br,cantActual:Math.max(0,b.cantC-b.cantV),precioCostoPromedio:b.cantC>0?b.costoTotal/b.cantC:0})).filter(b=>b.cantActual>0);
-    const pi=getPriceInfo(t.ticker,t.type,t.moneda);
-    t.precioActual=pi.price;t.priceLabel=pi.label;t.priceCssClass=pi.cssClass;t.priceTooltip=pi.tooltip||'';
-    t.valorActual=t.precioActual&&t.cantActual>0?t.cantActual*t.precioActual:null;
-    t.costoPosicion=t.cantActual*t.precioCostoPromedio;
-    t.gpNoRealizada=t.valorActual!==null?t.valorActual-t.costoPosicion:null;
-    t.pctNoRealizada=t.costoPosicion>0&&t.gpNoRealizada!==null?t.gpNoRealizada/t.costoPosicion:null;
-    t.gpRealizada=t.cantV>0?t.ventasTotal-(t.precioCostoPromedio*t.cantV):0;
-    return t;
+    tkp.brokersSaldo=Object.entries(tkp.brokers||{}).map(([br,b])=>({broker:br,cantActual:Math.max(0,b.cantC-b.cantV),precioCostoPromedio:b.cantC>0?b.costoTotal/b.cantC:0})).filter(b=>b.cantActual>0);
+    const pi=getPriceInfo(tkp.ticker,tkp.type,tkp.moneda);
+    tkp.precioActual=pi.price;tkp.priceLabel=pi.label;tkp.priceCssClass=pi.cssClass;tkp.priceTooltip=pi.tooltip||'';
+    tkp.valorActual=tkp.precioActual&&tkp.cantActual>0?tkp.cantActual*tkp.precioActual:null;
+    tkp.costoPosicion=tkp.cantActual*tkp.precioCostoPromedio;
+    tkp.gpNoRealizada=tkp.valorActual!==null?tkp.valorActual-tkp.costoPosicion:null;
+    tkp.pctNoRealizada=tkp.costoPosicion>0&&tkp.gpNoRealizada!==null?tkp.gpNoRealizada/tkp.costoPosicion:null;
+    tkp.gpRealizada=tkp.cantV>0?tkp.ventasTotal-(tkp.precioCostoPromedio*tkp.cantV):0;
+    return tkp;
   });
 }
 
