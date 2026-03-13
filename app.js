@@ -3063,7 +3063,7 @@ async function _aiCallSingle(provider, key, messages, test=false) {
     const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+key,'HTTP-Referer':window.location.origin,'X-Title':'Finanzas Pro'},
-      body: JSON.stringify({model:'google/gemini-2.0-flash-exp:free', max_tokens:maxTokens, messages:[{role:'system',content:systemPrompt},...messages.map(m=>({role:m.role,content:m.content}))]})
+      body: JSON.stringify({model:'meta-llama/llama-3.3-70b-instruct:free', max_tokens:maxTokens, messages:[{role:'system',content:systemPrompt},...messages.map(m=>({role:m.role,content:m.content}))]})
     });
     if (!r.ok) { const e=await r.json().catch(()=>({})); throw new Error(e?.error?.message||'Error OpenRouter '+r.status); }
     const d = await r.json();
