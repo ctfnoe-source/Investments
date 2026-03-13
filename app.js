@@ -345,7 +345,27 @@ async function fetchPrice(ticker, type, moneda) {
       const derived = cachedMXN.price / tcLive;
       if (isPriceReasonable(derived, ticker.toUpperCase())) { price = derived; source = 'mxn-cache-converted'; }
     }
-    if (price === null) { price = await fetchStockPrice(ticker); if (price !== null) source = 'finnhub'; }
+    if (price === null) {
+      const finnhubPrice = await fetchStockPrice(ticker);
+      if (finnhubPrice !== null) {
+        // Validar precio de Finnhub contra cache MXN si existe
+        // ETFs europeos como VUAA a veces devuelven precios incorrectos en Finnhub
+        const cachedMXN2 = getCachedPrice(ticker.toUpperCase() + '_MXN');
+        const fx2 = _fxCache || LS.get('fxCache');
+        const tcLive2 = (fx2?.usdmxn) || settings.tipoCambio;
+        if (cachedMXN2 && tcLive2) {
+          const expectedUSD = cachedMXN2.price / tcLive2;
+          const ratio = finnhubPrice / expectedUSD;
+          if (ratio < 0.1 || ratio > 10) {
+            console.warn(`[Finnhub] Precio sospechoso para ${ticker}: ${finnhubPrice} USD (esperado ~${expectedUSD.toFixed(2)}) — descartado`);
+          } else {
+            price = finnhubPrice; source = 'finnhub';
+          }
+        } else {
+          price = finnhubPrice; source = 'finnhub';
+        }
+      }
+    }
     // Alpha Vantage para ETFs europeos (VUAA, etc.) que Finnhub no tiene
     if (price === null && settings.alphaVantageKey) { price = await fetchAlphaVantagePrice(ticker, moneda); if (price !== null) source = 'alphavantage'; }
   }
