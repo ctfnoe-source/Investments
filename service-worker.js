@@ -5,12 +5,11 @@ const CACHE_VERSION = 'finanzas-pro-v1';
 
 // Archivos que se cachean al instalar la app (shell de la aplicación)
 const SHELL_FILES = [
-  '/',
-  '/index.html',
-  '/app.js',
-  '/styles.css',
-  '/manifest.json',
-  // Fuentes de Google (se cachean en runtime, no aquí)
+  './',
+  './index.html',
+  './app.js',
+  './styles.css',
+  './manifest.json',
 ];
 
 // URLs externas que se cachean cuando se usan por primera vez
@@ -94,7 +93,7 @@ self.addEventListener('fetch', event => {
         }).catch(() => {
           // Sin red y sin caché → devolver el index.html para que la app maneje el error
           if (event.request.destination === 'document') {
-            return caches.match('/index.html');
+            return caches.match('./index.html');
           }
         });
       })
