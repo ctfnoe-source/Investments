@@ -1,4 +1,5 @@
 // ==================== MÓDULO PRINCIPAL ====================
+function escHtml(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 const LS = {
   get(k) { try { const v = localStorage.getItem('fp_'+k); return v ? JSON.parse(v) : null; } catch { return null; } },
   set(k, v) { try { localStorage.setItem('fp_'+k, JSON.stringify(v)); } catch {} },
@@ -425,7 +426,7 @@ let patrimonioHistory = LS.get('patrimonioHistory') || [];
 // Limpiar snapshots sintéticos de versiones anteriores
 (function(){ const f=patrimonioHistory.filter(s=>!s.synthetic); if(f.length!==patrimonioHistory.length){patrimonioHistory=f;LS.set('patrimonioHistory',patrimonioHistory);} })();
 
-platforms = platforms.map(p => ({tasaAnual:0, fechaInicio:'2026-02-01', moneda:'MXN', ...p}));
+platforms = platforms.map(p => ({tasaAnual:0, fechaInicio:today(), moneda:'MXN', ...p}));
 
 let currentTab = 'dashboard';
 let movFilter = {seccion:'todas', search:''};
@@ -671,7 +672,7 @@ function calcPlatforms() {
   });
 }
 
-function recalcularPlatformas(){ platforms = platforms.map(p => ({tasaAnual:0, fechaInicio:'2026-02-01', moneda:'MXN', ...p})); }
+function recalcularPlatformas(){ platforms = platforms.map(p => ({tasaAnual:0, fechaInicio:today(), moneda:'MXN', ...p})); }
 
 function applyRecurrentes() {
   const cm=new Date().getMonth()+1, cy=new Date().getFullYear();
@@ -694,7 +695,7 @@ function applyRecurrentes() {
 
 function loadFromRemote(remote){
   if(Date.now()-_lastLocalSave<3000) return;
-  if(remote.platforms)platforms=remote.platforms.map(p=>({tasaAnual:0,fechaInicio:'2026-02-01',moneda:'MXN',...p}));
+  if(remote.platforms)platforms=remote.platforms.map(p=>({tasaAnual:0,fechaInicio:today(),moneda:'MXN',...p}));
   if(remote.goals)goals=remote.goals;
   if(remote.settings)settings={...DEFAULT_SETTINGS,...remote.settings};
   if(remote.recurrentes)recurrentes=remote.recurrentes;
@@ -1162,7 +1163,7 @@ function renderDashboard(){
           <div class="list-item">
             <div style="display:flex;align-items:center;gap:8px">
               <div class="rank" style="background:${COLORS[i]}">${i+1}</div>
-              <div><div style="font-size:13px;font-weight:600">${p.name} ${monedaBadge(p.moneda)} ${p.tasaAnual>0?`<span class="tasa-badge${p.tasaAnual>=10?' alta':p.tasaAnual>=5?' media':''}">⚡${p.tasaAnual}%</span>`:''}</div><div style="font-size:10px;color:var(--text2)">${p.type} · ${fmtPct(p.saldoInicial?p.rendimiento/p.saldoInicial:0)}</div></div>
+              <div><div style="font-size:13px;font-weight:600">${escHtml(p.name)} ${monedaBadge(p.moneda)} ${p.tasaAnual>0?`<span class="tasa-badge${p.tasaAnual>=10?' alta':p.tasaAnual>=5?' media':''}">⚡${p.tasaAnual}%</span>`:''}</div><div style="font-size:10px;color:var(--text2)">${p.type} · ${fmtPct(p.saldoInicial?p.rendimiento/p.saldoInicial:0)}</div></div>
             </div>
             <div style="text-align:right"><div style="font-size:13px;font-weight:700">${fmtPlat(p.saldo, p.moneda)}</div><div style="font-size:10px;font-weight:600;color:${pctCol(p.rendimiento)}">${p.rendimiento>=0?'+':''}${fmtPlat(p.rendimiento, p.moneda)}</div></div>
           </div>`).join('')}
@@ -1381,7 +1382,7 @@ function _buildMovRow(m, transferGroups) {
       tipo='↔ Transferencia'; monto=fmt(m.monto); rowClass='transfer-row';
     } else { det=m.platform; tipo=m.tipoPlat; monto=fmt(m.monto); }
   } else if(m.seccion==='inversiones'){
-    det=`<strong>${m.ticker}</strong> · ${m.broker}`;
+    det=`<strong>${escHtml(m.ticker)}</strong> · ${m.broker}`;
     tipo=m.tipoMov+' · '+m.tipoActivo+' · '+(m.moneda||'USD');
     monto=fmt(m.montoTotal,m.moneda);
     extra=m.cantidad+'×'+fmtFull(m.precioUnit);
@@ -1632,16 +1633,16 @@ function openEditMovModal(id){
       ${sec==='plataformas'?`
         <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${m.fecha}" required></div><div class="form-group"><label class="form-label">Plataforma</label><select class="form-select" name="platform" required>${platforms.map(p=>`<option value="${p.name}" ${m.platform===p.name?'selected':''}>${p.name}</option>`).join('')}</select></div></div>
         <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Tipo</label><select class="form-select" name="tipoPlat">${['Saldo Actual','Aportación','Retiro','Gasto'].map(t=>`<option ${m.tipoPlat===t?'selected':''}>${t}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Monto</label><input type="number" step="any" class="form-input" name="monto" value="${m.monto}" required></div></div>
-        <div class="form-group"><label class="form-label">Descripción</label><input class="form-input" name="desc" value="${m.desc||''}"></div>
+        <div class="form-group"><label class="form-label">Descripción</label><input class="form-input" name="desc" value="${escHtml(m.desc||'')}"></div>
       `:sec==='inversiones'?`
         <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${m.fecha}" required></div><div class="form-group"><label class="form-label">Tipo Activo</label><select class="form-select" name="tipoActivo">${ASSET_TYPES.map(t=>`<option ${m.tipoActivo===t?'selected':''}>${t}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Movimiento</label><select class="form-select" name="tipoMov">${['Compra','Venta','Dividendo','Comisión'].map(t=>`<option ${m.tipoMov===t?'selected':''}>${t}</option>`).join('')}</select></div></div>
         <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Ticker</label><input class="form-input" name="ticker" value="${m.ticker}" required style="text-transform:uppercase"></div><div class="form-group"><label class="form-label">Broker</label><input list="brokerListE" class="form-input" name="broker" value="${m.broker||''}"><datalist id="brokerListE">${BROKERS.map(b=>`<option value="${b}">`).join('')}</datalist></div><div class="form-group"><label class="form-label">Moneda</label><select class="form-select" name="moneda"><option value="USD" ${(m.moneda||'USD')==='USD'?'selected':''}>USD</option><option value="MXN" ${m.moneda==='MXN'?'selected':''}>MXN</option></select></div></div>
         <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Cantidad</label><input type="number" step="any" class="form-input" name="cantidad" value="${m.cantidad}" required></div><div class="form-group"><label class="form-label">Precio Unitario</label><input type="number" step="any" class="form-input" name="precioUnit" value="${m.precioUnit}" required></div><div class="form-group"><label class="form-label">Comisión</label><input type="number" step="any" class="form-input" name="comision" value="${m.comision||0}"></div></div>
-        <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="notas" value="${m.notas||''}"></div>
+        <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="notas" value="${escHtml(m.notas||'')}"></div>
       `:`
         <div class="form-row form-row-2"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" name="fecha" value="${m.fecha}" required></div><div class="form-group"><label class="form-label">Tipo</label><select class="form-select" name="tipo"><option ${m.tipo==='Gasto'?'selected':''}>Gasto</option><option ${m.tipo==='Ingreso'?'selected':''}>Ingreso</option></select></div></div>
         <div class="form-row form-row-3"><div class="form-group"><label class="form-label">Categoría</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}" ${m.categoria===c.id?'selected':''}>${c.icon} ${c.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Importe</label><input type="number" step="any" class="form-input" name="importe" value="${m.importe}" required></div><div class="form-group"><label class="form-label">Moneda</label><select class="form-select" name="monedaGasto"><option value="MXN" ${(m.monedaOrig||'MXN')==='MXN'?'selected':''}>MXN 🇲🇽</option><option value="EUR" ${m.monedaOrig==='EUR'?'selected':''}>EUR 🇪🇺</option></select></div></div>
-        <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="notas" value="${m.notas||''}"></div>
+        <div class="form-group"><label class="form-label">Notas</label><input class="form-input" name="notas" value="${escHtml(m.notas||'')}"></div>
       `}
       <div style="display:flex;gap:10px;margin-top:16px"><button type="submit" class="btn btn-primary" style="flex:1;padding:14px">💾 Guardar</button><button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button></div>
     </form>
@@ -1696,7 +1697,7 @@ function renderPlataformas(){
             return`<div style="background:var(--card2);border-radius:14px;padding:14px 16px;border:0.5px solid var(--border)">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
                 <div style="display:flex;align-items:center;gap:8px">
-                  <div style="font-size:15px;font-weight:800">${p.name}</div>
+                  <div style="font-size:15px;font-weight:800">${escHtml(p.name)}</div>
                   ${monedaBadge(cur)} ${typeBadge(p.type)} ${tasaBadge}
                 </div>
                 <div style="text-align:right">
@@ -1732,7 +1733,7 @@ function renderPlataformas(){
               const retirosStr = p.retiro > 0 ? `<span style="color:var(--text2);font-size:12px">-${fmtPlat(p.retiro,cur)}</span>` : `<span style="color:var(--text3)">—</span>`;
               const gastosStr = p.gasto > 0 ? `<span style="color:var(--text2);font-size:12px">-${fmtPlat(p.gasto,cur)}</span>` : `<span style="color:var(--text3)">—</span>`;
               const pctPort=total>0?((platSaldoToMXN(p)/total)*100).toFixed(1)+'%':'0%';
-              return`<tr><td style="color:var(--text3);font-size:11px">${i+1}</td><td style="font-weight:700">${p.name}</td><td><span class="editable" onclick="editPlatField('${p.id}','moneda',this,'moneda')">${monedaBadge(cur)}</span></td><td>${typeBadge(p.type)}</td><td><span class="editable" onclick="editPlatField('${p.id}','saldoInicial',this,'number')">${fmtPlat(p.saldoInicial,cur)}</span></td><td><span class="editable" onclick="editPlatField('${p.id}','tasaAnual',this,'percent')">${tasaBadge}</span></td><td><span class="editable" onclick="editPlatField('${p.id}','fechaInicio',this,'date')" style="font-size:11px;color:var(--text2)">${p.fechaInicio||'—'}</span></td><td>${diasStr}</td><td>${aportLink}</td><td>${retirosStr}</td><td>${gastosStr}</td><td>${rendAutoStr}</td><td style="color:${pctCol(p.rendimientoManual)};font-weight:600">${p.rendimientoManual!==0?(p.rendimientoManual>=0?'+':'')+fmtPlat(p.rendimientoManual,cur):'<span style="color:var(--text3)">—</span>'}</td><td style="font-weight:800;font-size:14px">${fmtPlat(p.saldo,cur)}</td><td style="font-weight:600;color:${pctCol(p.rendimiento)}">${fmtPct(p.saldoInicial?p.rendimiento/p.saldoInicial:0)}</td><td style="font-size:11px;color:var(--text2)">${pctPort}</td><td><button class="del-btn" onclick="deletePlatform('${p.id}')">×</button></td></tr>`;
+              return`<tr><td style="color:var(--text3);font-size:11px">${i+1}</td><td style="font-weight:700">${escHtml(p.name)}</td><td><span class="editable" onclick="editPlatField('${p.id}','moneda',this,'moneda')">${monedaBadge(cur)}</span></td><td>${typeBadge(p.type)}</td><td><span class="editable" onclick="editPlatField('${p.id}','saldoInicial',this,'number')">${fmtPlat(p.saldoInicial,cur)}</span></td><td><span class="editable" onclick="editPlatField('${p.id}','tasaAnual',this,'percent')">${tasaBadge}</span></td><td><span class="editable" onclick="editPlatField('${p.id}','fechaInicio',this,'date')" style="font-size:11px;color:var(--text2)">${p.fechaInicio||'—'}</span></td><td>${diasStr}</td><td>${aportLink}</td><td>${retirosStr}</td><td>${gastosStr}</td><td>${rendAutoStr}</td><td style="color:${pctCol(p.rendimientoManual)};font-weight:600">${p.rendimientoManual!==0?(p.rendimientoManual>=0?'+':'')+fmtPlat(p.rendimientoManual,cur):'<span style="color:var(--text3)">—</span>'}</td><td style="font-weight:800;font-size:14px">${fmtPlat(p.saldo,cur)}</td><td style="font-weight:600;color:${pctCol(p.rendimiento)}">${fmtPct(p.saldoInicial?p.rendimiento/p.saldoInicial:0)}</td><td style="font-size:11px;color:var(--text2)">${pctPort}</td><td><button class="del-btn" onclick="deletePlatform('${p.id}')">×</button></td></tr>`;
             }).join('')}
           </tbody>
         </table>
@@ -1765,7 +1766,7 @@ function deletePlatform(id){if(!confirm('¿Eliminar esta plataforma?'))return;pl
 function openEditPlatModal(id){
   const p = platforms.find(x=>x.id===id); if(!p) return;
   openModal(`<div class="modal-header"><div class="modal-title">✏️ Editar Plataforma</div><button class="modal-close" onclick="closeModal()">✕</button></div>
-    <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="epName" value="${p.name||''}"></div>
+    <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="epName" value="${escHtml(p.name||'')}"></div>
     <div class="form-row form-row-2">
       <div class="form-group"><label class="form-label">Tipo</label><select class="form-select" id="epType">${PLAT_TYPES.map(t=>`<option ${p.type===t?'selected':''}>${t}</option>`).join('')}</select></div>
       <div class="form-group"><label class="form-label">Moneda</label><select class="form-select" id="epMoneda"><option value="MXN" ${(p.moneda||'MXN')==='MXN'?'selected':''}>🇲🇽 MXN</option><option value="USD" ${p.moneda==='USD'?'selected':''}>🇺🇸 USD</option><option value="EUR" ${p.moneda==='EUR'?'selected':''}>🇪🇺 EUR</option></select></div>
@@ -1997,7 +1998,7 @@ function renderGastos(){
                 <span style="font-size:14px;font-weight:800;color:${m.tipo==='Ingreso'?'var(--green)':'var(--red)'}">${m.tipo==='Ingreso'?'+':'−'}${fmtEUR(toEUR(m))}</span>
               </div>
               <div style="display:flex;justify-content:space-between;align-items:center">
-                <span style="font-size:11px;color:var(--text2)">${m.fecha}${m.notas?` · ${m.notas}`:''}</span>
+                <span style="font-size:11px;color:var(--text2)">${m.fecha}${m.notas?` · ${escHtml(m.notas)}`:''}</span>
                 <div style="display:flex;gap:4px">
                   <button class="edit-btn" onclick="openEditMovModal('${m.id}')" style="opacity:0.6">✏️</button>
                   <button class="del-btn" onclick="deleteMovement('${m.id}')" style="opacity:0.5">×</button>
@@ -2444,7 +2445,7 @@ function openArchivarModal() {
         const movsPlat = movsAArchivar.filter(m => m.platform === p.name);
         if (movsPlat.length === 0) return '';
         return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)">
-          <span style="font-weight:600">${p.name}</span>
+          <span style="font-weight:600">${escHtml(p.name)}</span>
           <span style="color:var(--text2)">${movsPlat.length} movs → saldo <strong>${fmtPlat(p.saldo, p.moneda)}</strong> · G/P <strong style="color:${pctCol(p.rendimiento)}">${p.rendimiento>=0?'+':''}${fmtPlat(p.rendimiento, p.moneda)}</strong></span>
         </div>`;
       }).join('')}
@@ -2645,7 +2646,7 @@ function exportData(){const data={platforms,movements,goals,settings,recurrentes
 
 function importData(input){const file=input.files[0];if(!file)return;const r=new FileReader();r.onload=async e=>{try{
   const d=JSON.parse(e.target.result);
-  if(d.platforms)platforms=d.platforms.map(p=>({tasaAnual:0,fechaInicio:'2026-02-01',moneda:'MXN',...p}));
+  if(d.platforms)platforms=d.platforms.map(p=>({tasaAnual:0,fechaInicio:today(),moneda:'MXN',...p}));
   if(d.movements)movements=d.movements;
   if(d.goals)goals=d.goals;
   if(d.settings)settings=d.settings;
