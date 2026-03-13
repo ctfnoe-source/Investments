@@ -410,7 +410,15 @@ async function flushOfflineQueue() {
   if (!_offlineQueue.length) return;
   if (typeof window.saveToFirebase !== 'function') return;
   setOfflineBanner('syncing');
-  try { await window.saveToFirebase(true); _offlineQueue = []; LS.set('offlineQueue', []); setOfflineBanner('synced'); }
+  try {
+    // Guardar doc principal (platforms, goals, settings, recurrentes)
+    await window.saveToFirebase(true);
+    // Sincronizar TODOS los movimientos y snapshots acumulados offline
+    if (typeof window.saveAllMovementsToFirebase === 'function') {
+      await window.saveAllMovementsToFirebase();
+    }
+    _offlineQueue = []; LS.set('offlineQueue', []); setOfflineBanner('synced');
+  }
   catch(e) { setOfflineBanner('offline'); }
 }
 
@@ -996,7 +1004,7 @@ function _recalcAndSaveSnapshot() {
   const gananciaReal = totalRendPlats + totalRendInv;
 
   // capital = patrimonio - ganancia real, para que value - capital = gananciaReal siempre
-  const capitalBase = Math.round(patrimonioTotal - gananciaReal);
+  const capitalBase = Math.max(0, Math.round(patrimonioTotal - gananciaReal));
 
   savePatrimonioSnapshot(patrimonioTotal, capitalBase);
 }
@@ -1422,9 +1430,12 @@ function renderDashboard(){
   const tickers2 = getTickerPositions();
   const capitalInvHoy = tickers2.reduce((s,t) => s + (t.moneda==='MXN' ? t.costoPosicion : t.costoPosicion*tc2), 0);
   const capitalHoy = capitalPlatsHoy + capitalInvHoy;
-  // Ganancia neta real = suma de rendimientos individuales por plataforma
-  // Correcto porque cada plataforma ya descuenta aportaciones/retiros/transferencias
-  const patrimonioRendPuro = plats.reduce((s,p) => s + (p.rendimiento||0), 0);
+  // Ganancia neta real = rendimientos de plataformas + G/P no realizada de inversiones
+  const tickers2Rend = tickers2.reduce((s,t) => {
+    const gp = t.gpNoRealizada !== null ? t.gpNoRealizada : 0;
+    return s + (t.moneda === 'MXN' ? gp : gp * tc2);
+  }, 0);
+  const patrimonioRendPuro = plats.reduce((s,p) => s + (p.rendimiento||0), 0) + tickers2Rend;
 
   function getChangeForMonths(months) {
     if (hist.length < 2) return null;
@@ -2274,6 +2285,7 @@ function renderPlataformas(){
 
 function editPlatField(id,field,el,inputType){
   const p=platforms.find(x=>x.id===id);if(!p)return;
+  const originalEl=el.cloneNode(true); // guardar nodo original para cancelar
   let input;
   if(inputType==='date'){input=document.createElement('input');input.type='date';input.value=p[field]||today();input.className='form-input';input.style.cssText='width:130px;padding:4px 8px;font-size:12px';}
   else if(inputType==='percent'){input=document.createElement('input');input.type='number';input.step='0.01';input.min='0';input.max='100';input.value=p[field]||0;input.className='form-input';input.style.cssText='width:90px;padding:4px 8px;font-size:12px';input.placeholder='e.g. 13.5';}
@@ -2282,8 +2294,11 @@ function editPlatField(id,field,el,inputType){
     PLAT_MONEDAS.forEach(m=>{const opt=document.createElement('option');opt.value=m;opt.textContent=m==='MXN'?'🇲🇽 MXN':m==='USD'?'🇺🇸 USD':'🇪🇺 EUR';if(p[field]===m)opt.selected=true;input.appendChild(opt);});
   }
   else{input=document.createElement('input');input.type='number';input.step='any';input.value=p[field]||0;input.className='form-input';input.style.cssText='width:110px;padding:4px 8px;font-size:12px';}
-  const finish=()=>{const raw=input.value;let val=inputType==='date'||inputType==='moneda'?raw:(Number(raw)||0);platforms=platforms.map(x=>x.id!==id?x:{...x,[field]:val});saveAll();};
-  input.onblur=finish;input.onkeydown=e=>{if(e.key==='Enter')input.blur();if(e.key==='Escape')saveAll();};
+  let _committed=false;
+  const finish=()=>{if(_committed)return;_committed=true;const raw=input.value;let val=inputType==='date'||inputType==='moneda'?raw:(Number(raw)||0);platforms=platforms.map(x=>x.id!==id?x:{...x,[field]:val});saveAll();};
+  const cancel=()=>{if(_committed)return;_committed=true;input.replaceWith(originalEl);};
+  input.onblur=finish;
+  input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();input.blur();}if(e.key==='Escape'){e.preventDefault();cancel();}};
   if(inputType==='moneda')input.onchange=finish;
   el.replaceWith(input);input.focus();
 }
@@ -3642,10 +3657,13 @@ function importData(input){const file=input.files[0];if(!file)return;const r=new
   if(d.settings)settings=d.settings;
   if(d.recurrentes)recurrentes=d.recurrentes;
   if(d.patrimonioHistory)patrimonioHistory=d.patrimonioHistory;
+  // saveAll() ya llama a saveToFirebase internamente (doc principal + movimientos cambiados).
+  // Para una importación masiva forzamos también saveAllMovementsToFirebase una sola vez
+  // en lugar de dos (evita doble escritura que había antes).
   saveAll();
-  // Guardar todos los movimientos importados a sus subcolecciones
   if(typeof window.saveAllMovementsToFirebase==='function' && window._currentUser?.uid){
-    await window.saveAllMovementsToFirebase();
+    // Esperar el debounce de saveAll (1.5 s) antes de lanzar el guardado masivo
+    setTimeout(async () => { await window.saveAllMovementsToFirebase(); }, 2000);
   }
   alert('✅ Data imported');
 }catch(e){alert('❌ Invalid file: '+e.message);}};r.readAsText(file);}
@@ -4138,8 +4156,19 @@ window.revocarUsuario = async function(uid){
 
 window.eliminarUsuario = async function(uid){
   if(!confirm('Delete this user completely? Their data, profile and Firebase record will be removed.')) return;
-  const { doc: _doc, deleteDoc: _deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-  // Borrar en paralelo: datos, meta y registro
+  const { doc: _doc, deleteDoc: _deleteDoc, collection: _col, getDocs: _getDocs } =
+    await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+
+  // Borrar subcolecciones (movimientos + snapshots) — Firestore no las borra en cascada
+  const SUBCOLS = ['movimientos_plataformas','movimientos_inversiones','movimientos_gastos','snapshots'];
+  for (const subcol of SUBCOLS) {
+    try {
+      const snap = await _getDocs(_col(db, 'usuarios', uid, subcol));
+      await Promise.all(snap.docs.map(d => _deleteDoc(d.ref)));
+    } catch(e) { console.warn(`Could not delete subcollection ${subcol}:`, e); }
+  }
+
+  // Borrar documentos principales + registro
   try {
     await Promise.all([
       _deleteDoc(_doc(db, 'registros', uid)),
