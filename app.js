@@ -878,7 +878,12 @@ function loadFromRemote(remote){
   if(Date.now()-_lastLocalSave<3000) return;
   if(remote.platforms)platforms=remote.platforms.map(p=>({tasaAnual:0,fechaInicio:today(),moneda:'MXN',...p}));
   if(remote.goals)goals=remote.goals;
-  if(remote.settings)settings={...DEFAULT_SETTINGS,...remote.settings};
+  if(remote.settings){
+    const localAiKeys = settings.aiKeys;
+    settings={...DEFAULT_SETTINGS,...remote.settings};
+    // Preserve aiKeys from local if remote doesn't have them (keys saved locally but not yet synced)
+    if(!settings.aiKeys && localAiKeys) settings.aiKeys = localAiKeys;
+  }
   if(remote.recurrentes)recurrentes=remote.recurrentes;
   LS.set('platforms',platforms);LS.set('goals',goals);LS.set('settings',settings);
   LS.set('recurrentes',recurrentes);
@@ -2858,14 +2863,14 @@ function renderAjustes(){
     <div class="grid-2" style="margin-bottom:16px">
       <div class="card">
         <div class="card-title">🔑 API Key — Finnhub <span style="font-weight:400;color:var(--text3)">(acciones USA)</span></div>
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px"><input type="text" class="form-input" style="flex:1;min-width:200px;font-family:monospace;font-size:13px" id="finnhubKeyInput" placeholder="Pega tu API key" value="${settings.finnhubKey||''}" oninput="window.settings.finnhubKey=this.value.trim();window.LS.set('settings',window.settings)"><button class="btn btn-primary" onclick="testFinnhub()">🧪 Probar</button>${hasFinnhub?`<span style="font-size:12px;color:var(--green)">✅</span>`:''}</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px"><input type="text" class="form-input" style="flex:1;min-width:200px;font-family:monospace;font-size:13px" id="finnhubKeyInput" placeholder="Pega tu API key" value="${settings.finnhubKey||''}" oninput="window.settings.finnhubKey=this.value.trim();saveAll()"><button class="btn btn-primary" onclick="testFinnhub()">🧪 Probar</button>${hasFinnhub?`<span style="font-size:12px;color:var(--green)">✅</span>`:''}</div>
         <div id="finnhubTestResult" style="margin-top:8px;font-size:12px"></div>
         <div style="margin-top:8px;font-size:11px;color:var(--text3)">Gratis en <a href="https://finnhub.io" target="_blank" style="color:var(--blue)">finnhub.io</a></div>
       </div>
 
       <div class="card">
         <div class="card-title">🔑 API Key — Alpha Vantage <span style="font-weight:400;color:var(--text3)">(VUAA.LON, ETFs Londres/Xetra)</span></div>
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px"><input type="text" class="form-input" style="flex:1;min-width:200px;font-family:monospace;font-size:13px" id="alphaVantageKeyInput" placeholder="Pega tu API key" value="${settings.alphaVantageKey||''}" oninput="window.settings.alphaVantageKey=this.value.trim();window.LS.set('settings',window.settings)"><button class="btn btn-primary" onclick="testAlphaVantage()">🧪 Probar</button>${settings.alphaVantageKey?`<span style="font-size:12px;color:var(--green)">✅</span>`:''}</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px"><input type="text" class="form-input" style="flex:1;min-width:200px;font-family:monospace;font-size:13px" id="alphaVantageKeyInput" placeholder="Pega tu API key" value="${settings.alphaVantageKey||''}" oninput="window.settings.alphaVantageKey=this.value.trim();saveAll()"><button class="btn btn-primary" onclick="testAlphaVantage()">🧪 Probar</button>${settings.alphaVantageKey?`<span style="font-size:12px;color:var(--green)">✅</span>`:''}</div>
         <div id="alphaVantageTestResult" style="margin-top:8px;font-size:12px"></div>
         <div style="margin-top:8px;font-size:11px;color:var(--text3)">Gratis en <a href="https://alphavantage.co" target="_blank" style="color:var(--blue)">alphavantage.co</a> · 25 req/día</div>
       </div>
@@ -2906,7 +2911,7 @@ function renderAjustes(){
               '</div>'+
               '<div style="display:flex;gap:8px;align-items:center">'+
                 '<input type="password" class="form-input" id="aiKey_'+p.id+'" style="flex:1;font-family:monospace;font-size:12px" placeholder="'+p.ph+'" value="'+val+'" '+
-                  'oninput="if(!window.settings.aiKeys)window.settings.aiKeys={};window.settings.aiKeys[\'' + p.id + '\']=this.value.trim();window.LS.set(\'settings\',window.settings);this.closest(\'div\').style.borderColor=this.value?\'rgba(48,209,88,0.3)\':\'var(--border)\'">'+
+                  'oninput="if(!window.settings.aiKeys)window.settings.aiKeys={};window.settings.aiKeys[\'' + p.id + '\']=this.value.trim();saveAll();this.closest(\'div\').style.borderColor=this.value?\'rgba(48,209,88,0.3)\':\'var(--border)\'">'+
                 '<button class="btn btn-sm" style="background:var(--card);border:1px solid var(--border);white-space:nowrap" onclick="testAiKey(\'' + p.id + '\')">🧪 Probar</button>'+
               '</div>'+
               '<div id="aiKeyTestResult_'+p.id+'" style="margin-top:6px;font-size:11px"></div>'+
