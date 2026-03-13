@@ -2828,6 +2828,7 @@ function renderPageInternal(tab){
 }
 function renderPage(tab){renderPageInternal(tab);}
 window.renderPage=renderPage;
+window.forceUpdateFX=forceUpdateFX;
 window.showAportaciones = showAportaciones;
 
 // ==================== FIREBASE (MÓDULO) ====================
