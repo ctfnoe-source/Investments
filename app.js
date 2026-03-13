@@ -1113,18 +1113,18 @@ function getTickerPositions(){
       if(m.tipoMov==='Venta'){tickers[key].brokers[broker].cantV+=m.cantidad||0;}
     }
   });
-  return Object.values(tickers).map(t=>{
-    t.cantActual=t.cantC-t.cantV;t.precioCostoPromedio=t.cantC>0?t.costoTotal/t.cantC:0;
+  return Object.values(tickers).map(tk_pos=>{
+    tk_pos.cantActual=tk_pos.cantC-tk_pos.cantV;tk_pos.precioCostoPromedio=tk_pos.cantC>0?tk_pos.costoTotal/tk_pos.cantC:0;
     // Resolve per-broker available quantities
-    t.brokersSaldo=Object.entries(t.brokers).map(([br,b])=>({broker:br,cantActual:Math.max(0,b.cantC-b.cantV),precioCostoPromedio:b.cantC>0?b.costoTotal/b.cantC:0})).filter(b=>b.cantActual>0);
-    const pi=getPriceInfo(t.ticker,t.type,t.moneda);
-    t.precioActual=pi.price;t.priceLabel=pi.label;t.priceCssClass=pi.cssClass;t.priceTooltip=pi.tooltip||'';
-    t.valorActual=t.precioActual&&t.cantActual>0?t.cantActual*t.precioActual:null;
-    t.costoPosicion=t.cantActual*t.precioCostoPromedio;
-    t.gpNoRealizada=t.valorActual!==null?t.valorActual-t.costoPosicion:null;
-    t.pctNoRealizada=t.costoPosicion>0&&t.gpNoRealizada!==null?t.gpNoRealizada/t.costoPosicion:null;
-    t.gpRealizada=t.cantV>0?t.ventasTotal-(t.precioCostoPromedio*t.cantV):0;
-    return t;
+    tk_pos.brokersSaldo=Object.entries(tk_pos.brokers).map(([br,b])=>({broker:br,cantActual:Math.max(0,b.cantC-b.cantV),precioCostoPromedio:b.cantC>0?b.costoTotal/b.cantC:0})).filter(b=>b.cantActual>0);
+    const pi=getPriceInfo(tk_pos.ticker,tk_pos.type,tk_pos.moneda);
+    tk_pos.precioActual=pi.price;tk_pos.priceLabel=pi.label;tk_pos.priceCssClass=pi.cssClass;tk_pos.priceTooltip=pi.tooltip||'';
+    tk_pos.valorActual=tk_pos.precioActual&&tk_pos.cantActual>0?tk_pos.cantActual*tk_pos.precioActual:null;
+    tk_pos.costoPosicion=tk_pos.cantActual*tk_pos.precioCostoPromedio;
+    tk_pos.gpNoRealizada=tk_pos.valorActual!==null?tk_pos.valorActual-tk_pos.costoPosicion:null;
+    tk_pos.pctNoRealizada=tk_pos.costoPosicion>0&&tk_pos.gpNoRealizada!==null?tk_pos.gpNoRealizada/tk_pos.costoPosicion:null;
+    tk_pos.gpRealizada=tk_pos.cantV>0?tk_pos.ventasTotal-(tk_pos.precioCostoPromedio*tk_pos.cantV):0;
+    return tk_pos;
   });
 }
 
@@ -1927,7 +1927,7 @@ function openMovModal(sec){
           <div class="form-group"><label class="form-label">${t('plataforma')}</label><select class="form-select" name="platform" required><option value="">${t('seleccionar')}...</option>${platforms.map(p=>`<option value="${p.name}">${p.name} (${p.moneda||'MXN'})</option>`).join('')}</select></div>
         </div>
         <div class="form-row form-row-2">
-          <div class="form-group"><label class="form-label">${t('tipo')}</label><select class="form-select" name="tipoPlat">${['Saldo Actual','Aportación','Retiro','Gasto'].map(t=>`<option>${t}</option>`).join('')}</select></div>
+          <div class="form-group"><label class="form-label">${t('tipo')}</label><select class="form-select" name="tipoPlat">${['Saldo Actual','Aportación','Retiro','Gasto'].map(opt=>`<option>${opt}</option>`).join('')}</select></div>
           <div class="form-group"><label class="form-label">${t('monto')}</label><input type="number" step="any" class="form-input" name="monto" placeholder="0" required></div>
         </div>
         <div class="form-group"><label class="form-label">${t('descripcion')}</label><input class="form-input" name="desc" placeholder="${t('opcional')}..."></div>
@@ -2047,10 +2047,10 @@ function openEditMovModal(id){
     <form id="editForm" onsubmit="updateMovement('${id}');return false">
       ${sec==='plataformas'?`
         <div class="form-row form-row-2"><div class="form-group"><label class="form-label">${t('fecha')}</label><input type="date" class="form-input" name="fecha" value="${m.fecha}" required></div><div class="form-group"><label class="form-label">${t('plataforma')}</label><select class="form-select" name="platform" required>${platforms.map(p=>`<option value="${p.name}" ${m.platform===p.name?'selected':''}>${p.name}</option>`).join('')}</select></div></div>
-        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">${t('tipo')}</label><select class="form-select" name="tipoPlat">${['Saldo Actual','Aportación','Retiro','Gasto'].map(t=>`<option ${m.tipoPlat===t?'selected':''}>${t}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">${t('monto')}</label><input type="number" step="any" class="form-input" name="monto" value="${m.monto}" required></div></div>
+        <div class="form-row form-row-2"><div class="form-group"><label class="form-label">${t('tipo')}</label><select class="form-select" name="tipoPlat">${['Saldo Actual','Aportación','Retiro','Gasto'].map(opt=>`<option ${m.tipoPlat===opt?'selected':''}>${opt}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">${t('monto')}</label><input type="number" step="any" class="form-input" name="monto" value="${m.monto}" required></div></div>
         <div class="form-group"><label class="form-label">${t('descripcion')}</label><input class="form-input" name="desc" value="${escHtml(m.desc||'')}"></div>
       `:sec==='inversiones'?`
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">${t('fecha')}</label><input type="date" class="form-input" name="fecha" value="${m.fecha}" required></div><div class="form-group"><label class="form-label">${t('tipoActivo')}</label><select class="form-select" name="tipoActivo">${ASSET_TYPES.map(t=>`<option ${m.tipoActivo===t?'selected':''}>${t}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">${t('movimiento')}</label><select class="form-select" name="tipoMov">${['Compra','Venta','Dividendo','Comisión'].map(t=>`<option ${m.tipoMov===t?'selected':''}>${t}</option>`).join('')}</select></div></div>
+        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">${t('fecha')}</label><input type="date" class="form-input" name="fecha" value="${m.fecha}" required></div><div class="form-group"><label class="form-label">${t('tipoActivo')}</label><select class="form-select" name="tipoActivo">${ASSET_TYPES.map(opt=>`<option ${m.tipoActivo===opt?'selected':''}>${opt}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">${t('movimiento')}</label><select class="form-select" name="tipoMov">${['Compra','Venta','Dividendo','Comisión'].map(opt=>`<option ${m.tipoMov===opt?'selected':''}>${opt}</option>`).join('')}</select></div></div>
         <div class="form-row form-row-3"><div class="form-group"><label class="form-label">${t('ticker')}</label><input class="form-input" name="ticker" value="${m.ticker}" required style="text-transform:uppercase"></div><div class="form-group"><label class="form-label">${t('broker')}</label><input list="brokerListE" class="form-input" name="broker" value="${m.broker||''}"><datalist id="brokerListE">${BROKERS.map(b=>`<option value="${b}">`).join('')}</datalist></div><div class="form-group"><label class="form-label">${t('moneda')}</label><select class="form-select" name="moneda"><option value="USD" ${(m.moneda||'USD')==='USD'?'selected':''}>USD</option><option value="MXN" ${m.moneda==='MXN'?'selected':''}>MXN</option></select></div></div>
         <div class="form-row form-row-3"><div class="form-group"><label class="form-label">${t('cantidad')}</label><input type="number" step="any" class="form-input" name="cantidad" value="${m.cantidad}" required></div><div class="form-group"><label class="form-label">${t('precioUnitario')}</label><input type="number" step="any" class="form-input" name="precioUnit" value="${m.precioUnit}" required></div><div class="form-group"><label class="form-label">${t('comision')}</label><input type="number" step="any" class="form-input" name="comision" value="${m.comision||0}"></div></div>
         <div class="form-group"><label class="form-label">${t('notas')}</label><input class="form-input" name="notas" value="${escHtml(m.notas||'')}"></div>
@@ -2184,7 +2184,7 @@ function openEditPlatModal(id){
   openModal(`<div class="modal-header"><div class="modal-title">✏️ ${t('editar')} ${t('plataforma')}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
     <div class="form-group"><label class="form-label">${t('nombre')}</label><input class="form-input" id="epName" value="${escHtml(p.name||'')}"></div>
     <div class="form-row form-row-2">
-      <div class="form-group"><label class="form-label">${t('tipo')}</label><select class="form-select" id="epType">${PLAT_TYPES.map(t=>`<option ${p.type===t?'selected':''}>${t}</option>`).join('')}</select></div>
+      <div class="form-group"><label class="form-label">${t('tipo')}</label><select class="form-select" id="epType">${PLAT_TYPES.map(opt=>`<option ${p.type===opt?'selected':''}>${opt}</option>`).join('')}</select></div>
       <div class="form-group"><label class="form-label">${t('moneda')}</label><select class="form-select" id="epMoneda"><option value="MXN" ${(p.moneda||'MXN')==='MXN'?'selected':''}>🇲🇽 MXN</option><option value="USD" ${p.moneda==='USD'?'selected':''}>🇺🇸 USD</option><option value="EUR" ${p.moneda==='EUR'?'selected':''}>🇪🇺 EUR</option></select></div>
     </div>
     <div class="form-row form-row-2">
@@ -2212,7 +2212,7 @@ function openAddPlatformModal(){
   openModal(`<div class="modal-header"><div class="modal-title">${t('nuevaPlataforma')}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
     <form onsubmit="addPlatform();return false">
       <div class="form-group"><label class="form-label">${t('nombre')}</label><input class="form-input" id="npName" placeholder="e.g. Banco Azteca" required></div>
-      <div class="form-row form-row-3"><div class="form-group"><label class="form-label">${t('tipo')}</label><select class="form-select" id="npType">${PLAT_TYPES.map(t=>`<option>${t}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">${t('grupo')}</label><select class="form-select" id="npGroup">${PLAT_GROUPS.map(g=>`<option>${g}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">${t('moneda')}</label><select class="form-select" id="npMoneda"><option value="MXN">🇲🇽 MXN</option><option value="USD">🇺🇸 USD</option><option value="EUR">🇪🇺 EUR</option></select></div></div>
+      <div class="form-row form-row-3"><div class="form-group"><label class="form-label">${t('tipo')}</label><select class="form-select" id="npType">${PLAT_TYPES.map(opt=>`<option>${opt}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">${t('grupo')}</label><select class="form-select" id="npGroup">${PLAT_GROUPS.map(g=>`<option>${g}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">${t('moneda')}</label><select class="form-select" id="npMoneda"><option value="MXN">🇲🇽 MXN</option><option value="USD">🇺🇸 USD</option><option value="EUR">🇪🇺 EUR</option></select></div></div>
       <div class="form-row form-row-2"><div class="form-group"><label class="form-label">${t('saldoInicial')}</label><input type="number" class="form-input" id="npSaldo" placeholder="0" value="0"></div><div class="form-group"><label class="form-label">⚡ ${t('tasaAnual')} %</label><input type="number" step="0.01" min="0" max="100" class="form-input" id="npTasa" placeholder="e.g. 13.5" value="0"></div></div>
       <div class="form-group"><label class="form-label">${t('fechaInicio')}</label><input type="date" class="form-input" id="npFecha" value="${today()}"></div>
       <button type="submit" class="btn btn-primary" style="width:100%;margin-top:16px">${t('agregar')}</button>
@@ -3170,7 +3170,7 @@ function _buildAiContext() {
       .map(p=>`${p.name} (${p.type}): ${fmtPlat(p.saldo,p.moneda)}, return ${p.rendimiento>=0?'+':''}${fmtPlat(p.rendimiento,p.moneda)}`).join('; ');
 
     const topInv = tickers.filter(t=>t.cantActual>0).slice(0,5)
-      .map(t=>`${t.ticker} (${t.type}): ×${t.cantActual}, G/L ${t.gpNoRealizada!=null?(t.gpNoRealizada>=0?'+':'')+t.gpNoRealizada.toFixed(0)+' '+t.moneda:'no price'}`).join('; ');
+      .map(tkr=>`${tkr.ticker} (${tkr.type}): ×${tkr.cantActual}, G/L ${tkr.gpNoRealizada!=null?(tkr.gpNoRealizada>=0?'+':'')+tkr.gpNoRealizada.toFixed(0)+' '+tkr.moneda:'no price'}`).join('; ');
 
     const metasSummary = goals.slice(0,4).map(g=>`${g.nombre}: goal ${fmt(g.meta)}, current ${fmt(g.actual||0)}`).join('; ');
 
