@@ -8,14 +8,118 @@ const LS = {
 let _offlineQueue = LS.get('offlineQueue') || [];
 let _isOnline = navigator.onLine;
 
+// ==================== i18n ====================
+const I18N = {
+  es: {
+    // Nav tabs
+    tabDashboard:'📊 Dashboard', tabMovimientos:'📋 Movimientos', tabPlataformas:'🏦 Plataformas',
+    tabInversiones:'📈 Inversiones', tabGastos:'💳 Gastos', tabMetas:'🎯 Metas', tabAjustes:'⚙️ Ajustes',
+    // Gastos page
+    gastosTitulo:'Control de Gastos', gastosSubtitulo:'Todo en', gastosMoneda:'Euros',
+    ingresosMes:'💰 Mis Ingresos del Mes',
+    sueldoLabel:'Sueldo fijo', extrasLabel:'Extras / Bonos', otrosLabel:'Otros', totalLabel:'Total',
+    monedaSueldo:'Moneda del sueldo',
+    recurrentesTitulo:'🔄 Gastos Recurrentes', recurrentesGestionar:'⚙️ Gestionar',
+    sinRecurrentes:'Sin recurrentes.',
+    presupuestoTitulo:'Presupuesto por Categoría',
+    movsTitulo:'Movimientos',
+    sinMovs:'Sin movimientos este mes',
+    catHeader:['Categoría','Presupuesto','% ingreso','Real','Restante','Uso'],
+    sinAsignar:'sin presupuesto asignado',
+    asignar:'asignar',
+    usado:'usado',
+    catOcultas1:'categorías ocultas', catOcultas2:'Mostrar todas',
+    catOcultasSA:'categorías sin asignar ocultas',
+    // offline banner
+    offlineMsg:'Sin internet — cambios guardados localmente',
+    syncingMsg:'Sincronizando cambios pendientes…',
+    syncedMsg:'¡Sincronizado!',
+    // login
+    loginTitle:'Finanzas Pro',
+    loginSub:'Tu dashboard financiero personal.<br>Inicia sesión con tu cuenta de Google para continuar.',
+    loginBtn:'Continuar con Google',
+    loginLock:'🔒 Solo el propietario autorizado puede acceder',
+    // access denied
+    accessTitle:'Acceso denegado',
+    accessSub:'Esta aplicación es privada.<br>Tu cuenta no tiene permiso de acceso.',
+    accessBtn:'← Cerrar sesión',
+    // months
+    months:['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],
+  },
+  en: {
+    tabDashboard:'📊 Dashboard', tabMovimientos:'📋 Transactions', tabPlataformas:'🏦 Platforms',
+    tabInversiones:'📈 Investments', tabGastos:'💳 Expenses', tabMetas:'🎯 Goals', tabAjustes:'⚙️ Settings',
+    gastosTitulo:'Expense Tracker', gastosSubtitulo:'All in', gastosMoneda:'Euros',
+    ingresosMes:'💰 My Monthly Income',
+    sueldoLabel:'Fixed salary', extrasLabel:'Extras / Bonuses', otrosLabel:'Other', totalLabel:'Total',
+    monedaSueldo:'Salary currency',
+    recurrentesTitulo:'🔄 Recurring Expenses', recurrentesGestionar:'⚙️ Manage',
+    sinRecurrentes:'No recurring expenses.',
+    presupuestoTitulo:'Budget by Category',
+    movsTitulo:'Transactions',
+    sinMovs:'No transactions this month',
+    catHeader:['Category','Budget','% income','Actual','Remaining','Usage'],
+    sinAsignar:'no budget assigned',
+    asignar:'assign',
+    usado:'used',
+    catOcultas1:'categories hidden', catOcultas2:'Show all',
+    catOcultasSA:'unassigned categories hidden',
+    offlineMsg:'No internet — changes saved locally',
+    syncingMsg:'Syncing pending changes…',
+    syncedMsg:'Synced!',
+    loginTitle:'Finanzas Pro',
+    loginSub:'Your personal financial dashboard.<br>Sign in with your Google account to continue.',
+    loginBtn:'Continue with Google',
+    loginLock:'🔒 Only the authorized owner can access',
+    accessTitle:'Access denied',
+    accessSub:'This application is private.<br>Your account does not have access.',
+    accessBtn:'← Sign out',
+    months:['January','February','March','April','May','June','July','August','September','October','November','December'],
+  }
+};
+let _lang = LS.get('lang') || 'es';
+function t(key) { return (I18N[_lang] || I18N.es)[key] || (I18N.es[key] || key); }
+function toggleLang() {
+  _lang = _lang === 'es' ? 'en' : 'es';
+  LS.set('lang', _lang);
+  _applyLangToNav();
+  // Re-render current tab
+  if(typeof renderPageInternal === 'function') renderPageInternal(currentTab);
+}
+function _applyLangToNav() {
+  const tabMap = {
+    dashboard:'tabDashboard', movimientos:'tabMovimientos', plataformas:'tabPlataformas',
+    inversiones:'tabInversiones', gastos:'tabGastos', metas:'tabMetas', ajustes:'tabAjustes'
+  };
+  // Desktop tabs
+  document.querySelectorAll('.nav-tab[data-tab]').forEach(btn => {
+    const key = tabMap[btn.dataset.tab];
+    if(key) btn.textContent = t(key);
+  });
+  // Mobile tabs
+  document.querySelectorAll('.mobile-nav-item[data-tab]').forEach(btn => {
+    const key = tabMap[btn.dataset.tab];
+    const label = btn.querySelector('.mob-label');
+    if(key && label) {
+      // Strip the emoji prefix (first word) for mobile labels
+      const full = t(key);
+      label.textContent = full.replace(/^\S+\s+/, '');
+    }
+  });
+  // Lang button
+  const btn = document.getElementById('langToggleBtn');
+  if(btn) btn.textContent = _lang === 'es' ? '🌐 EN' : '🌐 ES';
+}
+window.toggleLang = toggleLang;
+
 function setOfflineBanner(state) {
   const b = document.getElementById('offlineBanner');
   const icon = document.getElementById('offlineIcon');
   const text = document.getElementById('offlineText');
   if (!b) return;
-  if (state === 'offline') { b.className = 'offline-banner show'; icon.textContent = '📴'; text.textContent = 'Sin internet — cambios guardados localmente'; }
-  else if (state === 'syncing') { b.className = 'offline-banner show syncing'; icon.textContent = '⏳'; text.textContent = 'Sincronizando cambios pendientes…'; }
-  else if (state === 'synced') { b.className = 'offline-banner show synced'; icon.textContent = '✅'; text.textContent = '¡Sincronizado!'; setTimeout(() => { b.className = 'offline-banner'; }, 2500); }
+  if (state === 'offline') { b.className = 'offline-banner show'; icon.textContent = '📴'; text.textContent = t('offlineMsg'); }
+  else if (state === 'syncing') { b.className = 'offline-banner show syncing'; icon.textContent = '⏳'; text.textContent = t('syncingMsg'); }
+  else if (state === 'synced') { b.className = 'offline-banner show synced'; icon.textContent = '✅'; text.textContent = t('syncedMsg'); setTimeout(() => { b.className = 'offline-banner'; }, 2500); }
   else { b.className = 'offline-banner'; }
 }
 
@@ -45,6 +149,17 @@ function applyDarkMode() {
   if (saved === true || (saved === null && prefersDark)) document.documentElement.setAttribute('data-theme', 'dark');
 }
 applyDarkMode();
+
+function applyInitialLang() {
+  // Apply saved language to nav tabs and button on startup (no re-render needed here)
+  _applyLangToNav();
+}
+// Run after DOM ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', applyInitialLang);
+} else {
+  setTimeout(applyInitialLang, 0);
+}
 
 const PRICE_CACHE_KEY = 'price_cache';
 function getPriceCache() { return LS.get(PRICE_CACHE_KEY) || {}; }
@@ -419,7 +534,9 @@ function getPriceSummary() {
 }
 
 const COLORS=['#0A84FF','#30D158','#FF9F0A','#BF5AF2','#FF375F','#64D2FF','#FFD60A','#AC8E68','#5E5CE6','#FF6482','#32D74B','#00C7BE','#FF453A','#5856D6','#AF52DE','#FF2D55','#A2845E','#30B0C7'];
-const MONTHS=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const MONTHS_ES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const MONTHS_EN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTHS=new Proxy([],{get(_,i){const m=_lang==='en'?MONTHS_EN:MONTHS_ES;return typeof i==='string'&&!isNaN(i)?m[+i]:m[i];}});
 const EXPENSE_CATS=[
   {id:'vivienda',name:'Vivienda',icon:'🏠'},{id:'alimentacion',name:'Alimentación',icon:'🍔'},{id:'luz',name:'Luz',icon:'💡'},{id:'agua',name:'Agua',icon:'🚰'},
   {id:'celular',name:'Celular',icon:'📱'},{id:'salud',name:'Salud',icon:'💊'},{id:'seguro',name:'Seguro',icon:'🛡'},{id:'ocio',name:'Ocio',icon:'🎮'},
@@ -1937,26 +2054,37 @@ function renderGastos(){
 
   document.getElementById('page-gastos').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-      <div><div class="section-title">Control de Gastos 🇪🇺</div><div class="section-sub">${MONTHS[cm-1]} ${cy} · Todo en Euros</div></div>
+      <div><div class="section-title">${t('gastosTitulo')} 🇪🇺</div><div class="section-sub">${MONTHS[cm-1]} ${cy} · ${t('gastosSubtitulo')} ${t('gastosMoneda')}</div></div>
       <button class="btn btn-secondary" onclick="switchTab('movimientos');openMovModal('gastos')">+ Gasto</button>
     </div>
     <div class="card" style="margin-bottom:16px;border-top:3px solid var(--purple)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <div class="card-title" style="margin:0">🔄 Gastos Recurrentes — ${fmtEUR(totalRecurrente)}/mes</div>
-        <button class="btn btn-sm" style="background:rgba(191,90,242,0.1);color:var(--purple);border:none;font-weight:700" onclick="openRecurrentesModal()">⚙️ Gestionar</button>
+        <div class="card-title" style="margin:0">${t('recurrentesTitulo')} — ${fmtEUR(totalRecurrente)}/mes</div>
+        <button class="btn btn-sm" style="background:rgba(191,90,242,0.1);color:var(--purple);border:none;font-weight:700" onclick="openRecurrentesModal()">${t('recurrentesGestionar')}</button>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">
         ${recurrentes.filter(r=>r.activo).slice(0,6).map(r=>`<div class="recurrente-card"><div class="recurrente-icon" style="background:${r.color||'var(--card2)'}22">${r.icon||'📌'}</div><div class="recurrente-info"><div class="recurrente-name">${r.nombre}</div><div class="recurrente-meta">${r.frecuencia} · día ${r.dia}</div></div><div class="recurrente-amount" style="color:var(--red)">-${fmtEUR(r.importe)}</div></div>`).join('')}
-        ${recurrentes.filter(r=>r.activo).length===0?'<div style="color:var(--text2);font-size:13px;padding:8px">Sin recurrentes.</div>':''}
+        ${recurrentes.filter(r=>r.activo).length===0?'<div style="color:var(--text2);font-size:13px;padding:8px">'+t('sinRecurrentes')+'</div>':''}
       </div>
     </div>
     <div class="card" style="margin-bottom:16px;border-top:3px solid var(--green)">
-      <div class="card-title">💰 Mis Ingresos del Mes (EUR 🇪🇺)</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px">
+        <div class="card-title" style="margin:0">${t('ingresosMes')}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <label style="font-size:11px;font-weight:600;color:var(--text2)">${t('monedaSueldo')}:</label>
+          <select class="form-select" style="padding:4px 10px;font-size:13px;font-weight:700;border-radius:10px;width:auto" id="selMonedaSueldo" onchange="updateIngresoConMoneda('sueldo',document.getElementById('inputSueldo').value,this.value)">
+            <option value="EUR" ${(ingresos.monedaSueldo||'EUR')==='EUR'?'selected':''}>🇪🇺 EUR</option>
+            <option value="USD" ${ingresos.monedaSueldo==='USD'?'selected':''}>🇺🇸 USD</option>
+            <option value="MXN" ${ingresos.monedaSueldo==='MXN'?'selected':''}>🇲🇽 MXN</option>
+            <option value="GBP" ${ingresos.monedaSueldo==='GBP'?'selected':''}>🇬🇧 GBP</option>
+          </select>
+        </div>
+      </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:8px">
-        <div><label class="form-label">Sueldo fijo (€)</label><div style="display:flex;gap:6px;align-items:center"><input type="number" class="form-input" placeholder="0" value="${ingresos.sueldoRaw||sueldoEUR||''}" onchange="updateIngresoConMoneda('sueldo',this.value,'EUR')" style="font-size:16px;font-weight:700;flex:1"><span style="font-size:13px;font-weight:700;color:var(--text2)">€</span></div></div>
-        <div><label class="form-label">Extras / Bonos (€)</label><input type="number" class="form-input" placeholder="0" value="${extrasEUR||''}" onchange="if(!settings.ingresos)settings.ingresos={};settings.ingresos.extrasEUR=Number(this.value)||0;settings.ingresos.extras=Number(this.value)||0;saveAll()" style="font-size:16px;font-weight:700"></div>
-        <div><label class="form-label">Otros (€)</label><input type="number" class="form-input" placeholder="0" value="${otrosEUR||''}" onchange="if(!settings.ingresos)settings.ingresos={};settings.ingresos.otrosEUR=Number(this.value)||0;settings.ingresos.otros=Number(this.value)||0;saveAll()" style="font-size:16px;font-weight:700"></div>
-        <div style="background:var(--card2);border-radius:12px;padding:12px;text-align:center"><div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase">Total</div><div style="font-size:22px;font-weight:800;color:var(--green);margin-top:4px">${fmtEUR(totalIngPlaneadoEUR)}</div></div>
+        <div><label class="form-label">${t('sueldoLabel')}</label><div style="display:flex;gap:6px;align-items:center"><input id="inputSueldo" type="number" class="form-input" placeholder="0" value="${ingresos.sueldoRaw||sueldoEUR||''}" onchange="updateIngresoConMoneda('sueldo',this.value,document.getElementById('selMonedaSueldo')?.value||(settings.ingresos?.monedaSueldo)||'EUR')" style="font-size:16px;font-weight:700;flex:1"><span class="sueldo-symbol" style="font-size:13px;font-weight:700;color:var(--text2)">${{EUR:'€',USD:'US$',MXN:'$',GBP:'£'}[ingresos.monedaSueldo||'EUR']||'€'}</span></div></div>
+        <div><label class="form-label">${t('extrasLabel')}</label><input type="number" class="form-input" placeholder="0" value="${extrasEUR||''}" onchange="if(!settings.ingresos)settings.ingresos={};settings.ingresos.extrasEUR=Number(this.value)||0;settings.ingresos.extras=Number(this.value)||0;saveAll()" style="font-size:16px;font-weight:700"></div>
+        <div><label class="form-label">${t('otrosLabel')}</label><input type="number" class="form-input" placeholder="0" value="${otrosEUR||''}" onchange="if(!settings.ingresos)settings.ingresos={};settings.ingresos.otrosEUR=Number(this.value)||0;settings.ingresos.otros=Number(this.value)||0;saveAll()" style="font-size:16px;font-weight:700"></div>
+        <div style="background:var(--card2);border-radius:12px;padding:12px;text-align:center"><div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase">${t('totalLabel')}</div><div style="font-size:22px;font-weight:800;color:var(--green);margin-top:4px">${fmtEUR(totalIngPlaneadoEUR)}</div></div>
       </div>
     </div>
 
@@ -2035,7 +2163,7 @@ function renderGastos(){
     </div>
 
     <div class="card-flat">
-      <div style="padding:16px 20px 0"><div class="card-title">Movimientos — ${MONTHS[cm-1]} ${cy}</div></div>
+      <div style="padding:16px 20px 0"><div class="card-title">${t('movsTitulo')} — ${MONTHS[cm-1]} ${cy}</div></div>
       ${isMobile() ? `
         <div style="padding:8px 12px;display:flex;flex-direction:column;gap:6px">
           ${mesMovs.length>0 ? mesMovs.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).map(m=>`
@@ -2055,7 +2183,7 @@ function renderGastos(){
                 </div>
               </div>
             </div>`).join('')
-          : '<div style="text-align:center;color:var(--text2);padding:24px;font-size:13px">Sin movimientos este mes</div>'}
+          : '<div style="text-align:center;color:var(--text2);padding:24px;font-size:13px">'+t('sinMovs')+'</div>'}
         </div>
       ` : `<div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Categoría</th><th>Tipo</th><th>Importe €</th><th>Notas</th><th></th></tr></thead><tbody>${movRows}</tbody></table></div>`}
     </div>
@@ -2066,8 +2194,20 @@ function updateBudget(catId,value){if(!settings.budgets)settings.budgets={};sett
 function updateIngreso(tipo,value){if(!settings.ingresos)settings.ingresos={};settings.ingresos[tipo]=Number(value)||0;saveAll();}
 function updateIngresoConMoneda(tipo,value,moneda){
   if(!settings.ingresos)settings.ingresos={};
-  const raw=Number(value)||0;settings.ingresos.monedaSueldo=moneda;settings.ingresos.sueldoRaw=raw;
-  if(moneda==='EUR'){settings.ingresos[tipo]=Math.round(raw*getEurMxn()*100)/100;}else{settings.ingresos[tipo]=raw;}
+  const raw=Number(value)||0;
+  moneda=moneda||'EUR';
+  settings.ingresos.monedaSueldo=moneda;
+  settings.ingresos.sueldoRaw=raw;
+  // Convert to EUR for internal calculations (gastos page is EUR-based)
+  const eurmxn=getEurMxn();
+  const fx=_fxCache||LS.get('fxCache');
+  const usdeur=fx?.usdeur||(settings.tipoEUR&&settings.tipoCambio?settings.tipoCambio/settings.tipoEUR:0.88);
+  const gbpeur=fx?(fx.usdeur/fx.usdgbp):(settings.tipoGBP&&settings.tipoEUR?settings.tipoEUR/settings.tipoGBP:1.17);
+  let asEUR=raw;
+  if(moneda==='USD') asEUR=raw*usdeur;
+  else if(moneda==='MXN') asEUR=raw/eurmxn;
+  else if(moneda==='GBP') asEUR=raw*gbpeur;
+  settings.ingresos[tipo]=Math.round(asEUR*100)/100;
   saveAll();
 }
 
@@ -3320,3 +3460,5 @@ window.updateMovement = updateMovement;
 window.movFilter = movFilter;
 window.renderMovimientos = renderMovimientos;
 window.updateAllPrices = updateAllPrices;
+window.toggleLang = toggleLang;
+window._applyLangToNav = _applyLangToNav;
