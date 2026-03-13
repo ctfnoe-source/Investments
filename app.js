@@ -141,143 +141,6 @@ const I18N = {
     costoPosicion:'costo compra', posiciones2:'posiciones',
     sobreCapital:'sobre capital invertido', sinHistorial:'sin historial aún',
     segunPlaneado:'según planeado', real:'real',
-    montoATransferir:'Monto a transferir', movimiento:'Movimiento',
-
-    // ── Keys añadidas automáticamente ──────────────────────────────────────
-    casi:'🔥 Casi', enProceso:'⏳ En proceso', inicio:'💤 Inicio',
-    activo:'Activo', inactivo:'Inactivo',
-    concentracion:'📊 Concentración', balanceMes:'💳 Balance Mes',
-    rendPlataformas:'🏦 Rend. Plataformas', gpNoRealizada:'📈 G/P No Realizada',
-    gpTotal:'G/P Total', patrimonioReal:'Patrimonio Real',
-    rentabilidadTotal:'📊 Rentabilidad Total',
-    // Nav / tabs
-    ajustes:'Ajustes',
-    // Buttons / actions
-    cancelar:'Cancelar', editar:'✏️ Editar', importar:'📥 Importar',
-    salir:'Salir', disponible:'✅ Disponible',
-    mostrarMenos:'Mostrar menos', showValues:'Mostrar valores',
-    // Campos de formulario
-    nombre:'Nombre', descripcion:'Descripción', fecha:'Fecha', tipo:'Tipo',
-    monto:'Monto', moneda:'Moneda', notas:'Notas', importe:'Importe',
-    categoria:'Categoría', seccion:'Sección', detalle:'Detalle',
-    origen:'Origen', destino:'Destino', broker:'Broker',
-    ticker:'Ticker', cantidad:'Cantidad', precioUnitario:'Precio Unit.',
-    comision:'Comisión', tipoActivo:'Tipo de activo', clase:'Clase',
-    tasa:'Tasa', tasaAnual:'Tasa anual', frecuencia:'Frecuencia',
-    dia:'Día', fechaInicio:'Fecha inicio', fechaLimite:'Fecha límite',
-    grupo:'Grupo', opcional:'(opcional)', seleccionar:'Seleccionar',
-    saldo:'Saldo', saldoInicial:'Saldo inicial', saldoTotal:'Saldo total',
-    // Tablas
-    sobrante:'Sobrante', retiros:'Retiros', rend:'Rend %',
-    saldoActualTh:'Saldo Actual', aportaciones:'+ Aport.',
-    rendReal:'Rend. Real', ingresoRef:'Ingreso ref.',
-    pctPort:'% Port.', dias:'Días', extra:'Extra', desde:'Desde',
-    mes:'Mes', ingreso:'Ingreso', gasto:'Gasto',
-    // Presupuesto / gastos
-    presupuesto:'Presupuesto', presupuestoLabel:'📋 Presupuesto',
-    asignarPresupuestos:'Asignar presupuestos',
-    categoriasSinAsignar:'categorías sin presupuesto',
-    categoriasOcultas:'categorías ocultas',
-    gastado:'Gastado', excedido:'Excedido', libre:'Libre',
-    usoPresupuesto:'Uso del presupuesto', disponible2:'Disponible',
-    sobranteExplicacion:'Capital que sobra después de gastos y presupuestos',
-    sinMovimientos:'Sin movimientos', sinMovimientosSeccion:'Sin movimientos en esta sección',
-    intentaOtroTermino:'Intenta con otro término',
-    mesSobrante:'Sobrante del mes', meses:'meses',
-    sueldoExtras:'Sueldo + Extras',
-    buscar:'Buscar...', totalLabel:'Total',
-    extrasLabel:'Extras / Bonos', otrosLabel:'Otros',
-    // Plataformas
-    plataformasTitulo:'Plataformas',
-    plataformasSubtitulo:'Bancos · SOFIPOs · ETFs · Fondos · CETES · Multi-moneda',
-    nuevaPlataforma:'+ Plataforma', plataformaDestino:'Plataforma destino',
-    plataformasConTasa:'plataformas con tasa',
-    cadaPlataformaMoneda:'Cada plataforma en su moneda',
-    archivarAhora:'Archivar ahora',
-    archivarDesc:'Archiva movimientos de esta plataforma hasta la fecha seleccionada',
-    queSeArchivara:'Qué se archivará',
-    inversionesGastosNoAfectados:'Las inversiones y gastos no se modifican',
-    movimientosPlataforma:'Movimientos de la plataforma',
-    // Inversiones
-    precioActual:'Precio actual', precioMedio:'Precio medio',
-    costoCompra:'Costo compra', costo:'Costo',
-    realizada:'Realizada', registraPrimeraCompra:'Registra tu primera compra',
-    sinPosicionesAbiertas:'Sin posiciones abiertas',
-    primerMovimiento:'+ Primer movimiento',
-    portfolio:'Portfolio', metas:'Metas', movimientos:'Movimientos',
-    // Recurrentes
-    recurrente:'Recurrente', recurrentes:'Recurrentes',
-    nuevoRecurrente:'+ Nuevo recurrente', registradoEsteMes:'Registrado este mes',
-    auto:'auto', fallbackAuto:'Aplicado automáticamente',
-    // Metas
-    meta:'Meta', nuevaMeta:'Nueva meta', crearPrimeraMeta:'Crear primera meta',
-    defineMetas:'Define metas financieras para seguir tu progreso',
-    // Import/Export CSV
-    seleccionarCSV:'Seleccionar archivo CSV',
-    importarExcel:'Importar desde Excel / CSV',
-    descargarPlantilla:'📥 Descargar plantilla',
-    csvInstrucciones:'Instrucciones para importar',
-    csvTipoExplicacion:'tipo: Gasto o Ingreso',
-    csvImporteExplicacion:'importe: número positivo',
-    csvCategoriaExplicacion:'categoria: id de la categoría',
-    csvNotasExplicacion:'notas: texto libre (opcional)',
-    csvFechaExplicacion:'fecha: YYYY-MM-DD',
-    csvPlataformaExplicacion:'plataforma: nombre exacto',
-    csvMonedaExplicacion:'moneda: MXN, USD, EUR, GBP',
-    exportarAntes:'Exporta primero para no perder datos',
-    exportarPrimero:'Exportar primero',
-    // Ajustes
-    resetAll:'Borrar todos los datos',
-    resetConfirm:'¿Seguro? Esto borrará TODOS tus datos',
-    deletePermanently:'Borrar permanentemente',
-    liveECB:'Tasa en vivo (ECB)', manual:'Manual', updateLive:'Actualizar en vivo',
-    // Rendimientos
-    rendimiento:'Rendimiento', rendimientoAutoTotal:'Rend. auto total',
-    rendimientoExplicacion:'Rendimiento calculado automáticamente',
-    recomendado:'Recomendado', actual:'Actual',
-    aPreciosActuales:'a precios actuales',
-    pressUpdate:'Presiona Actualizar', preciosHoy:'precios hoy',
-    // Dashboard misc
-    hoy:'Hoy', anual:'Anual',
-    metas2:'metas', liberados:'liberados', restan:'restan',
-    registraMovimientos:'Registra movimientos para ver aquí',
-    registrarIngreso:'+ Registrar ingreso',
-    agregarMovimiento:'+ Agregar movimiento',
-    movimientosSubtitulo:'Registro unificado',
-    todoIncluido:'Todo incluido',
-    enEUR:'en €', acumulado:'Acumulado',
-    saldoActual:'Saldo Actual', sinFecha:'Sin fecha',
-    sinHistorial:'sin historial', sinInversiones:'Sin inversiones registradas',
-    verMovimientos:'Ver movimientos',
-    // IA
-    financialAssistant:'Asistente Financiero',
-    iaAskMe:'Pregúntame sobre tus finanzas',
-    iaDesc:'Tengo acceso a todos tus datos.',
-    iaPlaceholder:'Pregunta sobre tus finanzas...',
-    noApiKey:'Sin API key — configura en Ajustes',
-    clear:'Limpiar', dataSentTo:'Datos enviados a',
-    notStored:'· no se almacenan',
-    configureApiKeyFirst:'Configura tu API key en Ajustes',
-    // Admin
-    adminPanel:'Panel de Admin', manageUsers:'Gestionar usuarios',
-    manageUsersDesc:'Lista de usuarios registrados',
-    accessPending:'Acceso pendiente',
-    pendingExplanation:'Tu solicitud de acceso está siendo revisada.',
-    // FX
-    tipoCambio:'💱 Tipo de cambio',
-    freeAt:'Gratis en',
-    // Misc
-    ejAhorro:'Ej: Ahorro', ejTransferencia:'Ej: Transferencia',
-    formatoFecha:'Formato: YYYY-MM-DD',
-    escibir:'Escribir', escribir:'Escribir', creat:'Crear', crear:'Crear',
-    input:'Entrada', select:'Seleccionar',
-    sinPrecio:'Sin precio disponible',
-    transferencia:'↔ Transferencia',
-    todo:'Todo', todos:'Todos',
-    seccion:'Sección', seccionGastos:'Gastos', seccionInversiones:'Inversiones',
-    saldoArchivado:'Saldo Archivado',
-    rendPlataformas:'🏦 Rend. Plataformas',
-    valorActual:'📊 Valor Actual',
   },
   en: {
     tabDashboard:'📊 Dashboard', tabMovimientos:'📋 Transactions', tabPlataformas:'🏦 Platforms',
@@ -390,126 +253,6 @@ const I18N = {
     costoPosicion:'purchase cost', posiciones2:'positions',
     sobreCapital:'on invested capital', sinHistorial:'no history yet',
     segunPlaneado:'as planned', real:'actual',
-    montoATransferir:'Amount to transfer', movimiento:'Movement',
-
-    // ── Keys añadidas automáticamente ──────────────────────────────────────
-    casi:'🔥 Almost', enProceso:'⏳ In progress', inicio:'💤 Starting',
-    activo:'Active', inactivo:'Inactive',
-    concentracion:'📊 Concentration', balanceMes:'💳 Month Balance',
-    rendPlataformas:'🏦 Platform Return', gpNoRealizada:'📈 Unrealized G/L',
-    gpTotal:'Total G/L', patrimonioReal:'Real Net Worth',
-    rentabilidadTotal:'📊 Total Return',
-    ajustes:'Settings',
-    cancelar:'Cancel', editar:'✏️ Edit', importar:'📥 Import',
-    salir:'Sign out', disponible:'✅ Available',
-    mostrarMenos:'Show less', showValues:'Show values',
-    nombre:'Name', descripcion:'Description', fecha:'Date', tipo:'Type',
-    monto:'Amount', moneda:'Currency', notas:'Notes', importe:'Amount',
-    categoria:'Category', seccion:'Section', detalle:'Detail',
-    origen:'Origin', destino:'Destination', broker:'Broker',
-    ticker:'Ticker', cantidad:'Quantity', precioUnitario:'Unit Price',
-    comision:'Commission', tipoActivo:'Asset type', clase:'Class',
-    tasa:'Rate', tasaAnual:'Annual rate', frecuencia:'Frequency',
-    dia:'Day', fechaInicio:'Start date', fechaLimite:'Deadline',
-    grupo:'Group', opcional:'(optional)', seleccionar:'Select',
-    saldo:'Balance', saldoInicial:'Initial balance', saldoTotal:'Total balance',
-    sobrante:'Surplus', retiros:'Withdrawals', rend:'Return %',
-    saldoActualTh:'Current Balance', aportaciones:'+ Contrib.',
-    rendReal:'Real Return', ingresoRef:'Ref. income',
-    pctPort:'% Port.', dias:'Days', extra:'Extra', desde:'Since',
-    mes:'Month', ingreso:'Income', gasto:'Expense',
-    presupuesto:'Budget', presupuestoLabel:'📋 Budget',
-    asignarPresupuestos:'Assign budgets',
-    categoriasSinAsignar:'categories without budget',
-    categoriasOcultas:'hidden categories',
-    gastado:'Spent', excedido:'Exceeded', libre:'Free',
-    usoPresupuesto:'Budget usage', disponible2:'Available',
-    sobranteExplicacion:'Capital remaining after expenses and budgets',
-    sinMovimientos:'No transactions', sinMovimientosSeccion:'No transactions in this section',
-    intentaOtroTermino:'Try another term',
-    mesSobrante:'Month surplus', meses:'months',
-    sueldoExtras:'Salary + Extras',
-    buscar:'Search...', totalLabel:'Total',
-    extrasLabel:'Extras / Bonuses', otrosLabel:'Other',
-    plataformasTitulo:'Platforms',
-    plataformasSubtitulo:'Banks · SOFIPOs · ETFs · Funds · CETES · Multi-currency',
-    nuevaPlataforma:'+ Platform', plataformaDestino:'Destination platform',
-    plataformasConTasa:'platforms with rate',
-    cadaPlataformaMoneda:'Each platform in its currency',
-    archivarAhora:'Archive now',
-    archivarDesc:'Archive movements for this platform up to the selected date',
-    queSeArchivara:'What will be archived',
-    inversionesGastosNoAfectados:'Investments and expenses are not affected',
-    movimientosPlataforma:'Platform movements',
-    precioActual:'Current price', precioMedio:'Avg. price',
-    costoCompra:'Purchase cost', costo:'Cost',
-    realizada:'Realized', registraPrimeraCompra:'Register your first purchase',
-    sinPosicionesAbiertas:'No open positions',
-    primerMovimiento:'+ First movement',
-    portfolio:'Portfolio', metas:'Goals', movimientos:'Transactions',
-    recurrente:'Recurring', recurrentes:'Recurring',
-    nuevoRecurrente:'+ New recurring', registradoEsteMes:'Registered this month',
-    auto:'auto', fallbackAuto:'Auto applied',
-    meta:'Goal', nuevaMeta:'New goal', crearPrimeraMeta:'Create first goal',
-    defineMetas:'Define financial goals to track your progress',
-    seleccionarCSV:'Select CSV file',
-    importarExcel:'Import from Excel / CSV',
-    descargarPlantilla:'📥 Download template',
-    csvInstrucciones:'Import instructions',
-    csvTipoExplicacion:'type: Expense or Income',
-    csvImporteExplicacion:'amount: positive number',
-    csvCategoriaExplicacion:'category: category id',
-    csvNotasExplicacion:'notes: free text (optional)',
-    csvFechaExplicacion:'date: YYYY-MM-DD',
-    csvPlataformaExplicacion:'platform: exact name',
-    csvMonedaExplicacion:'currency: MXN, USD, EUR, GBP',
-    exportarAntes:'Export first to avoid data loss',
-    exportarPrimero:'Export first',
-    resetAll:'Delete all data',
-    resetConfirm:'Are you sure? This will delete ALL your data',
-    deletePermanently:'Delete permanently',
-    liveECB:'Live rate (ECB)', manual:'Manual', updateLive:'Update live',
-    rendimiento:'Return', rendimientoAutoTotal:'Auto total return',
-    rendimientoExplicacion:'Automatically calculated return',
-    recomendado:'Recommended', actual:'Actual',
-    aPreciosActuales:'at current prices',
-    pressUpdate:'Press Update', preciosHoy:"today's prices",
-    hoy:'Today', anual:'Annual',
-    metas2:'goals', liberados:'freed', restan:'remaining',
-    registraMovimientos:'Register movements to see here',
-    registrarIngreso:'+ Register income',
-    agregarMovimiento:'+ Add movement',
-    movimientosSubtitulo:'Unified log',
-    todoIncluido:'All included',
-    enEUR:'in €', acumulado:'Accumulated',
-    saldoActual:'Current Balance', sinFecha:'No date',
-    sinHistorial:'no history', sinInversiones:'No investments registered',
-    verMovimientos:'View transactions',
-    financialAssistant:'Financial Assistant',
-    iaAskMe:'Ask me about your finances',
-    iaDesc:'I have access to all your data.',
-    iaPlaceholder:'Ask about your finances...',
-    noApiKey:'No API key — configure in Settings',
-    clear:'Clear', dataSentTo:'Data sent to',
-    notStored:'· not stored',
-    configureApiKeyFirst:'Configure your API key in Settings',
-    adminPanel:'Admin Panel', manageUsers:'Manage users',
-    manageUsersDesc:'List of registered users',
-    accessPending:'Access pending',
-    pendingExplanation:'Your access request is being reviewed.',
-    tipoCambio:'💱 Exchange Rate',
-    freeAt:'Free at',
-    ejAhorro:'Ex: Savings', ejTransferencia:'Ex: Transfer',
-    formatoFecha:'Format: YYYY-MM-DD',
-    escribir:'Write', crear:'Create',
-    input:'Input', select:'Select',
-    sinPrecio:'No price available',
-    transferencia:'↔ Transfer',
-    todo:'All', todos:'All',
-    seccion:'Section', seccionGastos:'Expenses', seccionInversiones:'Investments',
-    saldoArchivado:'Archived Balance',
-    rendPlataformas:'🏦 Platform Return',
-    valorActual:'📊 Current Value',
   }
 };
 let _lang = LS.get('lang') || 'en';
@@ -2269,25 +2012,6 @@ function deleteMovement(id){
   saveAll(null, deletedIds.join('|'));
 }
 
-function _getImporteEdicion(m) {
-  if (!m.monedaOrig || m.monedaOrig === 'MXN') return m.importe;
-  if (m.montoOriginal != null) return m.montoOriginal;
-  const _fx = _fxCache || LS.get('fxCache');
-  if (m.monedaOrig === 'EUR') {
-    const match = m.notas && m.notas.match(/€([d.]+)/);
-    return match ? Number(match[1]) : Math.round(m.importe / getEurMxn() * 100) / 100;
-  }
-  if (m.monedaOrig === 'USD') {
-    const match = m.notas && m.notas.match(/US$([d.]+)/);
-    return match ? Number(match[1]) : Math.round(m.importe / ((_fx?.usdmxn) || settings.tipoCambio || 17) * 100) / 100;
-  }
-  if (m.monedaOrig === 'GBP') {
-    const match = m.notas && m.notas.match(/£([d.]+)/);
-    return match ? Number(match[1]) : Math.round(m.importe / 20 * 100) / 100;
-  }
-  return m.importe;
-}
-
 function openEditMovModal(id){
   const m=movements.find(x=>x.id===id);if(!m)return;const sec=m.seccion;
   openModal(`
@@ -2304,7 +2028,7 @@ function openEditMovModal(id){
         <div class="form-group"><label class="form-label">${t('notas')}</label><input class="form-input" name="notas" value="${escHtml(m.notas||'')}"></div>
       `:`
         <div class="form-row form-row-2"><div class="form-group"><label class="form-label">${t('fecha')}</label><input type="date" class="form-input" name="fecha" value="${m.fecha}" required></div><div class="form-group"><label class="form-label">${t('tipo')}</label><select class="form-select" name="tipo"><option ${m.tipo==='Gasto'?'selected':''}>Gasto</option><option ${m.tipo==='Ingreso'?'selected':''}>Ingreso</option></select></div></div>
-        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">${t('categoria')}</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}" ${m.categoria===c.id?'selected':''}>${c.icon} ${c.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">${t('importe')}</label><input type="number" step="any" class="form-input" name="importe" value="${_getImporteEdicion(m)}" required></div><div class="form-group"><label class="form-label">${t('moneda')}</label><select class="form-select" name="monedaGasto"><option value="MXN" ${(m.monedaOrig||'MXN')==='MXN'?'selected':''}>MXN 🇲🇽</option><option value="EUR" ${m.monedaOrig==='EUR'?'selected':''}>EUR 🇪🇺</option><option value="USD" ${m.monedaOrig==='USD'?'selected':''}>USD 🇺🇸</option><option value="GBP" ${m.monedaOrig==='GBP'?'selected':''}>GBP 🇬🇧</option></select></div></div>
+        <div class="form-row form-row-3"><div class="form-group"><label class="form-label">${t('categoria')}</label><select class="form-select" name="categoria">${EXPENSE_CATS.map(c=>`<option value="${c.id}" ${m.categoria===c.id?'selected':''}>${c.icon} ${c.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">${t('importe')}</label><input type="number" step="any" class="form-input" name="importe" value="${(()=>{if(m.monedaOrig&&m.monedaOrig!=='MXN'){if(m.montoOriginal!=null)return m.montoOriginal;const _fx=_fxCache||LS.get('fxCache');if(m.monedaOrig==='EUR'){const match=m.notas&&m.notas.match(/€([\d.]+)/);return match?Number(match[1]):Math.round(m.importe/getEurMxn()*100)/100;}if(m.monedaOrig==='USD'){const match=m.notas&&m.notas.match(/US\$([\d.]+)/);return match?Number(match[1]):Math.round(m.importe/((_fx?.usdmxn)||settings.tipoCambio||17)*100)/100;}if(m.monedaOrig==='GBP'){const match=m.notas&&m.notas.match(/£([\d.]+)/);return match?Number(match[1]):Math.round(m.importe/20*100)/100;}}return m.importe;})()}" required></div><div class="form-group"><label class="form-label">${t('moneda')}</label><select class="form-select" name="monedaGasto"><option value="MXN" ${(m.monedaOrig||'MXN')==='MXN'?'selected':''}>MXN 🇲🇽</option><option value="EUR" ${m.monedaOrig==='EUR'?'selected':''}>EUR 🇪🇺</option><option value="USD" ${m.monedaOrig==='USD'?'selected':''}>USD 🇺🇸</option><option value="GBP" ${m.monedaOrig==='GBP'?'selected':''}>GBP 🇬🇧</option></select></div></div>
         <div class="form-group"><label class="form-label">${t('notas')}</label><input class="form-input" name="notas" value="${escHtml(m.notas||'')}"></div>
       `}
       <div style="display:flex;gap:10px;margin-top:16px"><button type="submit" class="btn btn-primary" style="flex:1;padding:14px">💾 ${t('guardar')}</button><button type="button" class="btn btn-secondary" onclick="closeModal()">${t('cancelar')}</button></div>
@@ -2417,12 +2141,11 @@ function editPlatField(id,field,el,inputType){
     PLAT_MONEDAS.forEach(m=>{const opt=document.createElement('option');opt.value=m;opt.textContent=m==='MXN'?'🇲🇽 MXN':m==='USD'?'🇺🇸 USD':'🇪🇺 EUR';if(p[field]===m)opt.selected=true;input.appendChild(opt);});
   }
   else{input=document.createElement('input');input.type='number';input.step='any';input.value=p[field]||0;input.className='form-input';input.style.cssText='width:110px;padding:4px 8px;font-size:12px';}
-  const finish=()=>{const raw=input.value;let val=inputType==='date'||inputType==='moneda'?raw:(Number(raw)||0);platforms=platforms.map(x=>x.id!==id?x:{...x,[field]:val});saveAll();};
   let _committed=false;
-  const _finish=finish; // alias por si ya existe
+  const finish=()=>{if(_committed)return;_committed=true;const raw=input.value;let val=inputType==='date'||inputType==='moneda'?raw:(Number(raw)||0);platforms=platforms.map(x=>x.id!==id?x:{...x,[field]:val});saveAll();};
   const cancel=()=>{if(_committed)return;_committed=true;input.replaceWith(originalEl);};
-  const finishOnce=()=>{if(_committed)return;_committed=true;finish();};
-  input.onblur=finishOnce;input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();input.blur();}if(e.key==='Escape'){e.preventDefault();cancel();}};
+  input.onblur=finish;
+  input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();input.blur();}if(e.key==='Escape'){e.preventDefault();cancel();}};
   if(inputType==='moneda')input.onchange=finish;
   el.replaceWith(input);input.focus();
 }
@@ -3936,7 +3659,7 @@ window.signOutUser=async()=>{
 };
 document.getElementById('btnGoogleLogin').addEventListener('click',async()=>{const btn=document.getElementById('btnGoogleLogin');btn.disabled=true;btn.innerHTML='<span style="display:inline-block;width:20px;height:20px;border:2px solid rgba(10,132,255,0.2);border-top-color:#0A84FF;border-radius:50%;animation:spin 0.7s linear infinite;margin-right:8px;vertical-align:middle"></span> Connecting...';try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(e){btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> Continue with Google';showLogin(e.code==='auth/popup-closed-by-user'?'':'Error signing in.');}});
 
-let _ignoreSnap=false,_saveTimeout=null,_unsub=null,_unsubRegistro=null;
+let _ignoreSnapCount=0,_saveTimeout=null,_unsub=null,_unsubRegistro=null;
 
 async function loadSubcollections(uid){
   const { collection, getDocs: _getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
@@ -3971,7 +3694,7 @@ function setupFirestore(uid){
   if(_unsub){_unsub();_unsub=null;}
   DOC_REF = getDocRef(uid);
   _unsub=onSnapshot(DOC_REF, async snap=>{
-    if(_ignoreSnap){_ignoreSnap=false;return;}
+    if(_ignoreSnapCount>0){_ignoreSnapCount--;return;}
     if(!snap.exists()){
       resetToEmpty();
       window.saveToFirebase(true);
@@ -4028,7 +3751,7 @@ window.saveToFirebase=async(forceImmediate=false, changedMovIds='', deletedMovId
         await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
 
       const d = window.getAppData ? window.getAppData() : {};
-      _ignoreSnap = true;
+      _ignoreSnapCount++;
       await _setDoc(DOC_REF, {
         platforms: d.platforms||[], goals: d.goals||[],
         settings: d.settings||{}, recurrentes: d.recurrentes||[],
@@ -4061,10 +3784,9 @@ window.saveToFirebase=async(forceImmediate=false, changedMovIds='', deletedMovId
 
       setFbStatus('ok');
     }catch(e){
+      _ignoreSnapCount=0; // reset en caso de error para no quedar bloqueado
       setFbStatus('error');
       if(!navigator.onLine){window.queueSave&&window.queueSave(window.getAppData&&window.getAppData());}
-    }finally{
-      _ignoreSnap = false;
     }
   };
   if(forceImmediate){await doSave();return;}
