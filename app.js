@@ -63,12 +63,18 @@ const I18N = {
     ahorro:'ahorro', est:'est.',
     saludFinanciera:'Salud Financiera', resumenMes:'Resumen del Mes',
     // Hardcoded strings fixed
+    realGain:'Ganancia real',
+    projectionLabel:'Proyección',
+    annualLabel:'anual',
+    noPrice:'sin precio',
     autoAppliedMonth:'gastos recurrentes aplicados automáticamente este mes',
     totalNetGain:'ganancia neta total',
     viewDetails:'Ver detalles →',
     totalLabel2:'Total',
     positionsTitle:'📊 Posiciones',
     noTrades:'Sin operaciones',
+    noGoals:'Sin metas',
+    noGoalsCreate:'Crear →',
     goalsProgress:'🎯 Progreso de Metas',
     viewAll:'Ver todo →',
     createFirst:'Crear →',
@@ -200,12 +206,18 @@ const I18N = {
     actualizarPrecios:'🔄 Update prices', actualizando:'⏳ Updating...',
     ahorro:'savings', est:'est.',
     saludFinanciera:'Financial Health', resumenMes:'Month Summary',
+    realGain:'Real Gain',
+    projectionLabel:'Projection',
+    annualLabel:'annual',
+    noPrice:t('noPrice'),
     autoAppliedMonth:'recurring expenses ${t('autoAppliedMonth')}',
     totalNetGain:'total net gain',
     viewDetails:'View details →',
     totalLabel2:'Total',
     positionsTitle:'📊 Positions',
     noTrades:'No trades',
+    noGoals:'No goals',
+    noGoalsCreate:'Create →',
     goalsProgress:'🎯 Goals Progress',
     goalsProgress:'🎯 Goals Progress',
     viewAll:'View all →',
@@ -1559,7 +1571,7 @@ function renderDashboard(){
       <div class="card" style="display:flex;flex-direction:column">
         <div class="card-title">${t('positionsTitle')}</div>
         <div style="max-height:380px;overflow-y:auto;margin:0 -4px;padding:0 4px">
-        ${tickerList.length>0?tickerList.sort((a,b)=>b.costoTotal-a.costoTotal).map(tk=>{
+        ${tickerList.length>0?tickerList.filter(tk=>tk.cantActual>0).sort((a,b)=>b.costoTotal-a.costoTotal).map(tk=>{
           const tipoClass=tk.type==='Acción'?'badge-green':tk.type==='ETF'?'badge-blue':tk.type==='Crypto'?'badge-orange':'badge-gray';
           const monedaLabel=tk.moneda==='MXN'?'MXN':'USD';
           return`<div class="list-item">
@@ -1567,7 +1579,7 @@ function renderDashboard(){
               <span class="badge ${tipoClass}">${tk.ticker}</span>
               <div><div style="font-size:13px;font-weight:600">${tk.type} <span class="badge badge-gray" style="font-size:9px">${monedaLabel}</span>${tk.cantActual<=0?` <span class="badge badge-gray" style="font-size:9px">${t('cerrada')}</span>`:''}</div><div style="font-size:10px;color:var(--text2)">×${tk.cantActual} · <span class="${tk.priceCssClass}">${tk.priceLabel}</span></div></div>
             </div>
-            <div style="text-align:right"><div style="font-size:13px;font-weight:700;color:${pctCol(tk.gpNoRealizada)}">${tk.gpNoRealizada!==null?(tk.gpNoRealizada>=0?'+':'')+fmtFull(tk.gpNoRealizada):'—'}</div><div style="font-size:10px;font-weight:600;color:${pctCol(tk.pctNoRealizada)}">${tk.gpNoRealizada!==null?fmtPct(tk.pctNoRealizada):'no price'}</div></div>
+            <div style="text-align:right"><div style="font-size:13px;font-weight:700;color:${pctCol(tk.gpNoRealizada)}">${tk.gpNoRealizada!==null?(tk.gpNoRealizada>=0?'+':'')+fmtFull(tk.gpNoRealizada):'—'}</div><div style="font-size:10px;font-weight:600;color:${pctCol(tk.pctNoRealizada)}">${tk.gpNoRealizada!==null?fmtPct(tk.pctNoRealizada):t('noPrice')}</div></div>
           </div>`;
         }).join(''):'<div style="text-align:center;color:var(--text2);padding:32px">${t('noTrades')}</div>'}
         </div>
@@ -1621,7 +1633,7 @@ function renderDashboard(){
       chartInstances.chartEvo=new Chart(ctxE,{type:'line',data:{
         datasets:[
           {
-            label:'Real Gain',
+            label:t('realGain'),
             data:realDates.map((d,i)=>({x:d,y:realVals[i]})),
             borderColor:'#30D158',
             backgroundColor: gradReal,
@@ -1638,7 +1650,7 @@ function renderDashboard(){
             pointHoverBorderWidth:2,
           },
           {
-            label:'Projection '+((re*100).toFixed(0))+'% annual',
+            label:t('projectionLabel')+' '+((re*100).toFixed(0))+'% '+t('annualLabel'),
             data:projDates.map((d,i)=>({x:d,y:projVals[i]})),
             borderColor:'rgba(10,132,255,0.65)',
             backgroundColor:'transparent',
@@ -1837,7 +1849,7 @@ function _buildMovRow(m, transferGroups) {
     <td style="color:var(--text2);font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${notas||'—'}</td>
     <td style="white-space:nowrap">
       <button class="edit-btn" onclick="openEditMovModal('${m.id}')" title="Edit">✏️</button>
-      <button class="del-btn" onclick="deleteMovement('${m.id}')" title="Delete">×</button>
+      <button class="del-btn" onclick="deleteMovement('${m.id}')" title="${t('deleteBtn')}">×</button>
     </td>
   </tr>`;
 }
@@ -3196,7 +3208,7 @@ function _buildAiContext() {
       .map(p=>`${p.name} (${p.type}): ${fmtPlat(p.saldo,p.moneda)}, return ${p.rendimiento>=0?'+':''}${fmtPlat(p.rendimiento,p.moneda)}`).join('; ');
 
     const topInv = tickers.filter(t=>t.cantActual>0).slice(0,5)
-      .map(tkr=>`${tkr.ticker} (${tkr.type}): ×${tkr.cantActual}, G/L ${tkr.gpNoRealizada!=null?(tkr.gpNoRealizada>=0?'+':'')+tkr.gpNoRealizada.toFixed(0)+' '+tkr.moneda:'no price'}`).join('; ');
+      .map(tkr=>`${tkr.ticker} (${tkr.type}): ×${tkr.cantActual}, G/L ${tkr.gpNoRealizada!=null?(tkr.gpNoRealizada>=0?'+':'')+tkr.gpNoRealizada.toFixed(0)+' '+tkr.moneda:t('noPrice')}`).join('; ');
 
     const metasSummary = goals.slice(0,4).map(g=>`${g.nombre}: goal ${fmt(g.meta)}, current ${fmt(g.actual||0)}`).join('; ');
 
