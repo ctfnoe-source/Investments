@@ -1520,15 +1520,15 @@ function renderDashboard(){
       <div class="card" style="display:flex;flex-direction:column">
         <div class="card-title">📊 Positions</div>
         <div style="max-height:380px;overflow-y:auto;margin:0 -4px;padding:0 4px">
-        ${tickerList.length>0?tickerList.sort((a,b)=>b.costoTotal-a.costoTotal).map(t=>{
-          const tipoClass=t.type==='Acción'?'badge-green':t.type==='ETF'?'badge-blue':t.type==='Crypto'?'badge-orange':'badge-gray';
-          const monedaLabel=t.moneda==='MXN'?'MXN':'USD';
+        ${tickerList.length>0?tickerList.sort((a,b)=>b.costoTotal-a.costoTotal).map(tk=>{
+          const tipoClass=tk.type==='Acción'?'badge-green':tk.type==='ETF'?'badge-blue':tk.type==='Crypto'?'badge-orange':'badge-gray';
+          const monedaLabel=tk.moneda==='MXN'?'MXN':'USD';
           return`<div class="list-item">
             <div style="display:flex;align-items:center;gap:8px">
-              <span class="badge ${tipoClass}">${t.ticker}</span>
-              <div><div style="font-size:13px;font-weight:600">${t.type} <span class="badge badge-gray" style="font-size:9px">${monedaLabel}</span>${t.cantActual<=0?` <span class="badge badge-gray" style="font-size:9px">${t('cerrada')}</span>`:''}</div><div style="font-size:10px;color:var(--text2)">×${t.cantActual} · <span class="${t.priceCssClass}">${t.priceLabel}</span></div></div>
+              <span class="badge ${tipoClass}">${tk.ticker}</span>
+              <div><div style="font-size:13px;font-weight:600">${tk.type} <span class="badge badge-gray" style="font-size:9px">${monedaLabel}</span>${tk.cantActual<=0?` <span class="badge badge-gray" style="font-size:9px">${t('cerrada')}</span>`:''}</div><div style="font-size:10px;color:var(--text2)">×${tk.cantActual} · <span class="${tk.priceCssClass}">${tk.priceLabel}</span></div></div>
             </div>
-            <div style="text-align:right"><div style="font-size:13px;font-weight:700;color:${pctCol(t.gpNoRealizada)}">${t.gpNoRealizada!==null?(t.gpNoRealizada>=0?'+':'')+fmtFull(t.gpNoRealizada):'—'}</div><div style="font-size:10px;font-weight:600;color:${pctCol(t.pctNoRealizada)}">${t.gpNoRealizada!==null?fmtPct(t.pctNoRealizada):'no price'}</div></div>
+            <div style="text-align:right"><div style="font-size:13px;font-weight:700;color:${pctCol(tk.gpNoRealizada)}">${tk.gpNoRealizada!==null?(tk.gpNoRealizada>=0?'+':'')+fmtFull(tk.gpNoRealizada):'—'}</div><div style="font-size:10px;font-weight:600;color:${pctCol(tk.pctNoRealizada)}">${tk.gpNoRealizada!==null?fmtPct(tk.pctNoRealizada):'no price'}</div></div>
           </div>`;
         }).join(''):'<div style="text-align:center;color:var(--text2);padding:32px">No trades</div>'}
         </div>
