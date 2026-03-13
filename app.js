@@ -340,7 +340,7 @@ const PLAT_MONEDAS=['MXN','USD','EUR'];
 const FRECUENCIAS=['Mensual','Quincenal','Semanal','Anual','Trimestral'];
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
-const today = () => new Date().toISOString().split('T')[0];
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 const isMobile = () => window.innerWidth <= 768;
 
 function fmt(n, cur) {
@@ -2462,7 +2462,6 @@ function renderAjustes(){
   const hasFinnhub=!!(settings.finnhubKey);const priceSummary=getPriceSummary();
   const cache=getPriceCache();const cacheEntries=Object.entries(cache);
   const currentUser=window._currentUser;const isDark=document.documentElement.getAttribute('data-theme')==='dark';
-  const storage = getStorageInfo();
   const isAdmin = window._currentUser?.uid === ADMIN_UID;
   const adminFirebaseRulesHTML = isAdmin ? (
     '<div class="card" style="margin-top:16px;padding:16px 20px">' +
@@ -2496,17 +2495,6 @@ function renderAjustes(){
         <div><div style="font-size:13px;font-weight:700">Panel de Administrador</div><div style="font-size:11px;color:var(--text2)">Gestiona quién tiene acceso a la app</div></div>
       </div>
       <button class="btn btn-primary btn-sm" onclick="window.openAdminPanel()">Gestionar usuarios</button>
-    </div>` : ''}
-
-    <!-- Alerta de almacenamiento si >60% -->
-    ${storage.mainPct >= 60 ? `
-    <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:${storage.mainPct>=80?'rgba(255,69,58,0.08)':'rgba(255,159,10,0.08)'};border:1px solid ${storage.mainPct>=80?'rgba(255,69,58,0.25)':'rgba(255,159,10,0.25)'};border-radius:12px;margin-bottom:16px">
-      <span style="font-size:20px">${storage.mainPct>=80?'🔴':'🟡'}</span>
-      <div style="flex:1">
-        <div style="font-size:13px;font-weight:700;color:${storage.color}">Documento principal al ${storage.mainPct.toFixed(1)}% de capacidad</div>
-        <div style="font-size:12px;color:var(--text2);margin-top:2px">${(storage.mainKb).toFixed(1)} KB de 1,024 KB máximo</div>
-      </div>
-      <button class="btn btn-sm" style="background:${storage.pct>=80?'var(--red)':'var(--orange)'};color:#fff;border:none" onclick="openArchivarModal()">🗜️ Archivar ahora</button>
     </div>` : ''}
 
     <div class="card" style="margin-bottom:16px;border-top:3px solid var(--blue)">
@@ -2561,33 +2549,9 @@ function renderAjustes(){
     <div class="grid-2">
       <div class="card"><div class="card-title">💾 Exportar / Importar</div><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px"><button class="btn btn-primary" onclick="exportData()">📥 Exportar JSON (backup)</button><button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📤 Importar JSON (backup)</button><button class="btn btn-secondary" onclick="openImportCSVModal()">📊 Importar movimientos desde Excel/CSV</button><input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)"></div></div>
       <div class="card">
-        <div class="card-title">🗄️ Almacenamiento Firebase</div>
-        <div style="margin-top:8px">
-          <div style="font-size:11px;color:var(--text2);margin-bottom:8px">Doc principal (límite 1 MB)</div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
-            <span style="color:var(--text2)">${storage.mainKb.toFixed(1)} KB usados</span>
-            <span style="font-weight:700;color:${storage.color}">${storage.mainPct.toFixed(1)}% de 1 MB</span>
-          </div>
-          <div style="height:8px;background:var(--progress-bg);border-radius:4px;overflow:hidden;margin-bottom:12px">
-            <div style="height:8px;border-radius:4px;background:${storage.color};width:${Math.min(storage.mainPct,100).toFixed(1)}%;transition:width 0.3s"></div>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">
-            <div style="background:var(--card2);border-radius:8px;padding:6px;text-align:center">
-              <div style="font-size:15px;font-weight:800;color:var(--blue)">${movements.filter(m=>m.seccion==='plataformas').length}</div>
-              <div style="font-size:9px;color:var(--text2);text-transform:uppercase">Plataformas</div>
-            </div>
-            <div style="background:var(--card2);border-radius:8px;padding:6px;text-align:center">
-              <div style="font-size:15px;font-weight:800;color:var(--green)">${movements.filter(m=>m.seccion==='inversiones').length}</div>
-              <div style="font-size:9px;color:var(--text2);text-transform:uppercase">Inversiones</div>
-            </div>
-            <div style="background:var(--card2);border-radius:8px;padding:6px;text-align:center">
-              <div style="font-size:15px;font-weight:800;color:var(--orange)">${movements.filter(m=>m.seccion==='gastos').length}</div>
-              <div style="font-size:9px;color:var(--text2);text-transform:uppercase">Gastos</div>
-            </div>
-          </div>
-          <div style="font-size:10px;color:var(--text3);margin-bottom:10px;text-align:center">Movimientos y snapshots (${patrimonioHistory.length}) en subcolecciones — sin límite</div>
-          <button class="btn btn-secondary" style="width:100%;font-size:12px" onclick="openArchivarModal()">🗜️ Archivar movimientos antiguos</button>
-        </div>
+        <div class="card-title">🗜️ Archivar movimientos antiguos</div>
+        <div style="margin-top:8px;font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:14px">Comprime el historial antiguo de plataformas conservando saldo y ganancias acumuladas. Útil si quieres tener el historial más limpio.</div>
+        <button class="btn btn-secondary" style="width:100%;font-size:13px" onclick="openArchivarModal()">🗜️ Archivar movimientos antiguos</button>
       </div>
     </div>
     <div class="card" style="margin-top:16px"><div class="card-title">⚠️ Zona de Peligro</div><button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="resetAll()">🗑 Resetear Todo</button></div>
@@ -2645,7 +2609,9 @@ function importData(input){const file=input.files[0];if(!file)return;const r=new
   if(d.patrimonioHistory)patrimonioHistory=d.patrimonioHistory;
   saveAll();
   // Guardar todos los movimientos importados a sus subcolecciones
-  await window.saveAllMovementsToFirebase();
+  if(typeof window.saveAllMovementsToFirebase==='function' && window._currentUser?.uid){
+    await window.saveAllMovementsToFirebase();
+  }
   alert('✅ Datos importados');
 }catch(e){alert('❌ Archivo inválido: '+e.message);}};r.readAsText(file);}
 
@@ -2807,7 +2773,6 @@ function confirmResetAll(){
   LS.set('price_cache',{});
   saveAll();
   // Limpiar en Firebase — doc principal y subcolecciones
-  _ignoreSnap = true;
   if(typeof window.saveToFirebase==='function') window.saveToFirebase(true);
   if(typeof window.saveAllMovementsToFirebase==='function') window.saveAllMovementsToFirebase();
   closeModal();
