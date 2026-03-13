@@ -62,25 +62,6 @@ const I18N = {
     actualizarPrecios:'🔄 Actualizar precios', actualizando:'⏳ Actualizando...',
     ahorro:'ahorro', est:'est.',
     saludFinanciera:'Salud Financiera', resumenMes:'Resumen del Mes',
-    // Hardcoded strings fixed
-    realGain:'Ganancia real',
-    projectionLabel:'Proyección',
-    annualLabel:'anual',
-    noPrice:'sin precio',
-    autoAppliedMonth:'gastos recurrentes aplicados automáticamente este mes',
-    totalNetGain:'ganancia neta total',
-    viewDetails:'Ver detalles →',
-    totalLabel2:'Total',
-    positionsTitle:'📊 Posiciones',
-    noTrades:'Sin operaciones',
-    noGoals:'Sin metas',
-    noGoalsCreate:'Crear →',
-    goalsProgress:'🎯 Progreso de Metas',
-    viewAll:'Ver todo →',
-    createFirst:'Crear →',
-    loadingUsers:'Cargando usuarios...',
-    deleteBtn:'Eliminar',
-    noUsersYet:'Sin usuarios aún',
     // Estados
     lograda:'🏆 LOGRADA', casi:'🔥 Casi', inicio:'💤 Inicio', enProceso:'⏳ En proceso',
     cerrada:'CERRADA', activo:'Activo',
@@ -206,24 +187,6 @@ const I18N = {
     actualizarPrecios:'🔄 Update prices', actualizando:'⏳ Updating...',
     ahorro:'savings', est:'est.',
     saludFinanciera:'Financial Health', resumenMes:'Month Summary',
-    realGain:'Real Gain',
-    projectionLabel:'Projection',
-    annualLabel:'annual',
-    noPrice:'no price',
-    autoAppliedMonth:'recurring expenses automatically applied this month',
-    totalNetGain:'total net gain',
-    viewDetails:'View details →',
-    totalLabel2:'Total',
-    positionsTitle:'📊 Positions',
-    noTrades:'No trades',
-    noGoals:'No goals',
-
-    goalsProgress:'🎯 Goals Progress',
-    viewAll:'View all →',
-    createFirst:'Create →',
-    loadingUsers:'Loading users...',
-    deleteBtn:'Delete',
-    noUsersYet:'No users yet',
     lograda:'🏆 ACHIEVED', casi:'🔥 Almost', inicio:'💤 Starting', enProceso:'⏳ In progress',
     cerrada:'CLOSED', activo:'Active',
     deficit:'🔴 Deficit', sobrePresupuesto:'🟡 Over budget', dentroDelPlan:'🟢 On track',
@@ -1151,17 +1114,17 @@ function getTickerPositions(){
     }
   });
   return Object.values(tickers).map(tkp=>{
-    tkp.cantActual=tkp.cantC-tkp.cantV;tkp.precioCostoPromedio=tkp.cantC>0?tkp.costoTotal/tkp.cantC:0;
+    t.cantActual=t.cantC-t.cantV;t.precioCostoPromedio=t.cantC>0?t.costoTotal/t.cantC:0;
     // Resolve per-broker available quantities
-    tkp.brokersSaldo=Object.entries(tkp.brokers).map(([br,b])=>({broker:br,cantActual:Math.max(0,b.cantC-b.cantV),precioCostoPromedio:b.cantC>0?b.costoTotal/b.cantC:0})).filter(b=>b.cantActual>0);
-    const pi=getPriceInfo(tkp.ticker,tkp.type,tkp.moneda);
-    tkp.precioActual=pi.price;tkp.priceLabel=pi.label;tkp.priceCssClass=pi.cssClass;tkp.priceTooltip=pi.tooltip||'';
-    tkp.valorActual=tkp.precioActual&&tkp.cantActual>0?tkp.cantActual*tkp.precioActual:null;
-    tkp.costoPosicion=tkp.cantActual*tkp.precioCostoPromedio;
-    tkp.gpNoRealizada=tkp.valorActual!==null?tkp.valorActual-tkp.costoPosicion:null;
-    tkp.pctNoRealizada=tkp.costoPosicion>0&&tkp.gpNoRealizada!==null?tkp.gpNoRealizada/tkp.costoPosicion:null;
-    tkp.gpRealizada=tkp.cantV>0?tkp.ventasTotal-(tkp.precioCostoPromedio*tkp.cantV):0;
-    return tkp;
+    t.brokersSaldo=Object.entries(t.brokers).map(([br,b])=>({broker:br,cantActual:Math.max(0,b.cantC-b.cantV),precioCostoPromedio:b.cantC>0?b.costoTotal/b.cantC:0})).filter(b=>b.cantActual>0);
+    const pi=getPriceInfo(t.ticker,t.type,t.moneda);
+    t.precioActual=pi.price;t.priceLabel=pi.label;t.priceCssClass=pi.cssClass;t.priceTooltip=pi.tooltip||'';
+    t.valorActual=t.precioActual&&t.cantActual>0?t.cantActual*t.precioActual:null;
+    t.costoPosicion=t.cantActual*t.precioCostoPromedio;
+    t.gpNoRealizada=t.valorActual!==null?t.valorActual-t.costoPosicion:null;
+    t.pctNoRealizada=t.costoPosicion>0&&t.gpNoRealizada!==null?t.gpNoRealizada/t.costoPosicion:null;
+    t.gpRealizada=t.cantV>0?t.ventasTotal-(t.precioCostoPromedio*t.cantV):0;
+    return t;
   });
 }
 
@@ -1420,7 +1383,7 @@ function renderDashboard(){
   const deltaHoyPct = ayerSnap && ayerSnap.value > 0 ? deltaHoy / ayerSnap.value : 0;
 
   document.getElementById('page-dashboard').innerHTML=`
-    ${applied>0?`<div class="snapshot-banner" style="background:rgba(191,90,242,0.06);border-color:rgba(191,90,242,0.2);margin-bottom:16px"><span class="snap-dot" style="background:var(--purple)"></span><span style="color:var(--purple)">✅ <strong>${applied} recurring expenses</strong> ${t('autoAppliedMonth')}</span></div>`:''}
+    ${applied>0?`<div class="snapshot-banner" style="background:rgba(191,90,242,0.06);border-color:rgba(191,90,242,0.2);margin-bottom:16px"><span class="snap-dot" style="background:var(--purple)"></span><span style="color:var(--purple)">✅ <strong>${applied} recurring expenses</strong> automatically applied this month</span></div>`:''}
     ${alertsHtml}
     ${platsSinActualizarHtml}
     <div class="price-banner">
@@ -1456,7 +1419,7 @@ function renderDashboard(){
             <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2);margin-bottom:4px">📈 Net Worth Evolution</div>
             <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
               <div style="font-size:18px;font-weight:800;letter-spacing:-0.03em;color:${pctCol(patrimonioRendPuro)};line-height:1">${fmt(patrimonioRendPuro)}</div>
-              <span style="font-size:12px;color:var(--text2)">${t('totalNetGain')}</span>
+              <span style="font-size:12px;color:var(--text2)">total net gain</span>
             </div>
             <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap">
               <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px">
@@ -1539,14 +1502,14 @@ function renderDashboard(){
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
           <div class="card-title" style="margin:0">💳 Expenses by category — ${MONTHS[cm-1]}</div>
-          <button class="btn btn-sm" style="font-size:11px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="switchTab('gastos')">${t('viewDetails')}</button>
+          <button class="btn btn-sm" style="font-size:11px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="switchTab('gastos')">View details →</button>
         </div>
         ${topCats.length>0?`
           <div style="display:flex;align-items:center;gap:12px">
             <div style="height:130px;width:130px;flex-shrink:0"><canvas id="chartGastosCat"></canvas></div>
             <div style="flex:1;min-width:0">
               ${topCats.map(([id,v],i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0"><span style="display:flex;align-items:center;gap:5px;font-size:11px;min-width:0"><span style="width:7px;height:7px;border-radius:2px;background:${COLORS[i%COLORS.length]};flex-shrink:0;display:inline-block"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${catName(id)}</span></span><span style="font-size:11px;font-weight:700;flex-shrink:0;margin-left:6px">${fmtD(v)}</span></div>`).join('')}
-              <div style="margin-top:6px;padding-top:6px;border-top:0.5px solid var(--border);display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">${t('totalLabel2')}</span><span style="font-weight:800;color:var(--red)">${fmtD(totGastoMes)}</span></div>
+              <div style="margin-top:6px;padding-top:6px;border-top:0.5px solid var(--border);display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">Total</span><span style="font-weight:800;color:var(--red)">${fmtD(totGastoMes)}</span></div>
             </div>
           </div>`
         :`<div style="text-align:center;color:var(--text2);padding:24px;font-size:13px">${t('sinGastosEsteMes')}</div>`}
@@ -1568,9 +1531,9 @@ function renderDashboard(){
         </div>
       </div>
       <div class="card" style="display:flex;flex-direction:column">
-        <div class="card-title">${t('positionsTitle')}</div>
+        <div class="card-title">📊 Positions</div>
         <div style="max-height:380px;overflow-y:auto;margin:0 -4px;padding:0 4px">
-        ${(()=>{const _noTrades=t('noTrades');return tickerList.length>0?tickerList.filter(tk=>tk.cantActual>0).sort((a,b)=>b.costoTotal-a.costoTotal).map(tk=>{
+        ${tickerList.length>0?tickerList.filter(tk=>tk.cantActual>0).sort((a,b)=>b.costoTotal-a.costoTotal).map(tk=>{
           const tipoClass=tk.type==='Acción'?'badge-green':tk.type==='ETF'?'badge-blue':tk.type==='Crypto'?'badge-orange':'badge-gray';
           const monedaLabel=tk.moneda==='MXN'?'MXN':'USD';
           return`<div class="list-item">
@@ -1578,19 +1541,19 @@ function renderDashboard(){
               <span class="badge ${tipoClass}">${tk.ticker}</span>
               <div><div style="font-size:13px;font-weight:600">${tk.type} <span class="badge badge-gray" style="font-size:9px">${monedaLabel}</span>${tk.cantActual<=0?` <span class="badge badge-gray" style="font-size:9px">${t('cerrada')}</span>`:''}</div><div style="font-size:10px;color:var(--text2)">×${tk.cantActual} · <span class="${tk.priceCssClass}">${tk.priceLabel}</span></div></div>
             </div>
-            <div style="text-align:right"><div style="font-size:13px;font-weight:700;color:${pctCol(tk.gpNoRealizada)}">${tk.gpNoRealizada!==null?(tk.gpNoRealizada>=0?'+':'')+fmtFull(tk.gpNoRealizada):'—'}</div><div style="font-size:10px;font-weight:600;color:${pctCol(tk.pctNoRealizada)}">${tk.gpNoRealizada!==null?fmtPct(tk.pctNoRealizada):t('noPrice')}</div></div>
+            <div style="text-align:right"><div style="font-size:13px;font-weight:700;color:${pctCol(tk.gpNoRealizada)}">${tk.gpNoRealizada!==null?(tk.gpNoRealizada>=0?'+':'')+fmtFull(tk.gpNoRealizada):'—'}</div><div style="font-size:10px;font-weight:600;color:${pctCol(tk.pctNoRealizada)}">${tk.gpNoRealizada!==null?fmtPct(tk.pctNoRealizada):'no price'}</div></div>
           </div>`;
-        }).join(''):`<div style="text-align:center;color:var(--text2);padding:32px">${_noTrades}</div>`})()}
+        }).join(''):'<div style="text-align:center;color:var(--text2);padding:32px">No trades</div>'}
         </div>
       </div>
     </div>
 
     <div class="card" style="margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <div class="card-title" style="margin:0">${t('goalsProgress')}</div>
-        <button class="btn btn-secondary btn-sm" onclick="switchTab('metas')">${t('viewAll')}</button>
+        <div class="card-title" style="margin:0">🎯 Goals Progress</div>
+        <button class="btn btn-secondary btn-sm" onclick="switchTab('metas')">View all →</button>
       </div>
-      ${goals.length>0?`<div class="grid-2">${goals.slice(0,4).map(g=>{let actual=0;const patrimonioTotal=totalMXN+totalInvMXN;if(g.clase==='Patrimonio Total'||g.clase==='Todos')actual=patrimonioTotal;else if(g.clase==='Plataformas')actual=totalMXN;else if(g.clase==='Inversiones')actual=totalInvMXN;else if(g.clase==='Ingreso Mensual')actual=ingresoMensualEUR;else actual=patrimonioTotal;const pct=g.meta>0?actual/g.meta:0;const sc=pct>=1?'var(--green)':pct>=0.8?'var(--orange)':pct>=0.3?'var(--blue)':'var(--text2)';const st=pct>=1?t('lograda'):pct>=0.8?t('casi'):pct>=0.3?t('enProceso'):t('inicio');return`<div style="padding:12px;background:var(--card2);border-radius:12px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:13px;font-weight:700">${g.nombre}</div><span style="font-size:11px;font-weight:700;color:${sc}">${st}</span></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:6px"><span style="font-weight:700;color:var(--text)">${fmt(actual)}</span><span>goal: ${fmt(g.meta)}</span></div><div class="progress-bg"><div class="progress-fill" style="background:${sc};width:${Math.min(pct*100,100).toFixed(1)}%"></div></div><div style="text-align:right;font-size:11px;font-weight:800;color:${sc};margin-top:4px">${(pct*100).toFixed(1)}%</div></div>`;}).join('')}</div>`:`<div style="text-align:center;padding:24px;color:var(--text2);font-size:13px">${t('noGoals')} — <button class="btn btn-primary btn-sm" onclick="switchTab('metas')">${t('createFirst')}</button></div>`}
+      ${goals.length>0?`<div class="grid-2">${goals.slice(0,4).map(g=>{let actual=0;const patrimonioTotal=totalMXN+totalInvMXN;if(g.clase==='Patrimonio Total'||g.clase==='Todos')actual=patrimonioTotal;else if(g.clase==='Plataformas')actual=totalMXN;else if(g.clase==='Inversiones')actual=totalInvMXN;else if(g.clase==='Ingreso Mensual')actual=ingresoMensualEUR;else actual=patrimonioTotal;const pct=g.meta>0?actual/g.meta:0;const sc=pct>=1?'var(--green)':pct>=0.8?'var(--orange)':pct>=0.3?'var(--blue)':'var(--text2)';const st=pct>=1?t('lograda'):pct>=0.8?t('casi'):pct>=0.3?t('enProceso'):t('inicio');return`<div style="padding:12px;background:var(--card2);border-radius:12px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:13px;font-weight:700">${g.nombre}</div><span style="font-size:11px;font-weight:700;color:${sc}">${st}</span></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:6px"><span style="font-weight:700;color:var(--text)">${fmt(actual)}</span><span>goal: ${fmt(g.meta)}</span></div><div class="progress-bg"><div class="progress-fill" style="background:${sc};width:${Math.min(pct*100,100).toFixed(1)}%"></div></div><div style="text-align:right;font-size:11px;font-weight:800;color:${sc};margin-top:4px">${(pct*100).toFixed(1)}%</div></div>`;}).join('')}</div>`:`<div style="text-align:center;padding:24px;color:var(--text2);font-size:13px">No goals — <button class="btn btn-primary btn-sm" onclick="switchTab('metas')">Create →</button></div>`}
     </div>
 
   `;
@@ -1632,7 +1595,7 @@ function renderDashboard(){
       chartInstances.chartEvo=new Chart(ctxE,{type:'line',data:{
         datasets:[
           {
-            label:t('realGain'),
+            label:'Real Gain',
             data:realDates.map((d,i)=>({x:d,y:realVals[i]})),
             borderColor:'#30D158',
             backgroundColor: gradReal,
@@ -1649,7 +1612,7 @@ function renderDashboard(){
             pointHoverBorderWidth:2,
           },
           {
-            label:t('projectionLabel')+' '+((re*100).toFixed(0))+'% '+t('annualLabel'),
+            label:'Projection '+((re*100).toFixed(0))+'% annual',
             data:projDates.map((d,i)=>({x:d,y:projVals[i]})),
             borderColor:'rgba(10,132,255,0.65)',
             backgroundColor:'transparent',
@@ -1848,7 +1811,7 @@ function _buildMovRow(m, transferGroups) {
     <td style="color:var(--text2);font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${notas||'—'}</td>
     <td style="white-space:nowrap">
       <button class="edit-btn" onclick="openEditMovModal('${m.id}')" title="Edit">✏️</button>
-      <button class="del-btn" onclick="deleteMovement('${m.id}')" title="${t('deleteBtn')}">×</button>
+      <button class="del-btn" onclick="deleteMovement('${m.id}')" title="Delete">×</button>
     </td>
   </tr>`;
 }
@@ -2622,7 +2585,7 @@ function renderInversiones(){
   const gpRealTotal = cerradas.reduce((s,t) => s + (t.gpRealizada||0) * (t.moneda==='MXN'?1:tc), 0);
 
   const porTipo = {};
-  abiertas.forEach(pos => {
+  abiertas.forEach(t => {
     const tipo = t.type || 'Otro';
     const val = (t.valorActual||t.costoPosicion||0) * (t.moneda==='MXN'?1:tc);
     porTipo[tipo] = (porTipo[tipo]||0) + val;
@@ -2631,7 +2594,7 @@ function renderInversiones(){
   const TIPO_COLORS = {'ETF':'var(--blue)','Acción':'var(--green)','Crypto':'var(--orange)','Bono':'var(--teal)','Otro':'var(--text2)'};
 
   const porMoneda = {};
-  abiertas.forEach(pos => {
+  abiertas.forEach(t => {
     const val = (t.valorActual||t.costoPosicion||0) * (t.moneda==='MXN'?1:tc);
     porMoneda[t.moneda||'USD'] = (porMoneda[t.moneda||'USD']||0) + val;
   });
@@ -3207,7 +3170,7 @@ function _buildAiContext() {
       .map(p=>`${p.name} (${p.type}): ${fmtPlat(p.saldo,p.moneda)}, return ${p.rendimiento>=0?'+':''}${fmtPlat(p.rendimiento,p.moneda)}`).join('; ');
 
     const topInv = tickers.filter(t=>t.cantActual>0).slice(0,5)
-      .map(tkr=>`${tkr.ticker} (${tkr.type}): ×${tkr.cantActual}, G/L ${tkr.gpNoRealizada!=null?(tkr.gpNoRealizada>=0?'+':'')+tkr.gpNoRealizada.toFixed(0)+' '+tkr.moneda:t('noPrice')}`).join('; ');
+      .map(tkr=>`${tkr.ticker} (${tkr.type}): ×${tkr.cantActual}, G/L ${tkr.gpNoRealizada!=null?(tkr.gpNoRealizada>=0?'+':'')+tkr.gpNoRealizada.toFixed(0)+' '+tkr.moneda:'no price'}`).join('; ');
 
     const metasSummary = goals.slice(0,4).map(g=>`${g.nombre}: goal ${fmt(g.meta)}, current ${fmt(g.actual||0)}`).join('; ');
 
@@ -3987,7 +3950,7 @@ function hidePending(){
 }
 
 window.openAdminPanel = async function(){
-  openModal('<div style="padding:8px 0"><div style="font-size:18px;font-weight:800;margin-bottom:16px">👑 Admin Panel</div><div style="text-align:center;padding:32px;color:var(--text2)"><span class="spinner"></span> ${t('loadingUsers')}</div></div>');
+  openModal('<div style="padding:8px 0"><div style="font-size:18px;font-weight:800;margin-bottom:16px">👑 Admin Panel</div><div style="text-align:center;padding:32px;color:var(--text2)"><span class="spinner"></span> Loading users...</div></div>');
 
   const { collection, getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
   const snap = await getDocs(collection(db, 'registros'));
@@ -4055,7 +4018,7 @@ window.openAdminPanel = async function(){
       <div style="display:flex;gap:6px;justify-content:flex-end">
         ${!u.aprobado?`<button onclick="window.aprobarUsuario('${u.uid}')" style="padding:5px 12px;border-radius:14px;border:none;background:var(--green);color:#fff;font-size:11px;font-weight:700;cursor:pointer">Approve</button>`:''}
         ${u.aprobado?`<button onclick="window.revocarUsuario('${u.uid}')" style="padding:5px 12px;border-radius:14px;border:none;background:var(--orange,#ff9f0a);color:#fff;font-size:11px;font-weight:700;cursor:pointer">Revoke</button>`:''}
-        <button onclick="window.eliminarUsuario('${u.uid}')" style="padding:5px 12px;border-radius:14px;border:none;background:var(--red,#ff453a);color:#fff;font-size:11px;font-weight:700;cursor:pointer">${t('deleteBtn')}</button>
+        <button onclick="window.eliminarUsuario('${u.uid}')" style="padding:5px 12px;border-radius:14px;border:none;background:var(--red,#ff453a);color:#fff;font-size:11px;font-weight:700;cursor:pointer">Delete</button>
       </div>
     </div>`).join('');
 
@@ -4069,7 +4032,7 @@ window.openAdminPanel = async function(){
       </div>
     </div>
     <div style="max-height:420px;overflow-y:auto;margin:0 -4px;padding:0 4px">
-      ${rows || '<div style="text-align:center;padding:32px;color:var(--text2)">${t('noUsersYet')}</div>'}
+      ${rows || '<div style="text-align:center;padding:32px;color:var(--text2)">No users yet</div>'}
     </div>
   </div>`);
 };
