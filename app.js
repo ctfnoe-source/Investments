@@ -1,4 +1,8 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 // ==================== MÓDULO PRINCIPAL ====================
+
 function escHtml(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 const LS = {
   get(k) { try { const v = localStorage.getItem('fp_'+k); return v ? JSON.parse(v) : null; } catch { return null; } },
@@ -1097,13 +1101,22 @@ function getTickerPositions(){
     const t=m.ticker.toUpperCase();
     const moneda=(m.moneda||'USD').toUpperCase();
     const key = moneda==='MXN' ? t+'_MXN' : t;
-    if(!tickers[key])tickers[key]={ticker:t,type:m.tipoActivo,moneda,cantC:0,cantV:0,costoTotal:0,ventasTotal:0,movs:[]};
+    if(!tickers[key])tickers[key]={ticker:t,type:m.tipoActivo,moneda,cantC:0,cantV:0,costoTotal:0,ventasTotal:0,movs:[],brokers:{}};
     if(m.tipoMov==='Compra'){tickers[key].cantC+=m.cantidad||0;tickers[key].costoTotal+=m.montoTotal||0;}
     if(m.tipoMov==='Venta'){tickers[key].cantV+=m.cantidad||0;tickers[key].ventasTotal+=m.montoTotal||0;}
     tickers[key].movs.push(m);
+    // Track per-broker breakdown
+    const broker=m.broker||'';
+    if(broker){
+      if(!tickers[key].brokers[broker])tickers[key].brokers[broker]={cantC:0,cantV:0,costoTotal:0};
+      if(m.tipoMov==='Compra'){tickers[key].brokers[broker].cantC+=m.cantidad||0;tickers[key].brokers[broker].costoTotal+=m.montoTotal||0;}
+      if(m.tipoMov==='Venta'){tickers[key].brokers[broker].cantV+=m.cantidad||0;}
+    }
   });
   return Object.values(tickers).map(t=>{
     t.cantActual=t.cantC-t.cantV;t.precioCostoPromedio=t.cantC>0?t.costoTotal/t.cantC:0;
+    // Resolve per-broker available quantities
+    t.brokersSaldo=Object.entries(t.brokers).map(([br,b])=>({broker:br,cantActual:Math.max(0,b.cantC-b.cantV),precioCostoPromedio:b.cantC>0?b.costoTotal/b.cantC:0})).filter(b=>b.cantActual>0);
     const pi=getPriceInfo(t.ticker,t.type,t.moneda);
     t.precioActual=pi.price;t.priceLabel=pi.label;t.priceCssClass=pi.cssClass;t.priceTooltip=pi.tooltip||'';
     t.valorActual=t.precioActual&&t.cantActual>0?t.cantActual*t.precioActual:null;
@@ -1751,7 +1764,9 @@ function _buildMovRow(m, transferGroups) {
     } else { det=m.platform; tipo=m.tipoPlat; monto=fmt(m.monto); }
   } else if(m.seccion==='inversiones'){
     det=`<strong>${escHtml(m.ticker)}</strong> · ${m.broker}`;
-    tipo=m.tipoMov+' · '+m.tipoActivo+' · '+(m.moneda||'USD');
+    const _tipoColor=m.tipoMov==='Compra'?'var(--green)':m.tipoMov==='Venta'?'var(--red)':m.tipoMov==='Dividendo'?'var(--blue)':'var(--text2)';
+    const _tipoBadge=`<span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:10px;font-weight:800;background:${_tipoColor}18;color:${_tipoColor}">${m.tipoMov}</span>`;
+    tipo=_tipoBadge+' <span style="font-size:11px;color:var(--text2)">'+m.tipoActivo+' · '+(m.moneda||'USD')+'</span>';
     monto=fmt(m.montoTotal,m.moneda);
     extra=m.cantidad+'×'+fmtFull(m.precioUnit);
   } else {
@@ -1893,6 +1908,8 @@ function renderMovimientos(){
     if (inp) { inp.focus(); if (prevCursor !== null) inp.setSelectionRange(prevCursor, prevCursor); }
   }
 }
+
+
 function openMovModal(sec){
   const s=sec||'plataformas';
   openModal(`
@@ -1917,20 +1934,31 @@ function openMovModal(sec){
       `:s==='inversiones'?`
         <div class="form-row form-row-3">
           <div class="form-group"><label class="form-label">${t('fecha')}</label><input type="date" class="form-input" name="fecha" value="${today()}" required></div>
-          <div class="form-group"><label class="form-label">${t('tipoActivo')}</label><select class="form-select" name="tipoActivo">${ASSET_TYPES.map(t=>`<option>${t}</option>`).join('')}</select></div>
-          <div class="form-group"><label class="form-label">${t('movimiento')}</label><select class="form-select" name="tipoMov">${['Compra','Venta','Dividendo','Comisión'].map(t=>`<option>${t}</option>`).join('')}</select></div>
+          <div class="form-group"><label class="form-label">${t('tipoActivo')}</label><select class="form-select" name="tipoActivo" id="invTipoActivo">${ASSET_TYPES.map(tp=>`<option>${tp}</option>`).join('')}</select></div>
+          <div class="form-group"><label class="form-label">${t('movimiento')}</label><select class="form-select" name="tipoMov" id="invTipoMov" onchange="window._invUpdateSellInfo()">${['Compra','Venta','Dividendo','Comisión'].map(tp=>`<option>${tp}</option>`).join('')}</select></div>
         </div>
         <div class="form-row form-row-3">
-          <div class="form-group"><label class="form-label">${t('ticker')}</label><input class="form-input" name="ticker" placeholder="AAPL, BTC..." required style="text-transform:uppercase"></div>
-          <div class="form-group"><label class="form-label">${t('broker')}</label><input list="brokerList" class="form-input" name="broker" required placeholder="${t('escribir')}..."><datalist id="brokerList">${BROKERS.map(b=>`<option value="${b}">`).join('')}</datalist></div>
-          <div class="form-group"><label class="form-label">${t('moneda')}</label><select class="form-select" name="moneda"><option value="USD">USD 🇺🇸</option><option value="MXN">MXN 🇲🇽</option></select></div>
+          <div class="form-group"><label class="form-label">${t('ticker')}</label><input class="form-input" name="ticker" id="invTicker" placeholder="AAPL, BTC..." required style="text-transform:uppercase" oninput="window._invUpdateSellInfo()" onblur="window._invUpdateSellInfo()"></div>
+          <div class="form-group" id="invBrokerGroup"><label class="form-label" id="invBrokerLabel">${t('broker')}</label><input list="brokerList" class="form-input" name="broker" id="invBroker" required placeholder="${t('escribir')}..."><datalist id="brokerList">${BROKERS.map(b=>`<option value="${b}">`).join('')}</datalist></div>
+          <div class="form-group"><label class="form-label">${t('moneda')}</label><select class="form-select" name="moneda" id="invMoneda" onchange="window._invUpdateSellInfo()"><option value="USD">USD 🇺🇸</option><option value="MXN">MXN 🇲🇽</option></select></div>
+        </div>
+        <div id="invSellInfoBox" style="display:none;margin-bottom:12px;padding:10px 14px;background:rgba(255,149,0,0.08);border:1.5px solid rgba(255,149,0,0.25);border-radius:12px;font-size:12px;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+          <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+            <span>📦 <span style="color:var(--text2)">Disponible:</span> <strong id="invSellQty" style="color:var(--text);font-size:13px">—</strong></span>
+            <span>💲 <span style="color:var(--text2)">Precio medio:</span> <strong id="invSellAvg" style="color:var(--text)">—</strong></span>
+          </div>
+          <button type="button" onclick="window._invSellAll()" style="flex-shrink:0;padding:6px 16px;border-radius:10px;border:none;background:var(--orange);color:#fff;font-size:12px;font-weight:800;cursor:pointer;font-family:var(--font);white-space:nowrap">🔴 Vender todo</button>
         </div>
         <div class="form-row form-row-3">
-          <div class="form-group"><label class="form-label">${t('cantidad')}</label><input type="number" step="any" class="form-input" name="cantidad" placeholder="0" required></div>
-          <div class="form-group"><label class="form-label">${t('precioUnitario')}</label><input type="number" step="any" class="form-input" name="precioUnit" placeholder="0.00" required></div>
+          <div class="form-group"><label class="form-label" id="invCantLabel">${t('cantidad')}</label><input type="number" step="any" class="form-input" name="cantidad" id="invCantidad" placeholder="0" required oninput="window._invUpdateTotal()"></div>
+          <div class="form-group"><label class="form-label">${t('precioUnitario')}</label><input type="number" step="any" class="form-input" name="precioUnit" id="invPrecioUnit" placeholder="0.00" required oninput="window._invUpdateTotal()"></div>
           <div class="form-group"><label class="form-label">${t('comision')}</label><input type="number" step="any" class="form-input" name="comision" value="0"></div>
         </div>
+        <div id="invTotalBox" style="display:none;margin:-4px 0 10px;padding:7px 14px;background:var(--card2);border-radius:10px;font-size:12px;color:var(--text2)">
+          Total operación: <strong id="invTotalVal" style="color:var(--text);font-size:13px">—</strong>
+        </div>
         <div class="form-group"><label class="form-label">${t('notas')}</label><input class="form-input" name="notas" placeholder="${t('opcional')}..."></div>
+
       `:s==='transferencia'?`
         <div class="form-group" style="margin-bottom:12px"><div style="display:flex;gap:8px">
           <button type="button" id="btnTipoPlat" onclick="setTipoTransfer('plat')" class="btn btn-secondary" style="flex:1">🏦 ${t('transferenciaEntrePlataformas')}</button>
@@ -2640,37 +2668,39 @@ function renderInversiones(){
         const va = (a.valorActual||a.costoPosicion||0)*(a.moneda==='MXN'?1:tc);
         const vb = (b.valorActual||b.costoPosicion||0)*(b.moneda==='MXN'?1:tc);
         return vb - va;
-      }).map(t => {
-        const tipoClass = t.type==='Acción'?'badge-green':t.type==='ETF'?'badge-blue':t.type==='Crypto'?'badge-orange':'badge-gray';
-        const valorMXN = (t.valorActual||t.costoPosicion||0)*(t.moneda==='MXN'?1:tc);
-        const costoMXN = t.costoPosicion*(t.moneda==='MXN'?1:tc);
+      }).map(pos => {
+        const tipoClass = pos.type==='Acción'?'badge-green':pos.type==='ETF'?'badge-blue':pos.type==='Crypto'?'badge-orange':'badge-gray';
+        const valorMXN = (pos.valorActual||pos.costoPosicion||0)*(pos.moneda==='MXN'?1:tc);
+        const costoMXN = pos.costoPosicion*(pos.moneda==='MXN'?1:tc);
         const gpMXN = valorMXN - costoMXN;
         const pctPort = totalValor > 0 ? valorMXN/totalValor : 0;
+        const brokersInfo = pos.brokersSaldo&&pos.brokersSaldo.length>0 ? pos.brokersSaldo.map(b=>b.broker+(b.cantActual!==pos.cantActual?' ('+( b.cantActual%1===0?b.cantActual:parseFloat(b.cantActual.toFixed(4)))+')':'')).join(', ') : '';
         return `<div class="list-item" style="flex-direction:column;align-items:stretch;gap:8px;padding:12px 0">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:16px;font-weight:800">${t.ticker}</span>
-              <span class="badge ${tipoClass}">${t.type}</span>
-              ${monedaBadge(t.moneda)}
+              <span style="font-size:16px;font-weight:800">${pos.ticker}</span>
+              <span class="badge ${tipoClass}">${pos.type}</span>
+              ${monedaBadge(pos.moneda)}
             </div>
             <div style="text-align:right">
-              <div style="font-size:15px;font-weight:800">${t.moneda==='MXN'?fmt(t.valorActual||t.costoPosicion||0):fmtFull(t.valorActual||t.costoPosicion||0)+' '+t.moneda}</div>
+              <div style="font-size:15px;font-weight:800">${pos.moneda==='MXN'?fmt(pos.valorActual||pos.costoPosicion||0):fmtFull(pos.valorActual||pos.costoPosicion||0)+' '+pos.moneda}</div>
               <div style="font-size:11px;color:var(--text2)">${fmt(valorMXN)} MXN</div>
             </div>
           </div>
           <div style="display:grid;grid-template-columns:${isMobile()?'repeat(2,1fr)':'repeat(4,1fr)'};gap:8px;font-size:11px">
-            <div><div style="color:var(--text2)">${t('cantidad')}</div><div style="font-weight:700">${t.cantActual}</div></div>
-            <div><div style="color:var(--text2)">${t('precioMedio')}</div><div style="font-weight:700">${t.moneda==='MXN'?'$':'US$'}${t.precioCostoPromedio.toFixed(2)}</div></div>
-            <div><div style="color:var(--text2)">${t('precioActual')}</div><div style="font-weight:700" class="${t.priceCssClass}">${t.priceLabel}</div></div>
+            <div><div style="color:var(--text2)">${t('cantidad')}</div><div style="font-weight:700">${pos.cantActual}</div></div>
+            <div><div style="color:var(--text2)">${t('precioMedio')}</div><div style="font-weight:700">${pos.moneda==='MXN'?'$':'US$'}${pos.precioCostoPromedio.toFixed(2)}</div></div>
+            <div><div style="color:var(--text2)">${t('precioActual')}</div><div style="font-weight:700" class="${pos.priceCssClass}">${pos.priceLabel}</div></div>
             <div><div style="color:var(--text2)">% ${t('portfolio')}</div><div style="font-weight:700">${(pctPort*100).toFixed(1)}%</div></div>
           </div>
+          ${brokersInfo?`<div style="font-size:11px;color:var(--text2)">🏦 ${brokersInfo}</div>`:''}
           <div style="display:flex;justify-content:space-between;align-items:center">
             <div style="height:4px;flex:1;background:var(--progress-bg);border-radius:3px;margin-right:12px">
               <div style="height:4px;border-radius:3px;background:${pctCol(gpMXN)};width:${Math.min(pctPort*100,100).toFixed(1)}%"></div>
             </div>
             <div style="text-align:right">
-              <span style="font-size:13px;font-weight:800;color:${pctCol(t.gpNoRealizada)}">${t.gpNoRealizada!==null?(t.gpNoRealizada>=0?'+':'')+fmtFull(t.gpNoRealizada)+' '+t.moneda:t('sinPrecio')}</span>
-              ${t.gpNoRealizada!==null?`<span style="font-size:11px;color:${pctCol(t.pctNoRealizada)};margin-left:6px;font-weight:600">${fmtPct(t.pctNoRealizada)}</span>`:''}
+              <span style="font-size:13px;font-weight:800;color:${pctCol(pos.gpNoRealizada)}">${pos.gpNoRealizada!==null?(pos.gpNoRealizada>=0?'+':'')+fmtFull(pos.gpNoRealizada)+' '+pos.moneda:t('sinPrecio')}</span>
+              ${pos.gpNoRealizada!==null?`<span style="font-size:11px;color:${pctCol(pos.pctNoRealizada)};margin-left:6px;font-weight:600">${fmtPct(pos.pctNoRealizada)}</span>`:''}
             </div>
           </div>
         </div>`;
@@ -2681,16 +2711,16 @@ function renderInversiones(){
     ${cerradas.length > 0 ? `
     <div class="card">
       <div class="card-title">🔒 ${t('posicionesCerradas')}</div>
-      ${cerradas.map(t => {
-        const tipoClass = t.type==='Acción'?'badge-green':t.type==='ETF'?'badge-blue':t.type==='Crypto'?'badge-orange':'badge-gray';
+      ${cerradas.map(cp => {
+        const tipoClass = cp.type==='Acción'?'badge-green':cp.type==='ETF'?'badge-blue':cp.type==='Crypto'?'badge-orange':'badge-gray';
         return `<div class="list-item">
           <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:13px;font-weight:800;color:var(--text2)">${t.ticker}</span>
-            <span class="badge ${tipoClass}">${t.type}</span>
-            <span style="font-size:11px;color:var(--text2)">${t('costo')} ${fmtFull(t.costoTotal)} ${t.moneda}</span>
+            <span style="font-size:13px;font-weight:800;color:var(--text2)">${cp.ticker}</span>
+            <span class="badge ${tipoClass}">${cp.type}</span>
+            <span style="font-size:11px;color:var(--text2)">${t('costo')} ${fmtFull(cp.costoTotal)} ${cp.moneda}</span>
           </div>
           <div style="text-align:right">
-            <div style="font-size:13px;font-weight:700;color:${pctCol(t.gpRealizada)}">${(t.gpRealizada||0)>=0?'+':''}${fmtFull(t.gpRealizada||0)} ${t.moneda}</div>
+            <div style="font-size:13px;font-weight:700;color:${pctCol(cp.gpRealizada)}">${(cp.gpRealizada||0)>=0?'+':''}${fmtFull(cp.gpRealizada||0)} ${cp.moneda}</div>
             <div style="font-size:10px;color:var(--text2)">${t('realizada')}</div>
           </div>
         </div>`;
@@ -3629,9 +3659,108 @@ window.forceUpdateFX=forceUpdateFX;
 window.showAportaciones = showAportaciones;
 
 // ==================== FIREBASE (MÓDULO) ====================
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+// ── Investment modal sell helpers ──────────────────────────────────────────
+(function(){
+  function fmtC(v){ return v%1===0?String(v):parseFloat(v.toFixed(8)).toString(); }
+  window._invCurrentPos = null;
+
+  window._invUpdateSellInfo = function(){
+    var tkEl=document.getElementById('invTicker');
+    var mnEl=document.getElementById('invMoneda');
+    var tmEl=document.getElementById('invTipoMov');
+    var box =document.getElementById('invSellInfoBox');
+    var cLbl=document.getElementById('invCantLabel');
+    var bLbl=document.getElementById('invBrokerLabel');
+    var bInp=document.getElementById('invBroker');
+    var bDL =document.getElementById('brokerList');
+    if(!box||!tkEl) return;
+    var ticker=(tkEl.value||'').toUpperCase().trim();
+    var moneda=mnEl?mnEl.value:'USD';
+    var tipo  =tmEl?tmEl.value:'Compra';
+    if(tipo==='Venta'&&ticker){
+      var allPos=(typeof getTickerPositions==='function')?getTickerPositions():[];
+      var pos=null;
+      for(var i=0;i<allPos.length;i++){
+        if(allPos[i].ticker===ticker&&allPos[i].cantActual>0){pos=allPos[i];break;}
+      }
+      if(pos&&mnEl&&mnEl.value!==pos.moneda){mnEl.value=pos.moneda;}
+      if(pos){
+        var sym=pos.moneda==='MXN'?'$':'US$';
+        var brokers=pos.brokersSaldo&&pos.brokersSaldo.length?pos.brokersSaldo:[];
+        var qty=fmtC(pos.cantActual);
+        var avg=sym+parseFloat(pos.precioCostoPromedio.toFixed(4));
+        if(brokers.length===1){
+          var b=brokers[0];qty=fmtC(b.cantActual);avg=sym+parseFloat(b.precioCostoPromedio.toFixed(4));
+          if(bInp){bInp.value=b.broker;bInp.style.background='rgba(52,199,89,0.08)';bInp.style.borderColor='var(--green)';bInp.readOnly=true;}
+          if(bLbl)bLbl.innerHTML='Exchange <span style="font-size:10px;font-weight:700;color:var(--green);margin-left:4px">&#10003; auto</span>';
+          if(bDL)bDL.innerHTML='<option value="'+b.broker+'">';
+          window._invCurrentPos={ticker:pos.ticker,moneda:pos.moneda,cantActual:b.cantActual,precioCostoPromedio:b.precioCostoPromedio};
+        } else if(brokers.length>1){
+          if(bInp){bInp.value='';bInp.style.background='rgba(10,132,255,0.06)';bInp.style.borderColor='var(--blue)';bInp.readOnly=false;}
+          if(bLbl)bLbl.innerHTML='Exchange <span style="font-size:10px;font-weight:700;color:var(--blue);margin-left:4px">'+brokers.length+' con saldo</span>';
+          if(bDL)bDL.innerHTML=brokers.map(function(b){return'<option value="'+b.broker+'">';}).join('');
+          window._invCurrentPos=pos;
+          if(bInp)bInp.oninput=function(){
+            for(var j=0;j<brokers.length;j++){
+              if(brokers[j].broker.toLowerCase()===bInp.value.toLowerCase()){
+                var s=brokers[j];
+                var qEl=document.getElementById('invSellQty');if(qEl)qEl.textContent=fmtC(s.cantActual);
+                var aEl=document.getElementById('invSellAvg');if(aEl)aEl.textContent=sym+parseFloat(s.precioCostoPromedio.toFixed(4));
+                if(cLbl)cLbl.textContent='Cantidad (tienes '+fmtC(s.cantActual)+' en '+s.broker+')';
+                window._invCurrentPos={ticker:pos.ticker,moneda:pos.moneda,cantActual:s.cantActual,precioCostoPromedio:s.precioCostoPromedio};
+                break;
+              }
+            }
+          };
+        } else {
+          if(bInp){bInp.style.background='';bInp.style.borderColor='';bInp.readOnly=false;}
+          if(bLbl)bLbl.textContent='Exchange';
+          window._invCurrentPos=pos;
+        }
+        var qEl=document.getElementById('invSellQty');if(qEl)qEl.textContent=qty;
+        var aEl=document.getElementById('invSellAvg');if(aEl)aEl.textContent=avg;
+        if(cLbl)cLbl.textContent='Cantidad (tienes '+qty+')';
+        box.style.display='flex';
+      } else {
+        box.style.display='none';window._invCurrentPos=null;
+        if(cLbl)cLbl.textContent='Cantidad';
+        if(bLbl)bLbl.textContent='Exchange';
+        if(bInp){bInp.style.background='';bInp.style.borderColor='';bInp.readOnly=false;bInp.oninput=null;}
+        if(bDL&&typeof BROKERS!=='undefined')bDL.innerHTML=BROKERS.map(function(b){return'<option value="'+b+'">';}).join('');
+      }
+    } else {
+      box.style.display='none';window._invCurrentPos=null;
+      if(cLbl)cLbl.textContent='Cantidad';
+      if(bLbl)bLbl.textContent='Exchange';
+      if(bInp){bInp.style.background='';bInp.style.borderColor='';bInp.readOnly=false;bInp.oninput=null;}
+      if(bDL&&typeof BROKERS!=='undefined')bDL.innerHTML=BROKERS.map(function(b){return'<option value="'+b+'">';}).join('');
+    }
+    window._invUpdateTotal();
+  };
+
+  window._invSellAll=function(){
+    var pos=window._invCurrentPos;if(!pos)return;
+    var cInp=document.getElementById('invCantidad');if(cInp)cInp.value=fmtC(pos.cantActual);
+    var pInp=document.getElementById('invPrecioUnit');if(pInp&&!pInp.value)pInp.value=parseFloat(pos.precioCostoPromedio.toFixed(4));
+    window._invUpdateTotal();
+  };
+
+  window._invUpdateTotal=function(){
+    var cInp=document.getElementById('invCantidad');
+    var pInp=document.getElementById('invPrecioUnit');
+    var mEl =document.getElementById('invMoneda');
+    var box =document.getElementById('invTotalBox');
+    var val =document.getElementById('invTotalVal');
+    var cant=parseFloat(cInp?cInp.value:0)||0;
+    var precio=parseFloat(pInp?pInp.value:0)||0;
+    if(cant>0&&precio>0&&box&&val){
+      var sym=(mEl&&mEl.value==='MXN')?'$':'US$';
+      val.textContent=sym+(cant*precio).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});
+      box.style.display='block';
+    } else if(box){box.style.display='none';}
+  };
+})();
 
 const firebaseConfig={apiKey:"AIzaSyDUAOlDXmkBRQNoYgmax9KOMjQrZd061Q8",authDomain:"control-de-inversion.firebaseapp.com",projectId:"control-de-inversion",storageBucket:"control-de-inversion.firebasestorage.app",messagingSenderId:"955139190781",appId:"1:955139190781:web:b73653484f5f96b7e23394"};
 const app=initializeApp(firebaseConfig),db=getFirestore(app),auth=getAuth(app);
@@ -4060,6 +4189,8 @@ window.exportData = exportData;
 window.importData = importData;
 window.resetAll = resetAll;
 window.confirmResetAll = confirmResetAll;
+
+
 window.openMovModal = openMovModal;
 window.saveMovement = saveMovement;
 window.deleteMovement = deleteMovement;
