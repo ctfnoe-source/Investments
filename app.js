@@ -1708,7 +1708,33 @@ function renderDashboard(){
       const dynRadius = realDates.length <= 12 ? 3 : realDates.length <= 30 ? 2 : 0;
       const dynLastRadius = realDates.length > 0 ? 5 : 0;
 
-      // Glow plugin
+      // ── Calcular límites X según el rango seleccionado ──────────────
+      const nowMs = new Date().getTime();
+      let xMin = undefined, xMax = undefined;
+      const showProjection = (_chartRange === 'all');
+
+      if (_chartRange !== 'all') {
+        // xMax = hoy
+        xMax = new Date(todayDateStr + 'T23:59:59').getTime();
+        // xMin = inicio del período filtrado
+        if (realDates.length > 0) {
+          xMin = new Date(realDates[0] + 'T00:00:00').getTime();
+        }
+        // Para rangos de 1 día o 1 semana con pocos puntos, dar algo de padding
+        if (_chartRange === '1d') {
+          const d = new Date(); d.setDate(d.getDate() - 1);
+          xMin = d.getTime();
+        } else if (_chartRange === '1w') {
+          const d = new Date(); d.setDate(d.getDate() - 7);
+          xMin = d.getTime();
+        }
+      } else {
+        // Rango "all": mostrar histórico + proyección
+        if (realDates.length > 0) xMin = new Date(realDates[0] + 'T00:00:00').getTime();
+        if (projDates.length > 0) xMax = new Date(projDates[projDates.length-1] + 'T23:59:59').getTime();
+      }
+      // ──────────────────────────────────────────────────────────────────
+
       const glowPlugin = {
         id:'glowLines',
         beforeDatasetsDraw(chart){
@@ -1776,7 +1802,8 @@ function renderDashboard(){
           },
           {
             label: t('proyeccion')+' '+((re*100).toFixed(0))+'% '+t('anual'),
-            data:projDates.map((d,i)=>({x:d,y:projVals[i]})),
+            // Si no se muestra proyección, dataset vacío
+            data: showProjection ? projDates.map((d,i)=>({x:d,y:projVals[i]})) : [],
             borderColor:'rgba(10,132,255,0.92)',
             backgroundColor:'transparent',
             borderWidth:1.6,
@@ -1834,9 +1861,11 @@ function renderDashboard(){
         scales:{
           x:{
             type:'time',
+            min: xMin,
+            max: xMax,
             time:{
-              unit:'month',
-              displayFormats:{ month:'MMM yy', day:'d MMM' },
+              unit: _chartRange === '1d' ? 'hour' : _chartRange === '1w' ? 'day' : 'month',
+              displayFormats:{ hour:'HH:mm', day:'d MMM', month:'MMM yy' },
               tooltipFormat:'yyyy-MM-dd'
             },
             adapters:{ date:{} },
