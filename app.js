@@ -1676,14 +1676,19 @@ function renderDashboard(){
 
     const now = new Date();
     const todayDateStr = now.toISOString().split('T')[0];
+    // Only show projection on long-range views — short ranges (1d,1w,1m,ytd) don't need it
+    // and it was causing the x-axis to expand far into the future
+    const showProjection = ['1y','3y','all'].includes(_chartRange);
     const projDates=[];
     const projVals=[];
-    projDates.push(todayDateStr);
-    projVals.push(0);
-    for(let i=1; i<=projMonths; i++){
-      const d=new Date(now.getFullYear(), now.getMonth()+i, 1);
-      projDates.push(d.toISOString().split('T')[0]);
-      projVals.push(Math.round(capitalHoy * (Math.pow(1+re/12, i) - 1)));
+    if(showProjection){
+      projDates.push(todayDateStr);
+      projVals.push(0);
+      for(let i=1; i<=projMonths; i++){
+        const d=new Date(now.getFullYear(), now.getMonth()+i, 1);
+        projDates.push(d.toISOString().split('T')[0]);
+        projVals.push(Math.round(capitalHoy * (Math.pow(1+re/12, i) - 1)));
+      }
     }
 
     const ctxE=document.getElementById('chartEvo');
@@ -1825,10 +1830,12 @@ function renderDashboard(){
           x:{
             type:'time',
             time:{
-              unit:'month',
-              displayFormats:{ month:'MMM yy', day:'d MMM' },
+              unit: _chartRange==='1d'?'hour':_chartRange==='1w'?'day':_chartRange==='1m'?'day':_chartRange==='ytd'?'month':_chartRange==='1y'?'month':'month',
+              displayFormats:{ hour:'HH:mm', day:'d MMM', month:'MMM yy' },
               tooltipFormat:'yyyy-MM-dd'
             },
+            min: histFiltered.length>0 ? histFiltered[0].date : undefined,
+            max: todayDateStr,
             adapters:{ date:{} },
             grid:{display:false},
             ticks:{
@@ -3987,48 +3994,41 @@ if(window.location.hostname.includes('github.io')){
   // If no flag: normal load or already authenticated — do nothing, let onAuthStateChanged handle it
 }
 
-function _initLoginBtn(){
+document.addEventListener('DOMContentLoaded', function(){
   const btn=document.getElementById('btnGoogleLogin');
-  if(!btn){ document.addEventListener('DOMContentLoaded',_initLoginBtn,{once:true}); return; }
-  btn.addEventListener('click',async()=>{
+  if(!btn) return;
   const googleSvg='<svg viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>';
   const spinnerHtml='<span style="display:inline-block;width:20px;height:20px;border:2px solid rgba(10,132,255,0.2);border-top-color:#0A84FF;border-radius:50%;animation:spin 0.7s linear infinite;margin-right:8px;vertical-align:middle"></span> ';
-  btn.disabled=true;
-  btn.innerHTML=spinnerHtml+t('connecting');
-  const isGitHubPages = window.location.hostname.includes('github.io');
-  // iOS Safari blocks popups reliably — detect and fallback to redirect
-  const isIOS = /iP(ad|hone|od)/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
-  const useRedirect = isGitHubPages || isIOS;
-  try {
-    if(useRedirect){
-      sessionStorage.setItem('_authRedirect', '1');
-      await signInWithRedirect(auth, new GoogleAuthProvider());
-      // signInWithRedirect navigates away — code below won't run
-      return;
-    }
-    await signInWithPopup(auth, new GoogleAuthProvider());
-  } catch(e){
-    _redirectPending = false; // always reset on error
-    // Popup was blocked or closed (common on mobile/iOS) — fallback to redirect
-    const popupFailed = ['auth/popup-blocked','auth/popup-closed-by-user','auth/cancelled-popup-request'].includes(e.code);
-    if(popupFailed && !useRedirect){
-      // Silent fallback: retry with redirect
-      try {
-        sessionStorage.setItem('_authRedirect', '1');
-        btn.innerHTML=spinnerHtml+t('connecting');
+  btn.addEventListener('click',async()=>{
+    btn.disabled=true;
+    btn.innerHTML=spinnerHtml+t('connecting');
+    const isGitHubPages=window.location.hostname.includes('github.io');
+    const isIOS=/iP(ad|hone|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+    const useRedirect=isGitHubPages||isIOS;
+    try {
+      if(useRedirect){
+        sessionStorage.setItem('_authRedirect','1');
         await signInWithRedirect(auth, new GoogleAuthProvider());
         return;
-      } catch(e2){
-        console.error('[Auth] redirect fallback failed:', e2);
       }
+      await signInWithPopup(auth, new GoogleAuthProvider());
+    } catch(e){
+      _redirectPending=false;
+      const popupFailed=['auth/popup-blocked','auth/popup-closed-by-user','auth/cancelled-popup-request'].includes(e.code);
+      if(popupFailed&&!useRedirect){
+        try{
+          sessionStorage.setItem('_authRedirect','1');
+          btn.innerHTML=spinnerHtml+t('connecting');
+          await signInWithRedirect(auth, new GoogleAuthProvider());
+          return;
+        }catch(e2){ console.error('[Auth] redirect fallback failed:',e2); }
+      }
+      btn.disabled=false;
+      btn.innerHTML=googleSvg+' '+t('loginBtn');
+      showLogin(popupFailed?'':t('signinError'));
     }
-    btn.disabled=false;
-    btn.innerHTML=googleSvg+' '+t('loginBtn');
-    showLogin(popupFailed?'':t('signinError'));
-  }
   });
-} // end _initLoginBtn
-_initLoginBtn();
+});
 
 let _ignoreSnapCount=0,_saveTimeout=null,_unsub=null,_unsubRegistro=null;
 
