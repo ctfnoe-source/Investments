@@ -189,16 +189,20 @@ const I18N = {
     manageUsers:'Gestionar usuarios',
     manageUsersDesc:'Gestionar usuarios y accesos',
     accessPending:'Acceso pendiente',
+    welcomeDesc:'Tu dashboard financiero personal para inversiones, gastos y metas.',
+    trialBtn:'Probar 20 minutos gratis',
+    trialUsed:'Ya usaste tu prueba gratuita',
+    contactBtn:'Contactar para obtener acceso',
+    trialBanner:'Modo prueba', trialMinutes:'min restantes',
+    trialExpiredTitle:'Tu prueba ha terminado',
+    trialExpiredDesc:'Para obtener acceso completo, contáctate con el administrador:',
+    trialExpiredBtn:'Contactar administrador',
     pendingExplanation:'Para obtener acceso, contáctate con el administrador: <a href="mailto:ctfnoe@gmail.com" style="color:var(--blue);font-weight:600">ctfnoe@gmail.com</a>',
     active:'Activo', pending:'Pendiente', approve:'Aprobar', revoke:'Revocar',
     trialBanner:'Modo prueba', trialMinutes:'min restantes',
     trialExpiredTitle:'Tu prueba ha terminado',
     trialExpiredDesc:'Para obtener acceso completo, contáctate con el administrador:',
     trialExpiredBtn:'Contactar administrador',
-    welcomeDesc:'Tu dashboard financiero personal para inversiones, gastos y metas.',
-    trialBtn:'Probar 20 minutos gratis',
-    trialUsed:'Ya usaste tu prueba gratuita',
-    contactBtn:'Contactar para obtener acceso',
   },
   en: {
     tabDashboard:'📊 Dashboard', tabMovimientos:'📋 Transactions', tabPlataformas:'🏦 Platforms',
@@ -355,16 +359,20 @@ const I18N = {
     manageUsers:'Manage users',
     manageUsersDesc:'Manage users and access',
     accessPending:'Access pending',
+    welcomeDesc:'Your personal financial dashboard for investments, expenses and goals.',
+    trialBtn:'Try free for 20 minutes',
+    trialUsed:'Your free trial has been used',
+    contactBtn:'Contact us for full access',
+    trialBanner:'Trial mode', trialMinutes:'min remaining',
+    trialExpiredTitle:'Your trial has ended',
+    trialExpiredDesc:'To get full access, contact the administrator:',
+    trialExpiredBtn:'Contact administrator',
     pendingExplanation:'To get access, please contact the administrator: <a href="mailto:ctfnoe@gmail.com" style="color:var(--blue);font-weight:600">ctfnoe@gmail.com</a>',
     active:'Active', pending:'Pending', approve:'Approve', revoke:'Revoke',
     trialBanner:'Trial mode', trialMinutes:'min remaining',
     trialExpiredTitle:'Your trial has ended',
     trialExpiredDesc:'To get full access, contact the administrator:',
     trialExpiredBtn:'Contact administrator',
-    welcomeDesc:'Your personal financial dashboard for investments, expenses and goals.',
-    trialBtn:'Try free for 20 minutes',
-    trialUsed:'Your free trial has been used',
-    contactBtn:'Contact us for full access',
   }
 };
 let _lang = (typeof window.__initLang !== 'undefined' ? window.__initLang : null) || LS.get('lang') || 'es';
@@ -4042,8 +4050,14 @@ window.saveToFirebase=async(forceImmediate=false, changedMovIds='', deletedMovId
   clearTimeout(_saveTimeout);_saveTimeout=setTimeout(doSave,1500);
 };
 
-// ── Welcome Gate: pantalla de bienvenida para usuarios no aprobados ──────
+// ── Trial expired screen ──────────────────────────────────────────────────
 function showWelcomeGate(user, trialExpirado){
+  // Ocultar app si estaba visible
+  document.getElementById('mainNav').style.display='none';
+  document.getElementById('mainContainer').style.display='none';
+  const mobileNav = document.getElementById('mobileNav');
+  if(mobileNav) mobileNav.style.display='none';
+
   let el = document.getElementById('welcomeGateOverlay');
   if(!el){
     el = document.createElement('div');
@@ -4052,57 +4066,51 @@ function showWelcomeGate(user, trialExpirado){
     document.body.appendChild(el);
   }
 
-  const trialBtn = !trialExpirado ? `
-    <button onclick="window._startTrial()" style="width:100%;padding:14px;border-radius:16px;border:none;background:linear-gradient(135deg,#0A84FF,#BF5AF2);color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:10px;letter-spacing:-0.02em">
-      ⚡ ${t('trialBtn')}
-    </button>` : `
-    <div style="padding:10px 16px;background:rgba(255,69,58,0.06);border:1px solid rgba(255,69,58,0.2);border-radius:12px;font-size:12px;color:#FF453A;font-weight:600;margin-bottom:10px">
-      ⏰ ${t('trialUsed')}
-    </div>`;
+  const trialBtn = !trialExpirado
+    ? `<button id="btnStartTrial" style="width:100%;padding:14px;border-radius:16px;border:none;background:linear-gradient(135deg,#0A84FF,#BF5AF2);color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:10px;letter-spacing:-0.02em">⚡ ${t('trialBtn')}</button>`
+    : `<div style="padding:10px 16px;background:rgba(255,69,58,0.06);border:1px solid rgba(255,69,58,0.2);border-radius:12px;font-size:12px;color:#FF453A;font-weight:600;margin-bottom:10px">⏰ ${t('trialUsed')}</div>`;
 
   el.innerHTML = `<div style="background:var(--card,#fff);border-radius:24px;padding:40px 32px;max-width:400px;width:90%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.12)">
     <div style="font-size:48px;margin-bottom:12px">📊</div>
     <div style="font-size:22px;font-weight:800;letter-spacing:-0.03em;margin-bottom:6px">InvestTracker</div>
     <div style="font-size:13px;color:#888;margin-bottom:24px;line-height:1.5">${t('welcomeDesc')}</div>
     ${trialBtn}
-    <a href="mailto:ctfnoe@gmail.com" style="display:block;width:100%;padding:13px;border-radius:16px;border:1.5px solid var(--blue,#0A84FF);color:var(--blue,#0A84FF);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;text-decoration:none;box-sizing:border-box">
-      ✉️ ${t('contactBtn')}
-    </a>
+    <a href="mailto:ctfnoe@gmail.com" style="display:block;width:100%;padding:13px;border-radius:16px;border:1.5px solid #0A84FF;color:#0A84FF;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;text-decoration:none;box-sizing:border-box">✉️ ${t('contactBtn')}</a>
     <div style="font-size:11px;color:#aaa;margin-bottom:16px">${user.email}</div>
     <button onclick="window.signOutUser()" style="padding:8px 20px;border-radius:20px;border:1px solid #ddd;background:none;cursor:pointer;font-size:12px;color:#888;font-family:inherit">← ${t('salir')}</button>
   </div>`;
   el.style.display = 'flex';
+  window._showingWelcomeGate = true;
 
-  // Handler del botón de probar
-  window._startTrial = function(){
-    const uid = window._currentUser?.uid;
-    if(!uid) return;
-    const TRIAL_MS = 20 * 60 * 1000;
-    const trialKey = 'fp_trial_' + uid;
-    const trialStart = Date.now();
-    localStorage.setItem(trialKey, trialStart);
-    window._trialStart = trialStart;
-    window._trialMS = TRIAL_MS;
-    window._trialUID = uid;
-    el.style.display = 'none';
-    // Iniciar app
-    hidePending();
-    if(typeof getDocRef==='function') DOC_REF = getDocRef(uid);
-    if(typeof resetToEmpty==='function') resetToEmpty();
-    if(typeof updateNavUser==='function') updateNavUser(window._currentUser);
-    if(typeof showApp==='function') showApp();
-    if(typeof setupFirestore==='function') setupFirestore(uid);
-    if(typeof startTrialBanner==='function') startTrialBanner();
-    if(window.renderPage) window.renderPage(window.currentTab||'dashboard');
-  };
+  // Botón probar
+  const btnTrial = document.getElementById('btnStartTrial');
+  if(btnTrial){
+    btnTrial.addEventListener('click', function(){
+      const uid = window._currentUser?.uid;
+      if(!uid) return;
+      const TRIAL_MS = 20 * 60 * 1000;
+      const trialKey = 'fp_trial_' + uid;
+      const trialStart = Date.now();
+      localStorage.setItem(trialKey, trialStart);
+      window._trialStart = trialStart;
+      window._trialMS = TRIAL_MS;
+      window._trialUID = uid;
+      window._showingWelcomeGate = false;
+      el.style.display = 'none';
+      // Iniciar app
+      hidePending();
+      DOC_REF = getDocRef(uid);
+      if(typeof resetToEmpty==='function') resetToEmpty();
+      if(typeof updateNavUser==='function') updateNavUser(window._currentUser);
+      if(typeof showApp==='function') showApp();
+      if(typeof setupFirestore==='function') setupFirestore(uid);
+      if(typeof startTrialBanner==='function') startTrialBanner();
+      if(window.renderPage) window.renderPage(window.currentTab||'dashboard');
+    });
+  }
 }
 
-// ── Trial expired (legacy, kept for banner expiry) ─────────────────────────
-function showTrialExpired(user){
-  // Reutiliza la welcome gate pero con trial ya usado
-  showWelcomeGate(user, true);
-}
-
+function showTrialExpired(user){ showWelcomeGate(user, true); }
 // ── Trial banner counter ───────────────────────────────────────────────────
 function startTrialBanner(){
   if(!window._trialStart || !window._trialMS) return;
@@ -4117,10 +4125,16 @@ function startTrialBanner(){
     const elapsed = Date.now() - window._trialStart;
     const remaining = Math.max(0, window._trialMS - elapsed);
     if(remaining === 0){
-      // Time's up — sign out and show expired screen
+      // Time's up — mostrar welcome gate con trial expirado
       if(window._trialUID){
         banner.remove();
-        if(window._currentUser) showTrialExpired(window._currentUser);
+        window._trialStart = null;
+        window._showingWelcomeGate = true;
+        // Ocultar app
+        document.getElementById('mainNav').style.display='none';
+        document.getElementById('mainContainer').style.display='none';
+        const mn=document.getElementById('mobileNav'); if(mn) mn.style.display='none';
+        if(window._currentUser) showWelcomeGate(window._currentUser, true);
         else window.location.reload();
       }
       return;
@@ -4317,15 +4331,13 @@ onAuthStateChanged(auth,async user=>{
 
     // ── Sistema de acceso / prueba ───────────────────────────────────
     if(!aprobado && !isAdmin){
-      const TRIAL_MS = 20 * 60 * 1000; // 20 minutos
+      const TRIAL_MS = 20 * 60 * 1000;
       const trialKey = 'fp_trial_' + uid;
       let trialStart = null;
       try { trialStart = parseInt(localStorage.getItem(trialKey)); } catch(e){}
-
-      const trialYaUsado = !!trialStart;
+      const trialYaUsado  = !!trialStart;
       const trialExpirado = trialYaUsado && (Date.now() - trialStart) >= TRIAL_MS;
       const trialActivo   = trialYaUsado && !trialExpirado;
-
       if(trialActivo){
         // Trial en curso — entrar directo con contador
         window._trialStart = trialStart;
@@ -4334,6 +4346,7 @@ onAuthStateChanged(auth,async user=>{
       } else {
         // Mostrar pantalla de bienvenida (con o sin botón de probar)
         hidePending();
+        window._showingWelcomeGate = true;
         showWelcomeGate(user, trialExpirado);
         return;
       }
@@ -4358,7 +4371,9 @@ onAuthStateChanged(auth,async user=>{
         return;
       }
       const data = snap.data();
-      if(!isAdmin && data.aprobado === false){
+      // No sacar si está en trial activo o en la pantalla de bienvenida
+      const enTrialOWelcome = window._trialStart || window._showingWelcomeGate;
+      if(!isAdmin && data.aprobado === false && !enTrialOWelcome){
         if(_unsub){_unsub();_unsub=null;}
         if(_unsubRegistro){_unsubRegistro();_unsubRegistro=null;}
         signOut(auth).then(()=>window.location.reload());
