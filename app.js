@@ -151,6 +151,7 @@ const I18N = {
     sinPrecio:'sin precio',
     conTasaAuto:'con tasa automática',
     requiereFinnhub:'requiere clave Finnhub',
+    proyeccion:'Proyección',
     expectedGainIn:'Ganancia esperada en',
     potencial:'Potencial',
     verTodo:'Ver todo →',
@@ -199,6 +200,10 @@ const I18N = {
     trialExpiredBtn:'Contactar administrador',
     pendingExplanation:'Para obtener acceso, contáctate con el administrador: <a href="mailto:ctfnoe@gmail.com" style="color:var(--blue);font-weight:600">ctfnoe@gmail.com</a>',
     active:'Activo', pending:'Pendiente', approve:'Aprobar', revoke:'Revocar',
+    trialBanner:'Modo prueba', trialMinutes:'min restantes',
+    trialExpiredTitle:'Tu prueba ha terminado',
+    trialExpiredDesc:'Para obtener acceso completo, contáctate con el administrador:',
+    trialExpiredBtn:'Contactar administrador',
   },
   en: {
     tabDashboard:'📊 Dashboard', tabMovimientos:'📋 Transactions', tabPlataformas:'🏦 Platforms',
@@ -317,6 +322,7 @@ const I18N = {
     sinPrecio:'no price',
     conTasaAuto:'with auto rate',
     requiereFinnhub:'requires Finnhub key',
+    proyeccion:'Projection',
     expectedGainIn:'Expected gain in',
     potencial:'Potential',
     verTodo:'View all →',
@@ -365,6 +371,10 @@ const I18N = {
     trialExpiredBtn:'Contact administrator',
     pendingExplanation:'To get access, please contact the administrator: <a href="mailto:ctfnoe@gmail.com" style="color:var(--blue);font-weight:600">ctfnoe@gmail.com</a>',
     active:'Active', pending:'Pending', approve:'Approve', revoke:'Revoke',
+    trialBanner:'Trial mode', trialMinutes:'min remaining',
+    trialExpiredTitle:'Your trial has ended',
+    trialExpiredDesc:'To get full access, contact the administrator:',
+    trialExpiredBtn:'Contact administrator',
   }
 };
 let _lang = (typeof window.__initLang !== 'undefined' ? window.__initLang : null) || LS.get('lang') || 'es';
@@ -1676,19 +1686,14 @@ function renderDashboard(){
 
     const now = new Date();
     const todayDateStr = now.toISOString().split('T')[0];
-    // Only show projection on long-range views — short ranges (1d,1w,1m,ytd) don't need it
-    // and it was causing the x-axis to expand far into the future
-    const showProjection = ['1y','3y','all'].includes(_chartRange);
     const projDates=[];
     const projVals=[];
-    if(showProjection){
-      projDates.push(todayDateStr);
-      projVals.push(0);
-      for(let i=1; i<=projMonths; i++){
-        const d=new Date(now.getFullYear(), now.getMonth()+i, 1);
-        projDates.push(d.toISOString().split('T')[0]);
-        projVals.push(Math.round(capitalHoy * (Math.pow(1+re/12, i) - 1)));
-      }
+    projDates.push(todayDateStr);
+    projVals.push(0);
+    for(let i=1; i<=projMonths; i++){
+      const d=new Date(now.getFullYear(), now.getMonth()+i, 1);
+      projDates.push(d.toISOString().split('T')[0]);
+      projVals.push(Math.round(capitalHoy * (Math.pow(1+re/12, i) - 1)));
     }
 
     const ctxE=document.getElementById('chartEvo');
@@ -1830,12 +1835,10 @@ function renderDashboard(){
           x:{
             type:'time',
             time:{
-              unit: _chartRange==='1d'?'hour':_chartRange==='1w'?'day':_chartRange==='1m'?'day':_chartRange==='ytd'?'month':_chartRange==='1y'?'month':'month',
-              displayFormats:{ hour:'HH:mm', day:'d MMM', month:'MMM yy' },
+              unit:'month',
+              displayFormats:{ month:'MMM yy', day:'d MMM' },
               tooltipFormat:'yyyy-MM-dd'
             },
-            min: histFiltered.length>0 ? histFiltered[0].date : undefined,
-            max: todayDateStr,
             adapters:{ date:{} },
             grid:{display:false},
             ticks:{
@@ -4002,9 +4005,9 @@ document.addEventListener('DOMContentLoaded', function(){
   btn.addEventListener('click',async()=>{
     btn.disabled=true;
     btn.innerHTML=spinnerHtml+t('connecting');
-    const isGitHubPages=window.location.hostname.includes('github.io');
-    const isIOS=/iP(ad|hone|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-    const useRedirect=isGitHubPages||isIOS;
+    const isGitHubPages = window.location.hostname.includes('github.io');
+    const isIOS = /iP(ad|hone|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+    const useRedirect = isGitHubPages || isIOS;
     try {
       if(useRedirect){
         sessionStorage.setItem('_authRedirect','1');
@@ -4013,7 +4016,7 @@ document.addEventListener('DOMContentLoaded', function(){
       }
       await signInWithPopup(auth, new GoogleAuthProvider());
     } catch(e){
-      _redirectPending=false;
+      _redirectPending = false;
       const popupFailed=['auth/popup-blocked','auth/popup-closed-by-user','auth/cancelled-popup-request'].includes(e.code);
       if(popupFailed&&!useRedirect){
         try{
