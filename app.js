@@ -1535,11 +1535,11 @@ function renderDashboard(){
       <div style="padding:24px 28px 16px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
           <div>
-            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(191,90,242,0.85);margin-bottom:4px">📈 ${t('patrimonioTotal')}</div>
-            <div style="font-size:22px;font-weight:800;letter-spacing:-0.03em;color:rgba(191,90,242,0.95);line-height:1">${fmt(patrimonio)}</div>
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(245,166,35,0.9);margin-bottom:4px">📈 ${t('patrimonioTotal')}</div>
+            <div style="font-size:22px;font-weight:800;letter-spacing:-0.03em;color:rgba(245,166,35,0.95);line-height:1">${fmt(patrimonio)}</div>
             <div style="display:flex;gap:14px;margin-top:10px;flex-wrap:wrap">
               <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px">
-                <span style="display:inline-block;width:16px;height:3px;background:rgba(191,90,242,0.9);border-radius:2px"></span>
+                <span style="display:inline-block;width:16px;height:3px;background:rgba(245,166,35,0.95);border-radius:2px"></span>
                 ${t('patrimonioTotal2')}
               </span>
               <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px">
@@ -1566,7 +1566,7 @@ function renderDashboard(){
             ${rendAnualReal !== null ? `
             <div style="width:1px;background:var(--border);align-self:stretch;margin:2px 0"></div>
             <div style="text-align:right">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--purple);margin-bottom:2px">${t('cagrReal')}</div>
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(245,166,35,0.9);margin-bottom:2px">${t('cagrReal')}</div>
               <div style="font-size:18px;font-weight:800;letter-spacing:-0.03em;color:${pctCol(rendAnualReal)};line-height:1">${rendAnualReal>=0?'+':''}${(rendAnualReal*100).toFixed(1)}%</div>
               <div style="font-size:10px;color:var(--text2);margin-top:3px">${t('annualized')} · ${Math.round((new Date(hist[hist.length-1].date)-new Date(hist[0].date))/(1000*60*60*24))}d</div>
             </div>` : ''}
@@ -1718,7 +1718,7 @@ function renderDashboard(){
             if(meta.hidden||!meta.data.length) return;
             const glows=[
               {color:'rgba(48,209,88,0.55)',blur:14},
-              {color:'rgba(191,90,242,0.5)',blur:12},
+              {color:'rgba(245,166,35,0.5)',blur:11},
               {color:'rgba(10,132,255,0.65)',blur:16},
             ];
             const g=glows[i]; if(!g) return;
@@ -1743,9 +1743,9 @@ function renderDashboard(){
             data:realDates.map((d,i)=>({x:d,y:realVals[i]})),
             borderColor:'#30D158',
             backgroundColor: gradReal,
-            borderWidth:2.5,
+            borderWidth:1.8,
             fill:true,
-            tension:0.4,
+            tension:0.5,
             pointRadius: realDates.map((_,i) => i === realDates.length-1 ? dynLastRadius : dynRadius),
             pointBackgroundColor:'#30D158',
             pointBorderColor: isDark?'#1C1C1E':'#fff',
@@ -1759,17 +1759,17 @@ function renderDashboard(){
           {
             label: t('patrimonioTotal2'),
             data:realDates.map((d,i)=>({x:d,y:patrimonioVals[i]})),
-            borderColor:'rgba(191,90,242,0.9)',
+            borderColor:'rgba(245,166,35,0.95)',
             backgroundColor:'transparent',
-            borderWidth:2,
+            borderWidth:1.8,
             fill:false,
-            tension:0.4,
+            tension:0.5,
             pointRadius: realDates.map((_,i) => i === realDates.length-1 ? dynLastRadius : dynRadius),
-            pointBackgroundColor:'rgba(191,90,242,0.9)',
+            pointBackgroundColor:'rgba(245,166,35,0.95)',
             pointBorderColor: isDark?'#1C1C1E':'#fff',
             pointBorderWidth:2,
             pointHoverRadius:6,
-            pointHoverBackgroundColor:'rgba(191,90,242,1)',
+            pointHoverBackgroundColor:'rgba(245,166,35,1)',
             pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
             pointHoverBorderWidth:2,
             yAxisID:'y2',
@@ -1779,10 +1779,10 @@ function renderDashboard(){
             data:projDates.map((d,i)=>({x:d,y:projVals[i]})),
             borderColor:'rgba(10,132,255,0.92)',
             backgroundColor:'transparent',
-            borderWidth:2,
-            borderDash:[8,5],
+            borderWidth:1.6,
+            borderDash:[7,5],
             fill:false,
-            tension:0.1,
+            tension:0.3,
             pointRadius:0,
             pointHoverRadius:4,
             pointHoverBackgroundColor:'rgba(10,132,255,0.9)',
@@ -1857,7 +1857,7 @@ function renderDashboard(){
           y2:{
             position:'right',
             grid:{display:false},
-            ticks:{font:{size:10},color:isDark?'rgba(191,90,242,0.5)':'rgba(191,90,242,0.6)',callback:v=>fmt(v),maxTicksLimit:4},
+            ticks:{font:{size:10},color:isDark?'rgba(245,166,35,0.5)':'rgba(245,166,35,0.6)',callback:v=>fmt(v),maxTicksLimit:4},
             border:{display:false}
           }
         }
