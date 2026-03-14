@@ -3102,7 +3102,7 @@ function renderAjustes(){
   const hasFinnhub=!!(settings.finnhubKey);const priceSummary=getPriceSummary();
   const cache=getPriceCache();const cacheEntries=Object.entries(cache);
   const currentUser=window._currentUser;const isDark=document.documentElement.getAttribute('data-theme')==='dark';
-  const isAdmin = window._currentUser?.uid === ADMIN_UID;
+  const isAdmin = window._currentUser?.uid === ADMIN_UID || window._currentUser?.email === ADMIN_EMAIL;
   const adminFirebaseRulesHTML = isAdmin ? (
     '<div class="card" style="margin-top:16px;padding:16px 20px">' +
     `<div class="card-title">${t('reglasFb')}</div>` +
@@ -3894,6 +3894,7 @@ const firebaseConfig={apiKey:"AIzaSyDUAOlDXmkBRQNoYgmax9KOMjQrZd061Q8",authDomai
 const app=initializeApp(firebaseConfig),db=getFirestore(app),auth=getAuth(app);
 
 const ADMIN_UID = 'vZBQ7d80yPSxbmar96UqPHXDpd32';
+const ADMIN_EMAIL = 'ctfnoe@gmail.com';
 
 let DOC_REF = null;
 let USER_META_REF = null;
@@ -4328,7 +4329,7 @@ onAuthStateChanged(auth,async user=>{
     const { setDoc: _setDoc, getDoc: _getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
     const metaRef = getMetaRef(uid);
     const metaSnap = await _getDoc(metaRef);
-    const isAdmin = uid === ADMIN_UID;
+    const isAdmin = uid === ADMIN_UID || user.email === ADMIN_EMAIL;
 
     const perfilData = {
       uid, email: user.email, displayName: user.displayName,
@@ -4370,6 +4371,7 @@ onAuthStateChanged(auth,async user=>{
         // Mostrar pantalla de bienvenida (con o sin botón de probar)
         hidePending();
         window._showingWelcomeGate = true;
+        document.getElementById('loginOverlay').classList.add('hidden');
         showWelcomeGate(user, trialExpirado);
         return;
       }
