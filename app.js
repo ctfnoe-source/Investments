@@ -193,7 +193,6 @@ const I18N = {
     trialBtn:'Probar 20 minutos gratis',
     trialUsed:'Ya usaste tu prueba gratuita',
     contactBtn:'Contactar para obtener acceso',
-    orCopyEmail:'o copia el correo:',
     trialBanner:'Modo prueba', trialMinutes:'min restantes',
     trialExpiredTitle:'Tu prueba ha terminado',
     trialExpiredDesc:'Para obtener acceso completo, contáctate con el administrador:',
@@ -364,7 +363,6 @@ const I18N = {
     trialBtn:'Try free for 20 minutes',
     trialUsed:'Your free trial has been used',
     contactBtn:'Contact us for full access',
-    orCopyEmail:'or copy the email:',
     trialBanner:'Trial mode', trialMinutes:'min remaining',
     trialExpiredTitle:'Your trial has ended',
     trialExpiredDesc:'To get full access, contact the administrator:',
@@ -378,8 +376,6 @@ const I18N = {
   }
 };
 let _lang = (typeof window.__initLang !== 'undefined' ? window.__initLang : null) || LS.get('lang') || 'es';
-// Asegurar que el estado de trial arranque limpio
-window._trialStart = null; window._trialMS = null; window._trialUID = null; window._showingWelcomeGate = false;
 function t(key) { return (I18N[_lang] || I18N.en)[key] || (I18N.en[key] || key); }
 function toggleLang() {
   _lang = _lang === 'es' ? 'en' : 'es';
@@ -1655,11 +1651,10 @@ function renderDashboard(){
         <div style="max-height:380px;overflow-y:auto;margin:0 -4px;padding:0 4px">
         ${tickerList.length>0?tickerList.filter(tk=>tk.cantActual>0).sort((a,b)=>b.costoTotal-a.costoTotal).map(tk=>{
           const tipoClass=tk.type==='Acción'?'badge-green':tk.type==='ETF'?'badge-blue':tk.type==='Crypto'?'badge-orange':'badge-gray';
-          const monedaLabel=tk.moneda==='MXN'?'MXN':'USD';
           return`<div class="list-item">
             <div style="display:flex;align-items:center;gap:8px">
               <span class="badge ${tipoClass}">${tk.ticker}</span>
-              <div><div style="font-size:13px;font-weight:600">${tk.type} <span class="badge badge-gray" style="font-size:9px">${monedaLabel}</span>${tk.cantActual<=0?` <span class="badge badge-gray" style="font-size:9px">${t('cerrada')}</span>`:''}</div><div style="font-size:10px;color:var(--text2)">×${tk.cantActual} · <span class="${tk.priceCssClass}">${tk.priceLabel}</span></div></div>
+              <div style="font-size:11px;color:var(--text2)">×${tk.cantActual} · <span class="${tk.priceCssClass}">${tk.priceLabel}</span></div>
             </div>
             <div style="text-align:right"><div style="font-size:13px;font-weight:700;color:${pctCol(tk.gpNoRealizada)}">${tk.gpNoRealizada!==null?(tk.gpNoRealizada>=0?'+':'')+fmtFull(tk.gpNoRealizada):'—'}</div><div style="font-size:10px;font-weight:600;color:${pctCol(tk.pctNoRealizada)}">${tk.gpNoRealizada!==null?fmtPct(tk.pctNoRealizada):t('sinPrecio')}</div></div>
           </div>`;
@@ -2795,33 +2790,21 @@ function renderInversiones(){
         const gpMXN = valorMXN - costoMXN;
         const pctPort = totalValor > 0 ? valorMXN/totalValor : 0;
         const brokersInfo = pos.brokersSaldo&&pos.brokersSaldo.length>0 ? pos.brokersSaldo.map(b=>b.broker+(b.cantActual!==pos.cantActual?' ('+( b.cantActual%1===0?b.cantActual:parseFloat(b.cantActual.toFixed(4)))+')':'')).join(', ') : '';
-        return `<div class="list-item" style="flex-direction:column;align-items:stretch;gap:8px;padding:12px 0">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:16px;font-weight:800">${pos.ticker}</span>
-              <span class="badge ${tipoClass}">${pos.type}</span>
-              ${monedaBadge(pos.moneda)}
-            </div>
-            <div style="text-align:right">
-              <div style="font-size:15px;font-weight:800">${pos.moneda==='MXN'?fmt(pos.valorActual||pos.costoPosicion||0):fmtFull(pos.valorActual||pos.costoPosicion||0)+' '+pos.moneda}</div>
-              <div style="font-size:11px;color:var(--text2)">${fmt(valorMXN)} MXN</div>
+        return `<div class="list-item" style="padding:10px 0">
+          <div style="display:flex;align-items:center;gap:8px;min-width:0">
+            <span class="badge ${tipoClass}">${pos.ticker}</span>
+            <div style="font-size:11px;color:var(--text2);min-width:0">
+              <span>×${pos.cantActual%1===0?pos.cantActual:parseFloat(pos.cantActual.toFixed(4))}</span>
+              <span style="margin:0 4px">·</span>
+              <span class="${pos.priceCssClass}">${pos.priceLabel}</span>
+              <span style="margin:0 4px">·</span>
+              <span>${(pctPort*100).toFixed(1)}%</span>
+              ${brokersInfo?`<span style="margin-left:4px">· 🏦 ${brokersInfo}</span>`:''}
             </div>
           </div>
-          <div style="display:grid;grid-template-columns:${isMobile()?'repeat(2,1fr)':'repeat(4,1fr)'};gap:8px;font-size:11px">
-            <div><div style="color:var(--text2)">${t('cantidad')}</div><div style="font-weight:700">${pos.cantActual}</div></div>
-            <div><div style="color:var(--text2)">${t('precioMedio')}</div><div style="font-weight:700">${pos.moneda==='MXN'?'$':'US$'}${pos.precioCostoPromedio.toFixed(2)}</div></div>
-            <div><div style="color:var(--text2)">${t('precioActual')}</div><div style="font-weight:700" class="${pos.priceCssClass}">${pos.priceLabel}</div></div>
-            <div><div style="color:var(--text2)">% ${t('portfolio')}</div><div style="font-weight:700">${(pctPort*100).toFixed(1)}%</div></div>
-          </div>
-          ${brokersInfo?`<div style="font-size:11px;color:var(--text2)">🏦 ${brokersInfo}</div>`:''}
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div style="height:4px;flex:1;background:var(--progress-bg);border-radius:3px;margin-right:12px">
-              <div style="height:4px;border-radius:3px;background:${pctCol(gpMXN)};width:${Math.min(pctPort*100,100).toFixed(1)}%"></div>
-            </div>
-            <div style="text-align:right">
-              <span style="font-size:13px;font-weight:800;color:${pctCol(pos.gpNoRealizada)}">${pos.gpNoRealizada!==null?(pos.gpNoRealizada>=0?'+':'')+fmtFull(pos.gpNoRealizada)+' '+pos.moneda:t('sinPrecio')}</span>
-              ${pos.gpNoRealizada!==null?`<span style="font-size:11px;color:${pctCol(pos.pctNoRealizada)};margin-left:6px;font-weight:600">${fmtPct(pos.pctNoRealizada)}</span>`:''}
-            </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:13px;font-weight:800;color:${pctCol(pos.gpNoRealizada)}">${pos.gpNoRealizada!==null?(pos.gpNoRealizada>=0?'+':'')+fmtFull(pos.gpNoRealizada)+' '+pos.moneda:t('sinPrecio')}</div>
+            <div style="font-size:10px;font-weight:600;color:${pctCol(pos.pctNoRealizada)}">${pos.gpNoRealizada!==null?fmtPct(pos.pctNoRealizada):''}</div>
           </div>
         </div>`;
       }).join('') : `<div style="text-align:center;color:var(--text2);padding:48px 24px"><div style="font-size:40px;margin-bottom:12px">📈</div><div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">${t('sinPosicionesAbiertas')}</div><div style="font-size:13px;margin-bottom:20px">${t('registraPrimeraCompra')}</div><button class="btn btn-primary" onclick="openMovModal('inversiones')">+ ${t('primerMovimiento')}</button></div>`}
@@ -3106,7 +3089,7 @@ function renderAjustes(){
   const hasFinnhub=!!(settings.finnhubKey);const priceSummary=getPriceSummary();
   const cache=getPriceCache();const cacheEntries=Object.entries(cache);
   const currentUser=window._currentUser;const isDark=document.documentElement.getAttribute('data-theme')==='dark';
-  const isAdmin = window._currentUser?.uid === ADMIN_UID || window._currentUser?.email === ADMIN_EMAIL;
+  const isAdmin = window._currentUser?.uid === ADMIN_UID;
   const adminFirebaseRulesHTML = isAdmin ? (
     '<div class="card" style="margin-top:16px;padding:16px 20px">' +
     `<div class="card-title">${t('reglasFb')}</div>` +
@@ -3898,7 +3881,6 @@ const firebaseConfig={apiKey:"AIzaSyDUAOlDXmkBRQNoYgmax9KOMjQrZd061Q8",authDomai
 const app=initializeApp(firebaseConfig),db=getFirestore(app),auth=getAuth(app);
 
 const ADMIN_UID = 'vZBQ7d80yPSxbmar96UqPHXDpd32';
-const ADMIN_EMAIL = 'ctfnoe@gmail.com';
 
 let DOC_REF = null;
 let USER_META_REF = null;
@@ -3917,19 +3899,7 @@ function showLogin(msg){document.getElementById('loginOverlay').classList.remove
 window.signOutUser=async()=>{
   if(_unsub){_unsub();_unsub=null;}
   if(_unsubRegistro){_unsubRegistro();_unsubRegistro=null;}
-  // Limpiar todo el estado de trial/welcome antes de salir
-  window._trialStart = null;
-  window._trialMS = null;
-  window._trialUID = null;
-  window._showingWelcomeGate = false;
-  window._currentUser = null;
-  // Ocultar welcome gate si está visible
-  const wg = document.getElementById('welcomeGateOverlay');
-  if(wg) wg.style.display = 'none';
-  const tb = document.getElementById('trialCounterBanner');
-  if(tb) tb.remove();
-  await signOut(auth);
-  window.location.reload();
+  await signOut(auth);window.location.reload();
 };
 document.getElementById('btnGoogleLogin').addEventListener('click',async()=>{const btn=document.getElementById('btnGoogleLogin');btn.disabled=true;btn.innerHTML='<span style="display:inline-block;width:20px;height:20px;border:2px solid rgba(10,132,255,0.2);border-top-color:#0A84FF;border-radius:50%;animation:spin 0.7s linear infinite;margin-right:8px;vertical-align:middle"></span> '+t('connecting');try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(e){btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> '+t('loginBtn');showLogin(e.code==='auth/popup-closed-by-user'?'':t('signinError'));}});
 
@@ -4092,11 +4062,7 @@ function showWelcomeGate(user, trialExpirado){
     <div style="font-size:22px;font-weight:800;letter-spacing:-0.03em;margin-bottom:6px">InvestTracker</div>
     <div style="font-size:13px;color:#888;margin-bottom:24px;line-height:1.5">${t('welcomeDesc')}</div>
     ${trialBtn}
-    <a href="https://mail.google.com/mail/?view=cm&to=ctfnoe@gmail.com&su=Solicitud%20de%20acceso%20InvestTracker" target="_blank" rel="noopener" style="display:block;width:100%;padding:13px;border-radius:16px;border:1.5px solid #0A84FF;color:#0A84FF;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;text-decoration:none;box-sizing:border-box">✉️ ${t('contactBtn')}</a>
-    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px">
-      <span style="font-size:12px;color:#888">${t('orCopyEmail')}</span>
-      <span id="adminEmailDisplay" onclick="navigator.clipboard.writeText('ctfnoe@gmail.com').then(()=>{this.textContent='✅ ctfnoe@gmail.com';setTimeout(()=>this.textContent='ctfnoe@gmail.com',2000)})" style="font-size:12px;font-weight:700;color:#0A84FF;cursor:pointer;text-decoration:underline;text-decoration-style:dotted" title="Click para copiar">ctfnoe@gmail.com</span>
-    </div>
+    <a href="mailto:ctfnoe@gmail.com" style="display:block;width:100%;padding:13px;border-radius:16px;border:1.5px solid #0A84FF;color:#0A84FF;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;text-decoration:none;box-sizing:border-box">✉️ ${t('contactBtn')}</a>
     <div style="font-size:11px;color:#aaa;margin-bottom:16px">${user.email}</div>
     <button onclick="window.signOutUser()" style="padding:8px 20px;border-radius:20px;border:1px solid #ddd;background:none;cursor:pointer;font-size:12px;color:#888;font-family:inherit">← ${t('salir')}</button>
   </div>`;
@@ -4320,24 +4286,13 @@ window.eliminarUsuario = async function(uid){
 
 onAuthStateChanged(auth,async user=>{
   if(user){
-    // Si cambió de cuenta, limpiar estado previo
-    if(window._currentUser && window._currentUser.uid !== user.uid){
-      window._trialStart = null;
-      window._trialMS = null;
-      window._trialUID = null;
-      window._showingWelcomeGate = false;
-      const wg = document.getElementById('welcomeGateOverlay');
-      if(wg) wg.style.display = 'none';
-      const tb = document.getElementById('trialCounterBanner');
-      if(tb) tb.remove();
-    }
     window._currentUser=user;
     const uid = user.uid;
 
     const { setDoc: _setDoc, getDoc: _getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
     const metaRef = getMetaRef(uid);
     const metaSnap = await _getDoc(metaRef);
-    const isAdmin = uid === ADMIN_UID || user.email === ADMIN_EMAIL;
+    const isAdmin = uid === ADMIN_UID;
 
     const perfilData = {
       uid, email: user.email, displayName: user.displayName,
@@ -4366,11 +4321,7 @@ onAuthStateChanged(auth,async user=>{
       const TRIAL_MS = 20 * 60 * 1000;
       const trialKey = 'fp_trial_' + uid;
       let trialStart = null;
-      try {
-        const raw = localStorage.getItem(trialKey);
-        const parsed = raw ? parseInt(raw) : null;
-        trialStart = (parsed && !isNaN(parsed)) ? parsed : null;
-      } catch(e){}
+      try { trialStart = parseInt(localStorage.getItem(trialKey)); } catch(e){}
       const trialYaUsado  = !!trialStart;
       const trialExpirado = trialYaUsado && (Date.now() - trialStart) >= TRIAL_MS;
       const trialActivo   = trialYaUsado && !trialExpirado;
@@ -4383,7 +4334,6 @@ onAuthStateChanged(auth,async user=>{
         // Mostrar pantalla de bienvenida (con o sin botón de probar)
         hidePending();
         window._showingWelcomeGate = true;
-        document.getElementById('loginOverlay').classList.add('hidden');
         showWelcomeGate(user, trialExpirado);
         return;
       }
