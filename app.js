@@ -1651,11 +1651,10 @@ function renderDashboard(){
         <div style="max-height:380px;overflow-y:auto;margin:0 -4px;padding:0 4px">
         ${tickerList.length>0?tickerList.filter(tk=>tk.cantActual>0).sort((a,b)=>b.costoTotal-a.costoTotal).map(tk=>{
           const tipoClass=tk.type==='Acción'?'badge-green':tk.type==='ETF'?'badge-blue':tk.type==='Crypto'?'badge-orange':'badge-gray';
-          const monedaLabel=tk.moneda==='MXN'?'MXN':'USD';
           return`<div class="list-item">
             <div style="display:flex;align-items:center;gap:8px">
               <span class="badge ${tipoClass}">${tk.ticker}</span>
-              <div><div style="font-size:13px;font-weight:600">${tk.type} <span class="badge badge-gray" style="font-size:9px">${monedaLabel}</span>${tk.cantActual<=0?` <span class="badge badge-gray" style="font-size:9px">${t('cerrada')}</span>`:''}</div><div style="font-size:10px;color:var(--text2)">×${tk.cantActual} · <span class="${tk.priceCssClass}">${tk.priceLabel}</span></div></div>
+              <div style="font-size:11px;color:var(--text2)">×${tk.cantActual} · <span class="${tk.priceCssClass}">${tk.priceLabel}</span></div>
             </div>
             <div style="text-align:right"><div style="font-size:13px;font-weight:700;color:${pctCol(tk.gpNoRealizada)}">${tk.gpNoRealizada!==null?(tk.gpNoRealizada>=0?'+':'')+fmtFull(tk.gpNoRealizada):'—'}</div><div style="font-size:10px;font-weight:600;color:${pctCol(tk.pctNoRealizada)}">${tk.gpNoRealizada!==null?fmtPct(tk.pctNoRealizada):t('sinPrecio')}</div></div>
           </div>`;
@@ -2844,33 +2843,21 @@ function renderInversiones(){
         const gpMXN = valorMXN - costoMXN;
         const pctPort = totalValor > 0 ? valorMXN/totalValor : 0;
         const brokersInfo = pos.brokersSaldo&&pos.brokersSaldo.length>0 ? pos.brokersSaldo.map(b=>b.broker+(b.cantActual!==pos.cantActual?' ('+( b.cantActual%1===0?b.cantActual:parseFloat(b.cantActual.toFixed(4)))+')':'')).join(', ') : '';
-        return `<div class="list-item" style="flex-direction:column;align-items:stretch;gap:8px;padding:12px 0">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:16px;font-weight:800">${pos.ticker}</span>
-              <span class="badge ${tipoClass}">${pos.type}</span>
-              ${monedaBadge(pos.moneda)}
-            </div>
-            <div style="text-align:right">
-              <div style="font-size:15px;font-weight:800">${pos.moneda==='MXN'?fmt(pos.valorActual||pos.costoPosicion||0):fmtFull(pos.valorActual||pos.costoPosicion||0)+' '+pos.moneda}</div>
-              <div style="font-size:11px;color:var(--text2)">${fmt(valorMXN)} MXN</div>
+        return `<div class="list-item" style="padding:10px 0">
+          <div style="display:flex;align-items:center;gap:8px;min-width:0">
+            <span class="badge ${tipoClass}">${pos.ticker}</span>
+            <div style="font-size:11px;color:var(--text2);min-width:0">
+              <span>×${pos.cantActual%1===0?pos.cantActual:parseFloat(pos.cantActual.toFixed(4))}</span>
+              <span style="margin:0 4px">·</span>
+              <span class="${pos.priceCssClass}">${pos.priceLabel}</span>
+              <span style="margin:0 4px">·</span>
+              <span>${(pctPort*100).toFixed(1)}%</span>
+              ${brokersInfo?`<span style="margin-left:4px">· 🏦 ${brokersInfo}</span>`:''}
             </div>
           </div>
-          <div style="display:grid;grid-template-columns:${isMobile()?'repeat(2,1fr)':'repeat(4,1fr)'};gap:8px;font-size:11px">
-            <div><div style="color:var(--text2)">${t('cantidad')}</div><div style="font-weight:700">${pos.cantActual}</div></div>
-            <div><div style="color:var(--text2)">${t('precioMedio')}</div><div style="font-weight:700">${pos.moneda==='MXN'?'$':'US$'}${pos.precioCostoPromedio.toFixed(2)}</div></div>
-            <div><div style="color:var(--text2)">${t('precioActual')}</div><div style="font-weight:700" class="${pos.priceCssClass}">${pos.priceLabel}</div></div>
-            <div><div style="color:var(--text2)">% ${t('portfolio')}</div><div style="font-weight:700">${(pctPort*100).toFixed(1)}%</div></div>
-          </div>
-          ${brokersInfo?`<div style="font-size:11px;color:var(--text2)">🏦 ${brokersInfo}</div>`:''}
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div style="height:4px;flex:1;background:var(--progress-bg);border-radius:3px;margin-right:12px">
-              <div style="height:4px;border-radius:3px;background:${pctCol(gpMXN)};width:${Math.min(pctPort*100,100).toFixed(1)}%"></div>
-            </div>
-            <div style="text-align:right">
-              <span style="font-size:13px;font-weight:800;color:${pctCol(pos.gpNoRealizada)}">${pos.gpNoRealizada!==null?(pos.gpNoRealizada>=0?'+':'')+fmtFull(pos.gpNoRealizada)+' '+pos.moneda:t('sinPrecio')}</span>
-              ${pos.gpNoRealizada!==null?`<span style="font-size:11px;color:${pctCol(pos.pctNoRealizada)};margin-left:6px;font-weight:600">${fmtPct(pos.pctNoRealizada)}</span>`:''}
-            </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:13px;font-weight:800;color:${pctCol(pos.gpNoRealizada)}">${pos.gpNoRealizada!==null?(pos.gpNoRealizada>=0?'+':'')+fmtFull(pos.gpNoRealizada)+' '+pos.moneda:t('sinPrecio')}</div>
+            <div style="font-size:10px;font-weight:600;color:${pctCol(pos.pctNoRealizada)}">${pos.gpNoRealizada!==null?fmtPct(pos.pctNoRealizada):''}</div>
           </div>
         </div>`;
       }).join('') : `<div style="text-align:center;color:var(--text2);padding:48px 24px"><div style="font-size:40px;margin-bottom:12px">📈</div><div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">${t('sinPosicionesAbiertas')}</div><div style="font-size:13px;margin-bottom:20px">${t('registraPrimeraCompra')}</div><button class="btn btn-primary" onclick="openMovModal('inversiones')">+ ${t('primerMovimiento')}</button></div>`}
