@@ -1721,78 +1721,97 @@ function renderDashboard(){
       };
       const projMonthsVisible = projMonthsMap[_chartRange] ?? projMonths;
 
-      // ── Línea de proyección histórica + futura ─────────────────────
-      // La línea azul arranca desde la fecha más antigua entre:
-      //   - fechaInicio de cada plataforma (donde está el saldoInicial)
-      //   - fecha del primer movimiento de compra de inversiones
-      // Y traza cuánto debería haber crecido ese capital al re% anual,
-      // tanto en el pasado como hacia el futuro.
+      // ── Línea de proyección: benchmark dinámico ──────────────────────
+      // Construimos el capital "invertido neto" en cada fecha del historial,
+      // acumulando aportaciones/compras y descontando retiros/ventas/gastos.
+      // La proyección muestra cuánto debería valer esa ganancia al re% anual.
+      //
+      // Fuentes de capital:
+      //   + plataformas: saldoInicial en fechaInicio, aportaciones, transferencias entrada
+      //   - plataformas: retiros, transferencias salida, gastos
+      //   + inversiones: compras (montoTotal)
+      //   - inversiones: ventas (montoTotal)
 
       const projDatesAdj = [];
       const projValsAdj  = [];
 
-      // 1) Buscar la fecha de inicio real y el capital inicial
-      // Plataformas: usar fechaInicio + saldoInicial (en MXN)
-      let fechaInicioReal = null;
-      let capitalInicialReal = 0;
+      // Recopilar todos los eventos de capital ordenados por fecha
+      const _evCap = [];
 
-      // Recopilar todos los eventos de capital con su fecha
-      const eventosCapital = [];
-
-      // Plataformas: cada plataforma aporta su saldoInicial en su fechaInicio
+      // Plataformas: saldo inicial en su fechaInicio
       platforms.forEach(p => {
-        if (!p.fechaInicio || !(p.saldoInicial > 0)) return;
+        if (!p.fechaInicio) return;
         const toMXN = v => p.moneda === 'USD' ? v * tc : p.moneda === 'EUR' ? v * eurmxn : v;
-        eventosCapital.push({ fecha: p.fechaInicio, capital: toMXN(p.saldoInicial) });
+        if (p.saldoInicial > 0) _evCap.push({ fecha: p.fechaInicio, delta: toMXN(p.saldoInicial) });
       });
 
-      // Inversiones: primer movimiento de compra por ticker
-      movements
-        .filter(m => m.seccion === 'inversiones' && m.tipoMov === 'Compra' && m.fecha)
-        .forEach(m => {
-          const monto = m.montoTotal || (m.cantidad || 0) * (m.precioUnit || 0);
-          const enMXN = m.moneda === 'MXN' ? monto : monto * tc;
-          eventosCapital.push({ fecha: m.fecha, capital: enMXN });
-        });
+      // Movimientos de plataformas: aportaciones, retiros, transferencias, gastos
+      movements.forEach(m => {
+        if (m.seccion !== 'plataformas' || !m.fecha) return;
+        const plat = platforms.find(p => p.name === m.platform);
+        const toMXN = v => plat?.moneda === 'USD' ? v * tc : plat?.moneda === 'EUR' ? v * eurmxn : v;
+        const monto = toMXN(m.monto || 0);
+        if (m.tipoPlat === 'Aportación' || m.tipoPlat === 'Transferencia entrada') {
+          _evCap.push({ fecha: m.fecha, delta: monto });
+        } else if (m.tipoPlat === 'Retiro' || m.tipoPlat === 'Transferencia salida' || m.tipoPlat === 'Gasto') {
+          _evCap.push({ fecha: m.fecha, delta: -monto });
+        }
+      });
 
-      if (eventosCapital.length > 0) {
-        // Ordenar por fecha
-        eventosCapital.sort((a, b) => a.fecha.localeCompare(b.fecha));
-        fechaInicioReal = eventosCapital[0].fecha;
-        // Capital inicial = suma de todo el capital invertido/depositado
-        capitalInicialReal = eventosCapital.reduce((s, e) => s + e.capital, 0);
-      }
+      // Movimientos de inversiones: compras y ventas
+      movements.forEach(m => {
+        if (m.seccion !== 'inversiones' || !m.fecha) return;
+        const monto = (m.montoTotal || (m.cantidad || 0) * (m.precioUnit || 0));
+        const enMXN = m.moneda === 'MXN' ? monto : monto * tc;
+        if (m.tipoMov === 'Compra')  _evCap.push({ fecha: m.fecha, delta:  enMXN });
+        if (m.tipoMov === 'Venta')   _evCap.push({ fecha: m.fecha, delta: -enMXN });
+      });
 
-      // Fallback: usar primer snapshot
-      if (!fechaInicioReal) {
-        const firstSnap = hist.length > 0 ? hist[0] : null;
-        fechaInicioReal = firstSnap ? firstSnap.date : todayDateStr;
-        capitalInicialReal = firstSnap ? (firstSnap.capital || firstSnap.value) : capitalHoy;
-      }
+      // Ordenar por fecha
+      _evCap.sort((a, b) => a.fecha.localeCompare(b.fecha));
 
-      const firstDateMs = new Date(fechaInicioReal + 'T00:00:00').getTime();
+      if (_evCap.length === 0) {
+        // Sin datos: proyección vacía
+      } else {
+        const _fechaOrigen = _evCap[0].fecha;
+        const _origenMs = new Date(_fechaOrigen + 'T00:00:00').getTime();
 
-      // 2) Trazar la proyección sobre los puntos históricos filtrados
-      for (const snap of histFiltered) {
-        const snapMs = new Date(snap.date + 'T00:00:00').getTime();
-        const diasDesdeInicio = (snapMs - firstDateMs) / (1000 * 60 * 60 * 24);
-        const anosTranscurridos = Math.max(0, diasDesdeInicio / 365);
-        const gpProyectada = Math.round(capitalInicialReal * (Math.pow(1 + re, anosTranscurridos) - 1));
-        projDatesAdj.push(snap.date);
-        projValsAdj.push(gpProyectada);
-      }
+        // Construir mapa de capital acumulado por fecha
+        // Para cada fecha del historial filtrado, calcular el capital neto
+        // que existía HASTA esa fecha y proyectar su ganancia esperada.
 
-      // 3) Continuar hacia el futuro desde hoy
-      const steps = Math.max(2, Math.round(projMonthsVisible * 8));
-      const diasHoyDesdeInicio = (now.getTime() - firstDateMs) / (1000 * 60 * 60 * 24);
-      for (let i = 1; i <= steps; i++) {
-        const frac = i / steps;
-        const dAdj = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        dAdj.setDate(dAdj.getDate() + Math.round(frac * projMonthsVisible * 30.44));
-        const diasTotales = diasHoyDesdeInicio + (frac * projMonthsVisible * 30.44);
-        const anosTotal = Math.max(0, diasTotales / 365);
-        projDatesAdj.push(dAdj.toISOString().split('T')[0]);
-        projValsAdj.push(Math.round(capitalInicialReal * (Math.pow(1 + re, anosTotal) - 1)));
+        // Función: capital neto acumulado hasta una fecha dada (inclusive)
+        const capitalHastaFecha = (fechaLimite) => {
+          return _evCap
+            .filter(e => e.fecha <= fechaLimite)
+            .reduce((s, e) => s + e.delta, 0);
+        };
+
+        // 2) Trazar sobre puntos históricos filtrados
+        for (const snap of histFiltered) {
+          const capNeto = Math.max(0, capitalHastaFecha(snap.date));
+          const snapMs = new Date(snap.date + 'T00:00:00').getTime();
+          // Ganancia proyectada = rendimiento esperado sobre el capital neto
+          // usando los días transcurridos desde el origen
+          const diasDesde = (snapMs - _origenMs) / (1000 * 60 * 60 * 24);
+          const anos = Math.max(0, diasDesde / 365);
+          projDatesAdj.push(snap.date);
+          projValsAdj.push(Math.round(capNeto * (Math.pow(1 + re, anos) - 1)));
+        }
+
+        // 3) Continuar hacia el futuro desde hoy
+        const capNeto = Math.max(0, capitalHastaFecha(todayDateStr));
+        const diasHoy = (now.getTime() - _origenMs) / (1000 * 60 * 60 * 24);
+        const steps = Math.max(2, Math.round(projMonthsVisible * 8));
+        for (let i = 1; i <= steps; i++) {
+          const frac = i / steps;
+          const dAdj = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          dAdj.setDate(dAdj.getDate() + Math.round(frac * projMonthsVisible * 30.44));
+          const diasTotales = diasHoy + (frac * projMonthsVisible * 30.44);
+          const anosTotal = Math.max(0, diasTotales / 365);
+          projDatesAdj.push(dAdj.toISOString().split('T')[0]);
+          projValsAdj.push(Math.round(capNeto * (Math.pow(1 + re, anosTotal) - 1)));
+        }
       }
 
       // ── Calcular límites X según el rango ──────────────────────────
