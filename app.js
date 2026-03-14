@@ -193,6 +193,7 @@ const I18N = {
     trialBtn:'Probar 20 minutos gratis',
     trialUsed:'Ya usaste tu prueba gratuita',
     contactBtn:'Contactar para obtener acceso',
+    orCopyEmail:'o copia el correo:',
     trialBanner:'Modo prueba', trialMinutes:'min restantes',
     trialExpiredTitle:'Tu prueba ha terminado',
     trialExpiredDesc:'Para obtener acceso completo, contáctate con el administrador:',
@@ -363,6 +364,7 @@ const I18N = {
     trialBtn:'Try free for 20 minutes',
     trialUsed:'Your free trial has been used',
     contactBtn:'Contact us for full access',
+    orCopyEmail:'or copy the email:',
     trialBanner:'Trial mode', trialMinutes:'min remaining',
     trialExpiredTitle:'Your trial has ended',
     trialExpiredDesc:'To get full access, contact the administrator:',
@@ -4091,6 +4093,10 @@ function showWelcomeGate(user, trialExpirado){
     <div style="font-size:13px;color:#888;margin-bottom:24px;line-height:1.5">${t('welcomeDesc')}</div>
     ${trialBtn}
     <a href="https://mail.google.com/mail/?view=cm&to=ctfnoe@gmail.com&su=Solicitud%20de%20acceso%20InvestTracker" target="_blank" rel="noopener" style="display:block;width:100%;padding:13px;border-radius:16px;border:1.5px solid #0A84FF;color:#0A84FF;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;text-decoration:none;box-sizing:border-box">✉️ ${t('contactBtn')}</a>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px">
+      <span style="font-size:12px;color:#888">${t('orCopyEmail')}</span>
+      <span id="adminEmailDisplay" onclick="navigator.clipboard.writeText('ctfnoe@gmail.com').then(()=>{this.textContent='✅ ctfnoe@gmail.com';setTimeout(()=>this.textContent='ctfnoe@gmail.com',2000)})" style="font-size:12px;font-weight:700;color:#0A84FF;cursor:pointer;text-decoration:underline;text-decoration-style:dotted" title="Click para copiar">ctfnoe@gmail.com</span>
+    </div>
     <div style="font-size:11px;color:#aaa;margin-bottom:16px">${user.email}</div>
     <button onclick="window.signOutUser()" style="padding:8px 20px;border-radius:20px;border:1px solid #ddd;background:none;cursor:pointer;font-size:12px;color:#888;font-family:inherit">← ${t('salir')}</button>
   </div>`;

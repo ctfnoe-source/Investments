@@ -1,7 +1,7 @@
 // ==================== SERVICE WORKER — Finanzas Pro ====================
 // Versión de caché — cambia este número cada vez que hagas un deploy
 // para que los usuarios reciban la versión más reciente automáticamente.
-const CACHE_VERSION = 'finanzas-pro-v21';
+const CACHE_VERSION = 'finanzas-pro-v22';
 
 // Archivos JS/CSS que usan Network-first (siempre intenta red antes)
 const NETWORK_FIRST_FILES = ['./app.js', './styles.css', './index.html', '/'];
