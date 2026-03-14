@@ -193,11 +193,13 @@ const I18N = {
     trialBtn:'Probar 20 minutos gratis',
     trialUsed:'Ya usaste tu prueba gratuita',
     contactBtn:'Contactar para obtener acceso',
+    trialBanner:'Modo prueba', trialMinutes:'min restantes',
     trialExpiredTitle:'Tu prueba ha terminado',
     trialExpiredDesc:'Para obtener acceso completo, contáctate con el administrador:',
     trialExpiredBtn:'Contactar administrador',
     pendingExplanation:'Para obtener acceso, contáctate con el administrador: <a href="mailto:ctfnoe@gmail.com" style="color:var(--blue);font-weight:600">ctfnoe@gmail.com</a>',
     active:'Activo', pending:'Pendiente', approve:'Aprobar', revoke:'Revocar',
+    trialBanner:'Modo prueba', trialMinutes:'min restantes',
     trialExpiredTitle:'Tu prueba ha terminado',
     trialExpiredDesc:'Para obtener acceso completo, contáctate con el administrador:',
     trialExpiredBtn:'Contactar administrador',
@@ -361,11 +363,13 @@ const I18N = {
     trialBtn:'Try free for 20 minutes',
     trialUsed:'Your free trial has been used',
     contactBtn:'Contact us for full access',
+    trialBanner:'Trial mode', trialMinutes:'min remaining',
     trialExpiredTitle:'Your trial has ended',
     trialExpiredDesc:'To get full access, contact the administrator:',
     trialExpiredBtn:'Contact administrator',
     pendingExplanation:'To get access, please contact the administrator: <a href="mailto:ctfnoe@gmail.com" style="color:var(--blue);font-weight:600">ctfnoe@gmail.com</a>',
     active:'Active', pending:'Pending', approve:'Approve', revoke:'Revoke',
+    trialBanner:'Trial mode', trialMinutes:'min remaining',
     trialExpiredTitle:'Your trial has ended',
     trialExpiredDesc:'To get full access, contact the administrator:',
     trialExpiredBtn:'Contact administrator',
@@ -583,6 +587,134 @@ async function fetchStockPrice(ticker) {
   const k = settings.finnhubKey||''; if(!k) return null;
   try { const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker.toUpperCase()}&token=${k}`); if(!r.ok) throw new Error(); const d = await r.json(); return (d.c && d.c > 0) ? d.c : null; } catch { return null; }
 }
+
+// ── Precios históricos para reconstrucción del gráfico ────────────────────
+async function fetchHistoricalStockPrice(ticker, dateStr) {
+  const k = settings.finnhubKey || ''; if(!k) return null;
+  try {
+    const d = new Date(dateStr + 'T12:00:00Z');
+    const from = Math.floor(d.getTime()/1000) - 3600;
+    const to   = Math.floor(d.getTime()/1000) + 86400;
+    const url  = `https://finnhub.io/api/v1/stock/candle?symbol=${ticker.toUpperCase()}&resolution=D&from=${from}&to=${to}&token=${k}`;
+    const r = await fetch(url); if(!r.ok) return null;
+    const data = await r.json();
+    if(data.s === 'ok' && data.c && data.c.length > 0) return data.c[0];
+    return null;
+  } catch { return null; }
+}
+
+async function fetchHistoricalCryptoPrice(ticker, dateStr) {
+  const coinId = CRYPTO_MAP[ticker.toUpperCase()]; if(!coinId) return null;
+  try {
+    // CoinGecko history endpoint: /coins/{id}/history?date=dd-mm-yyyy
+    const [y,m,d] = dateStr.split('-');
+    const url = `https://api.coingecko.com/api/v3/coins/${coinId}/history?date=${d}-${m}-${y}&localization=false`;
+    const r = await fetch(url); if(!r.ok) return null;
+    const data = await r.json();
+    return data.market_data?.current_price?.usd || null;
+  } catch { return null; }
+}
+
+async function buildHistoricalWithPrices() {
+  const finnhubKey = settings.finnhubKey || '';
+  const tc = settings.tipoCambio || 18;
+  const eurmxn = getEurMxn();
+  const todayStr = today();
+
+  // Fechas con movimientos de inversión — desde el primer movimiento registrado
+  const primerMov = movements.filter(m => m.seccion === 'inversiones' && m.fecha < todayStr)
+    .map(m => m.fecha).sort()[0];
+  if(!primerMov) return;
+  const cutoffStr = primerMov;
+
+  const invMovs = movements.filter(m => m.seccion === 'inversiones' && m.fecha >= cutoffStr && m.fecha < todayStr);
+  if(invMovs.length === 0) return;
+
+  // Fechas únicas que no tienen snapshot real
+  const fechasConMov = [...new Set(invMovs.map(m => m.fecha))].sort();
+  const fechasSinSnap = fechasConMov.filter(f => !patrimonioHistory.find(s => s.date === f && !s.synthetic));
+  if(fechasSinSnap.length === 0) return;
+
+  // Tickers únicos en inversiones
+  const tickerMap = {};
+  movements.filter(m => m.seccion === 'inversiones').forEach(m => {
+    if(!m.ticker) return;
+    const key = m.ticker.toUpperCase();
+    if(!tickerMap[key]) tickerMap[key] = { type: m.tipoActivo || 'Acción', moneda: m.moneda || 'USD' };
+  });
+
+  // Caché de precios históricos para no repetir llamadas
+  const priceCache = {};
+
+  for(const fecha of fechasSinSnap) {
+    // Calcular capital de plataformas en esa fecha (igual que buildHistoricalSnapshots)
+    let capitalPlats = 0;
+    platforms.forEach(p => {
+      if(p.fechaInicio && p.fechaInicio > fecha) return;
+      const toMXN = v => p.moneda === 'USD' ? v*tc : p.moneda === 'EUR' ? v*eurmxn : v;
+      capitalPlats += toMXN(p.saldoInicial || 0);
+      movements.filter(m => m.seccion === 'plataformas' && m.platform === p.name && m.fecha <= fecha).forEach(m => {
+        if(m.tipoPlat === 'Aportación' || m.tipoPlat === 'Transferencia entrada') capitalPlats += toMXN(m.monto || 0);
+        if(m.tipoPlat === 'Retiro' || m.tipoPlat === 'Transferencia salida' || m.tipoPlat === 'Gasto') capitalPlats -= toMXN(m.monto || 0);
+      });
+    });
+
+    // Calcular valor de inversiones en esa fecha con precios históricos reales
+    let valorInv = 0;
+    let capitalInv = 0;
+
+    for(const [ticker, info] of Object.entries(tickerMap)) {
+      // Posición en esa fecha
+      const compras = movements.filter(m => m.seccion === 'inversiones' && m.ticker?.toUpperCase() === ticker && m.tipoMov === 'Compra' && m.fecha <= fecha);
+      const ventas  = movements.filter(m => m.seccion === 'inversiones' && m.ticker?.toUpperCase() === ticker && m.tipoMov === 'Venta'  && m.fecha <= fecha);
+      const cantActual = compras.reduce((s,m) => s+(m.cantidad||0), 0) - ventas.reduce((s,m) => s+(m.cantidad||0), 0);
+      if(cantActual <= 0) continue;
+
+      const costo = compras.reduce((s,m) => s+(m.montoTotal||(m.cantidad||0)*(m.precioUnit||0)), 0)
+                  - ventas.reduce((s,m)  => s+(m.montoTotal||(m.cantidad||0)*(m.precioUnit||0)), 0);
+      capitalInv += info.moneda === 'MXN' ? costo : costo * tc;
+
+      // Buscar precio histórico (con caché)
+      const cacheKey = ticker + '_' + fecha;
+      let precioHist = priceCache[cacheKey];
+
+      if(precioHist === undefined) {
+        const isCrypto = !!CRYPTO_MAP[ticker];
+        if(isCrypto) {
+          precioHist = await fetchHistoricalCryptoPrice(ticker, fecha);
+        } else if(finnhubKey) {
+          precioHist = await fetchHistoricalStockPrice(ticker, fecha);
+          await new Promise(r => setTimeout(r, 250)); // respetar rate limit
+        }
+        priceCache[cacheKey] = precioHist ?? null;
+      }
+
+      if(precioHist && precioHist > 0) {
+        const valorPos = cantActual * precioHist;
+        valorInv += info.moneda === 'MXN' ? valorPos : valorPos * tc;
+      } else {
+        // Sin precio histórico: usar costo como fallback
+        valorInv += info.moneda === 'MXN' ? costo : costo * tc;
+      }
+    }
+
+    const value = Math.round(capitalPlats + Math.max(0, valorInv));
+    const capital = Math.round(capitalPlats + Math.max(0, capitalInv));
+    if(value > 0){
+      // Reemplazar sintético existente si lo hay
+      patrimonioHistory = patrimonioHistory.filter(s => !(s.date === fecha && s.synthetic));
+      patrimonioHistory.push({ date: fecha, value, capital, synthetic: true, historicalPrices: true });
+    }
+  }
+
+  patrimonioHistory.sort((a,b) => a.date < b.date ? -1 : 1);
+  const seen = new Map();
+  patrimonioHistory.forEach(s => { if(!seen.has(s.date) || !s.synthetic) seen.set(s.date, s); });
+  patrimonioHistory = [...seen.values()];
+  LS.set('patrimonioHistory', patrimonioHistory);
+  renderPageInternal(currentTab);
+}
+
 async function fetchAlphaVantagePrice(ticker, targetMoneda) {
   const k = settings.alphaVantageKey || ''; if (!k) return null;
   const base = ticker.toUpperCase().replace(/\.(L|DE|AS|PA|MI|SW|LON|DEX)$/i, '');
@@ -1174,6 +1306,11 @@ function saveAll(changedMovId, deletedMovId, changedSnapDate){
   _recalcAndSaveSnapshot();
   buildHistoricalSnapshots();
   renderPageInternal(currentTab);
+  // Si hay movimientos de inversión, reconstruir historial con precios reales
+  if(changedMovId){
+    const changedMov = movements.find(m => m.id === changedMovId || (changedMovId.includes('|') && changedMovId.includes(m.id)));
+    if(changedMov?.seccion === 'inversiones') setTimeout(() => buildHistoricalWithPrices(), 1000);
+  }
   if (!_isOnline) { queueSave(window.getAppData()); setOfflineBanner('offline'); }
   else if(typeof window.saveToFirebase==='function') {
     window.saveToFirebase(false, changedMovId, deletedMovId, changedSnapDate);
@@ -1288,7 +1425,7 @@ function platSaldoToMXN(p) {
 // RENDER DASHBOARD
 // ============================================
 function renderDashboard(){
-  const tc=settings.tipoCambio,re=settings.rendimientoEsperado??0.06;
+  const tc=settings.tipoCambio,re=settings.rendimientoEsperado||0.06;
   const eurmxn=getEurMxn();
   const cm=new Date().getMonth()+1,cy=new Date().getFullYear();
   const plats=calcPlatforms();
@@ -2860,7 +2997,7 @@ function renderMetas(){
     if(monedaMostrar2!=='EUR'){const eurmxn2=getEurMxn();const fx2=_fxCache||LS.get('fxCache');const usdeur2=fx2?.usdeur||0.88;const gbpeur2=fx2?(fx2.usdeur/(fx2.usdgbp||1)):1.17;if(monedaMostrar2==='USD')conv=conv/usdeur2;else if(monedaMostrar2==='MXN')conv=conv*eurmxn2;else if(monedaMostrar2==='GBP')conv=conv/gbpeur2;}
     return monSymbol2+conv.toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:2});
   };
-  const re=settings.rendimientoEsperado??0.06;
+  const re=settings.rendimientoEsperado||0.06;
 
   const metasData = goals.map(g=>{
     let actual=0;
@@ -3295,7 +3432,7 @@ function _buildAiContext() {
       .filter(m => m.fecha)
       .sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''))
       .slice(0, 500)
-      .map(m => `[${m.fecha}] ${m.seccion||''} | ${m.categoria||''} | ${m.desc||m.notas||''} | ${m.monedaOrig||'MXN'} ${(m.importe||0).toFixed(2)}`)
+      .map(m => `[${m.fecha}] ${m.seccion||''} | ${m.categoria||''} | ${m.concepto||m.descripcion||''} | ${m.monedaOrig||'MXN'} ${(m.importe||0).toFixed(2)}${m.notas?' ('+m.notas+')':''}`)
       .join('\n');
 
     const recurrentesList = recurrentes
@@ -3941,6 +4078,8 @@ async function loadSubcollections(uid){
   _recalcAndSaveSnapshot();
   buildHistoricalSnapshots();
   renderPageInternal(currentTab);
+  // Reconstruir historial con precios reales en background (sin bloquear UI)
+  setTimeout(() => buildHistoricalWithPrices(), 1500);
 }
 
 function setupFirestore(uid){
@@ -4367,15 +4506,6 @@ onAuthStateChanged(auth,async user=>{
         return;
       }
       const data = snap.data();
-      // Si fue aprobado mientras tenía trial activo, limpiar el trial
-      if(data.aprobado === true && window._trialStart){
-        window._trialStart = null;
-        window._trialMS = null;
-        window._trialUID = null;
-        window._showingWelcomeGate = false;
-        const tb = document.getElementById('trialCounterBanner');
-        if(tb) tb.remove();
-      }
       // No sacar si está en trial activo o en la pantalla de bienvenida
       const enTrialOWelcome = window._trialStart || window._showingWelcomeGate;
       if(!isAdmin && data.aprobado === false && !enTrialOWelcome){
