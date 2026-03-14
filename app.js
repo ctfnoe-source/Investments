@@ -156,6 +156,7 @@ const I18N = {
     potencial:'Potencial',
     verTodo:'Ver todo →',
     gananciaReal:'Ganancia real',
+    patrimonioTotal2:'Patrimonio total',
     gananciaNetaTotal:'Ganancia neta total',
     graficoApareceraManana:'El gráfico aparecerá mañana',
     necesitas2dias:'Necesitas al menos 2 días de datos.',
@@ -326,6 +327,7 @@ const I18N = {
     potencial:'Potential',
     verTodo:'View all →',
     gananciaReal:'Real Gain',
+    patrimonioTotal2:'Total net worth',
     gananciaNetaTotal:'total net gain',
     graficoApareceraManana:'Chart will appear tomorrow',
     necesitas2dias:'You need at least 2 days of data.',
@@ -1450,6 +1452,7 @@ function renderDashboard(){
   }
   const realDatesFiltered = histFiltered.map(s => s.date);
   const realValsFiltered = histFiltered.map(s => pureYieldAnchored(s));
+  const patrimonioValsFiltered = histFiltered.map(s => s.value || 0);
 
   const curLabel = salaryIsEUR ? '🇪🇺 EUR' : '🇲🇽 MXN';
 
@@ -1531,19 +1534,16 @@ function renderDashboard(){
     <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden">
       <div style="padding:24px 28px 16px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
-          <!-- IZQUIERDA: Patrimonio Total en morado + leyendas -->
           <div>
-            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(191,90,242,0.8);margin-bottom:4px">📈 ${t('patrimonioTotal')}</div>
-            <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
-              <div style="font-size:22px;font-weight:800;letter-spacing:-0.03em;color:rgba(191,90,242,0.9);line-height:1">${fmt(patrimonio)}</div>
-            </div>
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(191,90,242,0.85);margin-bottom:4px">📈 ${t('patrimonioTotal')}</div>
+            <div style="font-size:22px;font-weight:800;letter-spacing:-0.03em;color:rgba(191,90,242,0.95);line-height:1">${fmt(patrimonio)}</div>
             <div style="display:flex;gap:14px;margin-top:10px;flex-wrap:wrap">
               <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px">
-                <span style="display:inline-block;width:16px;height:3px;background:rgba(191,90,242,0.8);border-radius:2px"></span>
+                <span style="display:inline-block;width:16px;height:3px;background:rgba(191,90,242,0.9);border-radius:2px"></span>
                 ${t('patrimonioTotal2')}
               </span>
               <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px">
-                <span style="display:inline-block;width:16px;height:3px;background:linear-gradient(90deg,#30D158,#34D35A);border-radius:2px"></span>
+                <span style="display:inline-block;width:16px;height:3px;background:#30D158;border-radius:2px"></span>
                 ${t('gananciaReal')}
               </span>
               <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px">
@@ -1552,7 +1552,6 @@ function renderDashboard(){
               </span>
             </div>
           </div>
-          <!-- DERECHA: Ganancia neta + Esperado 1 año + CAGR -->
           <div style="display:flex;gap:20px;align-items:flex-start">
             <div style="text-align:right">
               <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--green);margin-bottom:2px">${t('gananciaNetaTotal')}</div>
@@ -1684,6 +1683,7 @@ function renderDashboard(){
 
     const realDates = realDatesFiltered;
     const realVals = realValsFiltered;
+    const patrimonioVals = patrimonioValsFiltered;
 
     const now = new Date();
     const todayDateStr = now.toISOString().split('T')[0];
@@ -1709,37 +1709,30 @@ function renderDashboard(){
       const dynRadius = realDates.length <= 12 ? 3 : realDates.length <= 30 ? 2 : 0;
       const dynLastRadius = realDates.length > 0 ? 5 : 0;
 
-      // Plugin de glow para líneas brillantes
+      // Glow plugin
       const glowPlugin = {
-        id: 'glowLines',
-        beforeDatasetsDraw(chart) {
-          const ctx = chart.ctx;
-          chart.data.datasets.forEach((ds, i) => {
-            const meta = chart.getDatasetMeta(i);
-            if(meta.hidden || !meta.data.length) return;
-            ctx.save();
-            if(i === 0) { // verde - ganancia real
-              ctx.shadowColor = 'rgba(48,209,88,0.6)';
-              ctx.shadowBlur = 12;
-            } else if(i === 1) { // morado - patrimonio
-              ctx.shadowColor = 'rgba(191,90,242,0.55)';
-              ctx.shadowBlur = 10;
-            } else if(i === 2) { // azul - proyección
-              ctx.shadowColor = 'rgba(10,132,255,0.7)';
-              ctx.shadowBlur = 14;
-            }
-            // Redibujar la línea con el glow
-            const points = meta.data;
-            if(points.length < 2) { ctx.restore(); return; }
-            ctx.beginPath();
-            ctx.strokeStyle = ds.borderColor;
-            ctx.lineWidth = (ds.borderWidth || 2) + 0.5;
-            if(ds.borderDash) ctx.setLineDash(ds.borderDash);
-            ctx.moveTo(points[0].x, points[0].y);
-            points.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
-            ctx.stroke();
-            ctx.setLineDash([]);
-            ctx.restore();
+        id:'glowLines',
+        beforeDatasetsDraw(chart){
+          const c=chart.ctx;
+          chart.data.datasets.forEach((ds,i)=>{
+            const meta=chart.getDatasetMeta(i);
+            if(meta.hidden||!meta.data.length) return;
+            const glows=[
+              {color:'rgba(48,209,88,0.55)',blur:14},
+              {color:'rgba(191,90,242,0.5)',blur:12},
+              {color:'rgba(10,132,255,0.65)',blur:16},
+            ];
+            const g=glows[i]; if(!g) return;
+            c.save();
+            c.shadowColor=g.color; c.shadowBlur=g.blur;
+            const pts=meta.data; if(pts.length<2){c.restore();return;}
+            c.beginPath();
+            c.strokeStyle=ds.borderColor;
+            c.lineWidth=(ds.borderWidth||2)+0.5;
+            if(ds.borderDash) c.setLineDash(ds.borderDash);
+            c.moveTo(pts[0].x,pts[0].y);
+            pts.slice(1).forEach(p=>c.lineTo(p.x,p.y));
+            c.stroke(); c.setLineDash([]); c.restore();
           });
         }
       };
@@ -1762,6 +1755,25 @@ function renderDashboard(){
             pointHoverBackgroundColor:'#30D158',
             pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
             pointHoverBorderWidth:2,
+            yAxisID:'y',
+          },
+          {
+            label: t('patrimonioTotal2'),
+            data:realDates.map((d,i)=>({x:d,y:patrimonioVals[i]})),
+            borderColor:'rgba(191,90,242,0.9)',
+            backgroundColor:'transparent',
+            borderWidth:2,
+            fill:false,
+            tension:0.4,
+            pointRadius: realDates.map((_,i) => i === realDates.length-1 ? dynLastRadius : dynRadius),
+            pointBackgroundColor:'rgba(191,90,242,0.9)',
+            pointBorderColor: isDark?'#1C1C1E':'#fff',
+            pointBorderWidth:2,
+            pointHoverRadius:6,
+            pointHoverBackgroundColor:'rgba(191,90,242,1)',
+            pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
+            pointHoverBorderWidth:2,
+            yAxisID:'y2',
           },
           {
             label: t('proyeccion')+' '+((re*100).toFixed(0))+'% '+t('anual'),
@@ -1774,9 +1786,10 @@ function renderDashboard(){
             tension:0.1,
             pointRadius:0,
             pointHoverRadius:4,
-            pointHoverBackgroundColor:'rgba(10,132,255,0.8)',
+            pointHoverBackgroundColor:'rgba(10,132,255,0.9)',
             pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
             pointHoverBorderWidth:2,
+            yAxisID:'y',
           }
         ]
       },options:{
@@ -1804,14 +1817,12 @@ function renderDashboard(){
               },
               label: ctx => {
                 const val = ctx.parsed.y;
-                const isReal = ctx.datasetIndex === 0;
-                const icon = isReal ? '🟢' : '🔵';
-                return ` ${icon} ${ctx.dataset.label}: ${fmtFull(val)}`;
+                const icons = ['🟢','🟣','🔵'];
+                return ` ${icons[ctx.datasetIndex]||'⚪'} ${ctx.dataset.label}: ${fmtFull(val)}`;
               },
               afterBody: items => {
-                if(items.length < 2) return [];
                 const real = items.find(i=>i.datasetIndex===0);
-                const proj = items.find(i=>i.datasetIndex===1);
+                const proj = items.find(i=>i.datasetIndex===2);
                 if(!real||!proj) return [];
                 const diff = proj.parsed.y - real.parsed.y;
                 if(diff === 0) return [];
@@ -1842,6 +1853,12 @@ function renderDashboard(){
           y:{
             grid:{color:gridColor},
             ticks:{font:{size:11},color:tickColor,callback:v=>fmt(v),maxTicksLimit:5},
+            border:{display:false}
+          },
+          y2:{
+            position:'right',
+            grid:{display:false},
+            ticks:{font:{size:10},color:isDark?'rgba(191,90,242,0.5)':'rgba(191,90,242,0.6)',callback:v=>fmt(v),maxTicksLimit:4},
             border:{display:false}
           }
         }
