@@ -1708,59 +1708,62 @@ function renderDashboard(){
       const dynRadius = realDates.length <= 12 ? 3 : realDates.length <= 30 ? 2 : 0;
       const dynLastRadius = realDates.length > 0 ? 5 : 0;
 
-      // ── Calcular límites X según el rango seleccionado ──────────────
-      const nowMs = new Date().getTime();
-      let xMin = undefined, xMax = undefined;
-      const showProjection = (_chartRange === 'all');
-
-      if (_chartRange !== 'all') {
-        // xMax = hoy
-        xMax = new Date(todayDateStr + 'T23:59:59').getTime();
-        // xMin = inicio del período filtrado
-        if (realDates.length > 0) {
-          xMin = new Date(realDates[0] + 'T00:00:00').getTime();
-        }
-        // Para rangos de 1 día o 1 semana con pocos puntos, dar algo de padding
-        if (_chartRange === '1d') {
-          const d = new Date(); d.setDate(d.getDate() - 1);
-          xMin = d.getTime();
-        } else if (_chartRange === '1w') {
-          const d = new Date(); d.setDate(d.getDate() - 7);
-          xMin = d.getTime();
-        }
-      } else {
-        // Rango "all": mostrar histórico + proyección
-        if (realDates.length > 0) xMin = new Date(realDates[0] + 'T00:00:00').getTime();
-        if (projDates.length > 0) xMax = new Date(projDates[projDates.length-1] + 'T23:59:59').getTime();
-      }
-      // ──────────────────────────────────────────────────────────────────
-
-      const glowPlugin = {
-        id:'glowLines',
-        beforeDatasetsDraw(chart){
-          const c=chart.ctx;
-          chart.data.datasets.forEach((ds,i)=>{
-            const meta=chart.getDatasetMeta(i);
-            if(meta.hidden||!meta.data.length) return;
-            const glows=[
-              {color:'rgba(48,209,88,0.55)',blur:14},
-              {color:'rgba(245,166,35,0.5)',blur:11},
-              {color:'rgba(10,132,255,0.65)',blur:16},
-            ];
-            const g=glows[i]; if(!g) return;
-            c.save();
-            c.shadowColor=g.color; c.shadowBlur=g.blur;
-            const pts=meta.data; if(pts.length<2){c.restore();return;}
-            c.beginPath();
-            c.strokeStyle=ds.borderColor;
-            c.lineWidth=(ds.borderWidth||2)+0.5;
-            if(ds.borderDash) c.setLineDash(ds.borderDash);
-            c.moveTo(pts[0].x,pts[0].y);
-            pts.slice(1).forEach(p=>c.lineTo(p.x,p.y));
-            c.stroke(); c.setLineDash([]); c.restore();
-          });
-        }
+      // ── Proyección ajustada al rango visible ────────────────────────
+      // Cuántos meses hacia adelante mostrar según el rango seleccionado
+      const projMonthsMap = {
+        '1d': 0.033,   // ~1 día
+        '1w': 0.25,    // ~1 semana
+        '1m': 1,
+        'ytd': 3,
+        '1y': 6,
+        '3y': 12,
+        'all': projMonths, // usa el selector de proyección completo
       };
+      const projMonthsVisible = projMonthsMap[_chartRange] ?? projMonths;
+
+      // Generar puntos de proyección proporcionales al rango
+      const projDatesAdj = [todayDateStr];
+      const projValsAdj  = [0];
+      const steps = Math.max(2, Math.round(projMonthsVisible * 8));
+      for (let i = 1; i <= steps; i++) {
+        const frac = i / steps;
+        const dAdj = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        dAdj.setDate(dAdj.getDate() + Math.round(frac * projMonthsVisible * 30.44));
+        projDatesAdj.push(dAdj.toISOString().split('T')[0]);
+        projValsAdj.push(Math.round(capitalHoy * (Math.pow(1 + re / 12, projMonthsVisible * frac) - 1)));
+      }
+
+      // ── Calcular límites X según el rango ──────────────────────────
+      let xMin = undefined, xMax = undefined;
+
+      // xMin = inicio del período histórico filtrado
+      if (realDates.length > 0) {
+        xMin = new Date(realDates[0] + 'T00:00:00').getTime();
+      }
+      // Para rangos fijos, forzar xMin exacto
+      if (_chartRange === '1d') {
+        const d = new Date(); d.setDate(d.getDate() - 1);
+        xMin = d.getTime();
+      } else if (_chartRange === '1w') {
+        const d = new Date(); d.setDate(d.getDate() - 7);
+        xMin = d.getTime();
+      } else if (_chartRange === '1m') {
+        const d = new Date(); d.setMonth(d.getMonth() - 1);
+        xMin = d.getTime();
+      } else if (_chartRange === 'ytd') {
+        const d = new Date(); d.setMonth(0); d.setDate(1);
+        xMin = d.getTime();
+      } else if (_chartRange === '1y') {
+        const d = new Date(); d.setFullYear(d.getFullYear() - 1);
+        xMin = d.getTime();
+      } else if (_chartRange === '3y') {
+        const d = new Date(); d.setFullYear(d.getFullYear() - 3);
+        xMin = d.getTime();
+      }
+
+      // xMax = último punto de proyección (así siempre se ve la línea azul)
+      xMax = new Date(projDatesAdj[projDatesAdj.length - 1] + 'T23:59:59').getTime();
+      // ──────────────────────────────────────────────────────────────────
 
       chartInstances.chartEvo=new Chart(ctxE,{type:'line',data:{
         datasets:[
@@ -1769,9 +1772,9 @@ function renderDashboard(){
             data:realDates.map((d,i)=>({x:d,y:realVals[i]})),
             borderColor:'#30D158',
             backgroundColor: gradReal,
-            borderWidth:1.8,
+            borderWidth:2,
             fill:true,
-            tension:0.5,
+            tension:0.4,
             pointRadius: realDates.map((_,i) => i === realDates.length-1 ? dynLastRadius : dynRadius),
             pointBackgroundColor:'#30D158',
             pointBorderColor: isDark?'#1C1C1E':'#fff',
@@ -1787,9 +1790,9 @@ function renderDashboard(){
             data:realDates.map((d,i)=>({x:d,y:patrimonioVals[i]})),
             borderColor:'rgba(245,166,35,0.95)',
             backgroundColor:'transparent',
-            borderWidth:1.8,
+            borderWidth:2,
             fill:false,
-            tension:0.5,
+            tension:0.4,
             pointRadius: realDates.map((_,i) => i === realDates.length-1 ? dynLastRadius : dynRadius),
             pointBackgroundColor:'rgba(245,166,35,0.95)',
             pointBorderColor: isDark?'#1C1C1E':'#fff',
@@ -1802,12 +1805,11 @@ function renderDashboard(){
           },
           {
             label: t('proyeccion')+' '+((re*100).toFixed(0))+'% '+t('anual'),
-            // Si no se muestra proyección, dataset vacío
-            data: showProjection ? projDates.map((d,i)=>({x:d,y:projVals[i]})) : [],
-            borderColor:'rgba(10,132,255,0.92)',
+            data: projDatesAdj.map((d,i)=>({x:d,y:projValsAdj[i]})),
+            borderColor:'rgba(10,132,255,0.85)',
             backgroundColor:'transparent',
-            borderWidth:1.6,
-            borderDash:[7,5],
+            borderWidth:1.5,
+            borderDash:[6,4],
             fill:false,
             tension:0.3,
             pointRadius:0,
@@ -1843,7 +1845,7 @@ function renderDashboard(){
               },
               label: ctx => {
                 const val = ctx.parsed.y;
-                const icons = ['🟢','🟣','🔵'];
+                const icons = ['🟢','🟡','🔵'];
                 return ` ${icons[ctx.datasetIndex]||'⚪'} ${ctx.dataset.label}: ${fmtFull(val)}`;
               },
               afterBody: items => {
@@ -1864,7 +1866,9 @@ function renderDashboard(){
             min: xMin,
             max: xMax,
             time:{
-              unit: _chartRange === '1d' ? 'hour' : _chartRange === '1w' ? 'day' : 'month',
+              unit: _chartRange === '1d' ? 'hour'
+                  : (_chartRange === '1w' || _chartRange === '1m') ? 'day'
+                  : 'month',
               displayFormats:{ hour:'HH:mm', day:'d MMM', month:'MMM yy' },
               tooltipFormat:'yyyy-MM-dd'
             },
@@ -1890,7 +1894,7 @@ function renderDashboard(){
             border:{display:false}
           }
         }
-      }, plugins:[glowPlugin] });
+      }});
     }
 
     const at={};plats.forEach(p=>{at[p.type]=(at[p.type]||0)+platSaldoToMXN(p);});
