@@ -344,3 +344,10 @@ tr:hover td { background: var(--table-row-hover); }
   .container { padding-bottom: 90px; }
 }
 @media(min-width:769px){ .mobile-nav { display: none; } }
+
+/* Inversiones: side-by-side → stack on mobile */
+@media(max-width:900px){
+  #page-inversiones > div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+}

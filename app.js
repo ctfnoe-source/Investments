@@ -2827,61 +2827,73 @@ function renderInversiones(){
       </div>
     </div>
 
-    <div class="card" style="margin-bottom:16px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-        <div class="card-title" style="margin:0">📂 ${t('posicionesAbiertas')}</div>
-      </div>
-      <div style="max-height:520px;overflow-y:auto;margin:0 -4px;padding:0 4px">
-      ${abiertas.length > 0 ? abiertas.sort((a,b) => {
-        const va = (a.valorActual||a.costoPosicion||0)*(a.moneda==='MXN'?1:tc);
-        const vb = (b.valorActual||b.costoPosicion||0)*(b.moneda==='MXN'?1:tc);
-        return vb - va;
-      }).map(pos => {
-        const tipoClass = pos.type==='Acción'?'badge-green':pos.type==='ETF'?'badge-blue':pos.type==='Crypto'?'badge-orange':'badge-gray';
-        const valorMXN = (pos.valorActual||pos.costoPosicion||0)*(pos.moneda==='MXN'?1:tc);
-        const costoMXN = pos.costoPosicion*(pos.moneda==='MXN'?1:tc);
-        const gpMXN = valorMXN - costoMXN;
-        const pctPort = totalValor > 0 ? valorMXN/totalValor : 0;
-        const brokersInfo = pos.brokersSaldo&&pos.brokersSaldo.length>0 ? pos.brokersSaldo.map(b=>b.broker+(b.cantActual!==pos.cantActual?' ('+( b.cantActual%1===0?b.cantActual:parseFloat(b.cantActual.toFixed(4)))+')':'')).join(', ') : '';
-        return `<div class="list-item" style="padding:10px 0">
-          <div style="display:flex;align-items:center;gap:8px;min-width:0">
-            <span class="badge ${tipoClass}">${pos.ticker}</span>
-            <div style="font-size:11px;color:var(--text2);min-width:0">
-              <span>×${pos.cantActual%1===0?pos.cantActual:parseFloat(pos.cantActual.toFixed(4))}</span>
-              <span style="margin:0 4px">·</span>
-              <span class="${pos.priceCssClass}">${pos.priceLabel}</span>
-              <span style="margin:0 4px">·</span>
-              <span>${(pctPort*100).toFixed(1)}%</span>
-              ${brokersInfo?`<span style="margin-left:4px">· 🏦 ${brokersInfo}</span>`:''}
-            </div>
-          </div>
-          <div style="text-align:right;flex-shrink:0">
-            <div style="font-size:13px;font-weight:800;color:${pctCol(pos.gpNoRealizada)}">${pos.gpNoRealizada!==null?(pos.gpNoRealizada>=0?'+':'')+fmtFull(pos.gpNoRealizada)+' '+pos.moneda:t('sinPrecio')}</div>
-            <div style="font-size:10px;font-weight:600;color:${pctCol(pos.pctNoRealizada)}">${pos.gpNoRealizada!==null?fmtPct(pos.pctNoRealizada):''}</div>
-          </div>
-        </div>`;
-      }).join('') : `<div style="text-align:center;color:var(--text2);padding:48px 24px"><div style="font-size:40px;margin-bottom:12px">📈</div><div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">${t('sinPosicionesAbiertas')}</div><div style="font-size:13px;margin-bottom:20px">${t('registraPrimeraCompra')}</div><button class="btn btn-primary" onclick="openMovModal('inversiones')">+ ${t('primerMovimiento')}</button></div>`}
-      </div>
-    </div>
+    <div style="display:grid;grid-template-columns:minmax(0,58%) minmax(0,42%);gap:16px;margin-bottom:16px;align-items:start">
 
-    ${cerradas.length > 0 ? `
-    <div class="card">
-      <div class="card-title">🔒 ${t('posicionesCerradas')}</div>
-      ${cerradas.map(cp => {
-        const tipoClass = cp.type==='Acción'?'badge-green':cp.type==='ETF'?'badge-blue':cp.type==='Crypto'?'badge-orange':'badge-gray';
-        return `<div class="list-item">
-          <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:13px;font-weight:800;color:var(--text2)">${cp.ticker}</span>
-            <span class="badge ${tipoClass}">${cp.type}</span>
-            <span style="font-size:11px;color:var(--text2)">${t('costo')} ${fmtFull(cp.costoTotal)} ${cp.moneda}</span>
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:13px;font-weight:700;color:${pctCol(cp.gpRealizada)}">${(cp.gpRealizada||0)>=0?'+':''}${fmtFull(cp.gpRealizada||0)} ${cp.moneda}</div>
-            <div style="font-size:10px;color:var(--text2)">${t('realizada')}</div>
-          </div>
-        </div>`;
-      }).join('')}
-    </div>` : ''}
+      <!-- POSICIONES ABIERTAS -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div class="card-title" style="margin:0">📂 ${t('posicionesAbiertas')} <span style="font-size:11px;font-weight:600;color:var(--text2);margin-left:4px">${abiertas.length}</span></div>
+        </div>
+        <div style="max-height:480px;overflow-y:auto;margin:0 -4px;padding:0 4px">
+        ${abiertas.length > 0 ? abiertas.sort((a,b) => {
+          const va = (a.valorActual||a.costoPosicion||0)*(a.moneda==='MXN'?1:tc);
+          const vb = (b.valorActual||b.costoPosicion||0)*(b.moneda==='MXN'?1:tc);
+          return vb - va;
+        }).map(pos => {
+          const tipoClass = pos.type==='Acción'?'badge-green':pos.type==='ETF'?'badge-blue':pos.type==='Crypto'?'badge-orange':'badge-gray';
+          const valorMXN = (pos.valorActual||pos.costoPosicion||0)*(pos.moneda==='MXN'?1:tc);
+          const costoMXN = pos.costoPosicion*(pos.moneda==='MXN'?1:tc);
+          const gpMXN = valorMXN - costoMXN;
+          const pctPort = totalValor > 0 ? valorMXN/totalValor : 0;
+          const brokersInfo = pos.brokersSaldo&&pos.brokersSaldo.length>0 ? pos.brokersSaldo.map(b=>b.broker+(b.cantActual!==pos.cantActual?' ('+( b.cantActual%1===0?b.cantActual:parseFloat(b.cantActual.toFixed(4)))+')':'')).join(', ') : '';
+          return `<div class="list-item" style="padding:10px 0">
+            <div style="display:flex;align-items:center;gap:8px;min-width:0">
+              <span class="badge ${tipoClass}">${pos.ticker}</span>
+              <div style="font-size:11px;color:var(--text2);min-width:0">
+                <span>×${pos.cantActual%1===0?pos.cantActual:parseFloat(pos.cantActual.toFixed(4))}</span>
+                <span style="margin:0 4px">·</span>
+                <span class="${pos.priceCssClass}">${pos.priceLabel}</span>
+                <span style="margin:0 4px">·</span>
+                <span>${(pctPort*100).toFixed(1)}%</span>
+                ${brokersInfo?`<span style="margin-left:4px">· 🏦 ${brokersInfo}</span>`:''}
+              </div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:13px;font-weight:800;color:${pctCol(pos.gpNoRealizada)}">${pos.gpNoRealizada!==null?(pos.gpNoRealizada>=0?'+':'')+fmtFull(pos.gpNoRealizada)+' '+pos.moneda:t('sinPrecio')}</div>
+              <div style="font-size:10px;font-weight:600;color:${pctCol(pos.pctNoRealizada)}">${pos.gpNoRealizada!==null?fmtPct(pos.pctNoRealizada):''}</div>
+            </div>
+          </div>`;
+        }).join('') : `<div style="text-align:center;color:var(--text2);padding:48px 24px"><div style="font-size:40px;margin-bottom:12px">📈</div><div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">${t('sinPosicionesAbiertas')}</div><div style="font-size:13px;margin-bottom:20px">${t('registraPrimeraCompra')}</div><button class="btn btn-primary" onclick="openMovModal('inversiones')">+ ${t('primerMovimiento')}</button></div>`}
+        </div>
+      </div>
+
+      <!-- POSICIONES CERRADAS -->
+      <div class="card" style="${cerradas.length===0?'opacity:0.5':''}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div class="card-title" style="margin:0">🔒 ${t('posicionesCerradas')} <span style="font-size:11px;font-weight:600;color:var(--text2);margin-left:4px">${cerradas.length}</span></div>
+        </div>
+        <div style="max-height:480px;overflow-y:auto;margin:0 -4px;padding:0 4px">
+        ${cerradas.length > 0 ? cerradas.map(cp => {
+          const tipoClass = cp.type==='Acción'?'badge-green':cp.type==='ETF'?'badge-blue':cp.type==='Crypto'?'badge-orange':'badge-gray';
+          return `<div class="list-item" style="padding:10px 0">
+            <div style="display:flex;align-items:center;gap:8px;min-width:0">
+              <span class="badge ${tipoClass}">${cp.ticker}</span>
+              <div style="font-size:11px;color:var(--text2);min-width:0">
+                <span style="font-weight:600">${cp.type}</span>
+                <span style="margin:0 4px">·</span>
+                <span>${t('costo')} ${fmtFull(cp.costoTotal)} ${cp.moneda}</span>
+              </div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:13px;font-weight:800;color:${pctCol(cp.gpRealizada)}">${(cp.gpRealizada||0)>=0?'+':''}${fmtFull(cp.gpRealizada||0)} ${cp.moneda}</div>
+              <div style="font-size:10px;font-weight:600;color:var(--text2)">${t('realizada')}</div>
+            </div>
+          </div>`;
+        }).join('') : `<div style="text-align:center;color:var(--text2);padding:48px 24px"><div style="font-size:36px;margin-bottom:10px">🔒</div><div style="font-size:13px">${t('sinResultados')||'Sin posiciones cerradas'}</div></div>`}
+        </div>
+      </div>
+
+    </div>
   `;
 }
 
@@ -3985,8 +3997,10 @@ if(window.location.hostname.includes('github.io')){
   // If no flag: normal load or already authenticated — do nothing, let onAuthStateChanged handle it
 }
 
-document.getElementById('btnGoogleLogin').addEventListener('click',async()=>{
+function _initLoginBtn(){
   const btn=document.getElementById('btnGoogleLogin');
+  if(!btn){ document.addEventListener('DOMContentLoaded',_initLoginBtn,{once:true}); return; }
+  btn.addEventListener('click',async()=>{
   const googleSvg='<svg viewBox="0 0 24 24" style="width:22px;height:22px"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>';
   const spinnerHtml='<span style="display:inline-block;width:20px;height:20px;border:2px solid rgba(10,132,255,0.2);border-top-color:#0A84FF;border-radius:50%;animation:spin 0.7s linear infinite;margin-right:8px;vertical-align:middle"></span> ';
   btn.disabled=true;
@@ -4022,7 +4036,9 @@ document.getElementById('btnGoogleLogin').addEventListener('click',async()=>{
     btn.innerHTML=googleSvg+' '+t('loginBtn');
     showLogin(popupFailed?'':t('signinError'));
   }
-});
+  });
+} // end _initLoginBtn
+_initLoginBtn();
 
 let _ignoreSnapCount=0,_saveTimeout=null,_unsub=null,_unsubRegistro=null;
 
