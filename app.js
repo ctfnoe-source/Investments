@@ -1721,18 +1721,78 @@ function renderDashboard(){
       };
       const projMonthsVisible = projMonthsMap[_chartRange] ?? projMonths;
 
-      // La proyección arranca desde la ganancia real actual (patrimonioRendPuro)
-      // Así la línea verde puede cruzarla si el rendimiento supera o queda por debajo
-      const gananciaActual = patrimonioRendPuro;
-      const projDatesAdj = [todayDateStr];
-      const projValsAdj  = [Math.round(gananciaActual)];
+      // ── Línea de proyección histórica + futura ─────────────────────
+      // La línea azul arranca desde la fecha más antigua entre:
+      //   - fechaInicio de cada plataforma (donde está el saldoInicial)
+      //   - fecha del primer movimiento de compra de inversiones
+      // Y traza cuánto debería haber crecido ese capital al re% anual,
+      // tanto en el pasado como hacia el futuro.
+
+      const projDatesAdj = [];
+      const projValsAdj  = [];
+
+      // 1) Buscar la fecha de inicio real y el capital inicial
+      // Plataformas: usar fechaInicio + saldoInicial (en MXN)
+      let fechaInicioReal = null;
+      let capitalInicialReal = 0;
+
+      // Recopilar todos los eventos de capital con su fecha
+      const eventosCapital = [];
+
+      // Plataformas: cada plataforma aporta su saldoInicial en su fechaInicio
+      platforms.forEach(p => {
+        if (!p.fechaInicio || !(p.saldoInicial > 0)) return;
+        const toMXN = v => p.moneda === 'USD' ? v * tc : p.moneda === 'EUR' ? v * eurmxn : v;
+        eventosCapital.push({ fecha: p.fechaInicio, capital: toMXN(p.saldoInicial) });
+      });
+
+      // Inversiones: primer movimiento de compra por ticker
+      movements
+        .filter(m => m.seccion === 'inversiones' && m.tipoMov === 'Compra' && m.fecha)
+        .forEach(m => {
+          const monto = m.montoTotal || (m.cantidad || 0) * (m.precioUnit || 0);
+          const enMXN = m.moneda === 'MXN' ? monto : monto * tc;
+          eventosCapital.push({ fecha: m.fecha, capital: enMXN });
+        });
+
+      if (eventosCapital.length > 0) {
+        // Ordenar por fecha
+        eventosCapital.sort((a, b) => a.fecha.localeCompare(b.fecha));
+        fechaInicioReal = eventosCapital[0].fecha;
+        // Capital inicial = suma de todo el capital invertido/depositado
+        capitalInicialReal = eventosCapital.reduce((s, e) => s + e.capital, 0);
+      }
+
+      // Fallback: usar primer snapshot
+      if (!fechaInicioReal) {
+        const firstSnap = hist.length > 0 ? hist[0] : null;
+        fechaInicioReal = firstSnap ? firstSnap.date : todayDateStr;
+        capitalInicialReal = firstSnap ? (firstSnap.capital || firstSnap.value) : capitalHoy;
+      }
+
+      const firstDateMs = new Date(fechaInicioReal + 'T00:00:00').getTime();
+
+      // 2) Trazar la proyección sobre los puntos históricos filtrados
+      for (const snap of histFiltered) {
+        const snapMs = new Date(snap.date + 'T00:00:00').getTime();
+        const diasDesdeInicio = (snapMs - firstDateMs) / (1000 * 60 * 60 * 24);
+        const anosTranscurridos = Math.max(0, diasDesdeInicio / 365);
+        const gpProyectada = Math.round(capitalInicialReal * (Math.pow(1 + re, anosTranscurridos) - 1));
+        projDatesAdj.push(snap.date);
+        projValsAdj.push(gpProyectada);
+      }
+
+      // 3) Continuar hacia el futuro desde hoy
       const steps = Math.max(2, Math.round(projMonthsVisible * 8));
+      const diasHoyDesdeInicio = (now.getTime() - firstDateMs) / (1000 * 60 * 60 * 24);
       for (let i = 1; i <= steps; i++) {
         const frac = i / steps;
         const dAdj = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         dAdj.setDate(dAdj.getDate() + Math.round(frac * projMonthsVisible * 30.44));
+        const diasTotales = diasHoyDesdeInicio + (frac * projMonthsVisible * 30.44);
+        const anosTotal = Math.max(0, diasTotales / 365);
         projDatesAdj.push(dAdj.toISOString().split('T')[0]);
-        projValsAdj.push(Math.round(gananciaActual + capitalHoy * (Math.pow(1 + re / 12, projMonthsVisible * frac) - 1)));
+        projValsAdj.push(Math.round(capitalInicialReal * (Math.pow(1 + re, anosTotal) - 1)));
       }
 
       // ── Calcular límites X según el rango ──────────────────────────
