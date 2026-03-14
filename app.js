@@ -1035,7 +1035,7 @@ function buildHistoricalSnapshots() {
       capitalPlats += toMXN(p.saldoInicial || 0);
       movements.filter(m => m.seccion === 'plataformas' && m.platform === p.name && m.fecha <= fecha).forEach(m => {
         if (m.tipoPlat === 'Aportación' || m.tipoPlat === 'Transferencia entrada') capitalPlats += toMXN(m.monto || 0);
-        if (m.tipoPlat === 'Retiro' || m.tipoPlat === 'Transferencia salida') capitalPlats -= toMXN(m.monto || 0);
+        if (m.tipoPlat === 'Retiro' || m.tipoPlat === 'Transferencia salida' || m.tipoPlat === 'Gasto') capitalPlats -= toMXN(m.monto || 0);
       });
     });
     let capitalInv = 0;
@@ -1390,7 +1390,7 @@ function renderDashboard(){
   const plats2 = calcPlatforms();
   const capitalPlatsHoy = plats2.reduce((s,p) => {
     const toMXN = v => p.moneda==='USD' ? v*tc2 : p.moneda==='EUR' ? v*eurmxn2 : v;
-    return s + toMXN(p.saldoInicial||0) + toMXN(p.aportacion||0) - toMXN(p.retiro||0);
+    return s + toMXN(p.saldoInicial||0) + toMXN(p.aportacion||0) - toMXN(p.retiro||0) - toMXN(p.gasto||0);
   }, 0);
   const tickers2 = getTickerPositions();
   const capitalInvHoy = tickers2.reduce((s,tk2) => s + (tk2.moneda==='MXN' ? tk2.costoPosicion : tk2.costoPosicion*tc2), 0);
@@ -3075,6 +3075,9 @@ function ejecutarArchivado(cutoffStr) {
     ...movements.filter(m => m.seccion !== 'plataformas' || m.fecha >= cutoffStr)
   ];
   saveAll();
+  if(typeof window.saveAllMovementsToFirebase==='function' && window._currentUser?.uid){
+    window.saveAllMovementsToFirebase();
+  }
   closeModal();
   alert(`✅ ${t('archivoCompletado', nuevosMovsArchivados.length)}`);
 }
@@ -3711,6 +3714,9 @@ function processCSVImport(input){
 
       movements = [...newMovs, ...movements];
       saveAll();
+      if(typeof window.saveAllMovementsToFirebase==='function' && window._currentUser?.uid){
+        window.saveAllMovementsToFirebase();
+      }
 
       let html = `<div style="color:var(--green);font-weight:700;margin-bottom:8px">✅ ${importados} ${t('movementsImported')}</div>`;
       if(errores > 0) html += `<div style="color:var(--orange);margin-bottom:6px">⚠️ ${errores} ${t('rowsSkipped')}</div>`;

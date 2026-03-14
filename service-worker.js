@@ -1,14 +1,13 @@
 // ==================== SERVICE WORKER — Finanzas Pro ====================
 // Versión de caché — cambia este número cada vez que hagas un deploy
 // para que los usuarios reciban la versión más reciente automáticamente.
-const CACHE_VERSION = 'finanzas-pro-v6';
+const CACHE_VERSION = 'finanzas-pro-v13';
 
-// Archivos que se cachean al instalar la app (shell de la aplicación)
+// Archivos JS/CSS que usan Network-first (siempre intenta red antes)
+const NETWORK_FIRST_FILES = ['./app.js', './styles.css', './index.html', '/'];
+
+// Archivos que se cachean al instalar (solo shell estático)
 const SHELL_FILES = [
-  './',
-  './index.html',
-  './app.js',
-  './styles.css',
   './manifest.json',
 ];
 
@@ -27,7 +26,6 @@ self.addEventListener('install', event => {
       console.log('[SW] Cacheando shell de la app...');
       return cache.addAll(SHELL_FILES);
     }).then(() => {
-      // Activar inmediatamente sin esperar a que se cierre la pestaña
       return self.skipWaiting();
     })
   );
@@ -46,7 +44,6 @@ self.addEventListener('activate', event => {
           })
       );
     }).then(() => {
-      // Tomar control de todas las pestañas abiertas inmediatamente
       return self.clients.claim();
     })
   );
@@ -55,6 +52,7 @@ self.addEventListener('activate', event => {
 // ── Fetch: estrategia según el tipo de recurso ────────────────────────────
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
+  const pathname = url.pathname;
 
   // 1. Firebase / APIs externas de datos → SIEMPRE red (nunca cachear)
   if (
@@ -67,11 +65,32 @@ self.addEventListener('fetch', event => {
     url.hostname.includes('alphavantage.co') ||
     url.hostname.includes('frankfurter.app')
   ) {
-    // Network-only: dejar pasar sin interceptar
+    return; // Network-only
+  }
+
+  // 2. app.js y styles.css → Network-first (actualización inmediata)
+  //    Si hay red, siempre sirve la versión más nueva.
+  //    Solo usa caché si no hay conexión (modo offline).
+  if (
+    url.hostname === self.location.hostname &&
+    (NETWORK_FIRST_FILES.some(f => pathname.endsWith(f.replace('./', '/'))) || pathname === '/' || pathname.endsWith('/index.html'))
+  ) {
+    event.respondWith(
+      fetch(event.request).then(response => {
+        if (response && response.status === 200) {
+          const toCache = response.clone();
+          caches.open(CACHE_VERSION).then(cache => cache.put(event.request, toCache));
+        }
+        return response;
+      }).catch(() => {
+        // Sin red → caché como fallback
+        return caches.match(event.request);
+      })
+    );
     return;
   }
 
-  // 2. Archivos del shell (HTML, JS, CSS) → Cache-first, fallback a red
+  // 3. Resto del shell e imágenes locales → Cache-first, fallback a red
   if (
     url.hostname === self.location.hostname ||
     RUNTIME_CACHE_PATTERNS.some(p => url.hostname.includes(p))
@@ -80,9 +99,7 @@ self.addEventListener('fetch', event => {
       caches.match(event.request).then(cached => {
         if (cached) return cached;
 
-        // No está en caché → ir a la red y guardar para próxima vez
         return fetch(event.request).then(response => {
-          // Solo cachear respuestas válidas (no errores, no opaque de otros orígenes críticos)
           if (!response || response.status !== 200) return response;
 
           const toCache = response.clone();
@@ -91,7 +108,6 @@ self.addEventListener('fetch', event => {
           });
           return response;
         }).catch(() => {
-          // Sin red y sin caché → devolver el index.html para que la app maneje el error
           if (event.request.destination === 'document') {
             return caches.match('./index.html');
           }
@@ -104,11 +120,9 @@ self.addEventListener('fetch', event => {
 
 // ── Mensajes desde la app principal ──────────────────────────────────────
 self.addEventListener('message', event => {
-  // La app puede pedir que el SW tome control inmediatamente
   if (event.data === 'SKIP_WAITING') {
     self.skipWaiting();
   }
-  // La app puede pedir que se limpie la caché (útil tras un deploy)
   if (event.data === 'CLEAR_CACHE') {
     caches.delete(CACHE_VERSION).then(() => {
       event.source.postMessage('CACHE_CLEARED');
