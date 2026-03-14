@@ -1547,7 +1547,7 @@ function renderDashboard(){
                 ${t('gananciaReal')}
               </span>
               <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px">
-                <span style="display:inline-flex;gap:2px;align-items:center"><span style="width:4px;height:2px;background:rgba(10,132,255,0.65);border-radius:1px"></span><span style="width:4px;height:2px;background:rgba(10,132,255,0.65);border-radius:1px"></span><span style="width:4px;height:2px;background:rgba(10,132,255,0.65);border-radius:1px"></span></span>
+                <span style="display:inline-flex;gap:2px;align-items:center"><span style="width:5px;height:2px;background:rgba(10,132,255,0.92);border-radius:1px"></span><span style="width:5px;height:2px;background:rgba(10,132,255,0.92);border-radius:1px"></span><span style="width:5px;height:2px;background:rgba(10,132,255,0.92);border-radius:1px"></span></span>
                 ${t('proyeccion')} ${(re*100).toFixed(0)}%
               </span>
             </div>
@@ -1709,6 +1709,41 @@ function renderDashboard(){
       const dynRadius = realDates.length <= 12 ? 3 : realDates.length <= 30 ? 2 : 0;
       const dynLastRadius = realDates.length > 0 ? 5 : 0;
 
+      // Plugin de glow para líneas brillantes
+      const glowPlugin = {
+        id: 'glowLines',
+        beforeDatasetsDraw(chart) {
+          const ctx = chart.ctx;
+          chart.data.datasets.forEach((ds, i) => {
+            const meta = chart.getDatasetMeta(i);
+            if(meta.hidden || !meta.data.length) return;
+            ctx.save();
+            if(i === 0) { // verde - ganancia real
+              ctx.shadowColor = 'rgba(48,209,88,0.6)';
+              ctx.shadowBlur = 12;
+            } else if(i === 1) { // morado - patrimonio
+              ctx.shadowColor = 'rgba(191,90,242,0.55)';
+              ctx.shadowBlur = 10;
+            } else if(i === 2) { // azul - proyección
+              ctx.shadowColor = 'rgba(10,132,255,0.7)';
+              ctx.shadowBlur = 14;
+            }
+            // Redibujar la línea con el glow
+            const points = meta.data;
+            if(points.length < 2) { ctx.restore(); return; }
+            ctx.beginPath();
+            ctx.strokeStyle = ds.borderColor;
+            ctx.lineWidth = (ds.borderWidth || 2) + 0.5;
+            if(ds.borderDash) ctx.setLineDash(ds.borderDash);
+            ctx.moveTo(points[0].x, points[0].y);
+            points.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.restore();
+          });
+        }
+      };
+
       chartInstances.chartEvo=new Chart(ctxE,{type:'line',data:{
         datasets:[
           {
@@ -1731,10 +1766,10 @@ function renderDashboard(){
           {
             label: t('proyeccion')+' '+((re*100).toFixed(0))+'% '+t('anual'),
             data:projDates.map((d,i)=>({x:d,y:projVals[i]})),
-            borderColor:'rgba(10,132,255,0.65)',
+            borderColor:'rgba(10,132,255,0.92)',
             backgroundColor:'transparent',
-            borderWidth:1.5,
-            borderDash:[6,4],
+            borderWidth:2,
+            borderDash:[8,5],
             fill:false,
             tension:0.1,
             pointRadius:0,
@@ -1810,7 +1845,7 @@ function renderDashboard(){
             border:{display:false}
           }
         }
-      }});
+      }, plugins:[glowPlugin] });
     }
 
     const at={};plats.forEach(p=>{at[p.type]=(at[p.type]||0)+platSaldoToMXN(p);});
