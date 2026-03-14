@@ -4118,7 +4118,7 @@ function showWelcomeGate(user, trialExpirado){
   if(!el){
     el = document.createElement('div');
     el.id = 'welcomeGateOverlay';
-    el.style.cssText = 'position:fixed;inset:0;background:var(--bg,#f2f2f7);display:flex;align-items:center;justify-content:center;z-index:9998;font-family:var(--font,"DM Sans",sans-serif)';
+    el.style.cssText = 'position:fixed;inset:0;background:var(--bg,#f2f2f7);display:flex;align-items:center;justify-content:center;z-index:10000;font-family:var(--font,"DM Sans",sans-serif)';
     document.body.appendChild(el);
   }
 
@@ -4213,7 +4213,7 @@ function showPending(user){
   if(!el){
     el = document.createElement('div');
     el.id = 'pendingOverlay';
-    el.style.cssText = 'position:fixed;inset:0;background:var(--bg,#f2f2f7);display:flex;align-items:center;justify-content:center;z-index:9998;font-family:var(--font,"DM Sans",sans-serif)';
+    el.style.cssText = 'position:fixed;inset:0;background:var(--bg,#f2f2f7);display:flex;align-items:center;justify-content:center;z-index:10000;font-family:var(--font,"DM Sans",sans-serif)';
     el.innerHTML = `<div style="background:var(--card,#fff);border-radius:24px;padding:40px 32px;max-width:380px;width:90%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.12)">
       <div style="font-size:48px;margin-bottom:16px">⏳</div>
       <div style="font-size:20px;font-weight:800;letter-spacing:-0.02em;margin-bottom:8px">${t('accessPending')}</div>
@@ -4361,7 +4361,7 @@ onAuthStateChanged(auth,async user=>{
     const { setDoc: _setDoc, getDoc: _getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
     const metaRef = getMetaRef(uid);
     const metaSnap = await _getDoc(metaRef);
-    const isAdmin = uid === ADMIN_UID;
+    const isAdmin = uid === ADMIN_UID || user.email === 'ctfnoe@gmail.com';
 
     const perfilData = {
       uid, email: user.email, displayName: user.displayName,
@@ -4384,6 +4384,7 @@ onAuthStateChanged(auth,async user=>{
     const registroRef = doc(db, 'registros', uid);
     const registroSnap = await _getDoc(registroRef);
     const aprobado = registroSnap.exists() && registroSnap.data()?.aprobado === true;
+    console.log('[Auth] uid:', uid, '| email:', user.email, '| isAdmin:', uid === ADMIN_UID || user.email === 'ctfnoe@gmail.com', '| aprobado:', aprobado);
 
     // ── Sistema de acceso / prueba ───────────────────────────────────
     if(!aprobado && !isAdmin){
@@ -4401,6 +4402,7 @@ onAuthStateChanged(auth,async user=>{
         window._trialUID = uid;
       } else {
         // Mostrar pantalla de bienvenida (con o sin botón de probar)
+        document.getElementById('loginOverlay')?.classList.add('hidden');
         hidePending();
         window._showingWelcomeGate = true;
         showWelcomeGate(user, trialExpirado);
