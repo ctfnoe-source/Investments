@@ -376,6 +376,8 @@ const I18N = {
   }
 };
 let _lang = (typeof window.__initLang !== 'undefined' ? window.__initLang : null) || LS.get('lang') || 'es';
+// Asegurar que el estado de trial arranque limpio
+window._trialStart = null; window._trialMS = null; window._trialUID = null; window._showingWelcomeGate = false;
 function t(key) { return (I18N[_lang] || I18N.en)[key] || (I18N.en[key] || key); }
 function toggleLang() {
   _lang = _lang === 'es' ? 'en' : 'es';
@@ -4358,7 +4360,11 @@ onAuthStateChanged(auth,async user=>{
       const TRIAL_MS = 20 * 60 * 1000;
       const trialKey = 'fp_trial_' + uid;
       let trialStart = null;
-      try { trialStart = parseInt(localStorage.getItem(trialKey)); } catch(e){}
+      try {
+        const raw = localStorage.getItem(trialKey);
+        const parsed = raw ? parseInt(raw) : null;
+        trialStart = (parsed && !isNaN(parsed)) ? parsed : null;
+      } catch(e){}
       const trialYaUsado  = !!trialStart;
       const trialExpirado = trialYaUsado && (Date.now() - trialStart) >= TRIAL_MS;
       const trialActivo   = trialYaUsado && !trialExpirado;
