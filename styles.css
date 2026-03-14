@@ -43,7 +43,7 @@ body {
   background: linear-gradient(135deg, #0A84FF 0%, #5856D6 50%, #BF5AF2 100%);
   display: flex; align-items: center; justify-content: center; transition: opacity 0.4s ease;
 }
-#loginOverlay.hidden { display: none !important; opacity: 0; pointer-events: none; }
+#loginOverlay.hidden { display: none !important; }
 .login-card {
   background: var(--card); border-radius: 28px; padding: 48px 40px;
   max-width: 420px; width: 90%; text-align: center;

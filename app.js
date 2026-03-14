@@ -3954,6 +3954,37 @@ window.signOutUser=async()=>{
   if(_unsubRegistro){_unsubRegistro();_unsubRegistro=null;}
   await signOut(auth);window.location.reload();
 };
+
+// ── Handle redirect result (GitHub Pages uses signInWithRedirect) ──
+let _redirectHandled = false;
+let _redirectPending = window.location.hostname.includes('github.io');
+
+if(_redirectPending){
+  // Show loading overlay immediately so login screen doesn't flash
+  const lo = document.getElementById('loginOverlay');
+  if(lo){
+    lo.innerHTML = '<div style="color:#fff;text-align:center;font-family:var(--font,DM Sans,sans-serif)"><div style="font-size:40px;margin-bottom:16px">💼</div><div style="font-size:18px;font-weight:700;margin-bottom:8px">InvestTracker</div><div style="display:flex;align-items:center;gap:8px;justify-content:center;font-size:14px;opacity:0.85"><span style="width:18px;height:18px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block"></span> Iniciando sesión...</div></div>';
+  }
+  getRedirectResult(auth).then(result => {
+    _redirectHandled = true;
+    _redirectPending = false;
+    // onAuthStateChanged will fire automatically after this resolves
+    if(!result || !result.user){
+      // No redirect in progress — restore normal login screen
+      if(lo){
+        lo.innerHTML = lo.getAttribute('data-original') || '';
+        // If we can't restore, reload to get fresh HTML
+        window.location.reload();
+      }
+    }
+  }).catch(err => {
+    _redirectHandled = true;
+    _redirectPending = false;
+    console.error('[Auth] getRedirectResult error:', err);
+    window.location.reload();
+  });
+}
+
 document.getElementById('btnGoogleLogin').addEventListener('click',async()=>{
   const btn=document.getElementById('btnGoogleLogin');
   btn.disabled=true;
@@ -4353,11 +4384,8 @@ window.eliminarUsuario = async function(uid){
   window.openAdminPanel();
 };
 
-let _authProcessing = false;
 onAuthStateChanged(auth,async user=>{
   if(user){
-    if(_authProcessing) return;
-    _authProcessing = true;
     window._currentUser=user;
     const uid = user.uid;
 
@@ -4408,7 +4436,6 @@ onAuthStateChanged(auth,async user=>{
         document.getElementById('loginOverlay')?.classList.add('hidden');
         hidePending();
         window._showingWelcomeGate = true;
-        _authProcessing = false;
         showWelcomeGate(user, trialExpirado);
         return;
       }
@@ -4452,12 +4479,12 @@ onAuthStateChanged(auth,async user=>{
       if(typeof flushOfflineQueue==='function') flushOfflineQueue();
     },1200);
   }else{
-    _authProcessing = false;
     window._currentUser=null;
     if(_unsub){_unsub();_unsub=null;}
     if(_unsubRegistro){_unsubRegistro();_unsubRegistro=null;}
     hidePending();
-    // Only show login if welcomeGate is not showing
+    // Don't show login if: redirect is still being processed, or welcome gate is showing
+    if(_redirectPending) return;
     if(window._showingWelcomeGate) return;
     showLogin();
   }
