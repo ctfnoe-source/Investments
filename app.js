@@ -4090,7 +4090,7 @@ function showWelcomeGate(user, trialExpirado){
     <div style="font-size:22px;font-weight:800;letter-spacing:-0.03em;margin-bottom:6px">InvestTracker</div>
     <div style="font-size:13px;color:#888;margin-bottom:24px;line-height:1.5">${t('welcomeDesc')}</div>
     ${trialBtn}
-    <a href="mailto:ctfnoe@gmail.com" style="display:block;width:100%;padding:13px;border-radius:16px;border:1.5px solid #0A84FF;color:#0A84FF;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;text-decoration:none;box-sizing:border-box">✉️ ${t('contactBtn')}</a>
+    <a href="https://mail.google.com/mail/?view=cm&to=ctfnoe@gmail.com&su=Solicitud%20de%20acceso%20InvestTracker" target="_blank" rel="noopener" style="display:block;width:100%;padding:13px;border-radius:16px;border:1.5px solid #0A84FF;color:#0A84FF;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;text-decoration:none;box-sizing:border-box">✉️ ${t('contactBtn')}</a>
     <div style="font-size:11px;color:#aaa;margin-bottom:16px">${user.email}</div>
     <button onclick="window.signOutUser()" style="padding:8px 20px;border-radius:20px;border:1px solid #ddd;background:none;cursor:pointer;font-size:12px;color:#888;font-family:inherit">← ${t('salir')}</button>
   </div>`;
