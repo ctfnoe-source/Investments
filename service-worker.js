@@ -1,7 +1,9 @@
 // ==================== SERVICE WORKER — Finanzas Pro ====================
-// Versión de caché — cambia este número cada vez que hagas un deploy
-// para que los usuarios reciban la versión más reciente automáticamente.
-const CACHE_VERSION = 'finanzas-pro-v41';
+// ⚠️  IMPORTANTE PARA DEPLOY: cambia el número al final de CACHE_VERSION
+// cada vez que hagas deploy a Netlify (ej: v42, v43…) para que los usuarios
+// reciban los cambios. Si usas Netlify CLI puedes automatizarlo con:
+//   sed -i "s/finanzas-pro-v[0-9]*/finanzas-pro-v$(date +%Y%m%d%H%M)/" service-worker.js
+const CACHE_VERSION = 'finanzas-pro-v42';
 
 // Archivos JS/CSS que usan Network-first (siempre intenta red antes)
 const NETWORK_FIRST_FILES = ['./app.js', './styles.css', './index.html', '/'];
