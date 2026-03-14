@@ -156,6 +156,7 @@ const I18N = {
     potencial:'Potencial',
     verTodo:'Ver todo →',
     gananciaReal:'Ganancia real',
+    patrimonioTotal2:'Patrimonio total',
     gananciaNetaTotal:'Ganancia neta total',
     graficoApareceraManana:'El gráfico aparecerá mañana',
     necesitas2dias:'Necesitas al menos 2 días de datos.',
@@ -326,6 +327,7 @@ const I18N = {
     potencial:'Potential',
     verTodo:'View all →',
     gananciaReal:'Real Gain',
+    patrimonioTotal2:'Total net worth',
     gananciaNetaTotal:'total net gain',
     graficoApareceraManana:'Chart will appear tomorrow',
     necesitas2dias:'You need at least 2 days of data.',
@@ -1583,6 +1585,7 @@ function renderDashboard(){
   }
   const realDatesFiltered = histFiltered.map(s => s.date);
   const realValsFiltered = histFiltered.map(s => pureYieldAnchored(s));
+  const patrimonioValsFiltered = histFiltered.map(s => s.value || 0);
 
   const curLabel = salaryIsEUR ? '🇪🇺 EUR' : '🇲🇽 MXN';
 
@@ -1674,6 +1677,10 @@ function renderDashboard(){
               <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px">
                 <span style="display:inline-block;width:18px;height:3px;background:linear-gradient(90deg,#30D158,#34D35A);border-radius:2px;box-shadow:0 0 6px rgba(48,209,88,0.4)"></span>
                 ${t('gananciaReal')}
+              </span>
+              <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px">
+                <span style="display:inline-block;width:18px;height:3px;background:rgba(191,90,242,0.8);border-radius:2px"></span>
+                ${t('patrimonioTotal2')}
               </span>
               <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px">
                 <span style="display:inline-flex;gap:2px;align-items:center"><span style="width:4px;height:2px;background:rgba(10,132,255,0.65);border-radius:1px"></span><span style="width:4px;height:2px;background:rgba(10,132,255,0.65);border-radius:1px"></span><span style="width:4px;height:2px;background:rgba(10,132,255,0.65);border-radius:1px"></span></span>
@@ -1816,6 +1823,7 @@ function renderDashboard(){
 
     const realDates = realDatesFiltered;
     const realVals = realValsFiltered;
+    const patrimonioVals = patrimonioValsFiltered;
 
     const now = new Date();
     const todayDateStr = now.toISOString().split('T')[0];
@@ -1861,6 +1869,21 @@ function renderDashboard(){
             pointHoverBorderWidth:2,
           },
           {
+            label: t('patrimonioTotal2'),
+            data:realDates.map((d,i)=>({x:d,y:patrimonioVals[i]})),
+            borderColor:'rgba(191,90,242,0.8)',
+            backgroundColor:'transparent',
+            borderWidth:2,
+            fill:false,
+            tension:0.4,
+            pointRadius: realDates.map((_,i) => i === realDates.length-1 ? dynLastRadius : dynRadius),
+            pointBackgroundColor:'rgba(191,90,242,0.8)',
+            pointBorderColor: isDark?'#1C1C1E':'#fff',
+            pointBorderWidth:2,
+            pointHoverRadius:6,
+            yAxisID:'y2',
+          },
+          {
             label: t('proyeccion')+' '+((re*100).toFixed(0))+'% '+t('anual'),
             data:projDates.map((d,i)=>({x:d,y:projVals[i]})),
             borderColor:'rgba(10,132,255,0.65)',
@@ -1901,14 +1924,13 @@ function renderDashboard(){
               },
               label: ctx => {
                 const val = ctx.parsed.y;
-                const isReal = ctx.datasetIndex === 0;
-                const icon = isReal ? '🟢' : '🔵';
+                const icons = ['🟢','🟣','🔵'];
+                const icon = icons[ctx.datasetIndex] || '⚪';
                 return ` ${icon} ${ctx.dataset.label}: ${fmtFull(val)}`;
               },
               afterBody: items => {
-                if(items.length < 2) return [];
                 const real = items.find(i=>i.datasetIndex===0);
-                const proj = items.find(i=>i.datasetIndex===1);
+                const proj = items.find(i=>i.datasetIndex===2);
                 if(!real||!proj) return [];
                 const diff = proj.parsed.y - real.parsed.y;
                 if(diff === 0) return [];
@@ -1939,6 +1961,12 @@ function renderDashboard(){
           y:{
             grid:{color:gridColor},
             ticks:{font:{size:11},color:tickColor,callback:v=>fmt(v),maxTicksLimit:5},
+            border:{display:false}
+          },
+          y2:{
+            position:'right',
+            grid:{display:false},
+            ticks:{font:{size:10},color:isDark?'rgba(191,90,242,0.6)':'rgba(191,90,242,0.7)',callback:v=>fmt(v),maxTicksLimit:4},
             border:{display:false}
           }
         }
