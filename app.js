@@ -156,7 +156,6 @@ const I18N = {
     potencial:'Potencial',
     verTodo:'Ver todo →',
     gananciaReal:'Ganancia real',
-    patrimonioTotal2:'Patrimonio total',
     gananciaNetaTotal:'Ganancia neta total',
     graficoApareceraManana:'El gráfico aparecerá mañana',
     necesitas2dias:'Necesitas al menos 2 días de datos.',
@@ -327,7 +326,6 @@ const I18N = {
     potencial:'Potential',
     verTodo:'View all →',
     gananciaReal:'Real Gain',
-    patrimonioTotal2:'Total net worth',
     gananciaNetaTotal:'total net gain',
     graficoApareceraManana:'Chart will appear tomorrow',
     necesitas2dias:'You need at least 2 days of data.',
@@ -589,134 +587,6 @@ async function fetchStockPrice(ticker) {
   const k = settings.finnhubKey||''; if(!k) return null;
   try { const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker.toUpperCase()}&token=${k}`); if(!r.ok) throw new Error(); const d = await r.json(); return (d.c && d.c > 0) ? d.c : null; } catch { return null; }
 }
-
-// ── Precios históricos para reconstrucción del gráfico ────────────────────
-async function fetchHistoricalStockPrice(ticker, dateStr) {
-  const k = settings.finnhubKey || ''; if(!k) return null;
-  try {
-    const d = new Date(dateStr + 'T12:00:00Z');
-    const from = Math.floor(d.getTime()/1000) - 3600;
-    const to   = Math.floor(d.getTime()/1000) + 86400;
-    const url  = `https://finnhub.io/api/v1/stock/candle?symbol=${ticker.toUpperCase()}&resolution=D&from=${from}&to=${to}&token=${k}`;
-    const r = await fetch(url); if(!r.ok) return null;
-    const data = await r.json();
-    if(data.s === 'ok' && data.c && data.c.length > 0) return data.c[0];
-    return null;
-  } catch { return null; }
-}
-
-async function fetchHistoricalCryptoPrice(ticker, dateStr) {
-  const coinId = CRYPTO_MAP[ticker.toUpperCase()]; if(!coinId) return null;
-  try {
-    // CoinGecko history endpoint: /coins/{id}/history?date=dd-mm-yyyy
-    const [y,m,d] = dateStr.split('-');
-    const url = `https://api.coingecko.com/api/v3/coins/${coinId}/history?date=${d}-${m}-${y}&localization=false`;
-    const r = await fetch(url); if(!r.ok) return null;
-    const data = await r.json();
-    return data.market_data?.current_price?.usd || null;
-  } catch { return null; }
-}
-
-async function buildHistoricalWithPrices() {
-  const finnhubKey = settings.finnhubKey || '';
-  const tc = settings.tipoCambio || 18;
-  const eurmxn = getEurMxn();
-  const todayStr = today();
-
-  // Fechas con movimientos de inversión — desde el primer movimiento registrado
-  const primerMov = movements.filter(m => m.seccion === 'inversiones' && m.fecha < todayStr)
-    .map(m => m.fecha).sort()[0];
-  if(!primerMov) return;
-  const cutoffStr = primerMov;
-
-  const invMovs = movements.filter(m => m.seccion === 'inversiones' && m.fecha >= cutoffStr && m.fecha < todayStr);
-  if(invMovs.length === 0) return;
-
-  // Fechas únicas que no tienen snapshot real
-  const fechasConMov = [...new Set(invMovs.map(m => m.fecha))].sort();
-  const fechasSinSnap = fechasConMov.filter(f => !patrimonioHistory.find(s => s.date === f && !s.synthetic));
-  if(fechasSinSnap.length === 0) return;
-
-  // Tickers únicos en inversiones
-  const tickerMap = {};
-  movements.filter(m => m.seccion === 'inversiones').forEach(m => {
-    if(!m.ticker) return;
-    const key = m.ticker.toUpperCase();
-    if(!tickerMap[key]) tickerMap[key] = { type: m.tipoActivo || 'Acción', moneda: m.moneda || 'USD' };
-  });
-
-  // Caché de precios históricos para no repetir llamadas
-  const priceCache = {};
-
-  for(const fecha of fechasSinSnap) {
-    // Calcular capital de plataformas en esa fecha (igual que buildHistoricalSnapshots)
-    let capitalPlats = 0;
-    platforms.forEach(p => {
-      if(p.fechaInicio && p.fechaInicio > fecha) return;
-      const toMXN = v => p.moneda === 'USD' ? v*tc : p.moneda === 'EUR' ? v*eurmxn : v;
-      capitalPlats += toMXN(p.saldoInicial || 0);
-      movements.filter(m => m.seccion === 'plataformas' && m.platform === p.name && m.fecha <= fecha).forEach(m => {
-        if(m.tipoPlat === 'Aportación' || m.tipoPlat === 'Transferencia entrada') capitalPlats += toMXN(m.monto || 0);
-        if(m.tipoPlat === 'Retiro' || m.tipoPlat === 'Transferencia salida' || m.tipoPlat === 'Gasto') capitalPlats -= toMXN(m.monto || 0);
-      });
-    });
-
-    // Calcular valor de inversiones en esa fecha con precios históricos reales
-    let valorInv = 0;
-    let capitalInv = 0;
-
-    for(const [ticker, info] of Object.entries(tickerMap)) {
-      // Posición en esa fecha
-      const compras = movements.filter(m => m.seccion === 'inversiones' && m.ticker?.toUpperCase() === ticker && m.tipoMov === 'Compra' && m.fecha <= fecha);
-      const ventas  = movements.filter(m => m.seccion === 'inversiones' && m.ticker?.toUpperCase() === ticker && m.tipoMov === 'Venta'  && m.fecha <= fecha);
-      const cantActual = compras.reduce((s,m) => s+(m.cantidad||0), 0) - ventas.reduce((s,m) => s+(m.cantidad||0), 0);
-      if(cantActual <= 0) continue;
-
-      const costo = compras.reduce((s,m) => s+(m.montoTotal||(m.cantidad||0)*(m.precioUnit||0)), 0)
-                  - ventas.reduce((s,m)  => s+(m.montoTotal||(m.cantidad||0)*(m.precioUnit||0)), 0);
-      capitalInv += info.moneda === 'MXN' ? costo : costo * tc;
-
-      // Buscar precio histórico (con caché)
-      const cacheKey = ticker + '_' + fecha;
-      let precioHist = priceCache[cacheKey];
-
-      if(precioHist === undefined) {
-        const isCrypto = !!CRYPTO_MAP[ticker];
-        if(isCrypto) {
-          precioHist = await fetchHistoricalCryptoPrice(ticker, fecha);
-        } else if(finnhubKey) {
-          precioHist = await fetchHistoricalStockPrice(ticker, fecha);
-          await new Promise(r => setTimeout(r, 250)); // respetar rate limit
-        }
-        priceCache[cacheKey] = precioHist ?? null;
-      }
-
-      if(precioHist && precioHist > 0) {
-        const valorPos = cantActual * precioHist;
-        valorInv += info.moneda === 'MXN' ? valorPos : valorPos * tc;
-      } else {
-        // Sin precio histórico: usar costo como fallback
-        valorInv += info.moneda === 'MXN' ? costo : costo * tc;
-      }
-    }
-
-    const value = Math.round(capitalPlats + Math.max(0, valorInv));
-    const capital = Math.round(capitalPlats + Math.max(0, capitalInv));
-    if(value > 0){
-      // Reemplazar sintético existente si lo hay
-      patrimonioHistory = patrimonioHistory.filter(s => !(s.date === fecha && s.synthetic));
-      patrimonioHistory.push({ date: fecha, value, capital, synthetic: true, historicalPrices: true });
-    }
-  }
-
-  patrimonioHistory.sort((a,b) => a.date < b.date ? -1 : 1);
-  const seen = new Map();
-  patrimonioHistory.forEach(s => { if(!seen.has(s.date) || !s.synthetic) seen.set(s.date, s); });
-  patrimonioHistory = [...seen.values()];
-  LS.set('patrimonioHistory', patrimonioHistory);
-  renderPageInternal(currentTab);
-}
-
 async function fetchAlphaVantagePrice(ticker, targetMoneda) {
   const k = settings.alphaVantageKey || ''; if (!k) return null;
   const base = ticker.toUpperCase().replace(/\.(L|DE|AS|PA|MI|SW|LON|DEX)$/i, '');
@@ -1175,29 +1045,10 @@ function buildHistoricalSnapshots() {
   fechasOrdenadas.forEach(fecha => {
     if (patrimonioHistory.find(s => s.date === fecha)) return;
     let capitalPlats = 0;
-    let valorPlats = 0; // valor real si hay Saldo Actual
-    let hayValorReal = false;
     platforms.forEach(p => {
       if (p.fechaInicio && p.fechaInicio > fecha) return;
       const toMXN = v => p.moneda === 'USD' ? v*tc : p.moneda === 'EUR' ? v*eurmxn : v;
       capitalPlats += toMXN(p.saldoInicial || 0);
-      // Usar el Saldo Actual más reciente en o antes de esta fecha como valor real
-      const saldosActuales = movements.filter(m =>
-        m.seccion === 'plataformas' && m.platform === p.name &&
-        m.tipoPlat === 'Saldo Actual' && m.fecha <= fecha
-      ).sort((a,b) => a.fecha > b.fecha ? -1 : 1);
-      if (saldosActuales.length > 0) {
-        valorPlats += toMXN(saldosActuales[0].monto || 0);
-        hayValorReal = true;
-      } else {
-        // Sin Saldo Actual: calcular desde aportaciones/retiros
-        let saldoCalc = toMXN(p.saldoInicial || 0);
-        movements.filter(m => m.seccion === 'plataformas' && m.platform === p.name && m.fecha <= fecha).forEach(m => {
-          if (m.tipoPlat === 'Aportación' || m.tipoPlat === 'Transferencia entrada') saldoCalc += toMXN(m.monto || 0);
-          if (m.tipoPlat === 'Retiro' || m.tipoPlat === 'Transferencia salida' || m.tipoPlat === 'Gasto') saldoCalc -= toMXN(m.monto || 0);
-        });
-        valorPlats += saldoCalc;
-      }
       movements.filter(m => m.seccion === 'plataformas' && m.platform === p.name && m.fecha <= fecha).forEach(m => {
         if (m.tipoPlat === 'Aportación' || m.tipoPlat === 'Transferencia entrada') capitalPlats += toMXN(m.monto || 0);
         if (m.tipoPlat === 'Retiro' || m.tipoPlat === 'Transferencia salida' || m.tipoPlat === 'Gasto') capitalPlats -= toMXN(m.monto || 0);
@@ -1209,11 +1060,7 @@ function buildHistoricalSnapshots() {
     movements.filter(m => m.seccion === 'inversiones' && m.tipoMov === 'Venta' && m.fecha <= fecha)
       .forEach(m => { const monto = m.montoTotal || (m.cantidad||0)*(m.precioUnit||0); capitalInv -= m.moneda==='MXN' ? monto : monto*tc; });
     const capital = Math.round(capitalPlats + Math.max(0, capitalInv));
-    // Si hay Saldo Actual real, usar ese como valor; si no, interpolar ganancia después
-    const valorBase = hayValorReal
-      ? Math.round(valorPlats + Math.max(0, capitalInv))
-      : null; // se llenará con interpolación abajo
-    if (capital > 0) capitalPorFecha.push({ date: fecha, capital, valorReal: valorBase });
+    if (capital > 0) capitalPorFecha.push({ date: fecha, capital });
   });
   if (capitalPorFecha.length === 0) return;
   const todaySnap = patrimonioHistory.find(s => s.date === todayStr && !s.synthetic);
@@ -1221,13 +1068,11 @@ function buildHistoricalSnapshots() {
   const fechaInicio = new Date(capitalPorFecha[0].date);
   const fechaHoy = new Date(todayStr);
   const diasTotal = Math.max(1, (fechaHoy - fechaInicio) / (1000*60*60*24));
-  capitalPorFecha.forEach(({ date, capital, valorReal }) => {
+  capitalPorFecha.forEach(({ date, capital }) => {
     const diasDesdeInicio = (new Date(date) - fechaInicio) / (1000*60*60*24);
     const progreso = diasDesdeInicio / diasTotal;
     const gananciaInterpolada = Math.round(gananciaHoy * progreso);
-    // Usar valor real si existe, sino interpolar
-    const value = valorReal !== null ? valorReal : capital + gananciaInterpolada;
-    patrimonioHistory.push({ date, value, capital, synthetic: true });
+    patrimonioHistory.push({ date, value: capital + gananciaInterpolada, capital, synthetic: true });
   });
   patrimonioHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
   const seen = new Map();
@@ -1333,11 +1178,6 @@ function saveAll(changedMovId, deletedMovId, changedSnapDate){
   _recalcAndSaveSnapshot();
   buildHistoricalSnapshots();
   renderPageInternal(currentTab);
-  // Si hay movimientos de inversión, reconstruir historial con precios reales
-  if(changedMovId){
-    const changedMov = movements.find(m => m.id === changedMovId || (changedMovId.includes('|') && changedMovId.includes(m.id)));
-    if(changedMov?.seccion === 'inversiones') setTimeout(() => buildHistoricalWithPrices(), 1000);
-  }
   if (!_isOnline) { queueSave(window.getAppData()); setOfflineBanner('offline'); }
   else if(typeof window.saveToFirebase==='function') {
     window.saveToFirebase(false, changedMovId, deletedMovId, changedSnapDate);
@@ -1610,7 +1450,6 @@ function renderDashboard(){
   }
   const realDatesFiltered = histFiltered.map(s => s.date);
   const realValsFiltered = histFiltered.map(s => pureYieldAnchored(s));
-  const patrimonioValsFiltered = histFiltered.map(s => s.value || 0);
 
   const curLabel = salaryIsEUR ? '🇪🇺 EUR' : '🇲🇽 MXN';
 
@@ -1692,48 +1531,45 @@ function renderDashboard(){
     <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden">
       <div style="padding:24px 28px 16px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+          <!-- IZQUIERDA: Patrimonio Total en morado + leyendas -->
           <div>
-            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2);margin-bottom:4px">📈 ${t('netWorthEvolution')}</div>
-            <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
-              <div style="font-size:18px;font-weight:800;letter-spacing:-0.03em;color:${pctCol(patrimonioRendPuro)};line-height:1">${fmt(patrimonioRendPuro)}</div>
-              <span style="font-size:12px;color:var(--text2)">${t('gananciaNetaTotal')}</span>
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(191,90,242,0.8);margin-bottom:4px">📈 ${t('patrimonioTotal')}</div>
+            <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+              <div style="font-size:22px;font-weight:800;letter-spacing:-0.03em;color:rgba(191,90,242,0.9);line-height:1">${fmt(patrimonio)}</div>
             </div>
-            <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap">
-              <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px">
-                <span style="display:inline-block;width:18px;height:3px;background:linear-gradient(90deg,#30D158,#34D35A);border-radius:2px;box-shadow:0 0 6px rgba(48,209,88,0.4)"></span>
-                ${t('gananciaReal')}
-              </span>
-              <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px">
-                <span style="display:inline-block;width:18px;height:3px;background:rgba(191,90,242,0.8);border-radius:2px"></span>
+            <div style="display:flex;gap:14px;margin-top:10px;flex-wrap:wrap">
+              <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px">
+                <span style="display:inline-block;width:16px;height:3px;background:rgba(191,90,242,0.8);border-radius:2px"></span>
                 ${t('patrimonioTotal2')}
               </span>
-              <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px">
+              <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px">
+                <span style="display:inline-block;width:16px;height:3px;background:linear-gradient(90deg,#30D158,#34D35A);border-radius:2px"></span>
+                ${t('gananciaReal')}
+              </span>
+              <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px">
                 <span style="display:inline-flex;gap:2px;align-items:center"><span style="width:4px;height:2px;background:rgba(10,132,255,0.65);border-radius:1px"></span><span style="width:4px;height:2px;background:rgba(10,132,255,0.65);border-radius:1px"></span><span style="width:4px;height:2px;background:rgba(10,132,255,0.65);border-radius:1px"></span></span>
-                ${t('proyeccion')} ${(re*100).toFixed(0)}% ${t('anual')}
+                ${t('proyeccion')} ${(re*100).toFixed(0)}%
               </span>
             </div>
           </div>
-          <div style="display:flex;gap:24px;align-items:flex-start">
+          <!-- DERECHA: Ganancia neta + Esperado 1 año + CAGR -->
+          <div style="display:flex;gap:20px;align-items:flex-start">
             <div style="text-align:right">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2);margin-bottom:2px">${t('patrimonioTotal')}</div>
-              <div style="font-size:18px;font-weight:800;letter-spacing:-0.03em;color:var(--text);line-height:1">${fmt(patrimonio)}</div>
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--green);margin-bottom:2px">${t('gananciaNetaTotal')}</div>
+              <div style="font-size:18px;font-weight:800;letter-spacing:-0.03em;color:${pctCol(patrimonioRendPuro)};line-height:1">${patrimonioRendPuro>=0?'+':''}${fmt(patrimonioRendPuro)}</div>
             </div>
             <div style="width:1px;background:var(--border);align-self:stretch;margin:2px 0"></div>
             <div style="text-align:right">
               <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--blue);margin-bottom:2px">${t('expectedGainIn')} ${projInterval.label}</div>
               <div style="font-size:18px;font-weight:800;letter-spacing:-0.03em;color:var(--blue);line-height:1">+${fmt(Math.round(capitalHoy * (Math.pow(1+re/12, projMonths) - 1)))}</div>
-              <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:5px">
-                <span style="font-size:12px;color:var(--text2);font-weight:700">${t('on')} ${fmt(capitalHoy)} ${t('capital')}</span>
-                <span style="font-size:11px;color:var(--text3)">·</span>
-                <span style="font-size:11px;font-weight:700;color:var(--blue)">${(re*100).toFixed(0)}%/${t('year')}</span>
-              </div>
+              <div style="font-size:10px;color:var(--text2);margin-top:3px">${(re*100).toFixed(0)}%/${t('year')}</div>
             </div>
             ${rendAnualReal !== null ? `
             <div style="width:1px;background:var(--border);align-self:stretch;margin:2px 0"></div>
             <div style="text-align:right">
               <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--purple);margin-bottom:2px">${t('cagrReal')}</div>
-              <div style="font-size:20px;font-weight:800;letter-spacing:-0.03em;color:${pctCol(rendAnualReal)};line-height:1">${rendAnualReal>=0?'+':''}${(rendAnualReal*100).toFixed(1)}%</div>
-              <div style="font-size:10px;color:var(--text2);margin-top:4px">${t('annualized')} · ${Math.round((new Date(hist[hist.length-1].date)-new Date(hist[0].date))/(1000*60*60*24))}d ${t('history')}</div>
+              <div style="font-size:18px;font-weight:800;letter-spacing:-0.03em;color:${pctCol(rendAnualReal)};line-height:1">${rendAnualReal>=0?'+':''}${(rendAnualReal*100).toFixed(1)}%</div>
+              <div style="font-size:10px;color:var(--text2);margin-top:3px">${t('annualized')} · ${Math.round((new Date(hist[hist.length-1].date)-new Date(hist[0].date))/(1000*60*60*24))}d</div>
             </div>` : ''}
           </div>
         </div>
@@ -1816,10 +1652,11 @@ function renderDashboard(){
         <div style="max-height:380px;overflow-y:auto;margin:0 -4px;padding:0 4px">
         ${tickerList.length>0?tickerList.filter(tk=>tk.cantActual>0).sort((a,b)=>b.costoTotal-a.costoTotal).map(tk=>{
           const tipoClass=tk.type==='Acción'?'badge-green':tk.type==='ETF'?'badge-blue':tk.type==='Crypto'?'badge-orange':'badge-gray';
+          const monedaLabel=tk.moneda==='MXN'?'MXN':'USD';
           return`<div class="list-item">
             <div style="display:flex;align-items:center;gap:8px">
               <span class="badge ${tipoClass}">${tk.ticker}</span>
-              <div style="font-size:11px;color:var(--text2)">×${tk.cantActual} · <span class="${tk.priceCssClass}">${tk.priceLabel}</span></div>
+              <div><div style="font-size:13px;font-weight:600">${tk.type} <span class="badge badge-gray" style="font-size:9px">${monedaLabel}</span>${tk.cantActual<=0?` <span class="badge badge-gray" style="font-size:9px">${t('cerrada')}</span>`:''}</div><div style="font-size:10px;color:var(--text2)">×${tk.cantActual} · <span class="${tk.priceCssClass}">${tk.priceLabel}</span></div></div>
             </div>
             <div style="text-align:right"><div style="font-size:13px;font-weight:700;color:${pctCol(tk.gpNoRealizada)}">${tk.gpNoRealizada!==null?(tk.gpNoRealizada>=0?'+':'')+fmtFull(tk.gpNoRealizada):'—'}</div><div style="font-size:10px;font-weight:600;color:${pctCol(tk.pctNoRealizada)}">${tk.gpNoRealizada!==null?fmtPct(tk.pctNoRealizada):t('sinPrecio')}</div></div>
           </div>`;
@@ -1847,7 +1684,6 @@ function renderDashboard(){
 
     const realDates = realDatesFiltered;
     const realVals = realValsFiltered;
-    const patrimonioVals = patrimonioValsFiltered;
 
     const now = new Date();
     const todayDateStr = now.toISOString().split('T')[0];
@@ -1893,21 +1729,6 @@ function renderDashboard(){
             pointHoverBorderWidth:2,
           },
           {
-            label: t('patrimonioTotal2'),
-            data:realDates.map((d,i)=>({x:d,y:patrimonioVals[i]})),
-            borderColor:'rgba(191,90,242,0.8)',
-            backgroundColor:'transparent',
-            borderWidth:2,
-            fill:false,
-            tension:0.4,
-            pointRadius: realDates.map((_,i) => i === realDates.length-1 ? dynLastRadius : dynRadius),
-            pointBackgroundColor:'rgba(191,90,242,0.8)',
-            pointBorderColor: isDark?'#1C1C1E':'#fff',
-            pointBorderWidth:2,
-            pointHoverRadius:6,
-            yAxisID:'y2',
-          },
-          {
             label: t('proyeccion')+' '+((re*100).toFixed(0))+'% '+t('anual'),
             data:projDates.map((d,i)=>({x:d,y:projVals[i]})),
             borderColor:'rgba(10,132,255,0.65)',
@@ -1948,13 +1769,14 @@ function renderDashboard(){
               },
               label: ctx => {
                 const val = ctx.parsed.y;
-                const icons = ['🟢','🟣','🔵'];
-                const icon = icons[ctx.datasetIndex] || '⚪';
+                const isReal = ctx.datasetIndex === 0;
+                const icon = isReal ? '🟢' : '🔵';
                 return ` ${icon} ${ctx.dataset.label}: ${fmtFull(val)}`;
               },
               afterBody: items => {
+                if(items.length < 2) return [];
                 const real = items.find(i=>i.datasetIndex===0);
-                const proj = items.find(i=>i.datasetIndex===2);
+                const proj = items.find(i=>i.datasetIndex===1);
                 if(!real||!proj) return [];
                 const diff = proj.parsed.y - real.parsed.y;
                 if(diff === 0) return [];
@@ -1985,12 +1807,6 @@ function renderDashboard(){
           y:{
             grid:{color:gridColor},
             ticks:{font:{size:11},color:tickColor,callback:v=>fmt(v),maxTicksLimit:5},
-            border:{display:false}
-          },
-          y2:{
-            position:'right',
-            grid:{display:false},
-            ticks:{font:{size:10},color:isDark?'rgba(191,90,242,0.6)':'rgba(191,90,242,0.7)',callback:v=>fmt(v),maxTicksLimit:4},
             border:{display:false}
           }
         }
@@ -2976,21 +2792,33 @@ function renderInversiones(){
         const gpMXN = valorMXN - costoMXN;
         const pctPort = totalValor > 0 ? valorMXN/totalValor : 0;
         const brokersInfo = pos.brokersSaldo&&pos.brokersSaldo.length>0 ? pos.brokersSaldo.map(b=>b.broker+(b.cantActual!==pos.cantActual?' ('+( b.cantActual%1===0?b.cantActual:parseFloat(b.cantActual.toFixed(4)))+')':'')).join(', ') : '';
-        return `<div class="list-item" style="padding:10px 0">
-          <div style="display:flex;align-items:center;gap:8px;min-width:0">
-            <span class="badge ${tipoClass}">${pos.ticker}</span>
-            <div style="font-size:11px;color:var(--text2);min-width:0">
-              <span>×${pos.cantActual%1===0?pos.cantActual:parseFloat(pos.cantActual.toFixed(4))}</span>
-              <span style="margin:0 4px">·</span>
-              <span class="${pos.priceCssClass}">${pos.priceLabel}</span>
-              <span style="margin:0 4px">·</span>
-              <span>${(pctPort*100).toFixed(1)}%</span>
-              ${brokersInfo?`<span style="margin-left:4px">· 🏦 ${brokersInfo}</span>`:''}
+        return `<div class="list-item" style="flex-direction:column;align-items:stretch;gap:8px;padding:12px 0">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:16px;font-weight:800">${pos.ticker}</span>
+              <span class="badge ${tipoClass}">${pos.type}</span>
+              ${monedaBadge(pos.moneda)}
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:15px;font-weight:800">${pos.moneda==='MXN'?fmt(pos.valorActual||pos.costoPosicion||0):fmtFull(pos.valorActual||pos.costoPosicion||0)+' '+pos.moneda}</div>
+              <div style="font-size:11px;color:var(--text2)">${fmt(valorMXN)} MXN</div>
             </div>
           </div>
-          <div style="text-align:right;flex-shrink:0">
-            <div style="font-size:13px;font-weight:800;color:${pctCol(pos.gpNoRealizada)}">${pos.gpNoRealizada!==null?(pos.gpNoRealizada>=0?'+':'')+fmtFull(pos.gpNoRealizada)+' '+pos.moneda:t('sinPrecio')}</div>
-            <div style="font-size:10px;font-weight:600;color:${pctCol(pos.pctNoRealizada)}">${pos.gpNoRealizada!==null?fmtPct(pos.pctNoRealizada):''}</div>
+          <div style="display:grid;grid-template-columns:${isMobile()?'repeat(2,1fr)':'repeat(4,1fr)'};gap:8px;font-size:11px">
+            <div><div style="color:var(--text2)">${t('cantidad')}</div><div style="font-weight:700">${pos.cantActual}</div></div>
+            <div><div style="color:var(--text2)">${t('precioMedio')}</div><div style="font-weight:700">${pos.moneda==='MXN'?'$':'US$'}${pos.precioCostoPromedio.toFixed(2)}</div></div>
+            <div><div style="color:var(--text2)">${t('precioActual')}</div><div style="font-weight:700" class="${pos.priceCssClass}">${pos.priceLabel}</div></div>
+            <div><div style="color:var(--text2)">% ${t('portfolio')}</div><div style="font-weight:700">${(pctPort*100).toFixed(1)}%</div></div>
+          </div>
+          ${brokersInfo?`<div style="font-size:11px;color:var(--text2)">🏦 ${brokersInfo}</div>`:''}
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="height:4px;flex:1;background:var(--progress-bg);border-radius:3px;margin-right:12px">
+              <div style="height:4px;border-radius:3px;background:${pctCol(gpMXN)};width:${Math.min(pctPort*100,100).toFixed(1)}%"></div>
+            </div>
+            <div style="text-align:right">
+              <span style="font-size:13px;font-weight:800;color:${pctCol(pos.gpNoRealizada)}">${pos.gpNoRealizada!==null?(pos.gpNoRealizada>=0?'+':'')+fmtFull(pos.gpNoRealizada)+' '+pos.moneda:t('sinPrecio')}</span>
+              ${pos.gpNoRealizada!==null?`<span style="font-size:11px;color:${pctCol(pos.pctNoRealizada)};margin-left:6px;font-weight:600">${fmtPct(pos.pctNoRealizada)}</span>`:''}
+            </div>
           </div>
         </div>`;
       }).join('') : `<div style="text-align:center;color:var(--text2);padding:48px 24px"><div style="font-size:40px;margin-bottom:12px">📈</div><div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">${t('sinPosicionesAbiertas')}</div><div style="font-size:13px;margin-bottom:20px">${t('registraPrimeraCompra')}</div><button class="btn btn-primary" onclick="openMovModal('inversiones')">+ ${t('primerMovimiento')}</button></div>`}
@@ -4118,8 +3946,6 @@ async function loadSubcollections(uid){
   _recalcAndSaveSnapshot();
   buildHistoricalSnapshots();
   renderPageInternal(currentTab);
-  // Reconstruir historial con precios reales en background (sin bloquear UI)
-  setTimeout(() => buildHistoricalWithPrices(), 1500);
 }
 
 function setupFirestore(uid){
