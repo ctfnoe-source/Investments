@@ -3,7 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Finanzas Pro — Dashboard Financiero</title>
+  <title>InvestTracker — Dashboard Financiero Personal</title>
+  <!-- SEO -->
+  <meta name="description" content="InvestTracker — La alternativa inteligente a las plantillas de Excel y Google Sheets. Dashboard financiero personal para rastrear inversiones, gastos y metas. Controla tu patrimonio en tiempo real, sin fórmulas.">
+  <meta name="keywords" content="
+    investment tracker, portfolio tracker, wealth tracker, personal finance dashboard, net worth tracker, stock tracker, investment portfolio, portfolio manager, expense tracker, financial goals,
+    control de inversiones, dashboard financiero, rastrear inversiones, control de gastos, metas financieras, patrimonio personal, seguimiento de inversiones, finanzas personales, gestor de cartera, control patrimonial, ahorro personal, tracker financiero, rendimiento de inversiones, portafolio personal,
+    plantilla excel inversiones, plantilla google sheets finanzas, hoja de calculo inversiones, dashboard excel finanzas, plantilla control gastos excel, spreadsheet inversiones, google sheets portfolio, excel finanzas personales, plantilla ahorro excel, dashboard finanzas google sheets,
+    alternative to excel budget, replace excel spreadsheet, better than google sheets finance, finance app no excel, investment tracking app
+  ">
+  <meta name="author" content="InvestTracker">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://investtrackers.netlify.app">
+
+  <!-- Open Graph (para redes sociales) -->
+  <meta property="og:title" content="InvestTracker — Dashboard Financiero Personal">
+  <meta property="og:description" content="La alternativa inteligente a Excel y Google Sheets. Controla inversiones, gastos y metas financieras en un solo lugar, sin fórmulas.">
+  <meta property="og:url" content="https://investtrackers.netlify.app">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="es_MX">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="InvestTracker — Dashboard Financiero Personal">
+  <meta name="twitter:description" content="La alternativa inteligente a Excel y Google Sheets para controlar tus inversiones y finanzas personales.">
+
   <meta name="theme-color" content="#0A84FF">
 
   <!-- PWA: instalar como app -->
@@ -12,12 +36,29 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Finanzas Pro">
+  <meta name="apple-mobile-web-app-title" content="InvestTracker">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
   <link rel="stylesheet" href="styles.css">
+
+  <!-- Aplicar idioma inmediatamente desde localStorage -->
+  <script>
+    (function() {
+      try {
+        var stored = localStorage.getItem('fp_lang');
+        var lang = stored ? JSON.parse(stored) : 'es';
+        if (lang !== 'es' && lang !== 'en') lang = 'es';
+        window.__initLang = lang;
+        // Patch the button text as soon as DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+          var btn = document.getElementById('langToggleBtn');
+          if (btn) btn.textContent = lang === 'es' ? '\uD83C\uDF10 EN' : '\uD83C\uDF10 ES';
+        });
+      } catch(e) {}
+    })();
+  </script>
 </head>
 <body>
 
@@ -29,7 +70,7 @@
 <div id="loginOverlay">
   <div class="login-card">
     <div class="login-logo">💼</div>
-    <div class="login-title">Finanzas Pro</div>
+    <div class="login-title">InvestTracker</div>
     <div class="login-sub">Tu dashboard financiero personal.<br>Inicia sesión con tu cuenta de Google para continuar.</div>
     <button class="btn-google" id="btnGoogleLogin">
       <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
@@ -110,7 +151,7 @@
 <div id="pwaInstallBanner" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9000;background:var(--card,#fff);border:1px solid var(--border,#e5e5ea);border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,0.18);padding:16px 20px;max-width:340px;width:calc(100% - 40px);font-family:'DM Sans',sans-serif;display:none;align-items:center;gap:14px">
   <div style="font-size:36px;flex-shrink:0">💼</div>
   <div style="flex:1;min-width:0">
-    <div style="font-size:14px;font-weight:800;letter-spacing:-0.02em;margin-bottom:2px">Instalar Finanzas Pro</div>
+    <div style="font-size:14px;font-weight:800;letter-spacing:-0.02em;margin-bottom:2px">Instalar InvestTracker</div>
     <div style="font-size:12px;color:#666;line-height:1.4">Accede desde tu pantalla de inicio, sin navegador y sin internet.</div>
   </div>
   <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
