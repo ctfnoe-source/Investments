@@ -1721,16 +1721,18 @@ function renderDashboard(){
       };
       const projMonthsVisible = projMonthsMap[_chartRange] ?? projMonths;
 
-      // Generar puntos de proyección proporcionales al rango
+      // La proyección arranca desde la ganancia real actual (patrimonioRendPuro)
+      // Así la línea verde puede cruzarla si el rendimiento supera o queda por debajo
+      const gananciaActual = patrimonioRendPuro;
       const projDatesAdj = [todayDateStr];
-      const projValsAdj  = [0];
+      const projValsAdj  = [Math.round(gananciaActual)];
       const steps = Math.max(2, Math.round(projMonthsVisible * 8));
       for (let i = 1; i <= steps; i++) {
         const frac = i / steps;
         const dAdj = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         dAdj.setDate(dAdj.getDate() + Math.round(frac * projMonthsVisible * 30.44));
         projDatesAdj.push(dAdj.toISOString().split('T')[0]);
-        projValsAdj.push(Math.round(capitalHoy * (Math.pow(1 + re / 12, projMonthsVisible * frac) - 1)));
+        projValsAdj.push(Math.round(gananciaActual + capitalHoy * (Math.pow(1 + re / 12, projMonthsVisible * frac) - 1)));
       }
 
       // ── Calcular límites X según el rango ──────────────────────────
