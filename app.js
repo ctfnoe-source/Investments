@@ -4353,8 +4353,11 @@ window.eliminarUsuario = async function(uid){
   window.openAdminPanel();
 };
 
+let _authProcessing = false;
 onAuthStateChanged(auth,async user=>{
   if(user){
+    if(_authProcessing) return;
+    _authProcessing = true;
     window._currentUser=user;
     const uid = user.uid;
 
@@ -4405,6 +4408,7 @@ onAuthStateChanged(auth,async user=>{
         document.getElementById('loginOverlay')?.classList.add('hidden');
         hidePending();
         window._showingWelcomeGate = true;
+        _authProcessing = false;
         showWelcomeGate(user, trialExpirado);
         return;
       }
@@ -4448,11 +4452,13 @@ onAuthStateChanged(auth,async user=>{
       if(typeof flushOfflineQueue==='function') flushOfflineQueue();
     },1200);
   }else{
+    _authProcessing = false;
     window._currentUser=null;
     if(_unsub){_unsub();_unsub=null;}
     if(_unsubRegistro){_unsubRegistro();_unsubRegistro=null;}
     hidePending();
-    if(document.getElementById('loginOverlay') && !document.getElementById('loginOverlay').classList.contains('hidden')) return;
+    // Only show login if welcomeGate is not showing
+    if(window._showingWelcomeGate) return;
     showLogin();
   }
 });
