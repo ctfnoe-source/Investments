@@ -821,7 +821,7 @@ async function updateAllPrices(forceRefresh=false) {
   await updateFX();
   const tickerSet = new Map();
   movements.forEach(m => { if (m.seccion === 'inversiones' && m.ticker) { const key = (m.moneda === 'MXN' ? m.ticker.toUpperCase() + '_MXN' : m.ticker.toUpperCase()); tickerSet.set(key, {type: m.tipoActivo, moneda: m.moneda||'USD', ticker: m.ticker.toUpperCase()}); } });
-  if (forceRefresh) { const c = getPriceCache(); tickerSet.forEach((_, k) => { delete c[k]; }); setPriceCache(c); }
+  if (forceRefresh) { const c = getPriceCache(); tickerSet.forEach((_, k) => { delete c[k]; }); setPriceCache(c); LS.set('sp500_history', null); _sp500Data = null; }
   const tickerArr = [...tickerSet.entries()].sort((a, b) => {
     const aIsMXN = a[1].moneda === 'MXN' ? 1 : 0;
     const bIsMXN = b[1].moneda === 'MXN' ? 1 : 0;
@@ -833,6 +833,104 @@ async function updateAllPrices(forceRefresh=false) {
   _recalcAndSaveSnapshot();
   renderPage(currentTab);
 }
+
+// ── S&P 500 histórico ─────────────────────────────────────────────────────
+// Histórico mensual via Alpha Vantage (gratis, CORS ok, 1 call/día cacheada)
+// Precio de hoy via Finnhub (ya configurado)
+const SP500_CACHE_KEY = 'sp500_history';
+
+function getSP500Cache() { return LS.get(SP500_CACHE_KEY) || null; }
+function setSP500Cache(data) { LS.set(SP500_CACHE_KEY, { data, ts: Date.now() }); }
+function isSP500CacheFresh(cached) {
+  if (!cached || !cached.ts) return false;
+  const c = new Date(cached.ts), n = new Date();
+  return c.getFullYear()===n.getFullYear() && c.getMonth()===n.getMonth() && c.getDate()===n.getDate();
+}
+
+async function fetchSP500History() {
+  const cached = getSP500Cache();
+  if (isSP500CacheFresh(cached)) return cached.data;
+
+  const avKey = settings.alphaVantageKey || '';
+  const fhKey = settings.finnhubKey || '';
+  if (!avKey && !fhKey) return null;
+
+  let result = { dates: [], closes: [] };
+
+  // 1) Histórico mensual via Alpha Vantage
+  if (avKey) {
+    try {
+      const r = await fetch(
+        `https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY&symbol=SPY&apikey=${avKey}`
+      );
+      if (r.ok) {
+        const d = await r.json();
+        if (d['Monthly Time Series']) {
+          const series = d['Monthly Time Series'];
+          const entries = Object.entries(series)
+            .map(([date, v]) => ({ date, close: parseFloat(v['4. close']) }))
+            .filter(e => e.close > 0)
+            .sort((a, b) => a.date.localeCompare(b.date));
+          result.dates = entries.map(e => e.date);
+          result.closes = entries.map(e => e.close);
+        }
+      }
+    } catch(e) { /* silencioso */ }
+  }
+
+  // 2) Precio de hoy via Finnhub
+  if (fhKey) {
+    try {
+      const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=SPY&token=${fhKey}`);
+      if (r.ok) {
+        const d = await r.json();
+        if (d.c && d.c > 0) {
+          const todayStr = new Date().toISOString().split('T')[0];
+          if (result.dates.length > 0) {
+            const lastMonth = result.dates[result.dates.length-1].substring(0,7);
+            const todayMonth = todayStr.substring(0,7);
+            if (lastMonth === todayMonth) {
+              result.dates[result.dates.length-1] = todayStr;
+              result.closes[result.closes.length-1] = d.c;
+            } else {
+              result.dates.push(todayStr);
+              result.closes.push(d.c);
+            }
+          } else {
+            result.dates.push(todayStr);
+            result.closes.push(d.c);
+          }
+        }
+      }
+    } catch(e) { /* silencioso */ }
+  }
+
+  if (result.dates.length > 0) { setSP500Cache(result); return result; }
+  return null;
+}
+
+// Normaliza la curva del SP500 al capital del portafolio
+// Devuelve array de { date, ganancia } comparable con la línea verde y azul
+// La ganancia = cuánto habrías ganado/perdido si hubieras invertido
+// el mismo capital en SPY desde la fecha de origen
+function normalizeSP500(sp500data, capitalInicial, fechaOrigen) {
+  if (!sp500data || !sp500data.dates.length || !capitalInicial || capitalInicial <= 0) return [];
+  const origenStr = fechaOrigen.substring(0, 7);
+  let precioOrigen = null;
+  for (let i = 0; i < sp500data.dates.length; i++) {
+    if (sp500data.dates[i].substring(0,7) <= origenStr) precioOrigen = sp500data.closes[i];
+  }
+  if (!precioOrigen) precioOrigen = sp500data.closes[0];
+  const result = [];
+  for (let i = 0; i < sp500data.dates.length; i++) {
+    if (sp500data.dates[i] < fechaOrigen) continue;
+    const retorno = (sp500data.closes[i] - precioOrigen) / precioOrigen;
+    result.push({ date: sp500data.dates[i], ganancia: Math.round(capitalInicial * retorno) });
+  }
+  return result;
+}
+
+let _sp500Data = null; // cache en memoria durante la sesión
 
 function getPriceInfo(ticker, type, moneda) {
   ticker = ticker.toUpperCase(); moneda = (moneda || 'USD').toUpperCase();
@@ -1550,6 +1648,10 @@ function renderDashboard(){
                 <span style="display:inline-flex;gap:2px;align-items:center"><span style="width:5px;height:2px;background:rgba(10,132,255,0.92);border-radius:1px"></span><span style="width:5px;height:2px;background:rgba(10,132,255,0.92);border-radius:1px"></span><span style="width:5px;height:2px;background:rgba(10,132,255,0.92);border-radius:1px"></span></span>
                 ${t('proyeccion')} ${(re*100).toFixed(0)}%
               </span>
+              ${(settings.alphaVantageKey||settings.finnhubKey)?`<span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px">
+                <span style="display:inline-flex;gap:2px;align-items:center"><span style="width:5px;height:2px;background:rgba(220,50,80,0.75);border-radius:1px"></span><span style="width:5px;height:2px;background:rgba(220,50,80,0.75);border-radius:1px"></span><span style="width:5px;height:2px;background:rgba(220,50,80,0.75);border-radius:1px"></span></span>
+                S&P 500 (SPY)${_sp500Data?'':' ⏳'}
+              </span>`:''}
             </div>
           </div>
           <div style="display:flex;gap:20px;align-items:flex-start">
@@ -1697,6 +1799,19 @@ function renderDashboard(){
   `;
 
   updateNav(patrimonio,totalMXN,totalUSDCurrent,tc,totalRend,deltaHoy,deltaHoyPct);
+
+  // Cargar S&P500 de forma asíncrona y re-renderizar el chart cuando lleguen los datos
+  if (!_sp500Data && (settings.alphaVantageKey || settings.finnhubKey)) {
+    fetchSP500History().then(data => {
+      if (data && data.dates.length > 0) {
+        _sp500Data = data;
+        if (currentTab === 'dashboard') {
+          if (chartInstances.chartEvo) { chartInstances.chartEvo.destroy(); delete chartInstances.chartEvo; }
+          renderDashboard();
+        }
+      }
+    }).catch(() => {});
+  }
 
   setTimeout(()=>{
     const isDark=document.documentElement.getAttribute('data-theme')==='dark';
@@ -1922,6 +2037,53 @@ function renderDashboard(){
             pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
             pointHoverBorderWidth:2,
             yAxisID:'y',
+          },
+          {
+            label: 'S&P 500 (SPY)',
+            data: (()=>{
+              if (!_sp500Data) return [];
+              // Capital de referencia = capital neto total invertido
+              const _evs = [];
+              platforms.forEach(p => {
+                if (!p.fechaInicio) return;
+                const toMXN = v => p.moneda==='USD' ? v*tc : p.moneda==='EUR' ? v*eurmxn : v;
+                if (p.saldoInicial > 0) _evs.push({ fecha: p.fechaInicio, delta: toMXN(p.saldoInicial) });
+              });
+              movements.forEach(m => {
+                if (m.seccion !== 'plataformas' || !m.fecha) return;
+                const plat = platforms.find(p => p.name === m.platform);
+                const toMXN = v => plat?.moneda==='USD' ? v*tc : plat?.moneda==='EUR' ? v*eurmxn : v;
+                const monto = toMXN(m.monto || 0);
+                if (m.tipoPlat==='Aportación'||m.tipoPlat==='Transferencia entrada') _evs.push({fecha:m.fecha,delta:monto});
+                else if (m.tipoPlat==='Retiro'||m.tipoPlat==='Transferencia salida'||m.tipoPlat==='Gasto') _evs.push({fecha:m.fecha,delta:-monto});
+              });
+              movements.forEach(m => {
+                if (m.seccion !== 'inversiones' || !m.fecha) return;
+                const monto = m.montoTotal || (m.cantidad||0)*(m.precioUnit||0);
+                const enMXN = m.moneda==='MXN' ? monto : monto*tc;
+                if (m.tipoMov==='Compra') _evs.push({fecha:m.fecha,delta:enMXN});
+                if (m.tipoMov==='Venta')  _evs.push({fecha:m.fecha,delta:-enMXN});
+              });
+              _evs.sort((a,b) => a.fecha.localeCompare(b.fecha));
+              const capitalRef = Math.max(0, _evs.reduce((s,e)=>s+e.delta, 0));
+              const fechaOrigen = _evs.length > 0 ? _evs[0].fecha : todayDateStr;
+              const pts = normalizeSP500(_sp500Data, capitalRef, fechaOrigen);
+              return pts
+                .filter(p => !xMin || new Date(p.date+'T00:00:00').getTime() >= xMin)
+                .map(p => ({ x: p.date, y: p.ganancia }));
+            })(),
+            borderColor: isDark ? 'rgba(255,100,130,0.8)' : 'rgba(220,50,80,0.75)',
+            backgroundColor:'transparent',
+            borderWidth:1.5,
+            borderDash:[4,3],
+            fill:false,
+            tension:0.3,
+            pointRadius:0,
+            pointHoverRadius:4,
+            pointHoverBackgroundColor:'rgba(220,50,80,0.9)',
+            pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
+            pointHoverBorderWidth:2,
+            yAxisID:'y',
           }
         ]
       },options:{
@@ -1949,7 +2111,7 @@ function renderDashboard(){
               },
               label: ctx => {
                 const val = ctx.parsed.y;
-                const icons = ['🟢','🟡','🔵'];
+                const icons = ['🟢','🟡','🔵','🔴'];
                 return ` ${icons[ctx.datasetIndex]||'⚪'} ${ctx.dataset.label}: ${fmtFull(val)}`;
               },
               afterBody: items => {
