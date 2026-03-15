@@ -1023,6 +1023,7 @@ let _aiLoading = false;
 let chartInstances = {};
 let _lastLocalSave = 0;
 let _chartRange = 'all';
+let _chartRange2 = 'all';
 
 const CHART_INTERVALS = [
   { key:'1m',  label:'1 month',   months:1  },
@@ -1037,6 +1038,11 @@ const CHART_INTERVALS = [
 
 let _projKey = '1y';
 
+function setChartRange2(range) {
+  _chartRange2 = range;
+  if(chartInstances.chartComp){chartInstances.chartComp.destroy();delete chartInstances.chartComp;}
+  renderDashboard();
+}
 function setChartRange(range) {
   _chartRange = range;
   Object.keys(chartInstances).forEach(k => { if(chartInstances[k]){ chartInstances[k].destroy(); delete chartInstances[k]; } });
@@ -1630,7 +1636,7 @@ function renderDashboard(){
     ${maxConc>0.25?`<div style="display:flex;align-items:center;gap:10px;padding:12px 20px;background:rgba(255,159,10,0.06);border:1px solid rgba(255,159,10,0.15);border-radius:12px;margin-bottom:16px;font-size:13px"><span style="font-size:18px">⚠️</span><span><strong>${topPlat?.name}</strong> ${t('concentra')} <strong style="color:var(--orange)">${(maxConc*100).toFixed(1)}%</strong> ${t('deTuPortafolio')}.</span></div>`:''}
 
     <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden">
-      <div style="padding:24px 28px 16px">
+      <div style="padding:16px 20px 10px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
           <div>
             <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(245,166,35,0.9);margin-bottom:4px">📈 ${t('patrimonioTotal')}</div>
@@ -1645,13 +1651,10 @@ function renderDashboard(){
                 ${t('gananciaReal')}
               </span>
               <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px">
-                <span style="display:inline-flex;gap:2px;align-items:center"><span style="width:5px;height:2px;background:rgba(10,132,255,0.92);border-radius:1px"></span><span style="width:5px;height:2px;background:rgba(10,132,255,0.92);border-radius:1px"></span><span style="width:5px;height:2px;background:rgba(10,132,255,0.92);border-radius:1px"></span></span>
+                <span style="display:inline-block;width:16px;height:3px;background:rgba(10,132,255,0.85);border-radius:2px"></span>
                 ${t('proyeccion')} ${(re*100).toFixed(0)}%
               </span>
-              ${(settings.alphaVantageKey||settings.finnhubKey)?`<span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px">
-                <span style="display:inline-flex;gap:2px;align-items:center"><span style="width:5px;height:2px;background:rgba(220,50,80,0.75);border-radius:1px"></span><span style="width:5px;height:2px;background:rgba(220,50,80,0.75);border-radius:1px"></span><span style="width:5px;height:2px;background:rgba(220,50,80,0.75);border-radius:1px"></span></span>
-                S&P 500 (SPY)${_sp500Data?'':' ⏳'}
-              </span>`:''}
+
             </div>
           </div>
           <div style="display:flex;gap:20px;align-items:flex-start">
@@ -1659,12 +1662,7 @@ function renderDashboard(){
               <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--green);margin-bottom:2px">${t('gananciaNetaTotal')}</div>
               <div style="font-size:18px;font-weight:800;letter-spacing:-0.03em;color:${pctCol(patrimonioRendPuro)};line-height:1">${patrimonioRendPuro>=0?'+':''}${fmt(patrimonioRendPuro)}</div>
             </div>
-            <div style="width:1px;background:var(--border);align-self:stretch;margin:2px 0"></div>
-            <div style="text-align:right">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--blue);margin-bottom:2px">${t('expectedGainIn')} ${projInterval.label}</div>
-              <div style="font-size:18px;font-weight:800;letter-spacing:-0.03em;color:var(--blue);line-height:1">+${fmt(Math.round(capitalHoy * (Math.pow(1+re/12, projMonths) - 1)))}</div>
-              <div style="font-size:10px;color:var(--text2);margin-top:3px">${(re*100).toFixed(0)}%/${t('year')}</div>
-            </div>
+
             ${rendAnualReal !== null ? `
             <div style="width:1px;background:var(--border);align-self:stretch;margin:2px 0"></div>
             <div style="text-align:right">
@@ -1676,10 +1674,56 @@ function renderDashboard(){
         </div>
       </div>
       <div style="padding:0 20px 0px">
-        <div class="chart-container" style="height:260px">${hist.length < 2 ? `<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text3)"><div style="font-size:32px">📈</div><div style="font-size:13px;font-weight:600;color:var(--text2)">${t('graficoApareceraManana')}</div><div style="font-size:11px;text-align:center;max-width:220px;line-height:1.5">${t('necesitas2dias')}<br>${t('vuelveManana')}</div></div>` : `<canvas id="chartEvo"></canvas>`}</div>
+        <div class="chart-container" style="height:200px">${hist.length < 2 ? `<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text3)"><div style="font-size:32px">📈</div><div style="font-size:13px;font-weight:600;color:var(--text2)">${t('graficoApareceraManana')}</div><div style="font-size:11px;text-align:center;max-width:220px;line-height:1.5">${t('necesitas2dias')}<br>${t('vuelveManana')}</div></div>` : `<canvas id="chartEvo"></canvas>`}</div>
       </div>
       <div style="padding:10px 24px 16px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap">
         ${rangeButtonsHTML}
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden">
+      <div style="padding:14px 20px 10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2);margin-bottom:6px">📊 ${t('comparacion')}</div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap">
+            ${(settings.alphaVantageKey||settings.finnhubKey)?`<span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px">
+              <span style="display:inline-block;width:16px;height:3px;background:rgba(220,50,80,0.8);border-radius:2px"></span>
+              S&P 500 (SPY)${_sp500Data?'':' ⏳'}
+            </span>`:''}
+            <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px">
+              <span style="display:inline-block;width:16px;height:3px;background:rgba(10,132,255,0.85);border-radius:2px"></span>
+              ${t('rendPlataformas')}
+            </span>
+            <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px">
+              <span style="display:inline-block;width:16px;height:3px;background:#30D158;border-radius:2px"></span>
+              ${t('gpNoRealizada')}
+            </span>
+          </div>
+        </div>
+        <div style="display:flex;gap:16px">
+          ${(settings.alphaVantageKey||settings.finnhubKey)&&_sp500Data?(()=>{
+            const _evs2=[];
+            platforms.forEach(p=>{if(!p.fechaInicio)return;const toMXN=v=>p.moneda==='USD'?v*tc:p.moneda==='EUR'?v*eurmxn:v;if(p.saldoInicial>0)_evs2.push({fecha:p.fechaInicio,delta:toMXN(p.saldoInicial)});});
+            movements.forEach(m=>{if(m.seccion!=='plataformas'||!m.fecha)return;const plat=platforms.find(p=>p.name===m.platform);const toMXN=v=>plat?.moneda==='USD'?v*tc:plat?.moneda==='EUR'?v*eurmxn:v;const monto=toMXN(m.monto||0);if(m.tipoPlat==='Aportación'||m.tipoPlat==='Transferencia entrada')_evs2.push({fecha:m.fecha,delta:monto});else if(m.tipoPlat==='Retiro'||m.tipoPlat==='Transferencia salida'||m.tipoPlat==='Gasto')_evs2.push({fecha:m.fecha,delta:-monto});});
+            movements.forEach(m=>{if(m.seccion!=='inversiones'||!m.fecha)return;const monto=m.montoTotal||(m.cantidad||0)*(m.precioUnit||0);const enMXN=m.moneda==='MXN'?monto:monto*tc;if(m.tipoMov==='Compra')_evs2.push({fecha:m.fecha,delta:enMXN});if(m.tipoMov==='Venta')_evs2.push({fecha:m.fecha,delta:-enMXN});});
+            _evs2.sort((a,b)=>a.fecha.localeCompare(b.fecha));
+            const capRef2=Math.max(0,_evs2.reduce((s,e)=>s+e.delta,0));
+            const fechaO2=_evs2.length>0?_evs2[0].fecha:todayDateStr;
+            const pts2=normalizeSP500(_sp500Data,capRef2,fechaO2);
+            const lastPt=pts2[pts2.length-1];
+            if(!lastPt) return '';
+            const spyPct=capRef2>0?(lastPt.ganancia/capRef2*100).toFixed(1):'—';
+            return `<div style="text-align:right"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:700">S&P 500</div><div style="font-size:15px;font-weight:800;color:${lastPt.ganancia>=0?'var(--green)':'var(--red)'}">${lastPt.ganancia>=0?'+':''}${fmt(lastPt.ganancia)}</div><div style="font-size:10px;color:var(--text2)">${lastPt.ganancia>=0?'+':''}${spyPct}%</div></div>`;
+          })():''}
+          <div style="text-align:right"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:700">${t('plataformas')}</div><div style="font-size:15px;font-weight:800;color:${pctCol(totalRend)}">${totalRend>=0?'+':''}${fmt(totalRend)}</div><div style="font-size:10px;color:var(--text2)">${fmtPct(invInicial?totalRend/invInicial:0)}</div></div>
+          <div style="text-align:right"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:700">${t('inversiones')}</div><div style="font-size:15px;font-weight:800;color:${pctCol(gpNoRealizadaTotal)}">${gpNoRealizadaTotal>=0?'+':''}${fmt(gpNoRealizadaTotal)}</div><div style="font-size:10px;color:var(--text2)">${fmtPct(totalInvertidoUSD?gpNoRealizadaTotal/(totalInvertidoUSD*tc):0)}</div></div>
+        </div>
+      </div>
+      <div style="padding:0 20px 4px">
+        <div class="chart-container" style="height:160px"><canvas id="chartComp"></canvas></div>
+      </div>
+      <div style="padding:6px 24px 12px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap">
+        ${rangeButtonsHTML.replace(/onclick="setChartRange\(/g, "onclick="setChartRange2(")}
       </div>
     </div>
 
@@ -1807,6 +1851,7 @@ function renderDashboard(){
         _sp500Data = data;
         if (currentTab === 'dashboard') {
           if (chartInstances.chartEvo) { chartInstances.chartEvo.destroy(); delete chartInstances.chartEvo; }
+          if (chartInstances.chartComp) { chartInstances.chartComp.destroy(); delete chartInstances.chartComp; }
           renderDashboard();
         }
       }
@@ -2024,7 +2069,7 @@ function renderDashboard(){
           },
           {
             label: t('proyeccion')+' '+((re*100).toFixed(0))+'% '+t('anual'),
-            data: projDatesAdj.map((d,i)=>({x:d,y:projValsAdj[i]})),
+            data: projDatesAdj.filter(d=>d<=todayDateStr).map((d,i)=>({x:d,y:projValsAdj[i]})),
             borderColor:'rgba(10,132,255,0.85)',
             backgroundColor:'transparent',
             borderWidth:1.5,
@@ -2037,52 +2082,6 @@ function renderDashboard(){
             pointHoverBorderWidth:2,
             yAxisID:'y',
           },
-          {
-            label: 'S&P 500 (SPY)',
-            data: (()=>{
-              if (!_sp500Data) return [];
-              // Capital de referencia = capital neto total invertido
-              const _evs = [];
-              platforms.forEach(p => {
-                if (!p.fechaInicio) return;
-                const toMXN = v => p.moneda==='USD' ? v*tc : p.moneda==='EUR' ? v*eurmxn : v;
-                if (p.saldoInicial > 0) _evs.push({ fecha: p.fechaInicio, delta: toMXN(p.saldoInicial) });
-              });
-              movements.forEach(m => {
-                if (m.seccion !== 'plataformas' || !m.fecha) return;
-                const plat = platforms.find(p => p.name === m.platform);
-                const toMXN = v => plat?.moneda==='USD' ? v*tc : plat?.moneda==='EUR' ? v*eurmxn : v;
-                const monto = toMXN(m.monto || 0);
-                if (m.tipoPlat==='Aportación'||m.tipoPlat==='Transferencia entrada') _evs.push({fecha:m.fecha,delta:monto});
-                else if (m.tipoPlat==='Retiro'||m.tipoPlat==='Transferencia salida'||m.tipoPlat==='Gasto') _evs.push({fecha:m.fecha,delta:-monto});
-              });
-              movements.forEach(m => {
-                if (m.seccion !== 'inversiones' || !m.fecha) return;
-                const monto = m.montoTotal || (m.cantidad||0)*(m.precioUnit||0);
-                const enMXN = m.moneda==='MXN' ? monto : monto*tc;
-                if (m.tipoMov==='Compra') _evs.push({fecha:m.fecha,delta:enMXN});
-                if (m.tipoMov==='Venta')  _evs.push({fecha:m.fecha,delta:-enMXN});
-              });
-              _evs.sort((a,b) => a.fecha.localeCompare(b.fecha));
-              const capitalRef = Math.max(0, _evs.reduce((s,e)=>s+e.delta, 0));
-              const fechaOrigen = _evs.length > 0 ? _evs[0].fecha : todayDateStr;
-              const pts = normalizeSP500(_sp500Data, capitalRef, fechaOrigen);
-              return pts
-                .filter(p => !xMin || new Date(p.date+'T00:00:00').getTime() >= xMin)
-                .map(p => ({ x: p.date, y: p.ganancia }));
-            })(),
-            borderColor: isDark ? 'rgba(255,100,130,0.8)' : 'rgba(220,50,80,0.75)',
-            backgroundColor:'transparent',
-            borderWidth:1.5,
-            fill:false,
-            tension:0.4,
-            pointRadius:0,
-            pointHoverRadius:4,
-            pointHoverBackgroundColor:'rgba(220,50,80,0.9)',
-            pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
-            pointHoverBorderWidth:2,
-            yAxisID:'y',
-          }
         ]
       },options:{
         responsive:true,
@@ -2109,7 +2108,7 @@ function renderDashboard(){
               },
               label: ctx => {
                 const val = ctx.parsed.y;
-                const icons = ['🟢','🟡','🔵','🔴'];
+                const icons = ['🟢','🟡','🔵'];
                 return ` ${icons[ctx.datasetIndex]||'⚪'} ${ctx.dataset.label}: ${fmtFull(val)}`;
               },
               afterBody: items => {
@@ -2159,6 +2158,154 @@ function renderDashboard(){
           }
         }
       }});
+    }
+
+    // ── Gráfica 2: Comparación S&P500 vs Plataformas vs Inversiones ──────────
+    const ctxComp = document.getElementById('chartComp');
+    if (ctxComp) {
+      if (chartInstances.chartComp) { chartInstances.chartComp.destroy(); delete chartInstances.chartComp; }
+
+      // Calcular xMin2 según _chartRange2
+      let xMin2 = undefined;
+      if (_chartRange2 !== 'all') {
+        const d2 = new Date();
+        if      (_chartRange2==='1d')  d2.setDate(d2.getDate()-1);
+        else if (_chartRange2==='1w')  d2.setDate(d2.getDate()-7);
+        else if (_chartRange2==='1m')  d2.setMonth(d2.getMonth()-1);
+        else if (_chartRange2==='ytd') { d2.setMonth(0); d2.setDate(1); }
+        else if (_chartRange2==='1y')  d2.setFullYear(d2.getFullYear()-1);
+        else if (_chartRange2==='3y')  d2.setFullYear(d2.getFullYear()-3);
+        xMin2 = d2.getTime();
+      }
+      const xMax2 = new Date(todayDateStr + 'T23:59:59').getTime();
+
+      // Dataset 1: S&P 500
+      const sp500CompData = (()=>{
+        if (!_sp500Data) return [];
+        const _evs2=[];
+        platforms.forEach(p=>{if(!p.fechaInicio)return;const toMXN=v=>p.moneda==='USD'?v*tc:p.moneda==='EUR'?v*eurmxn:v;if(p.saldoInicial>0)_evs2.push({fecha:p.fechaInicio,delta:toMXN(p.saldoInicial)});});
+        movements.forEach(m=>{if(m.seccion!=='plataformas'||!m.fecha)return;const plat=platforms.find(p=>p.name===m.platform);const toMXN=v=>plat?.moneda==='USD'?v*tc:plat?.moneda==='EUR'?v*eurmxn:v;const monto=toMXN(m.monto||0);if(m.tipoPlat==='Aportación'||m.tipoPlat==='Transferencia entrada')_evs2.push({fecha:m.fecha,delta:monto});else if(m.tipoPlat==='Retiro'||m.tipoPlat==='Transferencia salida'||m.tipoPlat==='Gasto')_evs2.push({fecha:m.fecha,delta:-monto});});
+        movements.forEach(m=>{if(m.seccion!=='inversiones'||!m.fecha)return;const monto=m.montoTotal||(m.cantidad||0)*(m.precioUnit||0);const enMXN=m.moneda==='MXN'?monto:monto*tc;if(m.tipoMov==='Compra')_evs2.push({fecha:m.fecha,delta:enMXN});if(m.tipoMov==='Venta')_evs2.push({fecha:m.fecha,delta:-enMXN});});
+        _evs2.sort((a,b)=>a.fecha.localeCompare(b.fecha));
+        const capRef=Math.max(0,_evs2.reduce((s,e)=>s+e.delta,0));
+        const fechaO=_evs2.length>0?_evs2[0].fecha:todayDateStr;
+        const pts=normalizeSP500(_sp500Data,capRef,fechaO);
+        return pts.filter(p=>!xMin2||new Date(p.date+'T00:00:00').getTime()>=xMin2).map(p=>({x:p.date,y:p.ganancia}));
+      })();
+
+      // Dataset 2: Ganancia plataformas por fecha (usando patrimonioHistory)
+      const platCompData = hist
+        .filter(s => !xMin2 || new Date(s.date+'T00:00:00').getTime() >= xMin2)
+        .map(s => ({ x: s.date, y: Math.round((s.value - (s.capital||s.value)) - (tickerList.reduce((sum,tk)=>{const gp=tk.gpNoRealizada||0;return sum+(tk.moneda==='MXN'?gp:gp*tc);},0))) }));
+
+      // Dataset 3: Ganancia inversiones por fecha
+      // Solo tenemos el valor actual; usamos snapshot + inversiones actuales
+      const invCompData = hist
+        .filter(s => !xMin2 || new Date(s.date+'T00:00:00').getTime() >= xMin2)
+        .map(s => {
+          // Aproximar: ganancia inversiones = ganancia total - ganancia plataformas en esa fecha
+          // Por simplicidad usamos la ganancia de inversiones de hoy escalada por el tiempo
+          const totalGain = s.value - (s.capital || s.value);
+          const platGain = totalRend > 0 && patrimonio > 0 ? totalGain * (totalRend / (totalRend + Math.max(0,gpNoRealizadaTotal))) : 0;
+          return { x: s.date, y: Math.round(totalGain - platGain) };
+        });
+
+      chartInstances.chartComp = new Chart(ctxComp, {
+        type: 'line',
+        data: {
+          datasets: [
+            ...(sp500CompData.length > 0 ? [{
+              label: 'S&P 500 (SPY)',
+              data: sp500CompData,
+              borderColor: isDark ? 'rgba(255,100,130,0.85)' : 'rgba(220,50,80,0.8)',
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              fill: false,
+              tension: 0.4,
+              pointRadius: 0,
+              pointHoverRadius: 4,
+              yAxisID: 'yc',
+            }] : []),
+            {
+              label: t('rendPlataformas'),
+              data: platCompData,
+              borderColor: 'rgba(10,132,255,0.85)',
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              fill: false,
+              tension: 0.4,
+              pointRadius: 0,
+              pointHoverRadius: 4,
+              yAxisID: 'yc',
+            },
+            {
+              label: t('gpNoRealizada'),
+              data: invCompData,
+              borderColor: '#30D158',
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              fill: false,
+              tension: 0.4,
+              pointRadius: 0,
+              pointHoverRadius: 4,
+              yAxisID: 'yc',
+            },
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { intersect: false, mode: 'nearest' },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: isDark?'rgba(28,28,30,0.96)':'rgba(29,29,31,0.92)',
+              borderColor: isDark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.1)',
+              borderWidth: 1,
+              cornerRadius: 10,
+              padding: { top:8, bottom:8, left:12, right:12 },
+              titleFont: { size:10, family:'DM Sans', weight:'600' },
+              bodyFont: { size:11, family:'DM Sans' },
+              titleColor: isDark?'#98989D':'#86868B',
+              callbacks: {
+                title: items => {
+                  if (!items.length) return '';
+                  const raw = items[0].label || items[0].raw?.x || '';
+                  const p = raw.split('-');
+                  if (p.length===3) { const d=new Date(raw+'T12:00:00'); return d.toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'}); }
+                  return raw;
+                },
+                label: ctx => {
+                  const val = ctx.parsed.y;
+                  const icons = ['🔴','🔵','🟢'];
+                  return ` ${icons[ctx.datasetIndex]||'⚪'} ${ctx.dataset.label}: ${fmtFull(val)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              type: 'time',
+              min: xMin2,
+              max: xMax2,
+              time: {
+                unit: _chartRange2==='1d'?'hour':(_chartRange2==='1w'||_chartRange2==='1m')?'day':'month',
+                displayFormats: { hour:'HH:mm', day:'d MMM', month:'MMM yy' },
+                tooltipFormat: 'yyyy-MM-dd'
+              },
+              adapters: { date: {} },
+              grid: { display: false },
+              ticks: { font:{size:10}, color:tickColor, maxTicksLimit:8, maxRotation:0 },
+              border: { display: false }
+            },
+            yc: {
+              grid: { color: gridColor },
+              ticks: { font:{size:11}, color:tickColor, callback:v=>fmt(v), maxTicksLimit:4 },
+              border: { display: false }
+            }
+          }
+        }
+      });
     }
 
     const at={};plats.forEach(p=>{at[p.type]=(at[p.type]||0)+platSaldoToMXN(p);});
@@ -4845,6 +4992,7 @@ window.switchTab = switchTab;
 window.openModal = openModal;
 window.closeModal = closeModal;
 window.setChartRange = setChartRange;
+window.setChartRange2 = setChartRange2;
 window.setChartProj = setChartProj;
 window.toggleChartPanel = toggleChartPanel;
 window.setTipoTransfer = setTipoTransfer;
