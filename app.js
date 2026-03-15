@@ -835,7 +835,10 @@ async function updateAllPrices(forceRefresh=false) {
 }
 
 // ── S&P 500 histórico ─────────────────────────────────────────────────────
+// Histórico mensual via Alpha Vantage (gratis, CORS ok, 1 call/día cacheada)
+// Precio de hoy via Finnhub (ya configurado)
 const SP500_CACHE_KEY = 'sp500_history';
+
 function getSP500Cache() { return LS.get(SP500_CACHE_KEY) || null; }
 function setSP500Cache(data) { LS.set(SP500_CACHE_KEY, { data, ts: Date.now() }); }
 function isSP500CacheFresh(cached) {
@@ -843,20 +846,28 @@ function isSP500CacheFresh(cached) {
   const c = new Date(cached.ts), n = new Date();
   return c.getFullYear()===n.getFullYear() && c.getMonth()===n.getMonth() && c.getDate()===n.getDate();
 }
+
 async function fetchSP500History() {
   const cached = getSP500Cache();
   if (isSP500CacheFresh(cached)) return cached.data;
+
   const avKey = settings.alphaVantageKey || '';
   const fhKey = settings.finnhubKey || '';
   if (!avKey && !fhKey) return null;
+
   let result = { dates: [], closes: [] };
+
+  // 1) Histórico mensual via Alpha Vantage
   if (avKey) {
     try {
-      const r = await fetch(`https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY&symbol=SPY&apikey=${avKey}`);
+      const r = await fetch(
+        `https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY&symbol=SPY&apikey=${avKey}`
+      );
       if (r.ok) {
         const d = await r.json();
         if (d['Monthly Time Series']) {
-          const entries = Object.entries(d['Monthly Time Series'])
+          const series = d['Monthly Time Series'];
+          const entries = Object.entries(series)
             .map(([date, v]) => ({ date, close: parseFloat(v['4. close']) }))
             .filter(e => e.close > 0)
             .sort((a, b) => a.date.localeCompare(b.date));
@@ -864,8 +875,10 @@ async function fetchSP500History() {
           result.closes = entries.map(e => e.close);
         }
       }
-    } catch(e) {}
+    } catch(e) { /* silencioso */ }
   }
+
+  // 2) Precio de hoy via Finnhub
   if (fhKey) {
     try {
       const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=SPY&token=${fhKey}`);
@@ -875,20 +888,34 @@ async function fetchSP500History() {
           const todayStr = new Date().toISOString().split('T')[0];
           if (result.dates.length > 0) {
             const lastMonth = result.dates[result.dates.length-1].substring(0,7);
-            if (lastMonth === todayStr.substring(0,7)) { result.dates[result.dates.length-1]=todayStr; result.closes[result.closes.length-1]=d.c; }
-            else { result.dates.push(todayStr); result.closes.push(d.c); }
-          } else { result.dates.push(todayStr); result.closes.push(d.c); }
+            const todayMonth = todayStr.substring(0,7);
+            if (lastMonth === todayMonth) {
+              result.dates[result.dates.length-1] = todayStr;
+              result.closes[result.closes.length-1] = d.c;
+            } else {
+              result.dates.push(todayStr);
+              result.closes.push(d.c);
+            }
+          } else {
+            result.dates.push(todayStr);
+            result.closes.push(d.c);
+          }
         }
       }
-    } catch(e) {}
+    } catch(e) { /* silencioso */ }
   }
+
   if (result.dates.length > 0) { setSP500Cache(result); return result; }
   return null;
 }
-// Normaliza SP500: ganancia como si hubieras invertido capitalInicial en SPY desde fechaOrigen
+
+// Normaliza la curva del SP500 al capital del portafolio
+// Devuelve array de { date, ganancia } comparable con la línea verde y azul
+// La ganancia = cuánto habrías ganado/perdido si hubieras invertido
+// el mismo capital en SPY desde la fecha de origen
 function normalizeSP500(sp500data, capitalInicial, fechaOrigen) {
   if (!sp500data || !sp500data.dates.length || !capitalInicial || capitalInicial <= 0) return [];
-  const origenStr = fechaOrigen.substring(0,7);
+  const origenStr = fechaOrigen.substring(0, 7);
   let precioOrigen = null;
   for (let i = 0; i < sp500data.dates.length; i++) {
     if (sp500data.dates[i].substring(0,7) <= origenStr) precioOrigen = sp500data.closes[i];
@@ -902,7 +929,8 @@ function normalizeSP500(sp500data, capitalInicial, fechaOrigen) {
   }
   return result;
 }
-let _sp500Data = null;
+
+let _sp500Data = null; // cache en memoria durante la sesión
 
 function getPriceInfo(ticker, type, moneda) {
   ticker = ticker.toUpperCase(); moneda = (moneda || 'USD').toUpperCase();
@@ -1621,7 +1649,7 @@ function renderDashboard(){
                 ${t('proyeccion')} ${(re*100).toFixed(0)}%
               </span>
               ${(settings.alphaVantageKey||settings.finnhubKey)?`<span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px">
-                <span style="display:inline-flex;gap:2px;align-items:center"><span style="width:5px;height:2px;background:rgba(220,50,80,0.8);border-radius:1px"></span><span style="width:5px;height:2px;background:rgba(220,50,80,0.8);border-radius:1px"></span><span style="width:5px;height:2px;background:rgba(220,50,80,0.8);border-radius:1px"></span></span>
+                <span style="display:inline-flex;gap:2px;align-items:center"><span style="width:5px;height:2px;background:rgba(220,50,80,0.75);border-radius:1px"></span><span style="width:5px;height:2px;background:rgba(220,50,80,0.75);border-radius:1px"></span><span style="width:5px;height:2px;background:rgba(220,50,80,0.75);border-radius:1px"></span></span>
                 S&P 500 (SPY)${_sp500Data?'':' ⏳'}
               </span>`:''}
             </div>
@@ -1912,7 +1940,7 @@ function renderDashboard(){
         // 3) Continuar hacia el futuro desde hoy
         const capNeto = Math.max(0, capitalHastaFecha(todayDateStr));
         const diasHoy = (now.getTime() - _origenMs) / (1000 * 60 * 60 * 24);
-        const steps = Math.max(4, Math.round(projMonthsVisible * 30)); // más puntos = curva más suave
+        const steps = Math.max(4, Math.round(projMonthsVisible * 30));
         for (let i = 1; i <= steps; i++) {
           const frac = i / steps;
           const dAdj = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -2014,16 +2042,17 @@ function renderDashboard(){
             label: 'S&P 500 (SPY)',
             data: (()=>{
               if (!_sp500Data) return [];
+              // Capital de referencia = capital neto total invertido
               const _evs = [];
               platforms.forEach(p => {
                 if (!p.fechaInicio) return;
-                const toMXN = v => p.moneda==='USD'?v*tc:p.moneda==='EUR'?v*eurmxn:v;
+                const toMXN = v => p.moneda==='USD' ? v*tc : p.moneda==='EUR' ? v*eurmxn : v;
                 if (p.saldoInicial > 0) _evs.push({ fecha: p.fechaInicio, delta: toMXN(p.saldoInicial) });
               });
               movements.forEach(m => {
                 if (m.seccion !== 'plataformas' || !m.fecha) return;
                 const plat = platforms.find(p => p.name === m.platform);
-                const toMXN = v => plat?.moneda==='USD'?v*tc:plat?.moneda==='EUR'?v*eurmxn:v;
+                const toMXN = v => plat?.moneda==='USD' ? v*tc : plat?.moneda==='EUR' ? v*eurmxn : v;
                 const monto = toMXN(m.monto || 0);
                 if (m.tipoPlat==='Aportación'||m.tipoPlat==='Transferencia entrada') _evs.push({fecha:m.fecha,delta:monto});
                 else if (m.tipoPlat==='Retiro'||m.tipoPlat==='Transferencia salida'||m.tipoPlat==='Gasto') _evs.push({fecha:m.fecha,delta:-monto});
@@ -2031,7 +2060,7 @@ function renderDashboard(){
               movements.forEach(m => {
                 if (m.seccion !== 'inversiones' || !m.fecha) return;
                 const monto = m.montoTotal || (m.cantidad||0)*(m.precioUnit||0);
-                const enMXN = m.moneda==='MXN'?monto:monto*tc;
+                const enMXN = m.moneda==='MXN' ? monto : monto*tc;
                 if (m.tipoMov==='Compra') _evs.push({fecha:m.fecha,delta:enMXN});
                 if (m.tipoMov==='Venta')  _evs.push({fecha:m.fecha,delta:-enMXN});
               });
@@ -2043,9 +2072,9 @@ function renderDashboard(){
                 .filter(p => !xMin || new Date(p.date+'T00:00:00').getTime() >= xMin)
                 .map(p => ({ x: p.date, y: p.ganancia }));
             })(),
-            borderColor: isDark ? 'rgba(255,100,130,0.85)' : 'rgba(220,50,80,0.8)',
+            borderColor: isDark ? 'rgba(255,100,130,0.8)' : 'rgba(220,50,80,0.75)',
             backgroundColor:'transparent',
-            borderWidth:1.8,
+            borderWidth:1.5,
             borderDash:[4,3],
             fill:false,
             tension:0.4,
