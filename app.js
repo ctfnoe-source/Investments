@@ -1578,6 +1578,12 @@ function renderDashboard(){
     return `<button onclick="setChartRange('${r.key}')" style="padding:4px 10px;border-radius:20px;border:1px solid ${isActive?'var(--blue)':'var(--border)'};background:${isActive?'var(--blue)':'transparent'};color:${isActive?'#fff':'var(--text2)'};font-size:12px;font-weight:${isActive?'700':'500'};cursor:pointer;font-family:var(--font);transition:all 0.15s">${r.label}</button>`;
   }).join('');
 
+  // Botones de rango para la segunda gráfica (chartComp)
+  const rangeButtonsHTML2 = periodOptions.map(r => {
+    const isActive = _chartRange2 === r.key;
+    return `<button onclick="setChartRange2('${r.key}')" style="padding:4px 10px;border-radius:20px;border:1px solid ${isActive?'var(--blue)':'var(--border)'};background:${isActive?'var(--blue)':'transparent'};color:${isActive?'#fff':'var(--text2)'};font-size:12px;font-weight:${isActive?'700':'500'};cursor:pointer;font-family:var(--font);transition:all 0.15s">${r.label}</button>`;
+  }).join('');
+
   const projButtonsHTML = CHART_INTERVALS.map(r => {
     const gain = Math.round(capitalHoy * (Math.pow(1 + re/12, r.months) - 1));
     const isActive = _projKey === r.key;
@@ -1723,7 +1729,7 @@ function renderDashboard(){
         <div class="chart-container" style="height:160px"><canvas id="chartComp"></canvas></div>
       </div>
       <div style="padding:6px 24px 12px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap">
-        ${rangeButtonsHTML.replace(/onclick="setChartRange\(/g, "onclick="setChartRange2(")}
+        ${rangeButtonsHTML2}
       </div>
     </div>
 
