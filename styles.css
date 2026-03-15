@@ -232,7 +232,7 @@ tr:hover td { background: var(--table-row-hover); }
 .price-live { color: var(--green); font-weight: 700; }
 .price-fallback { color: var(--text3); font-style: italic; }
 .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(10,132,255,0.2); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
-.price-banner { display: flex; align-items: center; justify-content: space-between; background: rgba(10,132,255,0.05); border: 1px solid rgba(10,132,255,0.12); border-radius: 12px; padding: 10px 16px; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; font-size: 12px; }
+.price-banner { display: flex; align-items: center; justify-content: space-between; background: rgba(10,132,255,0.05); border: 1px solid rgba(10,132,255,0.12); border-radius: 12px; padding: 6px 14px; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; font-size: 12px; }
 .price-banner-dot { width: 8px; height: 8px; border-radius: 4px; display: inline-block; margin-right: 6px; }
 .dot-live { background: var(--green); box-shadow: 0 0 0 3px rgba(48,209,88,0.2); animation: pulse 2s infinite; }
 .dot-none { background: var(--text3); }
@@ -285,7 +285,7 @@ tr:hover td { background: var(--table-row-hover); }
 .snapshot-banner {
   display: flex; align-items: center; gap: 10px;
   background: rgba(48,209,88,0.06); border: 1px solid rgba(48,209,88,0.15);
-  border-radius: 12px; padding: 10px 16px; margin-bottom: 16px; font-size: 12px;
+  border-radius: 12px; padding: 6px 14px; margin-bottom: 10px; font-size: 12px;
 }
 .snapshot-banner .snap-dot { width: 8px; height: 8px; border-radius: 4px; background: var(--green); flex-shrink: 0; animation: pulse 2s infinite; }
 /* Chart controls panel */

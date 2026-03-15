@@ -1480,9 +1480,9 @@ function renderDashboard(){
     :`<span class="price-banner-dot dot-none"></span><span style="color:var(--text2)">${priceSummary.total>0?t('sinPreciosDia'):t('sinInversiones')}</span>`;
   const btnLabel=priceUpdateState.loading?`<span class="spinner"></span> ${t('actualizando')}`:t('actualizarPrecios');
   const alerts=getBudgetAlerts();
-  const alertsHtml=alerts.length>0?`<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">${alerts.map(a=>`<div style="padding:10px 16px;background:${a.level==='error'?'rgba(255,69,58,0.06)':'rgba(255,159,10,0.06)'};border:1px solid ${a.level==='error'?'rgba(255,69,58,0.2)':'rgba(255,159,10,0.2)'};border-radius:10px;font-size:13px">${a.msg}</div>`).join('')}</div>`:'';
+  const alertsHtml=alerts.length>0?`<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px">${alerts.map(a=>`<div style="padding:6px 14px;background:${a.level==='error'?'rgba(255,69,58,0.06)':'rgba(255,159,10,0.06)'};border:1px solid ${a.level==='error'?'rgba(255,69,58,0.2)':'rgba(255,159,10,0.2)'};border-radius:10px;font-size:13px">${a.msg}</div>`).join('')}</div>`:'';
   const platsSinActualizarHtml = platsSinActualizar.length > 0
-    ? `<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:rgba(10,132,255,0.05);border:1px solid rgba(10,132,255,0.15);border-radius:10px;font-size:13px;margin-bottom:16px">
+    ? `<div style="display:flex;align-items:center;gap:10px;padding:6px 14px;background:rgba(10,132,255,0.05);border:1px solid rgba(10,132,255,0.15);border-radius:10px;font-size:12px;margin-bottom:10px">
         <span style="font-size:16px">ℹ️</span>
         <span><strong style="color:var(--blue)">${platsSinActualizar.length} ${t('plataformasSinSaldoActual').split(' ')[0]}</strong> ${t('plataformasSinSaldoActual').split(' ').slice(1).join(' ')} <em style="color:var(--text3)">(${platsSinActualizar.slice(0,4).map(p=>p.name).join(', ')}${platsSinActualizar.length>4?'…':''})</em></span>
       </div>`
@@ -1639,7 +1639,7 @@ function renderDashboard(){
       <div class="card stat" style="border-top:3px solid var(--orange)"><div class="stat-label">${t('balanceMes')} ${curLabel}</div><div class="stat-value" style="color:${pctCol(balMes)}">${fmtD(balMes)}</div><div class="stat-sub">${(pctAhorro*100).toFixed(0)}% ${t('ahorro')}${totIngMes===0&&ingresoMensualEUR>0?` (${t('est')})`:''}</div></div>
     </div>
 
-    ${maxConc>0.25?`<div style="display:flex;align-items:center;gap:10px;padding:12px 20px;background:rgba(255,159,10,0.06);border:1px solid rgba(255,159,10,0.15);border-radius:12px;margin-bottom:16px;font-size:13px"><span style="font-size:18px">⚠️</span><span><strong>${topPlat?.name}</strong> ${t('concentra')} <strong style="color:var(--orange)">${(maxConc*100).toFixed(1)}%</strong> ${t('deTuPortafolio')}.</span></div>`:''}
+    ${maxConc>0.25?`<div style="display:flex;align-items:center;gap:10px;padding:6px 14px;background:rgba(255,159,10,0.06);border:1px solid rgba(255,159,10,0.15);border-radius:10px;margin-bottom:10px;font-size:12px"><span style="font-size:18px">⚠️</span><span><strong>${topPlat?.name}</strong> ${t('concentra')} <strong style="color:var(--orange)">${(maxConc*100).toFixed(1)}%</strong> ${t('deTuPortafolio')}.</span></div>`:''}
 
     <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden">
       <div style="padding:16px 20px 10px">
@@ -1682,7 +1682,7 @@ function renderDashboard(){
       <div style="padding:0 20px 0px">
         <div class="chart-container" style="height:200px">${hist.length < 2 ? `<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text3)"><div style="font-size:32px">📈</div><div style="font-size:13px;font-weight:600;color:var(--text2)">${t('graficoApareceraManana')}</div><div style="font-size:11px;text-align:center;max-width:220px;line-height:1.5">${t('necesitas2dias')}<br>${t('vuelveManana')}</div></div>` : `<canvas id="chartEvo"></canvas>`}</div>
       </div>
-      <div style="padding:10px 24px 16px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap">
+      <div style="padding:6px 24px 10px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap">
         ${rangeButtonsHTML}
       </div>
     </div>
@@ -1728,7 +1728,7 @@ function renderDashboard(){
       <div style="padding:0 20px 4px">
         <div class="chart-container" style="height:160px"><canvas id="chartComp"></canvas></div>
       </div>
-      <div style="padding:6px 24px 12px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap">
+      <div style="padding:4px 24px 8px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap">
         ${rangeButtonsHTML2}
       </div>
     </div>
@@ -2204,16 +2204,18 @@ function renderDashboard(){
         .filter(s => !xMin2 || new Date(s.date+'T00:00:00').getTime() >= xMin2)
         .map(s => ({ x: s.date, y: Math.round((s.value - (s.capital||s.value)) - (tickerList.reduce((sum,tk)=>{const gp=tk.gpNoRealizada||0;return sum+(tk.moneda==='MXN'?gp:gp*tc);},0))) }));
 
-      // Dataset 3: Ganancia inversiones por fecha
-      // Solo tenemos el valor actual; usamos snapshot + inversiones actuales
+      // Dataset 3: G/P Inversiones = ganancia total del snapshot - rendimiento plataformas
+      // La ganancia total del snapshot incluye ambas fuentes; separamos quitando plataformas
+      // Usamos una proporción estable basada en valores actuales
+      const _totalGainHoy = patrimonioRendPuro; // ganancia total actual
+      const _platPropHoy = _totalGainHoy !== 0 ? totalRend / _totalGainHoy : 0;
       const invCompData = hist
         .filter(s => !xMin2 || new Date(s.date+'T00:00:00').getTime() >= xMin2)
         .map(s => {
-          // Aproximar: ganancia inversiones = ganancia total - ganancia plataformas en esa fecha
-          // Por simplicidad usamos la ganancia de inversiones de hoy escalada por el tiempo
           const totalGain = s.value - (s.capital || s.value);
-          const platGain = totalRend > 0 && patrimonio > 0 ? totalGain * (totalRend / (totalRend + Math.max(0,gpNoRealizadaTotal))) : 0;
-          return { x: s.date, y: Math.round(totalGain - platGain) };
+          // Ganancia inversiones = fracción que corresponde a inversiones
+          const invGain = Math.round(totalGain * (1 - _platPropHoy));
+          return { x: s.date, y: invGain };
         });
 
       chartInstances.chartComp = new Chart(ctxComp, {
@@ -2228,8 +2230,11 @@ function renderDashboard(){
               borderWidth: 2,
               fill: false,
               tension: 0.4,
-              pointRadius: 0,
-              pointHoverRadius: 4,
+              pointRadius: sp500CompData.map((_,i) => i === sp500CompData.length-1 ? 5 : 0),
+              pointBackgroundColor: isDark ? 'rgba(255,100,130,0.85)' : 'rgba(220,50,80,0.8)',
+              pointBorderColor: isDark?'#1C1C1E':'#fff',
+              pointBorderWidth: 2,
+              pointHoverRadius: 5,
               yAxisID: 'yc',
             }] : []),
             {
@@ -2240,8 +2245,11 @@ function renderDashboard(){
               borderWidth: 2,
               fill: false,
               tension: 0.4,
-              pointRadius: 0,
-              pointHoverRadius: 4,
+              pointRadius: platCompData.map((_,i) => i === platCompData.length-1 ? 5 : 0),
+              pointBackgroundColor: 'rgba(10,132,255,0.85)',
+              pointBorderColor: isDark?'#1C1C1E':'#fff',
+              pointBorderWidth: 2,
+              pointHoverRadius: 5,
               yAxisID: 'yc',
             },
             {
@@ -2252,8 +2260,11 @@ function renderDashboard(){
               borderWidth: 2,
               fill: false,
               tension: 0.4,
-              pointRadius: 0,
-              pointHoverRadius: 4,
+              pointRadius: invCompData.map((_,i) => i === invCompData.length-1 ? 5 : 0),
+              pointBackgroundColor: '#30D158',
+              pointBorderColor: isDark?'#1C1C1E':'#fff',
+              pointBorderWidth: 2,
+              pointHoverRadius: 5,
               yAxisID: 'yc',
             },
           ]
