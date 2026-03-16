@@ -1631,7 +1631,7 @@ function renderDashboard(){
     ${applied>0?`<div class="snapshot-banner" style="background:rgba(191,90,242,0.06);border-color:rgba(191,90,242,0.2);margin-bottom:16px"><span class="snap-dot" style="background:var(--purple)"></span><span style="color:var(--purple)">✅ <strong>${applied} ${t('recurrentesAplicadas')}</strong> ${t('esteMes')}</span></div>`:''}
     ${alertsHtml}
     ${platsSinActualizarHtml}
-    <div class="price-banner">
+    <div class="price-banner" style="margin-bottom:8px">
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         ${bannerStatus}
         ${priceSummary.missing>0?`<span style="color:var(--text3)">· ${priceSummary.missing} ${t('sinPrecio')}</span>`:''}
@@ -1643,7 +1643,6 @@ function renderDashboard(){
         <button class="btn btn-primary btn-sm" onclick="updateAllPrices(true)" ${priceUpdateState.loading?'disabled':''} id="btnUpdate">${btnLabel}</button>
       </div>
     </div>
-
     <div class="grid-8" style="margin-bottom:16px">
       <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">${t('valorPlataformas')}</div><div class="stat-value">${fmt(totalMXN)}</div><div class="stat-sub"><span style="color:${pctCol(totalRend)};font-weight:700">${fmtPct(invInicial?totalRend/invInicial:0)}</span> ${t('return')}</div></div>
       <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">${t('rendPlataformas')}</div><div class="stat-value" style="color:${pctCol(totalRend)}">${fmt(totalRend)}</div><div class="stat-sub">${platsConTasa>0?`<span style="color:var(--teal)">⚡${fmt(totalRendAuto)} ${t('auto')}</span>`:t('rendimientoSobre')}</div></div>
@@ -1654,8 +1653,6 @@ function renderDashboard(){
       <div class="card stat" style="border-top:3px solid var(--orange)"><div class="stat-label">${t('gastosMes')} ${curLabel}</div><div class="stat-value" style="color:${totGastoMes>0?'var(--red)':'var(--text)'}">${fmtD(totGastoMes)}</div><div class="stat-sub">${totalPresupuesto>0?(pctPresUsado*100).toFixed(0)+'% '+t('budget'):totIngMes>0||ingresoMensualEUR>0?fmtD(totIngMes>0?totIngMes:ingresoMensualEUR)+' '+t('income'):''}</div></div>
       <div class="card stat" style="border-top:3px solid var(--orange)"><div class="stat-label">${t('balanceMes')} ${curLabel}</div><div class="stat-value" style="color:${pctCol(balMes)}">${fmtD(balMes)}</div><div class="stat-sub">${(pctAhorro*100).toFixed(0)}% ${t('ahorro')}${totIngMes===0&&ingresoMensualEUR>0?` (${t('est')})`:''}</div></div>
     </div>
-
-    ${maxConc>0.25?`<div style="display:flex;align-items:center;gap:10px;padding:6px 14px;background:rgba(255,159,10,0.06);border:1px solid rgba(255,159,10,0.15);border-radius:10px;margin-bottom:10px;font-size:12px"><span style="font-size:18px">⚠️</span><span><strong>${topPlat?.name}</strong> ${t('concentra')} <strong style="color:var(--orange)">${(maxConc*100).toFixed(1)}%</strong> ${t('deTuPortafolio')}.</span></div>`:''}
 
     <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden">
       <div style="padding:16px 20px 10px">
@@ -1912,50 +1909,6 @@ function renderDashboard(){
       const dynRadius = 0;
       const dynLastRadius = realDates.length > 0 ? 5 : 0;
 
-      // ── Mapa de eventos para la línea de patrimonio (naranja) ────────────
-      // Incluye: plataformas (aportaciones, retiros, gastos, transferencias)
-      //          inversiones (compras, ventas)
-      const _evoEvt = {}; // { 'YYYY-MM-DD': { type:'aport'|'retiro', labels:[] } }
-      const _addEvt = (fecha, isPositive, label) => {
-        if (!fecha) return;
-        const d = fecha.substring(0, 10);
-        if (!_evoEvt[d]) _evoEvt[d] = { type: isPositive ? 'aport' : 'retiro', labels: [] };
-        if (!isPositive) _evoEvt[d].type = 'retiro'; // retiro/venta tiene prioridad visual
-        _evoEvt[d].labels.push(label);
-      };
-      // Plataformas
-      platforms.forEach(p => {
-        if (p.saldoInicial > 0 && p.fechaInicio) _addEvt(p.fechaInicio, true, '↑ ' + p.name);
-      });
-      movements.forEach(m => {
-        if (m.seccion === 'plataformas' && m.fecha) {
-          const isAport  = m.tipoPlat === 'Aportación' || m.tipoPlat === 'Transferencia entrada';
-          const isRetiro = m.tipoPlat === 'Retiro' || m.tipoPlat === 'Transferencia salida' || m.tipoPlat === 'Gasto';
-          if (isAport || isRetiro) {
-            const icon = isAport ? '↑' : '↓';
-            _addEvt(m.fecha, isAport, icon + ' ' + (m.platform || '') + (m.monto ? ' ' + fmt(m.monto) : ''));
-          }
-        }
-        // Inversiones
-        if (m.seccion === 'inversiones' && m.fecha) {
-          const isCompra = m.tipoMov === 'Compra';
-          const isVenta  = m.tipoMov === 'Venta';
-          if (isCompra || isVenta) {
-            const icon = isCompra ? '↑' : '↓';
-            _addEvt(m.fecha, isCompra, icon + ' ' + (m.ticker || '') + (m.montoTotal ? ' ' + fmt(m.montoTotal) : ''));
-          }
-        }
-      });
-      // pointRadius para línea patrimonio (naranja): evento=4, último=5, resto=0
-      const _patrimonioRadius = realDates.map((d, i) => {
-        if (i === realDates.length - 1) return dynLastRadius;
-        return _evoEvt[d] ? 4 : 0;
-      });
-      const _patrimonioPointBg = realDates.map((d, i) => {
-        if (i === realDates.length - 1) return 'rgba(245,166,35,0.95)';
-        return _evoEvt[d]?.type === 'retiro' ? 'var(--red)' : '#30D158';
-      });
-
       // ── Proyección ajustada al rango visible ────────────────────────
       // Cuántos meses hacia adelante mostrar según el rango seleccionado
       const projMonthsMap = {
@@ -2123,8 +2076,8 @@ function renderDashboard(){
             borderWidth:2,
             fill:false,
             tension:0.4,
-            pointRadius: _patrimonioRadius,
-            pointBackgroundColor: _patrimonioPointBg,
+            pointRadius: realDates.map((_,i) => i === realDates.length-1 ? dynLastRadius : dynRadius),
+            pointBackgroundColor:'rgba(245,166,35,0.95)',
             pointBorderColor: isDark?'#1C1C1E':'#fff',
             pointBorderWidth:2,
             pointHoverRadius:6,
@@ -2181,19 +2134,13 @@ function renderDashboard(){
                 return ` ${icons[ctx.datasetIndex]||'⚪'} ${ctx.dataset.label}: ${fmtFull(val)}`;
               },
               afterBody: items => {
-                const lines = [];
                 const real = items.find(i=>i.datasetIndex===0);
                 const proj = items.find(i=>i.datasetIndex===2);
-                if(real&&proj){ const diff=proj.parsed.y-real.parsed.y; if(diff!==0){ const sign=diff>0?'+':''; lines.push('', ` ${t('potencial')}: ${sign}${fmtFull(diff)}`); } }
-                // Eventos de movimiento en esa fecha
-                const dateKey = items[0]?.raw?.x || items[0]?.label || '';
-                const d = dateKey.substring(0,10);
-                const evts = _evoEvt[d];
-                if(evts && evts.labels.length > 0) {
-                  lines.push('');
-                  evts.labels.forEach(l => lines.push(' ' + l));
-                }
-                return lines;
+                if(!real||!proj) return [];
+                const diff = proj.parsed.y - real.parsed.y;
+                if(diff === 0) return [];
+                const sign = diff > 0 ? '+' : '';
+                return ['', ` ${t('potencial')}: ${sign}${fmtFull(diff)}`];
               }
             }
           }
@@ -2290,45 +2237,6 @@ function renderDashboard(){
           return { x: s.date, y: pct };
         });
 
-      // ── Eventos para gráfico de comparación ─────────────────────────────
-      // Plataformas: aportaciones, retiros, gastos, saldo actual, transferencias
-      const _platEvt = {}; // { date: { type, labels[] } }
-      const _invEvt  = {}; // { date: { type, labels[] } }
-      const _addCompEvt = (map, fecha, isPositive, label) => {
-        if (!fecha) return;
-        const d = fecha.substring(0, 10);
-        if (!map[d]) map[d] = { type: isPositive ? 'aport' : 'retiro', labels: [] };
-        if (!isPositive) map[d].type = 'retiro';
-        map[d].labels.push(label);
-      };
-      movements.forEach(m => {
-        if (m.seccion === 'plataformas' && m.fecha) {
-          const isAport  = m.tipoPlat === 'Aportación' || m.tipoPlat === 'Transferencia entrada';
-          const isRetiro = m.tipoPlat === 'Retiro' || m.tipoPlat === 'Transferencia salida' || m.tipoPlat === 'Gasto';
-          const isSaldo  = m.tipoPlat === 'Saldo Actual';
-          if (isAport || isRetiro || isSaldo) {
-            const icon = isAport || isSaldo ? '↑' : '↓';
-            _addCompEvt(_platEvt, m.fecha, isAport || isSaldo, icon + ' ' + (m.platform || '') + (m.monto ? ' ' + fmt(m.monto) : ''));
-          }
-        }
-        if (m.seccion === 'inversiones' && m.fecha) {
-          const isCompra = m.tipoMov === 'Compra';
-          const isVenta  = m.tipoMov === 'Venta';
-          if (isCompra || isVenta) {
-            const icon = isCompra ? '↑' : '↓';
-            _addCompEvt(_invEvt, m.fecha, isCompra, icon + ' ' + (m.ticker || '') + (m.montoTotal ? ' ' + fmt(m.montoTotal) : ''));
-          }
-        }
-      });
-      // pointRadius helpers
-      const _compRadius = (data, evtMap) => data.map((pt, i) => {
-        if (i === data.length - 1) return 5;
-        return evtMap[pt.x] ? 4 : 0;
-      });
-      const _compPointBg = (data, evtMap, defaultColor) => data.map((pt, i) => {
-        if (i === data.length - 1) return defaultColor;
-        return evtMap[pt.x]?.type === 'retiro' ? 'var(--red)' : '#30D158';
-      });
       chartInstances.chartComp = new Chart(ctxComp, {
         type: 'line',
         data: {
@@ -2356,8 +2264,8 @@ function renderDashboard(){
               borderWidth: 2,
               fill: false,
               tension: 0.4,
-              pointRadius: _compRadius(platCompData, _platEvt),
-              pointBackgroundColor: _compPointBg(platCompData, _platEvt, 'rgba(10,132,255,0.85)'),
+              pointRadius: platCompData.map((_,i) => i === platCompData.length-1 ? 5 : 0),
+              pointBackgroundColor: 'rgba(10,132,255,0.85)',
               pointBorderColor: isDark?'#1C1C1E':'#fff',
               pointBorderWidth: 2,
               pointHoverRadius: 5,
@@ -2371,8 +2279,8 @@ function renderDashboard(){
               borderWidth: 2,
               fill: false,
               tension: 0.4,
-              pointRadius: _compRadius(invCompData, _invEvt),
-              pointBackgroundColor: _compPointBg(invCompData, _invEvt, '#30D158'),
+              pointRadius: invCompData.map((_,i) => i === invCompData.length-1 ? 5 : 0),
+              pointBackgroundColor: '#30D158',
               pointBorderColor: isDark?'#1C1C1E':'#fff',
               pointBorderWidth: 2,
               pointHoverRadius: 5,
@@ -2408,16 +2316,6 @@ function renderDashboard(){
                   const icons = ['🔴','🔵','🟢'];
                   const sign = val >= 0 ? '+' : '';
                   return ` ${icons[ctx.datasetIndex]||'⚪'} ${ctx.dataset.label}: ${sign}${val.toFixed(2)}%`;
-                },
-                afterBody: items => {
-                  const lines = [];
-                  const dateKey = items[0]?.raw?.x || items[0]?.label || '';
-                  const d = dateKey.substring(0, 10);
-                  const pe = _platEvt[d];
-                  const ie = _invEvt[d];
-                  if (pe?.labels.length) { lines.push(''); pe.labels.forEach(l => lines.push(' 🔵 ' + l)); }
-                  if (ie?.labels.length) { if (!lines.length) lines.push(''); ie.labels.forEach(l => lines.push(' 🟢 ' + l)); }
-                  return lines;
                 }
               }
             }
