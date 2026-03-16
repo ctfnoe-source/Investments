@@ -909,10 +909,7 @@ async function fetchSP500History() {
   return null;
 }
 
-// Normaliza la curva del SP500 al capital del portafolio
-// Devuelve array de { date, ganancia } comparable con la línea verde y azul
-// La ganancia = cuánto habrías ganado/perdido si hubieras invertido
-// el mismo capital en SPY desde la fecha de origen
+// Normaliza la curva del SP500 al capital del portafolio (legacy, no se usa en gráfico comparativo)
 function normalizeSP500(sp500data, capitalInicial, fechaOrigen) {
   if (!sp500data || !sp500data.dates.length || !capitalInicial || capitalInicial <= 0) return [];
   const origenStr = fechaOrigen.substring(0, 7);
@@ -926,6 +923,25 @@ function normalizeSP500(sp500data, capitalInicial, fechaOrigen) {
     if (sp500data.dates[i] < fechaOrigen) continue;
     const retorno = (sp500data.closes[i] - precioOrigen) / precioOrigen;
     result.push({ date: sp500data.dates[i], ganancia: Math.round(capitalInicial * retorno) });
+  }
+  return result;
+}
+
+// Devuelve array de { date, pct } con el rendimiento % PURO del SP500 desde fechaOrigen
+// Completamente independiente del dinero del usuario
+function sp500ReturnPct(sp500data, fechaOrigen) {
+  if (!sp500data || !sp500data.dates.length || !fechaOrigen) return [];
+  const origenStr = fechaOrigen.substring(0, 7);
+  let precioOrigen = null;
+  for (let i = 0; i < sp500data.dates.length; i++) {
+    if (sp500data.dates[i].substring(0, 7) <= origenStr) precioOrigen = sp500data.closes[i];
+  }
+  if (!precioOrigen) precioOrigen = sp500data.closes[0];
+  const result = [];
+  for (let i = 0; i < sp500data.dates.length; i++) {
+    if (sp500data.dates[i] < fechaOrigen) continue;
+    const pct = ((sp500data.closes[i] - precioOrigen) / precioOrigen) * 100;
+    result.push({ date: sp500data.dates[i], pct: Math.round(pct * 100) / 100 });
   }
   return result;
 }
@@ -1708,18 +1724,17 @@ function renderDashboard(){
         </div>
         <div style="display:flex;gap:16px">
           ${(settings.alphaVantageKey||settings.finnhubKey)&&_sp500Data?(()=>{
-            const _evs2=[];
-            platforms.forEach(p=>{if(!p.fechaInicio)return;const toMXN=v=>p.moneda==='USD'?v*tc:p.moneda==='EUR'?v*eurmxn:v;if(p.saldoInicial>0)_evs2.push({fecha:p.fechaInicio,delta:toMXN(p.saldoInicial)});});
-            movements.forEach(m=>{if(m.seccion!=='plataformas'||!m.fecha)return;const plat=platforms.find(p=>p.name===m.platform);const toMXN=v=>plat?.moneda==='USD'?v*tc:plat?.moneda==='EUR'?v*eurmxn:v;const monto=toMXN(m.monto||0);if(m.tipoPlat==='Aportación'||m.tipoPlat==='Transferencia entrada')_evs2.push({fecha:m.fecha,delta:monto});else if(m.tipoPlat==='Retiro'||m.tipoPlat==='Transferencia salida'||m.tipoPlat==='Gasto')_evs2.push({fecha:m.fecha,delta:-monto});});
-            movements.forEach(m=>{if(m.seccion!=='inversiones'||!m.fecha)return;const monto=m.montoTotal||(m.cantidad||0)*(m.precioUnit||0);const enMXN=m.moneda==='MXN'?monto:monto*tc;if(m.tipoMov==='Compra')_evs2.push({fecha:m.fecha,delta:enMXN});if(m.tipoMov==='Venta')_evs2.push({fecha:m.fecha,delta:-enMXN});});
-            _evs2.sort((a,b)=>a.fecha.localeCompare(b.fecha));
-            const capRef2=Math.max(0,_evs2.reduce((s,e)=>s+e.delta,0));
-            const fechaO2=_evs2.length>0?_evs2[0].fecha:todayDateStr;
-            const pts2=normalizeSP500(_sp500Data,capRef2,fechaO2);
+            // Fecha de origen = primer movimiento/plataforma del usuario
+            const _evsDates=[];
+            platforms.forEach(p=>{if(p.fechaInicio)_evsDates.push(p.fechaInicio);});
+            movements.forEach(m=>{if(m.fecha)_evsDates.push(m.fecha);});
+            _evsDates.sort();
+            const fechaO2=_evsDates.length>0?_evsDates[0]:todayDateStr;
+            const pts2=sp500ReturnPct(_sp500Data,fechaO2);
             const lastPt=pts2[pts2.length-1];
             if(!lastPt) return '';
-            const spyPct=capRef2>0?(lastPt.ganancia/capRef2*100).toFixed(1):'—';
-            return `<div style="text-align:right"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:700">S&P 500</div><div style="font-size:15px;font-weight:800;color:${lastPt.ganancia>=0?'var(--green)':'var(--red)'}">${lastPt.ganancia>=0?'+':''}${fmt(lastPt.ganancia)}</div><div style="font-size:10px;color:var(--text2)">${lastPt.ganancia>=0?'+':''}${spyPct}%</div></div>`;
+            const spyPct=lastPt.pct.toFixed(2);
+            return `<div style="text-align:right"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:700">S&P 500</div><div style="font-size:15px;font-weight:800;color:${lastPt.pct>=0?'var(--green)':'var(--red)'}">${lastPt.pct>=0?'+':''}${spyPct}%</div><div style="font-size:10px;color:var(--text2)">desde ${fechaO2.substring(0,7)}</div></div>`;
           })():''}
           <div style="text-align:right"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:700">${t('plataformas')}</div><div style="font-size:15px;font-weight:800;color:${pctCol(totalRend)}">${totalRend>=0?'+':''}${fmt(totalRend)}</div><div style="font-size:10px;color:var(--text2)">${fmtPct(invInicial?totalRend/invInicial:0)}</div></div>
           <div style="text-align:right"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:700">${t('inversiones')}</div><div style="font-size:15px;font-weight:800;color:${pctCol(gpNoRealizadaTotal)}">${gpNoRealizadaTotal>=0?'+':''}${fmt(gpNoRealizadaTotal)}</div><div style="font-size:10px;color:var(--text2)">${fmtPct(totalInvertidoUSD?gpNoRealizadaTotal/(totalInvertidoUSD*tc):0)}</div></div>
@@ -2185,37 +2200,40 @@ function renderDashboard(){
       }
       const xMax2 = new Date(todayDateStr + 'T23:59:59').getTime();
 
-      // Dataset 1: S&P 500
+      // Dataset 1: S&P 500 — rendimiento % PURO, sin relación con el dinero del usuario
       const sp500CompData = (()=>{
         if (!_sp500Data) return [];
-        const _evs2=[];
-        platforms.forEach(p=>{if(!p.fechaInicio)return;const toMXN=v=>p.moneda==='USD'?v*tc:p.moneda==='EUR'?v*eurmxn:v;if(p.saldoInicial>0)_evs2.push({fecha:p.fechaInicio,delta:toMXN(p.saldoInicial)});});
-        movements.forEach(m=>{if(m.seccion!=='plataformas'||!m.fecha)return;const plat=platforms.find(p=>p.name===m.platform);const toMXN=v=>plat?.moneda==='USD'?v*tc:plat?.moneda==='EUR'?v*eurmxn:v;const monto=toMXN(m.monto||0);if(m.tipoPlat==='Aportación'||m.tipoPlat==='Transferencia entrada')_evs2.push({fecha:m.fecha,delta:monto});else if(m.tipoPlat==='Retiro'||m.tipoPlat==='Transferencia salida'||m.tipoPlat==='Gasto')_evs2.push({fecha:m.fecha,delta:-monto});});
-        movements.forEach(m=>{if(m.seccion!=='inversiones'||!m.fecha)return;const monto=m.montoTotal||(m.cantidad||0)*(m.precioUnit||0);const enMXN=m.moneda==='MXN'?monto:monto*tc;if(m.tipoMov==='Compra')_evs2.push({fecha:m.fecha,delta:enMXN});if(m.tipoMov==='Venta')_evs2.push({fecha:m.fecha,delta:-enMXN});});
-        _evs2.sort((a,b)=>a.fecha.localeCompare(b.fecha));
-        const capRef=Math.max(0,_evs2.reduce((s,e)=>s+e.delta,0));
-        const fechaO=_evs2.length>0?_evs2[0].fecha:todayDateStr;
-        const pts=normalizeSP500(_sp500Data,capRef,fechaO);
-        return pts.filter(p=>!xMin2||new Date(p.date+'T00:00:00').getTime()>=xMin2).map(p=>({x:p.date,y:p.ganancia}));
+        // Fecha origen = primer evento del usuario
+        const _evsDates2=[];
+        platforms.forEach(p=>{if(p.fechaInicio)_evsDates2.push(p.fechaInicio);});
+        movements.forEach(m=>{if(m.fecha)_evsDates2.push(m.fecha);});
+        _evsDates2.sort();
+        const fechaO=_evsDates2.length>0?_evsDates2[0]:todayDateStr;
+        const pts=sp500ReturnPct(_sp500Data,fechaO);
+        return pts.filter(p=>!xMin2||new Date(p.date+'T00:00:00').getTime()>=xMin2).map(p=>({x:p.date,y:p.pct}));
       })();
 
-      // Dataset 2: Ganancia plataformas por fecha (usando patrimonioHistory)
+      // Dataset 2: Rendimiento % plataformas por fecha (ganancia / capital)
       const platCompData = hist
         .filter(s => !xMin2 || new Date(s.date+'T00:00:00').getTime() >= xMin2)
-        .map(s => ({ x: s.date, y: Math.round((s.value - (s.capital||s.value)) - (tickerList.reduce((sum,tk)=>{const gp=tk.gpNoRealizada||0;return sum+(tk.moneda==='MXN'?gp:gp*tc);},0))) }));
+        .map(s => {
+          const gananciaPlat = Math.round((s.value - (s.capital||s.value)) - (tickerList.reduce((sum,tk)=>{const gp=tk.gpNoRealizada||0;return sum+(tk.moneda==='MXN'?gp:gp*tc);},0)));
+          const capPlat = s.capital || s.value;
+          const pct = capPlat > 0 ? Math.round((gananciaPlat / capPlat) * 10000) / 100 : 0;
+          return { x: s.date, y: pct };
+        });
 
-      // Dataset 3: G/P Inversiones = ganancia total del snapshot - rendimiento plataformas
-      // La ganancia total del snapshot incluye ambas fuentes; separamos quitando plataformas
-      // Usamos una proporción estable basada en valores actuales
+      // Dataset 3: G/P % Inversiones
       const _totalGainHoy = patrimonioRendPuro; // ganancia total actual
       const _platPropHoy = _totalGainHoy !== 0 ? totalRend / _totalGainHoy : 0;
       const invCompData = hist
         .filter(s => !xMin2 || new Date(s.date+'T00:00:00').getTime() >= xMin2)
         .map(s => {
           const totalGain = s.value - (s.capital || s.value);
-          // Ganancia inversiones = fracción que corresponde a inversiones
           const invGain = Math.round(totalGain * (1 - _platPropHoy));
-          return { x: s.date, y: invGain };
+          const capInv = totalInvertidoUSD > 0 ? totalInvertidoUSD * tc : (s.capital || s.value);
+          const pct = capInv > 0 ? Math.round((invGain / capInv) * 10000) / 100 : 0;
+          return { x: s.date, y: pct };
         });
 
       chartInstances.chartComp = new Chart(ctxComp, {
@@ -2295,7 +2313,8 @@ function renderDashboard(){
                 label: ctx => {
                   const val = ctx.parsed.y;
                   const icons = ['🔴','🔵','🟢'];
-                  return ` ${icons[ctx.datasetIndex]||'⚪'} ${ctx.dataset.label}: ${fmtFull(val)}`;
+                  const sign = val >= 0 ? '+' : '';
+                  return ` ${icons[ctx.datasetIndex]||'⚪'} ${ctx.dataset.label}: ${sign}${val.toFixed(2)}%`;
                 }
               }
             }
@@ -2317,7 +2336,7 @@ function renderDashboard(){
             },
             yc: {
               grid: { color: gridColor },
-              ticks: { font:{size:11}, color:tickColor, callback:v=>fmt(v), maxTicksLimit:4 },
+              ticks: { font:{size:11}, color:tickColor, callback: v => (v >= 0 ? '+' : '') + v.toFixed(1) + '%', maxTicksLimit:4 },
               border: { display: false }
             }
           }
