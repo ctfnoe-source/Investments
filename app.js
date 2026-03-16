@@ -2046,8 +2046,12 @@ function renderDashboard(){
         xMin = d.getTime();
       }
 
-      // xMax = último punto de proyección (así siempre se ve la línea azul)
-      xMax = new Date(projDatesAdj[projDatesAdj.length - 1] + 'T23:59:59').getTime();
+      // xMax = hoy, a menos que la proyección futura llegue más lejos
+      const todayMs = new Date(todayDateStr + 'T23:59:59').getTime();
+      const projFutureMs = projDatesAdj.length > 0
+        ? new Date(projDatesAdj[projDatesAdj.length - 1] + 'T23:59:59').getTime()
+        : todayMs;
+      xMax = projFutureMs > todayMs ? projFutureMs : todayMs;
       // ──────────────────────────────────────────────────────────────────
 
       chartInstances.chartEvo=new Chart(ctxE,{type:'line',data:{
@@ -2167,7 +2171,7 @@ function renderDashboard(){
             border:{display:false}
           },
           y:{
-            grid:{color:gridColor},
+            grid:{display:false},
             ticks:{font:{size:11},color:tickColor,callback:v=>fmt(v),maxTicksLimit:5},
             border:{display:false}
           },
@@ -2335,7 +2339,7 @@ function renderDashboard(){
               border: { display: false }
             },
             yc: {
-              grid: { color: gridColor },
+              grid: { display: false },
               ticks: { font:{size:11}, color:tickColor, callback: v => (v >= 0 ? '+' : '') + v.toFixed(1) + '%', maxTicksLimit:4 },
               border: { display: false }
             }
