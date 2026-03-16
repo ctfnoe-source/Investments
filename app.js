@@ -2068,29 +2068,23 @@ function renderDashboard(){
       // ──────────────────────────────────────────────────────────────────
 
       // ── Plugin de glow reutilizable ──────────────────────────────────
-      const _glowPlugin = {
-        id: 'lineGlow',
-        beforeDatasetsDraw(chart) {
-          chart.ctx.save();
-        },
+      const _makeGlowPlugin = (id) => ({
+        id,
         beforeDatasetDraw(chart, args) {
-          const ds = args.meta.dataset;
-          if (!ds) return;
           const color = args.meta._dataset?.borderColor;
           if (!color || typeof color !== 'string') return;
+          chart.ctx.save();
           chart.ctx.shadowColor = color;
           chart.ctx.shadowBlur = 6;
         },
         afterDatasetDraw(chart) {
           chart.ctx.shadowColor = 'transparent';
           chart.ctx.shadowBlur = 0;
-        },
-        afterDatasetsDraw(chart) {
           chart.ctx.restore();
         }
-      };
+      });
 
-      chartInstances.chartEvo=new Chart(ctxE,{type:'line',plugins:[_glowPlugin],data:{
+      chartInstances.chartEvo=new Chart(ctxE,{type:'line',plugins:[_makeGlowPlugin('glowEvo')],data:{
         datasets:[
           {
             label: t('gananciaReal'),
@@ -2101,9 +2095,9 @@ function renderDashboard(){
             fill:false,
             tension:0.4,
             pointRadius: realDates.map((d,i) => i===realDates.length-1 ? dynLastRadius : (_evoEvt[d] ? 1.5 : 0)),
-            pointBackgroundColor:'#30D158',
-            pointBorderColor:'transparent',
-            pointBorderWidth:0,
+            pointBackgroundColor: realDates.map((_,i) => i===realDates.length-1 ? (isDark?'#1C1C1E':'#fff') : '#30D158'),
+            pointBorderColor: realDates.map((_,i) => i===realDates.length-1 ? '#30D158' : 'transparent'),
+            pointBorderWidth: realDates.map((_,i) => i===realDates.length-1 ? 2 : 0),
             pointHoverRadius:6,
             pointHoverBackgroundColor:'#30D158',
             pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
@@ -2119,9 +2113,9 @@ function renderDashboard(){
             fill:false,
             tension:0.4,
             pointRadius: realDates.map((d,i) => i===realDates.length-1 ? dynLastRadius : (_evoEvt[d] ? 1.5 : 0)),
-            pointBackgroundColor:'rgba(245,166,35,0.9)',
-            pointBorderColor:'transparent',
-            pointBorderWidth:0,
+            pointBackgroundColor: realDates.map((_,i) => i===realDates.length-1 ? (isDark?'#1C1C1E':'#fff') : 'rgba(245,166,35,0.9)'),
+            pointBorderColor: realDates.map((_,i) => i===realDates.length-1 ? 'rgba(245,166,35,0.95)' : 'transparent'),
+            pointBorderWidth: realDates.map((_,i) => i===realDates.length-1 ? 2 : 0),
             pointHoverRadius:6,
             pointHoverBackgroundColor:'rgba(245,166,35,1)',
             pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
@@ -2298,7 +2292,7 @@ function renderDashboard(){
 
       chartInstances.chartComp = new Chart(ctxComp, {
         type: 'line',
-        plugins: [_glowPlugin],
+        plugins: [_makeGlowPlugin('glowComp')],
         data: {
           datasets: [
             ...(sp500CompData.length > 0 ? [{
@@ -2325,9 +2319,9 @@ function renderDashboard(){
               fill: false,
               tension: 0.4,
               pointRadius: platCompData.map((p,i) => { const d=p.x?.substring(0,10); return i===platCompData.length-1 ? 2.3 : (d&&_platEvt[d] ? 1.5 : 0); }),
-              pointBackgroundColor:'rgba(10,132,255,0.85)',
-              pointBorderColor:'transparent',
-              pointBorderWidth:0,
+              pointBackgroundColor: platCompData.map((_,i) => i===platCompData.length-1 ? (isDark?'#1C1C1E':'#fff') : 'rgba(10,132,255,0.85)'),
+              pointBorderColor: platCompData.map((_,i) => i===platCompData.length-1 ? 'rgba(10,132,255,0.85)' : 'transparent'),
+              pointBorderWidth: platCompData.map((_,i) => i===platCompData.length-1 ? 2 : 0),
               pointHoverRadius: 5,
               yAxisID: 'yc',
             },
@@ -2340,9 +2334,9 @@ function renderDashboard(){
               fill: false,
               tension: 0.4,
               pointRadius: invCompData.map((p,i) => { const d=p.x?.substring(0,10); return i===invCompData.length-1 ? 2.3 : (d&&_invEvt[d] ? 1.5 : 0); }),
-              pointBackgroundColor:'#30D158',
-              pointBorderColor:'transparent',
-              pointBorderWidth:0,
+              pointBackgroundColor: invCompData.map((_,i) => i===invCompData.length-1 ? (isDark?'#1C1C1E':'#fff') : '#30D158'),
+              pointBorderColor: invCompData.map((_,i) => i===invCompData.length-1 ? '#30D158' : 'transparent'),
+              pointBorderWidth: invCompData.map((_,i) => i===invCompData.length-1 ? 2 : 0),
               pointHoverRadius: 5,
               yAxisID: 'yc',
             },
