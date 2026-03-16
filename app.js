@@ -2077,16 +2077,10 @@ function renderDashboard(){
             borderWidth:2,
             fill:true,
             tension:0.4,
-            segment: {
-              borderColor: ctx => {
-                const d = realDates[ctx.p1DataIndex];
-                if (_evoEvt[d]) return _evoEvt[d]==='retiro' ? 'rgba(255,120,100,0.75)' : 'rgba(90,210,140,1)';
-              }
-            },
-            pointRadius: realDates.map((_,i) => i===realDates.length-1 ? dynLastRadius : 0),
+            pointRadius: realDates.map((d,i) => i===realDates.length-1 ? dynLastRadius : (_evoEvt[d] ? 2.5 : 0)),
             pointBackgroundColor:'#30D158',
-            pointBorderColor: isDark?'#1C1C1E':'#fff',
-            pointBorderWidth:2,
+            pointBorderColor:'transparent',
+            pointBorderWidth:0,
             pointHoverRadius:6,
             pointHoverBackgroundColor:'#30D158',
             pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
@@ -2101,16 +2095,10 @@ function renderDashboard(){
             borderWidth:2,
             fill:false,
             tension:0.4,
-            segment: {
-              borderColor: ctx => {
-                const d = realDates[ctx.p1DataIndex];
-                if (_evoEvt[d]) return _evoEvt[d]==='retiro' ? 'rgba(255,120,100,0.75)' : 'rgba(90,210,140,1)';
-              }
-            },
-            pointRadius: realDates.map((_,i) => i===realDates.length-1 ? dynLastRadius : 0),
-            pointBackgroundColor:'rgba(245,166,35,0.95)',
-            pointBorderColor: isDark?'#1C1C1E':'#fff',
-            pointBorderWidth:2,
+            pointRadius: realDates.map((d,i) => i===realDates.length-1 ? dynLastRadius : (_evoEvt[d] ? 2.5 : 0)),
+            pointBackgroundColor:'rgba(245,166,35,0.9)',
+            pointBorderColor:'transparent',
+            pointBorderWidth:0,
             pointHoverRadius:6,
             pointHoverBackgroundColor:'rgba(245,166,35,1)',
             pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
@@ -2312,16 +2300,10 @@ function renderDashboard(){
               borderWidth: 2,
               fill: false,
               tension: 0.4,
-              segment: {
-                borderColor: ctx => {
-                  const d = platCompData[ctx.p1DataIndex]?.x?.substring(0,10);
-                  if (d && _platEvt[d]) return _platEvt[d]==='out' ? 'rgba(255,120,100,0.75)' : 'rgba(90,210,140,1)';
-                }
-              },
-              pointRadius: platCompData.map((_,i) => i===platCompData.length-1 ? 5 : 0),
-              pointBackgroundColor: 'rgba(10,132,255,0.85)',
-              pointBorderColor: isDark?'#1C1C1E':'#fff',
-              pointBorderWidth: 2,
+              pointRadius: platCompData.map((p,i) => { const d=p.x?.substring(0,10); return i===platCompData.length-1 ? 5 : (d&&_platEvt[d] ? 2.5 : 0); }),
+              pointBackgroundColor:'rgba(10,132,255,0.85)',
+              pointBorderColor:'transparent',
+              pointBorderWidth:0,
               pointHoverRadius: 5,
               yAxisID: 'yc',
             },
@@ -2333,16 +2315,10 @@ function renderDashboard(){
               borderWidth: 2,
               fill: false,
               tension: 0.4,
-              segment: {
-                borderColor: ctx => {
-                  const d = invCompData[ctx.p1DataIndex]?.x?.substring(0,10);
-                  if (d && _invEvt[d]) return _invEvt[d]==='out' ? 'rgba(255,120,100,0.75)' : 'rgba(90,210,140,1)';
-                }
-              },
-              pointRadius: invCompData.map((_,i) => i===invCompData.length-1 ? 5 : 0),
-              pointBackgroundColor: '#30D158',
-              pointBorderColor: isDark?'#1C1C1E':'#fff',
-              pointBorderWidth: 2,
+              pointRadius: invCompData.map((p,i) => { const d=p.x?.substring(0,10); return i===invCompData.length-1 ? 5 : (d&&_invEvt[d] ? 2.5 : 0); }),
+              pointBackgroundColor:'#30D158',
+              pointBorderColor:'transparent',
+              pointBorderWidth:0,
               pointHoverRadius: 5,
               yAxisID: 'yc',
             },
