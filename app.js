@@ -2067,26 +2067,7 @@ function renderDashboard(){
       xMax = todayMs;
       // ──────────────────────────────────────────────────────────────────
 
-      chartInstances.chartEvo=new Chart(ctxE,{type:'line',
-      plugins:[{
-        id:'evtBandsEvo',
-        afterDraw: chart => {
-          const { ctx, chartArea, scales } = chart;
-          if (!chartArea || !scales.x) return;
-          ctx.save();
-          ctx.beginPath();
-          ctx.rect(chartArea.left, chartArea.top, chartArea.width, chartArea.height);
-          ctx.clip();
-          Object.entries(_evoEvt).forEach(([date, type]) => {
-            const x = scales.x.getPixelForValue(new Date(date+'T12:00:00').getTime());
-            if (x < chartArea.left || x > chartArea.right) return;
-            ctx.fillStyle = type==='retiro' ? 'rgba(255,69,58,0.18)' : 'rgba(48,209,88,0.18)';
-            ctx.fillRect(x - 1.5, chartArea.top, 3, chartArea.height);
-          });
-          ctx.restore();
-        }
-      }],
-      data:{
+      chartInstances.chartEvo=new Chart(ctxE,{type:'line',data:{
         datasets:[
           {
             label: t('gananciaReal'),
@@ -2096,10 +2077,10 @@ function renderDashboard(){
             borderWidth:2,
             fill:true,
             tension:0.4,
-            pointRadius: realDates.map((_,i) => i===realDates.length-1 ? dynLastRadius : 0),
-            pointBackgroundColor:'#30D158',
-            pointBorderColor: isDark?'#1C1C1E':'#fff',
-            pointBorderWidth:2,
+            pointRadius: realDates.map((d,i) => i===realDates.length-1 ? dynLastRadius : (_evoEvt[d] ? 3 : 0)),
+            pointBackgroundColor: realDates.map((d,i) => i===realDates.length-1 ? '#30D158' : (_evoEvt[d]==='retiro' ? 'rgba(180,100,120,0.55)' : 'rgba(100,160,200,0.55)')),
+            pointBorderColor: 'transparent',
+            pointBorderWidth: 0,
             pointHoverRadius:6,
             pointHoverBackgroundColor:'#30D158',
             pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
@@ -2114,10 +2095,10 @@ function renderDashboard(){
             borderWidth:2,
             fill:false,
             tension:0.4,
-            pointRadius: realDates.map((_,i) => i===realDates.length-1 ? dynLastRadius : 0),
-            pointBackgroundColor:'rgba(245,166,35,0.95)',
-            pointBorderColor: isDark?'#1C1C1E':'#fff',
-            pointBorderWidth:2,
+            pointRadius: realDates.map((d,i) => i===realDates.length-1 ? dynLastRadius : (_evoEvt[d] ? 3 : 0)),
+            pointBackgroundColor: realDates.map((d,i) => i===realDates.length-1 ? 'rgba(245,166,35,0.95)' : (_evoEvt[d]==='retiro' ? 'rgba(180,100,120,0.55)' : 'rgba(100,160,200,0.55)')),
+            pointBorderColor: realDates.map((d,i) => i===realDates.length-1 ? (isDark?'#1C1C1E':'#fff') : 'transparent'),
+            pointBorderWidth: realDates.map((d,i) => i===realDates.length-1 ? 2 : 0),
             pointHoverRadius:6,
             pointHoverBackgroundColor:'rgba(245,166,35,1)',
             pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
@@ -2276,11 +2257,12 @@ function renderDashboard(){
         });
 
       // ── Mapas de eventos para bandas verticales ──────────────────────────
+      // ── Mapas de eventos para gráfico comparación ───────────────────────
       const _platEvt = {}, _invEvt = {};
       movements.forEach(m => {
         if (m.seccion === 'plataformas' && m.fecha) {
           const d = m.fecha.substring(0,10);
-          const isIn = m.tipoPlat==='Aportación'||m.tipoPlat==='Transferencia entrada'||m.tipoPlat==='Saldo Actual';
+          const isIn  = m.tipoPlat==='Aportación'||m.tipoPlat==='Transferencia entrada'||m.tipoPlat==='Saldo Actual';
           const isOut = m.tipoPlat==='Retiro'||m.tipoPlat==='Transferencia salida'||m.tipoPlat==='Gasto';
           if (isIn||isOut) { if (!_platEvt[d]||isOut) _platEvt[d] = isOut?'out':'in'; }
         }
@@ -2290,32 +2272,9 @@ function renderDashboard(){
           if (m.tipoMov==='Venta')  _invEvt[d]='out';
         }
       });
-      // Función reutilizable para dibujar bandas
-      const _drawBands = (chart, evtMap, colorIn, colorOut) => {
-        const { ctx, chartArea, scales } = chart;
-        if (!chartArea || !scales.x) return;
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(chartArea.left, chartArea.top, chartArea.width, chartArea.height);
-        ctx.clip();
-        Object.entries(evtMap).forEach(([date, type]) => {
-          const x = scales.x.getPixelForValue(new Date(date + 'T12:00:00').getTime());
-          if (x < chartArea.left || x > chartArea.right) return;
-          ctx.fillStyle = type === 'out' ? colorOut : colorIn;
-          ctx.fillRect(x - 1.5, chartArea.top, 3, chartArea.height);
-        });
-        ctx.restore();
-      };
 
       chartInstances.chartComp = new Chart(ctxComp, {
         type: 'line',
-        plugins: [{
-          id: 'evtBands',
-          afterDraw: chart => {
-            _drawBands(chart, _platEvt, 'rgba(10,132,255,0.18)', 'rgba(255,69,58,0.18)');
-            _drawBands(chart, _invEvt, 'rgba(48,209,88,0.18)',   'rgba(255,69,58,0.18)');
-          }
-        }],
         data: {
           datasets: [
             ...(sp500CompData.length > 0 ? [{
@@ -2341,10 +2300,10 @@ function renderDashboard(){
               borderWidth: 2,
               fill: false,
               tension: 0.4,
-              pointRadius: platCompData.map((_,i) => i === platCompData.length-1 ? 5 : 0),
-              pointBackgroundColor: 'rgba(10,132,255,0.85)',
-              pointBorderColor: isDark?'#1C1C1E':'#fff',
-              pointBorderWidth: 2,
+              pointRadius: platCompData.map(p => { const d=p.x?.substring(0,10); return d && _platEvt[d] ? 3 : (platCompData.indexOf(p)===platCompData.length-1?5:0); }),
+              pointBackgroundColor: platCompData.map((p,i) => { const d=p.x?.substring(0,10); if(i===platCompData.length-1) return 'rgba(10,132,255,0.85)'; return d&&_platEvt[d] ? (_platEvt[d]==='out'?'rgba(180,100,120,0.55)':'rgba(100,160,200,0.55)') : 'rgba(10,132,255,0.85)'; }),
+              pointBorderColor: platCompData.map((p,i) => i===platCompData.length-1?(isDark?'#1C1C1E':'#fff'):'transparent'),
+              pointBorderWidth: platCompData.map((p,i) => i===platCompData.length-1?2:0),
               pointHoverRadius: 5,
               yAxisID: 'yc',
             },
@@ -2356,10 +2315,10 @@ function renderDashboard(){
               borderWidth: 2,
               fill: false,
               tension: 0.4,
-              pointRadius: invCompData.map((_,i) => i === invCompData.length-1 ? 5 : 0),
-              pointBackgroundColor: '#30D158',
-              pointBorderColor: isDark?'#1C1C1E':'#fff',
-              pointBorderWidth: 2,
+              pointRadius: invCompData.map(p => { const d=p.x?.substring(0,10); return d && _invEvt[d] ? 3 : (invCompData.indexOf(p)===invCompData.length-1?5:0); }),
+              pointBackgroundColor: invCompData.map((p,i) => { const d=p.x?.substring(0,10); if(i===invCompData.length-1) return '#30D158'; return d&&_invEvt[d] ? (_invEvt[d]==='out'?'rgba(180,100,120,0.55)':'rgba(100,160,200,0.55)') : '#30D158'; }),
+              pointBorderColor: invCompData.map((p,i) => i===invCompData.length-1?(isDark?'#1C1C1E':'#fff'):'transparent'),
+              pointBorderWidth: invCompData.map((p,i) => i===invCompData.length-1?2:0),
               pointHoverRadius: 5,
               yAxisID: 'yc',
             },
