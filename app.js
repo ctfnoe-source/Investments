@@ -1655,12 +1655,11 @@ function renderDashboard(){
     </div>
 
     <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden">
-      <div style="padding:16px 20px 10px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+      <div style="padding:14px 20px 10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
-            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(245,166,35,0.9);margin-bottom:4px">📈 ${t('patrimonioTotal')}</div>
-            <div style="font-size:22px;font-weight:800;letter-spacing:-0.03em;color:rgba(245,166,35,0.95);line-height:1">${fmt(patrimonio)}</div>
-            <div style="display:flex;gap:14px;margin-top:10px;flex-wrap:wrap">
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(245,166,35,0.9);margin-bottom:6px">📈 ${t('patrimonioTotal')} · <span style="color:rgba(245,166,35,0.95);font-size:14px;font-weight:800;letter-spacing:-0.02em">${fmt(patrimonio)}</span></div>
+            <div style="display:flex;gap:14px;flex-wrap:wrap">
               <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px">
                 <span style="display:inline-block;width:16px;height:3px;background:rgba(245,166,35,0.95);border-radius:2px"></span>
                 ${t('patrimonioTotal2')}
@@ -1673,27 +1672,25 @@ function renderDashboard(){
                 <span style="display:inline-block;width:16px;height:3px;background:rgba(10,132,255,0.85);border-radius:2px"></span>
                 ${t('proyeccion')} ${(re*100).toFixed(0)}%
               </span>
-
             </div>
           </div>
-          <div style="display:flex;gap:20px;align-items:flex-start">
+          <div style="display:flex;gap:16px;align-items:center">
             <div style="text-align:right">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--green);margin-bottom:2px">${t('gananciaNetaTotal')}</div>
-              <div style="font-size:18px;font-weight:800;letter-spacing:-0.03em;color:${pctCol(patrimonioRendPuro)};line-height:1">${patrimonioRendPuro>=0?'+':''}${fmt(patrimonioRendPuro)}</div>
+              <div style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:700;margin-bottom:2px">${t('gananciaNetaTotal')}</div>
+              <div style="font-size:15px;font-weight:800;color:${pctCol(patrimonioRendPuro)}">${patrimonioRendPuro>=0?'+':''}${fmt(patrimonioRendPuro)}</div>
             </div>
-
             ${rendAnualReal !== null ? `
             <div style="width:1px;background:var(--border);align-self:stretch;margin:2px 0"></div>
             <div style="text-align:right">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(245,166,35,0.9);margin-bottom:2px">${t('cagrReal')}</div>
-              <div style="font-size:18px;font-weight:800;letter-spacing:-0.03em;color:${pctCol(rendAnualReal)};line-height:1">${rendAnualReal>=0?'+':''}${(rendAnualReal*100).toFixed(1)}%</div>
-              <div style="font-size:10px;color:var(--text2);margin-top:3px">${t('annualized')} · ${Math.round((new Date(hist[hist.length-1].date)-new Date(hist[0].date))/(1000*60*60*24))}d</div>
+              <div style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:700;margin-bottom:2px">${t('cagrReal')}</div>
+              <div style="font-size:15px;font-weight:800;color:${pctCol(rendAnualReal)}">${rendAnualReal>=0?'+':''}${(rendAnualReal*100).toFixed(1)}%</div>
+              <div style="font-size:10px;color:var(--text2);margin-top:2px">${t('annualized')} · ${Math.round((new Date(hist[hist.length-1].date)-new Date(hist[0].date))/(1000*60*60*24))}d</div>
             </div>` : ''}
           </div>
         </div>
       </div>
       <div style="padding:0 20px 0px">
-        <div class="chart-container" style="height:200px">${hist.length < 2 ? `<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text3)"><div style="font-size:32px">📈</div><div style="font-size:13px;font-weight:600;color:var(--text2)">${t('graficoApareceraManana')}</div><div style="font-size:11px;text-align:center;max-width:220px;line-height:1.5">${t('necesitas2dias')}<br>${t('vuelveManana')}</div></div>` : `<canvas id="chartEvo"></canvas>`}</div>
+        <div class="chart-container" style="height:160px">${hist.length < 2 ? `<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text3)"><div style="font-size:32px">📈</div><div style="font-size:13px;font-weight:600;color:var(--text2)">${t('graficoApareceraManana')}</div><div style="font-size:11px;text-align:center;max-width:220px;line-height:1.5">${t('necesitas2dias')}<br>${t('vuelveManana')}</div></div>` : `<canvas id="chartEvo"></canvas>`}</div>
       </div>
       <div style="padding:6px 24px 10px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap">
         ${rangeButtonsHTML}
@@ -1909,6 +1906,28 @@ function renderDashboard(){
       const dynRadius = 0;
       const dynLastRadius = realDates.length > 0 ? 5 : 0;
 
+      // ── Mapa de eventos: plataformas + inversiones ───────────────────────
+      const _evoEvt = {}; // { 'YYYY-MM-DD': 'aport'|'retiro' }
+      const _addEvoEvt = (fecha, isPositive) => {
+        if (!fecha) return;
+        const d = fecha.substring(0, 10);
+        if (!_evoEvt[d] || !isPositive) _evoEvt[d] = isPositive ? 'aport' : 'retiro';
+      };
+      platforms.forEach(p => { if (p.saldoInicial > 0 && p.fechaInicio) _addEvoEvt(p.fechaInicio, true); });
+      movements.forEach(m => {
+        if (m.seccion === 'plataformas' && m.fecha) {
+          if (m.tipoPlat === 'Aportación' || m.tipoPlat === 'Transferencia entrada') _addEvoEvt(m.fecha, true);
+          if (m.tipoPlat === 'Retiro' || m.tipoPlat === 'Transferencia salida' || m.tipoPlat === 'Gasto') _addEvoEvt(m.fecha, false);
+        }
+        if (m.seccion === 'inversiones' && m.fecha) {
+          if (m.tipoMov === 'Compra') _addEvoEvt(m.fecha, true);
+          if (m.tipoMov === 'Venta')  _addEvoEvt(m.fecha, false);
+        }
+      });
+      // Puntos de evento: radio 3 (sutil), del color de la línea, sin borde
+      const _evtRadiusPatrimonio = realDates.map((d, i) => i === realDates.length-1 ? 5 : (_evoEvt[d] ? 3 : 0));
+      const _evtRadiusGanancia   = realDates.map((d, i) => i === realDates.length-1 ? 5 : (_evoEvt[d] ? 3 : 0));
+
       // ── Proyección ajustada al rango visible ────────────────────────
       // Cuántos meses hacia adelante mostrar según el rango seleccionado
       const projMonthsMap = {
@@ -2058,10 +2077,10 @@ function renderDashboard(){
             borderWidth:2,
             fill:true,
             tension:0.4,
-            pointRadius: realDates.map((_,i) => i === realDates.length-1 ? dynLastRadius : dynRadius),
-            pointBackgroundColor:'#30D158',
-            pointBorderColor: isDark?'#1C1C1E':'#fff',
-            pointBorderWidth:2,
+            pointRadius: _evtRadiusGanancia,
+            pointBackgroundColor: realDates.map((d,i) => i===realDates.length-1 ? '#30D158' : '#30D158'),
+            pointBorderColor: realDates.map((d,i) => i===realDates.length-1 ? (isDark?'#1C1C1E':'#fff') : 'transparent'),
+            pointBorderWidth: realDates.map((d,i) => i===realDates.length-1 ? 2 : 0),
             pointHoverRadius:6,
             pointHoverBackgroundColor:'#30D158',
             pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
@@ -2076,10 +2095,10 @@ function renderDashboard(){
             borderWidth:2,
             fill:false,
             tension:0.4,
-            pointRadius: realDates.map((_,i) => i === realDates.length-1 ? dynLastRadius : dynRadius),
-            pointBackgroundColor:'rgba(245,166,35,0.95)',
-            pointBorderColor: isDark?'#1C1C1E':'#fff',
-            pointBorderWidth:2,
+            pointRadius: _evtRadiusPatrimonio,
+            pointBackgroundColor: realDates.map((d,i) => i===realDates.length-1 ? 'rgba(245,166,35,0.95)' : 'rgba(245,166,35,0.85)'),
+            pointBorderColor: realDates.map((d,i) => i===realDates.length-1 ? (isDark?'#1C1C1E':'#fff') : 'transparent'),
+            pointBorderWidth: realDates.map((d,i) => i===realDates.length-1 ? 2 : 0),
             pointHoverRadius:6,
             pointHoverBackgroundColor:'rgba(245,166,35,1)',
             pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
@@ -2134,13 +2153,13 @@ function renderDashboard(){
                 return ` ${icons[ctx.datasetIndex]||'⚪'} ${ctx.dataset.label}: ${fmtFull(val)}`;
               },
               afterBody: items => {
+                const lines = [];
                 const real = items.find(i=>i.datasetIndex===0);
                 const proj = items.find(i=>i.datasetIndex===2);
-                if(!real||!proj) return [];
-                const diff = proj.parsed.y - real.parsed.y;
-                if(diff === 0) return [];
-                const sign = diff > 0 ? '+' : '';
-                return ['', ` ${t('potencial')}: ${sign}${fmtFull(diff)}`];
+                if(real&&proj){ const diff=proj.parsed.y-real.parsed.y; if(diff!==0){ lines.push(''); lines.push(` ${t('potencial')}: ${diff>0?'+':''}${fmtFull(diff)}`); } }
+                const d = (items[0]?.raw?.x || items[0]?.label || '').substring(0,10);
+                if(_evoEvt[d]){ lines.push(''); lines.push(_evoEvt[d]==='aport' ? ' ↑ aportación / compra' : ' ↓ retiro / venta / gasto'); }
+                return lines;
               }
             }
           }
