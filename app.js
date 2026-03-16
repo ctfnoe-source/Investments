@@ -1904,7 +1904,7 @@ function renderDashboard(){
       gradReal.addColorStop(1, 'rgba(48,209,88,0)');
 
       const dynRadius = 0;
-      const dynLastRadius = realDates.length > 0 ? 2 : 0;
+      const dynLastRadius = realDates.length > 0 ? 2.3 : 0;
 
       // ── Mapa de eventos: plataformas + inversiones ───────────────────────
       const _evoEvt = {}; // { 'YYYY-MM-DD': 'aport'|'retiro' }
@@ -2067,7 +2067,30 @@ function renderDashboard(){
       xMax = todayMs;
       // ──────────────────────────────────────────────────────────────────
 
-      chartInstances.chartEvo=new Chart(ctxE,{type:'line',data:{
+      // ── Plugin de glow reutilizable ──────────────────────────────────
+      const _glowPlugin = {
+        id: 'lineGlow',
+        beforeDatasetsDraw(chart) {
+          chart.ctx.save();
+        },
+        beforeDatasetDraw(chart, args) {
+          const ds = args.meta.dataset;
+          if (!ds) return;
+          const color = args.meta._dataset?.borderColor;
+          if (!color || typeof color !== 'string') return;
+          chart.ctx.shadowColor = color;
+          chart.ctx.shadowBlur = 6;
+        },
+        afterDatasetDraw(chart) {
+          chart.ctx.shadowColor = 'transparent';
+          chart.ctx.shadowBlur = 0;
+        },
+        afterDatasetsDraw(chart) {
+          chart.ctx.restore();
+        }
+      };
+
+      chartInstances.chartEvo=new Chart(ctxE,{type:'line',plugins:[_glowPlugin],data:{
         datasets:[
           {
             label: t('gananciaReal'),
@@ -2113,7 +2136,7 @@ function renderDashboard(){
             borderWidth:1,
             fill:false,
             tension:0.4,
-            pointRadius: (()=>{ const d=projDatesAdj.filter(dd=>dd<=todayDateStr); return d.map((_,i)=>i===d.length-1?2:0); })(),
+            pointRadius: (()=>{ const d=projDatesAdj.filter(dd=>dd<=todayDateStr); return d.map((_,i)=>i===d.length-1?2.3:0); })(),
             pointBackgroundColor:'rgba(10,132,255,0.9)',
             pointBorderColor:isDark?'#1C1C1E':'#fff',
             pointBorderWidth:2,
@@ -2275,6 +2298,7 @@ function renderDashboard(){
 
       chartInstances.chartComp = new Chart(ctxComp, {
         type: 'line',
+        plugins: [_glowPlugin],
         data: {
           datasets: [
             ...(sp500CompData.length > 0 ? [{
@@ -2285,7 +2309,7 @@ function renderDashboard(){
               borderWidth: 1,
               fill: false,
               tension: 0.4,
-              pointRadius: sp500CompData.map((_,i) => i === sp500CompData.length-1 ? 2 : 0),
+              pointRadius: sp500CompData.map((_,i) => i === sp500CompData.length-1 ? 2.3 : 0),
               pointBackgroundColor: isDark ? 'rgba(255,100,130,0.85)' : 'rgba(220,50,80,0.8)',
               pointBorderColor: isDark?'#1C1C1E':'#fff',
               pointBorderWidth: 2,
@@ -2300,7 +2324,7 @@ function renderDashboard(){
               borderWidth: 1,
               fill: false,
               tension: 0.4,
-              pointRadius: platCompData.map((p,i) => { const d=p.x?.substring(0,10); return i===platCompData.length-1 ? 2 : (d&&_platEvt[d] ? 1.5 : 0); }),
+              pointRadius: platCompData.map((p,i) => { const d=p.x?.substring(0,10); return i===platCompData.length-1 ? 2.3 : (d&&_platEvt[d] ? 1.5 : 0); }),
               pointBackgroundColor:'rgba(10,132,255,0.85)',
               pointBorderColor:'transparent',
               pointBorderWidth:0,
@@ -2315,7 +2339,7 @@ function renderDashboard(){
               borderWidth: 1,
               fill: false,
               tension: 0.4,
-              pointRadius: invCompData.map((p,i) => { const d=p.x?.substring(0,10); return i===invCompData.length-1 ? 2 : (d&&_invEvt[d] ? 1.5 : 0); }),
+              pointRadius: invCompData.map((p,i) => { const d=p.x?.substring(0,10); return i===invCompData.length-1 ? 2.3 : (d&&_invEvt[d] ? 1.5 : 0); }),
               pointBackgroundColor:'#30D158',
               pointBorderColor:'transparent',
               pointBorderWidth:0,
