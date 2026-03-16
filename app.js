@@ -1895,6 +1895,24 @@ function renderDashboard(){
     }
 
     const ctxE=document.getElementById('chartEvo');
+
+    // ── Plugin de glow reutilizable por ambos gráficos ───────────────────
+    const _makeGlowPlugin = (id) => ({
+      id,
+      beforeDatasetDraw(chart, args) {
+        const color = args.meta._dataset?.borderColor;
+        if (!color || typeof color !== 'string') return;
+        chart.ctx.save();
+        chart.ctx.shadowColor = color;
+        chart.ctx.shadowBlur = 6;
+      },
+      afterDatasetDraw(chart) {
+        chart.ctx.shadowColor = 'transparent';
+        chart.ctx.shadowBlur = 0;
+        chart.ctx.restore();
+      }
+    });
+
     if(ctxE){
       if(chartInstances.chartEvo){chartInstances.chartEvo.destroy();delete chartInstances.chartEvo;}
       const ctx2d = ctxE.getContext('2d');
@@ -2066,23 +2084,6 @@ function renderDashboard(){
       const todayMs = new Date(todayDateStr + 'T23:59:59').getTime();
       xMax = todayMs;
       // ──────────────────────────────────────────────────────────────────
-
-      // ── Plugin de glow reutilizable ──────────────────────────────────
-      const _makeGlowPlugin = (id) => ({
-        id,
-        beforeDatasetDraw(chart, args) {
-          const color = args.meta._dataset?.borderColor;
-          if (!color || typeof color !== 'string') return;
-          chart.ctx.save();
-          chart.ctx.shadowColor = color;
-          chart.ctx.shadowBlur = 6;
-        },
-        afterDatasetDraw(chart) {
-          chart.ctx.shadowColor = 'transparent';
-          chart.ctx.shadowBlur = 0;
-          chart.ctx.restore();
-        }
-      });
 
       chartInstances.chartEvo=new Chart(ctxE,{type:'line',plugins:[_makeGlowPlugin('glowEvo')],data:{
         datasets:[
