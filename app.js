@@ -2077,10 +2077,16 @@ function renderDashboard(){
             borderWidth:2,
             fill:true,
             tension:0.4,
-            pointRadius: realDates.map((d,i) => i===realDates.length-1 ? dynLastRadius : (_evoEvt[d] ? 3 : 0)),
-            pointBackgroundColor: realDates.map((d,i) => i===realDates.length-1 ? '#30D158' : (_evoEvt[d]==='retiro' ? 'rgba(180,100,120,0.55)' : 'rgba(100,160,200,0.55)')),
-            pointBorderColor: 'transparent',
-            pointBorderWidth: 0,
+            segment: {
+              borderColor: ctx => {
+                const d = realDates[ctx.p1DataIndex];
+                if (_evoEvt[d]) return _evoEvt[d]==='retiro' ? 'rgba(255,120,100,0.75)' : 'rgba(90,210,140,1)';
+              }
+            },
+            pointRadius: realDates.map((_,i) => i===realDates.length-1 ? dynLastRadius : 0),
+            pointBackgroundColor:'#30D158',
+            pointBorderColor: isDark?'#1C1C1E':'#fff',
+            pointBorderWidth:2,
             pointHoverRadius:6,
             pointHoverBackgroundColor:'#30D158',
             pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
@@ -2095,10 +2101,16 @@ function renderDashboard(){
             borderWidth:2,
             fill:false,
             tension:0.4,
-            pointRadius: realDates.map((d,i) => i===realDates.length-1 ? dynLastRadius : (_evoEvt[d] ? 3 : 0)),
-            pointBackgroundColor: realDates.map((d,i) => i===realDates.length-1 ? 'rgba(245,166,35,0.95)' : (_evoEvt[d]==='retiro' ? 'rgba(180,100,120,0.55)' : 'rgba(100,160,200,0.55)')),
-            pointBorderColor: realDates.map((d,i) => i===realDates.length-1 ? (isDark?'#1C1C1E':'#fff') : 'transparent'),
-            pointBorderWidth: realDates.map((d,i) => i===realDates.length-1 ? 2 : 0),
+            segment: {
+              borderColor: ctx => {
+                const d = realDates[ctx.p1DataIndex];
+                if (_evoEvt[d]) return _evoEvt[d]==='retiro' ? 'rgba(255,120,100,0.75)' : 'rgba(90,210,140,1)';
+              }
+            },
+            pointRadius: realDates.map((_,i) => i===realDates.length-1 ? dynLastRadius : 0),
+            pointBackgroundColor:'rgba(245,166,35,0.95)',
+            pointBorderColor: isDark?'#1C1C1E':'#fff',
+            pointBorderWidth:2,
             pointHoverRadius:6,
             pointHoverBackgroundColor:'rgba(245,166,35,1)',
             pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
@@ -2300,10 +2312,16 @@ function renderDashboard(){
               borderWidth: 2,
               fill: false,
               tension: 0.4,
-              pointRadius: platCompData.map(p => { const d=p.x?.substring(0,10); return d && _platEvt[d] ? 3 : (platCompData.indexOf(p)===platCompData.length-1?5:0); }),
-              pointBackgroundColor: platCompData.map((p,i) => { const d=p.x?.substring(0,10); if(i===platCompData.length-1) return 'rgba(10,132,255,0.85)'; return d&&_platEvt[d] ? (_platEvt[d]==='out'?'rgba(180,100,120,0.55)':'rgba(100,160,200,0.55)') : 'rgba(10,132,255,0.85)'; }),
-              pointBorderColor: platCompData.map((p,i) => i===platCompData.length-1?(isDark?'#1C1C1E':'#fff'):'transparent'),
-              pointBorderWidth: platCompData.map((p,i) => i===platCompData.length-1?2:0),
+              segment: {
+                borderColor: ctx => {
+                  const d = platCompData[ctx.p1DataIndex]?.x?.substring(0,10);
+                  if (d && _platEvt[d]) return _platEvt[d]==='out' ? 'rgba(255,120,100,0.75)' : 'rgba(90,210,140,1)';
+                }
+              },
+              pointRadius: platCompData.map((_,i) => i===platCompData.length-1 ? 5 : 0),
+              pointBackgroundColor: 'rgba(10,132,255,0.85)',
+              pointBorderColor: isDark?'#1C1C1E':'#fff',
+              pointBorderWidth: 2,
               pointHoverRadius: 5,
               yAxisID: 'yc',
             },
@@ -2315,10 +2333,16 @@ function renderDashboard(){
               borderWidth: 2,
               fill: false,
               tension: 0.4,
-              pointRadius: invCompData.map(p => { const d=p.x?.substring(0,10); return d && _invEvt[d] ? 3 : (invCompData.indexOf(p)===invCompData.length-1?5:0); }),
-              pointBackgroundColor: invCompData.map((p,i) => { const d=p.x?.substring(0,10); if(i===invCompData.length-1) return '#30D158'; return d&&_invEvt[d] ? (_invEvt[d]==='out'?'rgba(180,100,120,0.55)':'rgba(100,160,200,0.55)') : '#30D158'; }),
-              pointBorderColor: invCompData.map((p,i) => i===invCompData.length-1?(isDark?'#1C1C1E':'#fff'):'transparent'),
-              pointBorderWidth: invCompData.map((p,i) => i===invCompData.length-1?2:0),
+              segment: {
+                borderColor: ctx => {
+                  const d = invCompData[ctx.p1DataIndex]?.x?.substring(0,10);
+                  if (d && _invEvt[d]) return _invEvt[d]==='out' ? 'rgba(255,120,100,0.75)' : 'rgba(90,210,140,1)';
+                }
+              },
+              pointRadius: invCompData.map((_,i) => i===invCompData.length-1 ? 5 : 0),
+              pointBackgroundColor: '#30D158',
+              pointBorderColor: isDark?'#1C1C1E':'#fff',
+              pointBorderWidth: 2,
               pointHoverRadius: 5,
               yAxisID: 'yc',
             },
