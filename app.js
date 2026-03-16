@@ -1909,7 +1909,7 @@ function renderDashboard(){
       gradReal.addColorStop(0.7, isDark ? 'rgba(48,209,88,0.04)' : 'rgba(48,209,88,0.02)');
       gradReal.addColorStop(1, 'rgba(48,209,88,0)');
 
-      const dynRadius = realDates.length <= 12 ? 3 : realDates.length <= 30 ? 2 : 0;
+      const dynRadius = 0;
       const dynLastRadius = realDates.length > 0 ? 5 : 0;
 
       // ── Proyección ajustada al rango visible ────────────────────────
