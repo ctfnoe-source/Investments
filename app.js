@@ -2046,12 +2046,9 @@ function renderDashboard(){
         xMin = d.getTime();
       }
 
-      // xMax = hoy, a menos que la proyección futura llegue más lejos
+      // xMax = siempre hoy — la proyección futura se recorta al borde del gráfico
       const todayMs = new Date(todayDateStr + 'T23:59:59').getTime();
-      const projFutureMs = projDatesAdj.length > 0
-        ? new Date(projDatesAdj[projDatesAdj.length - 1] + 'T23:59:59').getTime()
-        : todayMs;
-      xMax = projFutureMs > todayMs ? projFutureMs : todayMs;
+      xMax = todayMs;
       // ──────────────────────────────────────────────────────────────────
 
       chartInstances.chartEvo=new Chart(ctxE,{type:'line',data:{
