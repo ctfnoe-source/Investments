@@ -2067,7 +2067,26 @@ function renderDashboard(){
       xMax = todayMs;
       // ──────────────────────────────────────────────────────────────────
 
-      chartInstances.chartEvo=new Chart(ctxE,{type:'line',data:{
+      chartInstances.chartEvo=new Chart(ctxE,{type:'line',
+      plugins:[{
+        id:'evtBandsEvo',
+        afterDraw: chart => {
+          const { ctx, chartArea, scales } = chart;
+          if (!chartArea || !scales.x) return;
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(chartArea.left, chartArea.top, chartArea.width, chartArea.height);
+          ctx.clip();
+          Object.entries(_evoEvt).forEach(([date, type]) => {
+            const x = scales.x.getPixelForValue(new Date(date+'T12:00:00').getTime());
+            if (x < chartArea.left || x > chartArea.right) return;
+            ctx.fillStyle = type==='retiro' ? 'rgba(255,69,58,0.18)' : 'rgba(48,209,88,0.18)';
+            ctx.fillRect(x - 1.5, chartArea.top, 3, chartArea.height);
+          });
+          ctx.restore();
+        }
+      }],
+      data:{
         datasets:[
           {
             label: t('gananciaReal'),
@@ -2077,10 +2096,10 @@ function renderDashboard(){
             borderWidth:2,
             fill:true,
             tension:0.4,
-            pointRadius: _evtRadiusGanancia,
-            pointBackgroundColor: realDates.map((d,i) => i===realDates.length-1 ? '#30D158' : '#30D158'),
-            pointBorderColor: realDates.map((d,i) => i===realDates.length-1 ? (isDark?'#1C1C1E':'#fff') : 'transparent'),
-            pointBorderWidth: realDates.map((d,i) => i===realDates.length-1 ? 2 : 0),
+            pointRadius: realDates.map((_,i) => i===realDates.length-1 ? dynLastRadius : 0),
+            pointBackgroundColor:'#30D158',
+            pointBorderColor: isDark?'#1C1C1E':'#fff',
+            pointBorderWidth:2,
             pointHoverRadius:6,
             pointHoverBackgroundColor:'#30D158',
             pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
@@ -2095,10 +2114,10 @@ function renderDashboard(){
             borderWidth:2,
             fill:false,
             tension:0.4,
-            pointRadius: _evtRadiusPatrimonio,
-            pointBackgroundColor: realDates.map((d,i) => i===realDates.length-1 ? 'rgba(245,166,35,0.95)' : 'rgba(245,166,35,0.85)'),
-            pointBorderColor: realDates.map((d,i) => i===realDates.length-1 ? (isDark?'#1C1C1E':'#fff') : 'transparent'),
-            pointBorderWidth: realDates.map((d,i) => i===realDates.length-1 ? 2 : 0),
+            pointRadius: realDates.map((_,i) => i===realDates.length-1 ? dynLastRadius : 0),
+            pointBackgroundColor:'rgba(245,166,35,0.95)',
+            pointBorderColor: isDark?'#1C1C1E':'#fff',
+            pointBorderWidth:2,
             pointHoverRadius:6,
             pointHoverBackgroundColor:'rgba(245,166,35,1)',
             pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
@@ -2256,8 +2275,47 @@ function renderDashboard(){
           return { x: s.date, y: pct };
         });
 
+      // ── Mapas de eventos para bandas verticales ──────────────────────────
+      const _platEvt = {}, _invEvt = {};
+      movements.forEach(m => {
+        if (m.seccion === 'plataformas' && m.fecha) {
+          const d = m.fecha.substring(0,10);
+          const isIn = m.tipoPlat==='Aportación'||m.tipoPlat==='Transferencia entrada'||m.tipoPlat==='Saldo Actual';
+          const isOut = m.tipoPlat==='Retiro'||m.tipoPlat==='Transferencia salida'||m.tipoPlat==='Gasto';
+          if (isIn||isOut) { if (!_platEvt[d]||isOut) _platEvt[d] = isOut?'out':'in'; }
+        }
+        if (m.seccion === 'inversiones' && m.fecha) {
+          const d = m.fecha.substring(0,10);
+          if (m.tipoMov==='Compra') { if (!_invEvt[d]) _invEvt[d]='in'; }
+          if (m.tipoMov==='Venta')  _invEvt[d]='out';
+        }
+      });
+      // Función reutilizable para dibujar bandas
+      const _drawBands = (chart, evtMap, colorIn, colorOut) => {
+        const { ctx, chartArea, scales } = chart;
+        if (!chartArea || !scales.x) return;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(chartArea.left, chartArea.top, chartArea.width, chartArea.height);
+        ctx.clip();
+        Object.entries(evtMap).forEach(([date, type]) => {
+          const x = scales.x.getPixelForValue(new Date(date + 'T12:00:00').getTime());
+          if (x < chartArea.left || x > chartArea.right) return;
+          ctx.fillStyle = type === 'out' ? colorOut : colorIn;
+          ctx.fillRect(x - 1.5, chartArea.top, 3, chartArea.height);
+        });
+        ctx.restore();
+      };
+
       chartInstances.chartComp = new Chart(ctxComp, {
         type: 'line',
+        plugins: [{
+          id: 'evtBands',
+          afterDraw: chart => {
+            _drawBands(chart, _platEvt, 'rgba(10,132,255,0.18)', 'rgba(255,69,58,0.18)');
+            _drawBands(chart, _invEvt, 'rgba(48,209,88,0.18)',   'rgba(255,69,58,0.18)');
+          }
+        }],
         data: {
           datasets: [
             ...(sp500CompData.length > 0 ? [{
