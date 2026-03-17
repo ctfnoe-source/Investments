@@ -1341,22 +1341,19 @@ function saveAll(changedMovId, deletedMovId, changedSnapDate){
   LS.set('platforms',platforms);LS.set('movements',movements);LS.set('goals',goals);LS.set('settings',settings);
   LS.set('recurrentes',recurrentes);LS.set('patrimonioHistory',patrimonioHistory);
   _recalcAndSaveSnapshot();
+  // Renderizar inmediatamente con los datos actuales para que la UI responda al instante
   // No re-renderizar si hay un input inline activo en plataformas (editPlatField)
-  // para evitar que el render destruya el campo mientras el usuario escribe
-  const _activeInPlat = document.activeElement && document.getElementById('page-plataformas') &&
+  const _activeInPlat = document.activeElement &&
+    document.getElementById('page-plataformas') &&
     document.getElementById('page-plataformas').contains(document.activeElement) &&
     (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT');
-  if (!_activeInPlat) {
-    renderPageInternal(currentTab);
-  }
+  if (!_activeInPlat) renderPageInternal(currentTab);
   // buildHistoricalSnapshots es costoso — debounce para que cambios rápidos consecutivos
   // (ej: eliminar varios movimientos seguidos) no apilen múltiples reconstrucciones
   clearTimeout(window._snapshotDebounce);
   window._snapshotDebounce = setTimeout(() => {
     buildHistoricalSnapshots();
     LS.set('patrimonioHistory', patrimonioHistory);
-    // Si había un input activo, renderizar ahora que ya terminó el snapshot
-    if (_activeInPlat) renderPageInternal(currentTab);
   }, 300);
   if (!_isOnline) { queueSave(window.getAppData()); setOfflineBanner('offline'); }
   else if(typeof window.saveToFirebase==='function') {
@@ -3495,7 +3492,7 @@ function renderInversiones(){
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
           <div class="card-title" style="margin:0">🔒 ${t('posicionesCerradas')} <span style="font-size:11px;font-weight:600;color:var(--text2);margin-left:4px">${cerradas.length}</span></div>
         </div>
-        <div style="max-height:480px;overflow-y:auto;margin:0 -4px;padding:0 4px">
+        <div style="max-height:${cerradas.length > 0 ? Math.min(cerradas.length * 60 + 20, 320) : 80}px;overflow-y:auto;margin:0 -4px;padding:0 4px">
         ${cerradas.length > 0 ? cerradas.map(cp => {
           const tipoClass = cp.type==='Acción'?'badge-green':cp.type==='ETF'?'badge-blue':cp.type==='Crypto'?'badge-orange':'badge-gray';
           return `<div class="list-item" style="padding:10px 0">
@@ -3513,7 +3510,7 @@ function renderInversiones(){
               <div style="font-size:10px;font-weight:600;color:var(--text2)">${t('realizada')}</div>
             </div>
           </div>`;
-        }).join('') : `<div style="text-align:center;color:var(--text2);padding:48px 24px"><div style="font-size:36px;margin-bottom:10px">🔒</div><div style="font-size:13px">${t('sinResultados')||'Sin posiciones cerradas'}</div></div>`}
+        }).join('') : `<div style="text-align:center;color:var(--text2);padding:20px 16px"><div style="font-size:28px;margin-bottom:6px">🔒</div><div style="font-size:12px;color:var(--text3)">${t('sinResultados')||'Sin posiciones cerradas'}</div></div>`}
         </div>
       </div>
 
@@ -4788,7 +4785,14 @@ window.saveToFirebase=async(forceImmediate=false, changedMovIds='', deletedMovId
         await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
 
       const d = window.getAppData ? window.getAppData() : {};
-      _ignoreSnapCount++;
+
+      // Calcular cuántos writes se harán para ignorar exactamente esos snapshots
+      const _changedMids = changedMovIds ? changedMovIds.split('|').filter(Boolean) : [];
+      const _deletedMids = deletedMovIds ? deletedMovIds.split('|').filter(Boolean) : [];
+      const _todaySnap = patrimonioHistory.find(s=>s.date===today());
+      // 1 por DOC_REF + 1 por cada mov cambiado + 1 por cada mov eliminado (×3 subcols pero solo 1 dispara) + 1 si hay snapshot
+      _ignoreSnapCount += 1 + _changedMids.length + _deletedMids.length + (_todaySnap ? 1 : 0);
+
       await _setDoc(DOC_REF, {
         platforms: d.platforms||[], goals: d.goals||[],
         settings: d.settings||{}, recurrentes: d.recurrentes||[],
@@ -4796,7 +4800,7 @@ window.saveToFirebase=async(forceImmediate=false, changedMovIds='', deletedMovId
       });
 
       if(changedMovIds){
-        for(const mid of changedMovIds.split('|')){
+        for(const mid of _changedMids){
           const mov = movements.find(m=>m.id===mid);
           if(!mov) continue;
           const subcol = mov.seccion==='plataformas' ? 'movimientos_plataformas'
@@ -4807,16 +4811,15 @@ window.saveToFirebase=async(forceImmediate=false, changedMovIds='', deletedMovId
       }
 
       if(deletedMovIds){
-        for(const mid of deletedMovIds.split('|')){
+        for(const mid of _deletedMids){
           for(const subcol of ['movimientos_plataformas','movimientos_inversiones','movimientos_gastos']){
             try{ await _deleteDoc(_doc(db,'usuarios',uid,subcol,mid)); }catch(e){}
           }
         }
       }
 
-      const todaySnap = patrimonioHistory.find(s=>s.date===today());
-      if(todaySnap){
-        await _setDoc(_doc(db,'usuarios',uid,'snapshots',todaySnap.date), todaySnap);
+      if(_todaySnap){
+        await _setDoc(_doc(db,'usuarios',uid,'snapshots',_todaySnap.date), _todaySnap);
       }
 
       setFbStatus('ok');
