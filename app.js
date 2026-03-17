@@ -538,72 +538,9 @@ if (document.readyState === 'loading') {
 
 const PRICE_CACHE_KEY = 'price_cache';
 
-// ── Caché de precios en IndexedDB (evita límite de ~5MB de localStorage) ──
-// Fallback a localStorage si IndexedDB no está disponible
-const _idb = (() => {
-  let _db = null;
-  const supported = typeof indexedDB !== 'undefined';
-  if (!supported) return { get: async () => null, set: async () => false };
 
-  const open = () => new Promise((res, rej) => {
-    if (_db) return res(_db);
-    try {
-      const req = indexedDB.open('trackfolio_cache', 1);
-      req.onupgradeneeded = e => e.target.result.createObjectStore('kv');
-      req.onsuccess = e => { _db = e.target.result; res(_db); };
-      req.onerror = () => rej(req.error);
-    } catch(e) { rej(e); }
-  });
-  return {
-    async get(key) {
-      try {
-        const db = await open();
-        return new Promise((res) => {
-          const tx = db.transaction('kv', 'readonly');
-          const req = tx.objectStore('kv').get(key);
-          req.onsuccess = () => res(req.result ?? null);
-          req.onerror = () => res(null);
-        });
-      } catch { return null; }
-    },
-    async set(key, val) {
-      try {
-        const db = await open();
-        return new Promise((res) => {
-          const tx = db.transaction('kv', 'readwrite');
-          tx.objectStore('kv').put(val, key);
-          tx.oncomplete = () => res(true);
-          tx.onerror = () => res(false);
-        });
-      } catch { return false; }
-    },
-  };
-})();
-
-// Cache en memoria para acceso síncrono durante el ciclo de render
-// Inicializado con localStorage para que esté disponible inmediatamente
-let _priceCacheMemory = LS.get(PRICE_CACHE_KEY) || {};
-
-// Intentar mejorar con IndexedDB en segundo plano, sin bloquear nada
-(async () => {
-  try {
-    const val = await _idb.get(PRICE_CACHE_KEY);
-    if (val && Object.keys(val).length > 0) {
-      _priceCacheMemory = val;
-    } else if (Object.keys(_priceCacheMemory).length > 0) {
-      // Migrar lo que ya había en localStorage a IDB
-      await _idb.set(PRICE_CACHE_KEY, _priceCacheMemory);
-      try { localStorage.removeItem('fp_' + PRICE_CACHE_KEY); } catch {}
-    }
-  } catch { /* IDB no disponible, localStorage sigue funcionando */ }
-})();
-
-function getPriceCache() { return _priceCacheMemory || {}; }
-function setPriceCache(c) {
-  _priceCacheMemory = c;
-  LS.set(PRICE_CACHE_KEY, c);          // síncrono, siempre disponible
-  _idb.set(PRICE_CACHE_KEY, c);        // async, mejora si está disponible
-}
+function getPriceCache() { return LS.get(PRICE_CACHE_KEY) || {}; }
+function setPriceCache(c) { LS.set(PRICE_CACHE_KEY, c); }
 function isCacheFresh(ts) { if (!ts) return false; const n = new Date(), c = new Date(ts); return n.getFullYear()===c.getFullYear() && n.getMonth()===c.getMonth() && n.getDate()===c.getDate(); }
 function isFxCacheFresh(ts) { if (!ts) return false; return (Date.now() - ts) < 6 * 60 * 60 * 1000; }
 function getCachedPrice(t) { const c=getPriceCache(); return c[t]||null; }
@@ -4357,27 +4294,24 @@ function processCSVImport(input){
       const text = e.target.result;
 
       // Parseo CSV robusto: soporta comillas, comas y saltos de línea dentro de campos
-      function parseCSVRobust(text) {
+      function parseCSVRobust(rawText) {
         const rows = [];
         let row = [], field = '', inQuote = false;
-        for (let i = 0; i < text.length; i++) {
-          const ch = text[i], next = text[i+1];
+        const LF = 10, CR = 13, QUOTE = 34, COMMA = 44, SEMI = 59;
+        const bytes = rawText.replace(/^\uFEFF/, '');
+        for (let i = 0; i < bytes.length; i++) {
+          const ch = bytes[i], code = bytes.charCodeAt(i), next = bytes[i+1], nextCode = bytes.charCodeAt(i+1);
           if (inQuote) {
-            if (ch === '"' && next === '"') { field += '"'; i++; }         // "" → "
-            else if (ch === '"') { inQuote = false; }                      // cierre de comilla
+            if (code === QUOTE && nextCode === QUOTE) { field += '"'; i++; }
+            else if (code === QUOTE) { inQuote = false; }
             else { field += ch; }
           } else {
-            if (ch === '"') { inQuote = true; }                            // apertura de comilla
-            else if (ch === ',' || ch === ';') { row.push(field.trim()); field = ''; }
-            else if (ch === '
-' || (ch === '
-' && next === '
-')) {
-              if (ch === '
-') i++;
+            if (code === QUOTE) { inQuote = true; }
+            else if (code === COMMA || code === SEMI) { row.push(field.trim()); field = ''; }
+            else if (code === LF || (code === CR && nextCode === LF)) {
+              if (code === CR) i++;
               row.push(field.trim()); rows.push(row); row = []; field = '';
-            } else if (ch === '
-') {
+            } else if (code === CR) {
               row.push(field.trim()); rows.push(row); row = []; field = '';
             } else { field += ch; }
           }
@@ -4386,9 +4320,9 @@ function processCSVImport(input){
         return rows;
       }
 
-      const allRows = parseCSVRobust(text.replace(/^\uFEFF/,''));
+      const allRows = parseCSVRobust(text);
       if (allRows.length < 2) { resultEl.innerHTML='<span style="color:var(--red)">❌ '+t('emptyFile')+'</span>'; return; }
-      const sep = ','; // ya no se usa para split, solo para compatibilidad
+      const sep = ',';
       const headers = allRows[0].map(h => h.toLowerCase().replace(/['"]/g,''));
 
       const idxFecha    = headers.findIndex(h => h.includes('fecha'));
