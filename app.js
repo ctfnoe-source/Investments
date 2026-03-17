@@ -539,14 +539,20 @@ if (document.readyState === 'loading') {
 const PRICE_CACHE_KEY = 'price_cache';
 
 // ── Caché de precios en IndexedDB (evita límite de ~5MB de localStorage) ──
+// Fallback a localStorage si IndexedDB no está disponible
 const _idb = (() => {
   let _db = null;
+  const supported = typeof indexedDB !== 'undefined';
+  if (!supported) return { get: async () => null, set: async () => false };
+
   const open = () => new Promise((res, rej) => {
     if (_db) return res(_db);
-    const req = indexedDB.open('trackfolio_cache', 1);
-    req.onupgradeneeded = e => e.target.result.createObjectStore('kv');
-    req.onsuccess = e => { _db = e.target.result; res(_db); };
-    req.onerror = () => rej(req.error);
+    try {
+      const req = indexedDB.open('trackfolio_cache', 1);
+      req.onupgradeneeded = e => e.target.result.createObjectStore('kv');
+      req.onsuccess = e => { _db = e.target.result; res(_db); };
+      req.onerror = () => rej(req.error);
+    } catch(e) { rej(e); }
   });
   return {
     async get(key) {
@@ -575,30 +581,28 @@ const _idb = (() => {
 })();
 
 // Cache en memoria para acceso síncrono durante el ciclo de render
-let _priceCacheMemory = null;
+// Inicializado con localStorage para que esté disponible inmediatamente
+let _priceCacheMemory = LS.get(PRICE_CACHE_KEY) || {};
 
-async function _loadPriceCacheFromIDB() {
-  const val = await _idb.get(PRICE_CACHE_KEY);
-  // Migrar desde localStorage si existe y IDB está vacío
-  if (!val) {
-    const fromLS = LS.get(PRICE_CACHE_KEY);
-    if (fromLS) {
-      _priceCacheMemory = fromLS;
-      await _idb.set(PRICE_CACHE_KEY, fromLS);
+// Intentar mejorar con IndexedDB en segundo plano, sin bloquear nada
+(async () => {
+  try {
+    const val = await _idb.get(PRICE_CACHE_KEY);
+    if (val && Object.keys(val).length > 0) {
+      _priceCacheMemory = val;
+    } else if (Object.keys(_priceCacheMemory).length > 0) {
+      // Migrar lo que ya había en localStorage a IDB
+      await _idb.set(PRICE_CACHE_KEY, _priceCacheMemory);
       try { localStorage.removeItem('fp_' + PRICE_CACHE_KEY); } catch {}
-      return;
     }
-  }
-  _priceCacheMemory = val || {};
-}
-
-// Inicializar al cargar
-_loadPriceCacheFromIDB();
+  } catch { /* IDB no disponible, localStorage sigue funcionando */ }
+})();
 
 function getPriceCache() { return _priceCacheMemory || {}; }
 function setPriceCache(c) {
   _priceCacheMemory = c;
-  _idb.set(PRICE_CACHE_KEY, c); // async, no bloqueante
+  LS.set(PRICE_CACHE_KEY, c);          // síncrono, siempre disponible
+  _idb.set(PRICE_CACHE_KEY, c);        // async, mejora si está disponible
 }
 function isCacheFresh(ts) { if (!ts) return false; const n = new Date(), c = new Date(ts); return n.getFullYear()===c.getFullYear() && n.getMonth()===c.getMonth() && n.getDate()===c.getDate(); }
 function isFxCacheFresh(ts) { if (!ts) return false; return (Date.now() - ts) < 6 * 60 * 60 * 1000; }
