@@ -1008,7 +1008,8 @@ function getPriceSummary() {
   return {live, missing, total: ts.size};
 }
 
-const COLORS=['#0A84FF','#30D158','#FF9F0A','#BF5AF2','#FF375F','#64D2FF','#FFD60A','#AC8E68','#5E5CE6','#FF6482','#32D74B','#00C7BE','#FF453A','#5856D6','#AF52DE','#FF2D55','#A2845E','#30B0C7'];
+const COLORS=['#6E9EF5','#4DC78A','#F5A54A','#A97DD1','#F07070','#52BED8','#D4A843','#8A9BB0','#7B79D4','#E87FA0','#45C27A','#35B5B0','#E8705A','#6F6DC9','#C47AC0','#E05577','#9A8A7A','#4AA8C0'];
+const COLORS_BAR=COLORS.map(c=>{const r=parseInt(c.slice(1,3),16),g=parseInt(c.slice(3,5),16),b=parseInt(c.slice(5,7),16);return`rgba(${r},${g},${b},0.75)`;});
 const MONTHS_ES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const MONTHS_EN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MONTHS=new Proxy([],{get(_,i){const m=_lang==='en'?MONTHS_EN:MONTHS_ES;return typeof i==='string'&&!isNaN(i)?m[+i]:m[i];}});
@@ -1478,14 +1479,38 @@ function getBudgetAlerts(){
   const alerts=[];
   const cm=new Date().getMonth()+1,cy=new Date().getFullYear();
   const budgets=settings.budgets||{};
+  const eurmxn=getEurMxn();
+  const ingresos=settings.ingresos||{};
+  const monedaMostrar=ingresos.monedaSueldo||'EUR';
+  const fx=_fxCache||LS.get('fxCache');
+  const usdeur=fx?.usdeur||(settings.tipoCambio&&settings.tipoEUR?settings.tipoCambio/settings.tipoEUR:0.88);
+  const gbpeur=fx?(fx.usdeur/(fx.usdgbp||1)):1.17;
+  // Convert a movement's importe (always stored in MXN) back to EUR
+  const movToEUR=m=>{
+    if(m.montoOriginal!=null&&m.monedaOrig==='EUR')return m.montoOriginal;
+    if(m.montoOriginal!=null&&m.monedaOrig==='USD')return m.montoOriginal*usdeur;
+    if(m.montoOriginal!=null&&m.monedaOrig==='GBP')return m.montoOriginal*gbpeur;
+    if(m.notas){const match=m.notas.match(/€([\d.]+)/);if(match)return Number(match[1]);}
+    return Math.round((m.importe||0)/eurmxn*100)/100;
+  };
+  // Convert EUR value to display currency
+  const eurToDisp=v=>{
+    if(monedaMostrar==='EUR')return v;
+    if(monedaMostrar==='MXN')return v*eurmxn;
+    if(monedaMostrar==='USD')return v/usdeur;
+    if(monedaMostrar==='GBP')return v*gbpeur;
+    return v;
+  };
+  const sym={EUR:'€',USD:'US$',MXN:'$',GBP:'£'}[monedaMostrar]||'€';
+  const fmtA=v=>sym+(eurToDisp(v)).toLocaleString('es-ES',{minimumFractionDigits:0,maximumFractionDigits:2});
   const mesMovs=movements.filter(m=>{const d=new Date(m.fecha);return m.seccion==='gastos'&&m.tipo==='Gasto'&&d.getMonth()+1===cm&&d.getFullYear()===cy;});
-  const byCat={};mesMovs.forEach(m=>{byCat[m.categoria]=(byCat[m.categoria]||0)+(m.importe||0);});
+  const byCat={};mesMovs.forEach(m=>{byCat[m.categoria]=(byCat[m.categoria]||0)+movToEUR(m);});
   EXPENSE_CATS.forEach(cat=>{
     const pres=budgets[cat.id]||0,real=byCat[cat.id]||0;
     if(pres>0){
       const pct=real/pres;
-      if(pct>=1)alerts.push({level:'error',msg:`🔴 <strong>${cat.icon} ${cat.name}</strong>: ${t('budgetExceeded')} (${fmt(real)} / ${fmt(pres)})`});
-      else if(pct>=0.85)alerts.push({level:'warn',msg:`🟡 <strong>${cat.icon} ${cat.name}</strong>: ${t('atBudget')} ${(pct*100).toFixed(0)}% (${fmt(real)} / ${fmt(pres)})`});
+      if(pct>=1)alerts.push({level:'error',msg:`🔴 <strong>${cat.icon} ${cat.name}</strong>: ${t('budgetExceeded')} (${fmtA(real)} / ${fmtA(pres)})`});
+      else if(pct>=0.85)alerts.push({level:'warn',msg:`🟡 <strong>${cat.icon} ${cat.name}</strong>: ${t('atBudget')} ${(pct*100).toFixed(0)}% (${fmtA(real)} / ${fmtA(pres)})`});
     }
   });
   return alerts;
@@ -2490,10 +2515,10 @@ function renderDashboard(){
       if(chartInstances.chartDistro){
         chartInstances.chartDistro.data.labels=de.map(([k])=>k);
         chartInstances.chartDistro.data.datasets[0].data=de.map(([,v])=>v);
-        chartInstances.chartDistro.data.datasets[0].backgroundColor=de.map((_,i)=>COLORS[i%COLORS.length]);
+        chartInstances.chartDistro.data.datasets[0].backgroundColor=de.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]);
         chartInstances.chartDistro.update('none');
       } else {
-        chartInstances.chartDistro=new Chart(ctxD,{type:'bar',data:{labels:de.map(([k])=>k),datasets:[{data:de.map(([,v])=>v),backgroundColor:de.map((_,i)=>COLORS[i%COLORS.length]),borderRadius:6,borderSkipped:false,barThickness:18}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',cornerRadius:12,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>' '+ctx.label+': '+((ctx.parsed.x/de.reduce((s,[,v])=>s+v,0)*100)).toFixed(1)+'%'}}},scales:{x:{display:false,grid:{display:false},ticks:{display:false}},y:{grid:{display:false},border:{display:false},ticks:{color:isDark?'rgba(235,235,245,0.6)':'rgba(60,60,67,0.6)',font:{family:'DM Sans',size:11},padding:4}}}}});
+        chartInstances.chartDistro=new Chart(ctxD,{type:'bar',data:{labels:de.map(([k])=>k),datasets:[{data:de.map(([,v])=>v),backgroundColor:de.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]),borderRadius:6,borderSkipped:false,barThickness:18}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',cornerRadius:12,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>' '+ctx.label+': '+((ctx.parsed.x/de.reduce((s,[,v])=>s+v,0)*100)).toFixed(1)+'%'}}},scales:{x:{display:false,grid:{display:false},ticks:{display:false}},y:{grid:{display:false},border:{display:false},ticks:{color:isDark?'rgba(235,235,245,0.6)':'rgba(60,60,67,0.6)',font:{family:'DM Sans',size:11},padding:4}}}}});
       }
     }
 
@@ -2506,10 +2531,10 @@ function renderDashboard(){
       if(chartInstances.chartInvTipo){
         chartInstances.chartInvTipo.data.labels=invE.map(([k])=>k);
         chartInstances.chartInvTipo.data.datasets[0].data=invE.map(([,v])=>v);
-        chartInstances.chartInvTipo.data.datasets[0].backgroundColor=invE.map((_,i)=>COLORS[i%COLORS.length]);
+        chartInstances.chartInvTipo.data.datasets[0].backgroundColor=invE.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]);
         chartInstances.chartInvTipo.update('none');
       } else {
-        chartInstances.chartInvTipo=new Chart(ctxI,{type:'bar',data:{labels:invE.map(([k])=>k),datasets:[{data:invE.map(([,v])=>v),backgroundColor:invE.map((_,i)=>COLORS[i%COLORS.length]),borderRadius:6,borderSkipped:false,barThickness:18}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',cornerRadius:12,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>{const total=invE.reduce((s,[,v])=>s+v,0);return ' '+ctx.label+': '+((ctx.parsed.x/total)*100).toFixed(1)+'% ('+fmt(ctx.parsed.x)+')';}}}},scales:{x:{display:false,grid:{display:false},ticks:{display:false}},y:{grid:{display:false},border:{display:false},ticks:{color:isDark?'rgba(235,235,245,0.6)':'rgba(60,60,67,0.6)',font:{family:'DM Sans',size:11},padding:4}}}}});
+        chartInstances.chartInvTipo=new Chart(ctxI,{type:'bar',data:{labels:invE.map(([k])=>k),datasets:[{data:invE.map(([,v])=>v),backgroundColor:invE.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]),borderRadius:6,borderSkipped:false,barThickness:18}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',cornerRadius:12,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>{const total=invE.reduce((s,[,v])=>s+v,0);return ' '+ctx.label+': '+((ctx.parsed.x/total)*100).toFixed(1)+'% ('+fmt(ctx.parsed.x)+')';}}}},scales:{x:{display:false,grid:{display:false},ticks:{display:false}},y:{grid:{display:false},border:{display:false},ticks:{color:isDark?'rgba(235,235,245,0.6)':'rgba(60,60,67,0.6)',font:{family:'DM Sans',size:11},padding:4}}}}});
       }
     }
 
@@ -2518,7 +2543,7 @@ function renderDashboard(){
       if(chartInstances.chartGastosCat){
         chartInstances.chartGastosCat.data.labels=topCats.map(([id])=>catName(id));
         chartInstances.chartGastosCat.data.datasets[0].data=topCats.map(([,v])=>v);
-        chartInstances.chartGastosCat.data.datasets[0].backgroundColor=topCats.map((_,i)=>COLORS[i%COLORS.length]);
+        chartInstances.chartGastosCat.data.datasets[0].backgroundColor=topCats.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]);
         chartInstances.chartGastosCat.update('none');
       } else {
         chartInstances.chartGastosCat = new Chart(ctxGC, {
@@ -2527,7 +2552,7 @@ function renderDashboard(){
             labels: topCats.map(([id])=>catName(id)),
             datasets:[{
               data: topCats.map(([,v])=>v),
-              backgroundColor: topCats.map((_,i)=>COLORS[i%COLORS.length]),
+              backgroundColor: topCats.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]),
               borderRadius:6,
               borderSkipped:false,
               barThickness:18
