@@ -4562,27 +4562,22 @@ getRedirectResult(auth).then(result => {
 window._doGoogleLogin = async function(btnEl) {
   const spinnerHtml = '<span style="display:inline-block;width:20px;height:20px;border:2px solid rgba(10,132,255,0.2);border-top-color:#0A84FF;border-radius:50%;animation:spin 0.7s linear infinite;margin-right:8px;vertical-align:middle"></span> Conectando...';
   if(btnEl){ btnEl.disabled = true; btnEl.innerHTML = spinnerHtml; }
+  window._log('_doGoogleLogin llamado');
 
-  const isIOS = /iP(ad|hone|od)/.test(navigator.userAgent) ||
-                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  // Siempre usar popup — en iOS Safari el popup funciona si se abre
+  // directamente desde el gesto del usuario (este click).
+  // signInWithRedirect falla en iOS por ITP (bloquea cookies de terceros).
   try {
-    if(isIOS){
-      localStorage.setItem('_authRedirect', '1');
-      await signInWithRedirect(auth, new GoogleAuthProvider());
-      return;
-    }
     await signInWithPopup(auth, new GoogleAuthProvider());
+    window._log('signInWithPopup OK');
   } catch(e){
-    const popupFailed = ['auth/popup-blocked','auth/popup-closed-by-user','auth/cancelled-popup-request'].includes(e.code);
-    if(popupFailed){
-      try {
-        localStorage.setItem('_authRedirect', '1');
-        await signInWithRedirect(auth, new GoogleAuthProvider());
-        return;
-      } catch(e2){ console.error('[Auth] redirect fallback failed:', e2); }
-    }
+    window._log('signInWithPopup error: '+e.code);
     if(btnEl){ btnEl.disabled = false; btnEl.innerHTML = 'Continuar con Google'; }
-    showLogin(popupFailed ? '' : t('signinError'));
+    if(e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request'){
+      showLogin(t('signinError'));
+    } else {
+      showLogin();
+    }
   }
 };
 
