@@ -89,14 +89,14 @@
   <nav class="ld-nav">
     <div class="ld-nav-logo">💼 InvestTracker</div>
     <div style="display:flex;align-items:center;gap:10px">
-      <button class="ld-btn-outline" onclick="window._doGoogleLogin(this)">Probar gratis</button>
-      <button class="ld-btn-primary" onclick="window._doGoogleLogin(this)">Comprar — $20</button>
+      <button class="ld-btn-outline" onclick="window._log('CLICK Probar gratis');if(window._doGoogleLogin)window._doGoogleLogin(this);else window._log('ERROR: _doGoogleLogin no definido')">Probar gratis</button>
+      <button class="ld-btn-primary" onclick="window._log('CLICK Comprar');if(window._doGoogleLogin)window._doGoogleLogin(this);else window._log('ERROR: _doGoogleLogin no definido')">Comprar — $20</button>
     </div>
   </nav>
   <section class="ld-hero">
     <h1 class="ld-h1">Controla tu dinero.<br><span>Sin fórmulas.</span></h1>
     <p class="ld-sub">Dashboard financiero personal para rastrear inversiones, gastos y metas. Todo en un solo lugar, en tiempo real.</p>
-    <button class="ld-cta-big" onclick="window._doGoogleLogin(this)">Empezar ahora — $20 pago único</button>
+    <button class="ld-cta-big" onclick="window._log('CLICK CTA');if(window._doGoogleLogin)window._doGoogleLogin(this);else window._log('ERROR: _doGoogleLogin no definido')">Empezar ahora — $20 pago único</button>
     <div class="ld-note">Pago único · Sin suscripción · Acceso de por vida</div>
   </section>
   <div class="ld-footer">© 2026 InvestTracker · <a href="/cdn-cgi/l/email-protection#117265777f7e7451767c70787d3f727e7c" style="color:#AEAEB2">Contacto</a></div>
