@@ -1509,8 +1509,8 @@ function getBudgetAlerts(){
     const pres=budgets[cat.id]||0,real=byCat[cat.id]||0;
     if(pres>0){
       const pct=real/pres;
-      if(pct>=1)alerts.push({level:'error',msg:`🔴 <strong>${cat.icon} ${cat.name}</strong>: ${t('budgetExceeded')} (${fmtA(real)} / ${fmtA(pres)})`});
-      else if(pct>=0.85)alerts.push({level:'warn',msg:`🟡 <strong>${cat.icon} ${cat.name}</strong>: ${t('atBudget')} ${(pct*100).toFixed(0)}% (${fmtA(real)} / ${fmtA(pres)})`});
+      if(pct>1.001)alerts.push({level:'error',msg:`🔴 <strong>${cat.icon} ${cat.name}</strong>: ${t('budgetExceeded')} (${fmtA(real)} / ${fmtA(pres)})`});
+      else if(pct>=0.85&&pct<=1.001)alerts.push({level:'warn',msg:`🟡 <strong>${cat.icon} ${cat.name}</strong>: ${t('atBudget')} ${(pct*100).toFixed(0)}% (${fmtA(real)} / ${fmtA(pres)})`});
     }
   });
   return alerts;
