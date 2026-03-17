@@ -537,8 +537,69 @@ if (document.readyState === 'loading') {
 }
 
 const PRICE_CACHE_KEY = 'price_cache';
-function getPriceCache() { return LS.get(PRICE_CACHE_KEY) || {}; }
-function setPriceCache(c) { LS.set(PRICE_CACHE_KEY, c); }
+
+// ── Caché de precios en IndexedDB (evita límite de ~5MB de localStorage) ──
+const _idb = (() => {
+  let _db = null;
+  const open = () => new Promise((res, rej) => {
+    if (_db) return res(_db);
+    const req = indexedDB.open('trackfolio_cache', 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore('kv');
+    req.onsuccess = e => { _db = e.target.result; res(_db); };
+    req.onerror = () => rej(req.error);
+  });
+  return {
+    async get(key) {
+      try {
+        const db = await open();
+        return new Promise((res) => {
+          const tx = db.transaction('kv', 'readonly');
+          const req = tx.objectStore('kv').get(key);
+          req.onsuccess = () => res(req.result ?? null);
+          req.onerror = () => res(null);
+        });
+      } catch { return null; }
+    },
+    async set(key, val) {
+      try {
+        const db = await open();
+        return new Promise((res) => {
+          const tx = db.transaction('kv', 'readwrite');
+          tx.objectStore('kv').put(val, key);
+          tx.oncomplete = () => res(true);
+          tx.onerror = () => res(false);
+        });
+      } catch { return false; }
+    },
+  };
+})();
+
+// Cache en memoria para acceso síncrono durante el ciclo de render
+let _priceCacheMemory = null;
+
+async function _loadPriceCacheFromIDB() {
+  const val = await _idb.get(PRICE_CACHE_KEY);
+  // Migrar desde localStorage si existe y IDB está vacío
+  if (!val) {
+    const fromLS = LS.get(PRICE_CACHE_KEY);
+    if (fromLS) {
+      _priceCacheMemory = fromLS;
+      await _idb.set(PRICE_CACHE_KEY, fromLS);
+      try { localStorage.removeItem('fp_' + PRICE_CACHE_KEY); } catch {}
+      return;
+    }
+  }
+  _priceCacheMemory = val || {};
+}
+
+// Inicializar al cargar
+_loadPriceCacheFromIDB();
+
+function getPriceCache() { return _priceCacheMemory || {}; }
+function setPriceCache(c) {
+  _priceCacheMemory = c;
+  _idb.set(PRICE_CACHE_KEY, c); // async, no bloqueante
+}
 function isCacheFresh(ts) { if (!ts) return false; const n = new Date(), c = new Date(ts); return n.getFullYear()===c.getFullYear() && n.getMonth()===c.getMonth() && n.getDate()===c.getDate(); }
 function isFxCacheFresh(ts) { if (!ts) return false; return (Date.now() - ts) < 6 * 60 * 60 * 1000; }
 function getCachedPrice(t) { const c=getPriceCache(); return c[t]||null; }
@@ -4289,12 +4350,42 @@ function processCSVImport(input){
   const reader = new FileReader();
   reader.onload = e => {
     try {
-      const text = e.target.result.replace(/^\uFEFF/,'');
-      const lines = text.split(/\r?\n/).filter(l => l.trim());
-      if(lines.length < 2){ resultEl.innerHTML='<span style="color:var(--red)">❌ '+t('emptyFile')+'</span>'; return; }
+      const text = e.target.result;
 
-      const sep = lines[0].includes(';') ? ';' : ',';
-      const headers = lines[0].split(sep).map(h => h.trim().toLowerCase().replace(/['"]/g,''));
+      // Parseo CSV robusto: soporta comillas, comas y saltos de línea dentro de campos
+      function parseCSVRobust(text) {
+        const rows = [];
+        let row = [], field = '', inQuote = false;
+        for (let i = 0; i < text.length; i++) {
+          const ch = text[i], next = text[i+1];
+          if (inQuote) {
+            if (ch === '"' && next === '"') { field += '"'; i++; }         // "" → "
+            else if (ch === '"') { inQuote = false; }                      // cierre de comilla
+            else { field += ch; }
+          } else {
+            if (ch === '"') { inQuote = true; }                            // apertura de comilla
+            else if (ch === ',' || ch === ';') { row.push(field.trim()); field = ''; }
+            else if (ch === '
+' || (ch === '
+' && next === '
+')) {
+              if (ch === '
+') i++;
+              row.push(field.trim()); rows.push(row); row = []; field = '';
+            } else if (ch === '
+') {
+              row.push(field.trim()); rows.push(row); row = []; field = '';
+            } else { field += ch; }
+          }
+        }
+        if (field || row.length) { row.push(field.trim()); rows.push(row); }
+        return rows;
+      }
+
+      const allRows = parseCSVRobust(text.replace(/^\uFEFF/,''));
+      if (allRows.length < 2) { resultEl.innerHTML='<span style="color:var(--red)">❌ '+t('emptyFile')+'</span>'; return; }
+      const sep = ','; // ya no se usa para split, solo para compatibilidad
+      const headers = allRows[0].map(h => h.toLowerCase().replace(/['"]/g,''));
 
       const idxFecha    = headers.findIndex(h => h.includes('fecha'));
       const idxSeccion  = headers.findIndex(h => h.includes('seccion') || h.includes('sección'));
@@ -4314,9 +4405,8 @@ function processCSVImport(input){
       let importados = 0, errores = 0, errorMsgs = [];
       const newMovs = [];
 
-      lines.slice(1).forEach((line, li) => {
-        if(!line.trim()) return;
-        const row = line.split(sep);
+      allRows.slice(1).forEach((row, li) => {
+        if(!row.length || row.every(c=>!c)) return;
         const fecha = parseVal(row, idxFecha);
         const seccion = (parseVal(row, idxSeccion) || 'gastos').toLowerCase();
         const tipo = parseVal(row, idxTipo) || (seccion==='gastos' ? 'Gasto' : 'Aportación');
