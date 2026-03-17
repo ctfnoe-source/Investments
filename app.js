@@ -1810,35 +1810,36 @@ function renderDashboard(){
     </div>
 
     <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden">
-      <div style="padding:14px 20px 10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-        <div>
-          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(245,166,35,0.9);margin-bottom:6px">📈 ${t('patrimonioTotal')} · <span style="color:rgba(245,166,35,0.95);font-size:14px;font-weight:800;letter-spacing:-0.02em">${fmt(patrimonio)}</span></div>
-
+      <div style="padding:10px 20px 8px;display:flex;align-items:center;flex-wrap:wrap;gap:10px;border-bottom:0.5px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+          <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:rgba(245,166,35,0.9)">📈 ${t('patrimonioTotal')}</span>
+          <span style="font-size:16px;font-weight:800;letter-spacing:-0.02em;color:rgba(245,166,35,0.95)">${fmt(patrimonio)}</span>
         </div>
-        <div style="display:flex;gap:16px;align-items:center">
-          <div style="text-align:right">
-            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:700;margin-bottom:2px">${t('gananciaNetaTotal')}</div>
-            <div style="font-size:15px;font-weight:800;color:${pctCol(patrimonioRendPuro)}">${patrimonioRendPuro>=0?'+':''}${fmt(patrimonioRendPuro)}</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-shrink:0">
+          <span style="font-size:10px;color:var(--text3)">·</span>
+          <div>
+            <div style="font-size:9px;color:var(--text3);text-transform:uppercase;font-weight:700;letter-spacing:0.05em">${t('gananciaNetaTotal')}</div>
+            <div style="font-size:13px;font-weight:800;color:${pctCol(patrimonioRendPuro)}">${patrimonioRendPuro>=0?'+':''}${fmt(patrimonioRendPuro)}</div>
           </div>
           ${rendAnualReal !== null ? `
-          <div style="width:1px;background:var(--border);align-self:stretch;margin:2px 0"></div>
-          <div style="text-align:right">
-            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:700;margin-bottom:2px">${t('cagrReal')}</div>
-            <div style="font-size:15px;font-weight:800;color:${pctCol(rendAnualReal)}">${rendAnualReal>=0?'+':''}${(rendAnualReal*100).toFixed(1)}%</div>
-            <div style="font-size:10px;color:var(--text2);margin-top:2px">${t('annualized')} · ${Math.round((new Date(hist[hist.length-1].date)-new Date(hist[0].date))/(1000*60*60*24))}d</div>
+          <span style="font-size:10px;color:var(--text3)">·</span>
+          <div>
+            <div style="font-size:9px;color:var(--text3);text-transform:uppercase;font-weight:700;letter-spacing:0.05em">${t('cagrReal')} · ${Math.round((new Date(hist[hist.length-1].date)-new Date(hist[0].date))/(1000*60*60*24))}d</div>
+            <div style="font-size:13px;font-weight:800;color:${pctCol(rendAnualReal)}">${rendAnualReal>=0?'+':''}${(rendAnualReal*100).toFixed(1)}%</div>
           </div>` : ''}
         </div>
-      </div>
-      <div style="padding:0 20px 8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
-          <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:16px;height:3px;background:rgba(245,166,35,0.95);border-radius:2px"></span>${t('patrimonioTotal2')}</span>
-          <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:16px;height:3px;background:#30D158;border-radius:2px"></span>${t('gananciaReal')}</span>
-          <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:16px;height:3px;background:rgba(10,132,255,0.85);border-radius:2px"></span>${t('proyeccion')} ${(re*100).toFixed(0)}%</span>
-          <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:14px;height:2px;background:rgba(10,132,255,0.5);border-top:1.5px dashed rgba(10,132,255,0.7)"></span>${t('rendPlataformas')} %</span>
-          <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:14px;height:2px;background:rgba(48,209,88,0.5);border-top:1.5px dashed rgba(48,209,88,0.7)"></span>${t('gpNoRealizada')} %</span>
-          ${(settings.alphaVantageKey||settings.finnhubKey)?`<span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:14px;height:2px;background:rgba(220,50,80,0.5);border-top:1.5px dashed rgba(220,50,80,0.7)"></span>S&P 500 %</span>`:''}
+        <div style="flex:1"></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:3px;background:rgba(245,166,35,0.95);border-radius:2px"></span>${t('patrimonioTotal2')}</span>
+            <span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:3px;background:#30D158;border-radius:2px"></span>${t('gananciaReal')}</span>
+            <span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:3px;background:rgba(10,132,255,0.85);border-radius:2px"></span>${t('proyeccion')} ${(re*100).toFixed(0)}%</span>
+            <span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:12px;height:2px;border-top:1.5px dashed rgba(10,132,255,0.7)"></span>${t('rendPlataformas')} %</span>
+            <span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:12px;height:2px;border-top:1.5px dashed rgba(48,209,88,0.7)"></span>${t('gpNoRealizada')} %</span>
+            ${(settings.alphaVantageKey||settings.finnhubKey)?`<span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:12px;height:2px;border-top:1.5px dashed rgba(220,50,80,0.7)"></span>S&P 500 %</span>`:''}
+          </div>
+          <div style="display:flex;gap:4px">${rangeButtonsHTML}</div>
         </div>
-        <div style="display:flex;gap:5px;flex-wrap:wrap">${rangeButtonsHTML}</div>
       </div>
       <div style="padding:0 20px 14px">
         <div class="chart-container" style="height:200px">${hist.length < 2 ? `<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text3)"><div style="font-size:32px">📈</div><div style="font-size:13px;font-weight:600;color:var(--text2)">${t('graficoApareceraManana')}</div><div style="font-size:11px;text-align:center;max-width:220px;line-height:1.5">${t('necesitas2dias')}<br>${t('vuelveManana')}</div></div>` : `<canvas id="chartEvo"></canvas>`}</div>
