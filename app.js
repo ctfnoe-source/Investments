@@ -2320,26 +2320,15 @@ function renderDashboard(){
         });
 
       // Dataset 3: G/P % Inversiones
-      // Calcular la ganancia de inversiones por snapshot usando el capital invertido
-      // real en cada fecha en lugar de una proporción fija de hoy
-      const _invMovsByDate = movements.filter(m => m.seccion === 'inversiones');
+      const _totalGainHoy = patrimonioRendPuro; // ganancia total actual
+      const _platPropHoy = _totalGainHoy !== 0 ? totalRend / _totalGainHoy : 0;
       const invCompData = hist
         .filter(s => !xMin2 || new Date(s.date+'T00:00:00').getTime() >= xMin2)
         .map(s => {
-          // Capital invertido acumulado hasta esa fecha
-          const capInvFecha = _invMovsByDate
-            .filter(m => m.fecha <= s.date)
-            .reduce((acc, m) => {
-              const monto = (m.montoTotal || (m.cantidad||0)*(m.precioUnit||0)) * (m.moneda==='MXN' ? 1/tc : 1);
-              return m.tipoMov === 'Compra' ? acc + monto : acc - monto;
-            }, 0);
-          // La ganancia de inversiones = total snapshot - capital plataformas en esa fecha
           const totalGain = s.value - (s.capital || s.value);
-          const platCapFecha = (s.capital || s.value) - Math.max(0, capInvFecha) * tc;
-          const platGainFecha = platCapFecha > 0 ? totalGain * (platCapFecha / (s.capital || s.value || 1)) : 0;
-          const invGain = Math.round(totalGain - platGainFecha);
-          const capInv = Math.max(1, capInvFecha * tc);
-          const pct = Math.round((invGain / capInv) * 10000) / 100;
+          const invGain = Math.round(totalGain * (1 - _platPropHoy));
+          const capInv = totalInvertidoUSD > 0 ? totalInvertidoUSD * tc : (s.capital || s.value);
+          const pct = capInv > 0 ? Math.round((invGain / capInv) * 10000) / 100 : 0;
           return { x: s.date, y: pct };
         });
 
