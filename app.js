@@ -2222,6 +2222,8 @@ function renderDashboard(){
                 return raw;
               },
               label: ctx => {
+                // No mostrar si el dataset está oculto
+                if (ctx.dataset.hidden) return null;
                 const val = ctx.parsed.y;
                 const icons = ['🟢','🟡','🔵'];
                 return ` ${icons[ctx.datasetIndex]||'⚪'} ${ctx.dataset.label}: ${fmtFull(val)}`;
@@ -2318,15 +2320,26 @@ function renderDashboard(){
         });
 
       // Dataset 3: G/P % Inversiones
-      const _totalGainHoy = patrimonioRendPuro; // ganancia total actual
-      const _platPropHoy = _totalGainHoy !== 0 ? totalRend / _totalGainHoy : 0;
+      // Calcular la ganancia de inversiones por snapshot usando el capital invertido
+      // real en cada fecha en lugar de una proporción fija de hoy
+      const _invMovsByDate = movements.filter(m => m.seccion === 'inversiones');
       const invCompData = hist
         .filter(s => !xMin2 || new Date(s.date+'T00:00:00').getTime() >= xMin2)
         .map(s => {
+          // Capital invertido acumulado hasta esa fecha
+          const capInvFecha = _invMovsByDate
+            .filter(m => m.fecha <= s.date)
+            .reduce((acc, m) => {
+              const monto = (m.montoTotal || (m.cantidad||0)*(m.precioUnit||0)) * (m.moneda==='MXN' ? 1/tc : 1);
+              return m.tipoMov === 'Compra' ? acc + monto : acc - monto;
+            }, 0);
+          // La ganancia de inversiones = total snapshot - capital plataformas en esa fecha
           const totalGain = s.value - (s.capital || s.value);
-          const invGain = Math.round(totalGain * (1 - _platPropHoy));
-          const capInv = totalInvertidoUSD > 0 ? totalInvertidoUSD * tc : (s.capital || s.value);
-          const pct = capInv > 0 ? Math.round((invGain / capInv) * 10000) / 100 : 0;
+          const platCapFecha = (s.capital || s.value) - Math.max(0, capInvFecha) * tc;
+          const platGainFecha = platCapFecha > 0 ? totalGain * (platCapFecha / (s.capital || s.value || 1)) : 0;
+          const invGain = Math.round(totalGain - platGainFecha);
+          const capInv = Math.max(1, capInvFecha * tc);
+          const pct = Math.round((invGain / capInv) * 10000) / 100;
           return { x: s.date, y: pct };
         });
 
@@ -2423,6 +2436,7 @@ function renderDashboard(){
                   return raw;
                 },
                 label: ctx => {
+                  if (ctx.dataset.hidden) return null;
                   const val = ctx.parsed.y;
                   const icons = ['🔴','🔵','🟢'];
                   const sign = val >= 0 ? '+' : '';
@@ -4725,6 +4739,7 @@ async function loadSubcollections(uid){
 
 function setupFirestore(uid){
   if(_unsub){_unsub();_unsub=null;}
+  if(_unsubRegistro){_unsubRegistro();_unsubRegistro=null;}
   DOC_REF = getDocRef(uid);
   _unsub=onSnapshot(DOC_REF, async snap=>{
     if(_ignoreSnapCount>0){_ignoreSnapCount--;return;}
@@ -5047,6 +5062,50 @@ window.openAdminPanel = async function(){
     return b.totalMovs - a.totalMovs;
   });
 
+  // Guardar en memoria para actualizaciones sin recargar desde Firebase
+  window._adminUsageData = usageData;
+
+  // Función para re-renderizar solo las filas sin recargar datos
+  window._renderAdminRows = function() {
+    const data = window._adminUsageData || [];
+    const pending = data.filter(u=>!u.aprobado).length;
+    const pagados = data.filter(u=>u.pagado).length;
+    const ingresos = pagados * 20;
+    const pendingEl = document.querySelector('._adminPendingBadge');
+    if (pendingEl) pendingEl.textContent = pending > 0 ? `${pending} ${t('pending')}` : '';
+    const rowsEl = document.getElementById('_adminRowsContainer');
+    if (!rowsEl) return;
+    rowsEl.innerHTML = data.map(u => `
+    <div style="padding:14px 0;border-bottom:0.5px solid var(--border)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex-shrink:0">
+            ${(u.displayName||u.email||'?')[0].toUpperCase()}
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:700">${u.displayName||t('noName')}</div>
+            <div style="font-size:11px;color:var(--text2)">${u.email||''}</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:${u.aprobado?'rgba(48,209,88,0.1)':'rgba(255,159,10,0.1)'};color:${u.aprobado?'var(--green)':'var(--orange)'}">${u.aprobado?'✅ '+t('active'):'⏳ '+t('pending')}</span>
+          ${u.pagado?`<span style="font-size:10px;font-weight:600;color:var(--green)">💳 $20 USD · ${u.pagadoEn?new Date(u.pagadoEn).toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}):'—'}</span>`:`<span style="font-size:10px;color:var(--text3)">Sin pago registrado</span>`}
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">
+        <div style="background:var(--card2);border-radius:8px;padding:6px 8px;text-align:center"><div style="font-size:16px;font-weight:800;color:var(--blue)">${u.movPlat}</div><div style="font-size:9px;color:var(--text2);text-transform:uppercase">${t('seccionPlataformas')}</div></div>
+        <div style="background:var(--card2);border-radius:8px;padding:6px 8px;text-align:center"><div style="font-size:16px;font-weight:800;color:var(--green)">${u.movInv}</div><div style="font-size:9px;color:var(--text2);text-transform:uppercase">${t('seccionInversiones')}</div></div>
+        <div style="background:var(--card2);border-radius:8px;padding:6px 8px;text-align:center"><div style="font-size:16px;font-weight:800;color:var(--orange)">${u.movGas}</div><div style="font-size:9px;color:var(--text2);text-transform:uppercase">${t('seccionGastos')}</div></div>
+        <div style="background:var(--card2);border-radius:8px;padding:6px 8px;text-align:center"><div style="font-size:16px;font-weight:800;color:var(--purple)">${u.snaps}</div><div style="font-size:9px;color:var(--text2);text-transform:uppercase">${t('snapshots')}</div></div>
+      </div>
+      <div style="display:flex;gap:6px;justify-content:flex-end">
+        ${!u.aprobado?`<button onclick="window.aprobarUsuario('${u.uid}')" style="padding:5px 12px;border-radius:14px;border:none;background:var(--green);color:#fff;font-size:11px;font-weight:700;cursor:pointer">${t('approve')}</button>`:''}
+        ${u.aprobado?`<button onclick="window.revocarUsuario('${u.uid}')" style="padding:5px 12px;border-radius:14px;border:none;background:var(--orange,#ff9f0a);color:#fff;font-size:11px;font-weight:700;cursor:pointer">${t('revoke')}</button>`:''}
+        <button onclick="window.eliminarUsuario('${u.uid}')" style="padding:5px 12px;border-radius:14px;border:none;background:var(--red,#ff453a);color:#fff;font-size:11px;font-weight:700;cursor:pointer">${t('delete')}</button>
+      </div>
+    </div>`).join('') || `<div style="text-align:center;padding:32px;color:var(--text2)">${t('noUsers')}</div>`;
+  };
+
   const rows = usageData.map(u => `
     <div style="padding:14px 0;border-bottom:0.5px solid var(--border)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -5117,7 +5176,7 @@ window.openAdminPanel = async function(){
         <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em">USD ingresados</div>
       </div>
     </div>
-    <div style="max-height:420px;overflow-y:auto;margin:0 -4px;padding:0 4px">
+    <div id="_adminRowsContainer" style="max-height:420px;overflow-y:auto;margin:0 -4px;padding:0 4px">
       ${rows || '<div style="text-align:center;padding:32px;color:var(--text2)">'+t('noUsers')+'</div>'}
     </div>
   </div>`);
@@ -5125,14 +5184,28 @@ window.openAdminPanel = async function(){
 
 window.aprobarUsuario = async function(uid){
   const { doc: _doc, setDoc: _setDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+  // Actualizar botón inmediatamente sin recargar todo el panel
+  const btn = document.querySelector(`button[onclick="window.aprobarUsuario('${uid}')"]`);
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
   await _setDoc(_doc(db,'registros',uid), {aprobado:true}, {merge:true});
-  window.openAdminPanel();
+  // Actualizar solo ese usuario en el cache del panel
+  if (window._adminUsageData) {
+    const u = window._adminUsageData.find(x => x.uid === uid);
+    if (u) u.aprobado = true;
+    window._renderAdminRows();
+  }
 };
 
 window.revocarUsuario = async function(uid){
   const { doc: _doc, setDoc: _setDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+  const btn = document.querySelector(`button[onclick="window.revocarUsuario('${uid}')"]`);
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
   await _setDoc(_doc(db,'registros',uid), {aprobado:false}, {merge:true});
-  window.openAdminPanel();
+  if (window._adminUsageData) {
+    const u = window._adminUsageData.find(x => x.uid === uid);
+    if (u) u.aprobado = false;
+    window._renderAdminRows();
+  }
 };
 
 window.eliminarUsuario = async function(uid){
@@ -5155,7 +5228,13 @@ window.eliminarUsuario = async function(uid){
       _deleteDoc(_doc(db, 'usuarios', uid, 'meta', 'perfil')),
     ]);
   } catch(e) { /* ignore */ }
-  window.openAdminPanel();
+  // Quitar usuario del cache y re-renderizar sin recargar Firebase
+  if (window._adminUsageData) {
+    window._adminUsageData = window._adminUsageData.filter(u => u.uid !== uid);
+    window._renderAdminRows();
+  } else {
+    window.openAdminPanel();
+  }
 };
 
 onAuthStateChanged(auth,async user=>{
@@ -5190,7 +5269,7 @@ onAuthStateChanged(auth,async user=>{
     const registroRef = doc(db, 'registros', uid);
     const registroSnap = await _getDoc(registroRef);
     const aprobado = registroSnap.exists() && registroSnap.data()?.aprobado === true;
-    console.log('[Auth] uid:', uid, '| email:', user.email, '| isAdmin:', uid === ADMIN_UID || user.email === 'ctfnoe@gmail.com', '| aprobado:', aprobado);
+    // [Auth] log removido de producción;
 
     // ── Sistema de acceso / prueba ───────────────────────────────────
     if(!aprobado && !isAdmin){
