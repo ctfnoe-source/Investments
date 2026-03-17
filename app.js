@@ -4620,9 +4620,23 @@ if(localStorage.getItem('_authRedirect') === '1'){
   getRedirectResult(auth).then(result => {
     _redirectPending = false;
     if(!result || !result.user){
-      showLogin(); // came back but no user — show login normally
+      // No user came back from redirect — show login normally
+      showLogin();
     }
-    // If result.user exists, onAuthStateChanged fires automatically
+    // If result.user exists, onAuthStateChanged will fire automatically.
+    // If it doesn't fire within 4s (iOS Safari bug), reload the page once
+    // so Firebase can re-establish the session from persisted storage.
+    else {
+      const safetyTimer = setTimeout(() => {
+        if(!window._currentUser){
+          console.warn('[Auth] onAuthStateChanged did not fire after redirect — reloading');
+          window.location.replace(window.location.pathname);
+        }
+      }, 4000);
+      // If onAuthStateChanged fires normally, window._currentUser gets set
+      // and the timer above becomes a no-op
+      window._authSafetyTimer = safetyTimer;
+    }
   }).catch(err => {
     _redirectPending = false;
     console.error('[Auth] getRedirectResult error:', err.code, err.message);
@@ -5152,6 +5166,8 @@ window.eliminarUsuario = async function(uid){
 })();
 
 onAuthStateChanged(auth,async user=>{
+  // Cancel the iOS redirect safety timer if it's pending
+  if(window._authSafetyTimer){ clearTimeout(window._authSafetyTimer); window._authSafetyTimer=null; }
   if(user){
     window._currentUser=user;
     const uid = user.uid;
