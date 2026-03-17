@@ -20,11 +20,11 @@ export async function onRequestPost(context) {
     const preference = {
       items: [
         {
-          id: 'investtracker-lifetime',
-          title: isES ? 'InvestTracker — Acceso de por vida' : 'InvestTracker — Lifetime Access',
+          id: 'trackfolio-lifetime',
+          title: isES ? 'TrackFolio — Acceso de por vida' : 'TrackFolio — Lifetime Access',
           description: isES
-            ? 'Acceso completo y permanente a InvestTracker. Pago único sin suscripción.'
-            : 'Full and permanent access to InvestTracker. One-time payment, no subscription.',
+            ? 'Acceso completo y permanente a TrackFolio. Pago único sin suscripción.'
+            : 'Full and permanent access to TrackFolio. One-time payment, no subscription.',
           quantity: 1,
           currency_id: 'USD',
           unit_price: 20,
@@ -39,7 +39,7 @@ export async function onRequestPost(context) {
       },
       auto_return: 'approved',
       notification_url: `${siteUrl}/mp-webhook`,
-      statement_descriptor: 'InvestTracker',
+      statement_descriptor: 'TrackFolio',
     };
 
     const result = await fetch('https://api.mercadopago.com/checkout/preferences', {
