@@ -862,6 +862,7 @@ async function updateAllPrices(forceRefresh=false) {
   if (priceUpdateState.loading) return;
   priceUpdateState.loading = true;
   const btn = document.getElementById('btnUpdate');
+  if(btn){btn.innerHTML='<span class="spinner"></span>';btn.disabled=true;}
   if (btn) { btn.disabled=true; btn.innerHTML='<span class="spinner"></span> '+t('actualizando'); }
   await updateFX();
   const tickerSet = new Map();
@@ -875,6 +876,7 @@ async function updateAllPrices(forceRefresh=false) {
   for (const [key, info] of tickerArr) { const b = document.getElementById('btnUpdate'); if (b) b.innerHTML = `<span class="spinner"></span> ${info.ticker}...`; await fetchPrice(info.ticker, info.type, info.moneda); await new Promise(r => setTimeout(r, 300)); }
   priceUpdateState.loading = false;
   priceUpdateState.lastUpdate = new Date();
+  const _nb=document.getElementById('btnUpdate');if(_nb){_nb.innerHTML='🔄';_nb.disabled=false;}
   _recalcAndSaveSnapshot();
   renderPage(currentTab);
 }
@@ -1795,18 +1797,7 @@ function renderDashboard(){
     ${applied>0?`<div class="snapshot-banner" style="background:rgba(191,90,242,0.06);border-color:rgba(191,90,242,0.2);margin-bottom:16px"><span class="snap-dot" style="background:var(--purple)"></span><span style="color:var(--purple)">✅ <strong>${applied} ${t('recurrentesAplicadas')}</strong> ${t('esteMes')}</span></div>`:''}
     ${alertsHtml}
     ${platsSinActualizarHtml}
-    <div class="price-banner" style="margin-bottom:8px">
-      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        ${bannerStatus}
-        ${priceSummary.missing>0?`<span style="color:var(--text3)">· ${priceSummary.missing} ${t('sinPrecio')}</span>`:''}
-        ${platsConTasa>0?`<span style="color:var(--teal);font-weight:600">· 🏦 ${platsConTasa} ${t('conTasaAuto')}</span>`:''}
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        ${!hasFinnhub&&priceSummary.total>0?`<span style="font-size:11px;color:var(--orange)">⚠️ ${t('requiereFinnhub')}</span>`:''}
-        ${(()=>{const fx=_fxCache||LS.get('fxCache');if(fx&&isCacheFresh(fx.ts))return`<span style="font-size:11px;color:var(--teal)">💱 USD $${fx.usdmxn?.toFixed(2)} · EUR $${fx.eurmxn?.toFixed(2)}</span>`;return`<span style="font-size:11px;color:var(--text3)">💱 USD $${tc} (${t('manual')})</span>`;})()}
-        <button class="btn btn-primary btn-sm" onclick="updateAllPrices(true)" ${priceUpdateState.loading?'disabled':''} id="btnUpdate">${btnLabel}</button>
-      </div>
-    </div>
+
     <div class="grid-8" style="margin-bottom:16px">
       <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">${t('valorPlataformas')}</div><div class="stat-value">${fmt(totalMXN)}</div><div class="stat-sub"><span style="color:${pctCol(totalRend)};font-weight:700">${fmtPct(invInicial?totalRend/invInicial:0)}</span> ${t('return')}</div></div>
       <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">${t('rendPlataformas')}</div><div class="stat-value" style="color:${pctCol(totalRend)}">${fmt(totalRend)}</div><div class="stat-sub">${platsConTasa>0?`<span style="color:var(--teal)">⚡${fmt(totalRendAuto)} ${t('auto')}</span>`:t('rendimientoSobre')}</div></div>
@@ -4137,6 +4128,13 @@ function updateNav(patrimonio,totalMXN,totalUSD,tc,totalRend,deltaHoy,deltaHoyPc
   const eurStr=fx?.eurmxn?`<span>EUR $${fx.eurmxn.toFixed(2)}</span>`:'';
   const deltaStr=deltaHoy!==0&&deltaHoy!=null?`<span style="color:${pctCol(deltaHoy)};font-weight:700;background:${deltaHoy>=0?'rgba(48,209,88,0.12)':'rgba(255,69,58,0.10)'};padding:1px 6px;border-radius:6px">${deltaHoy>=0?'▲':'▼'} ${fmt(Math.abs(deltaHoy))} ${t('today')}</span>`:'';
   if(el2)el2.innerHTML=`<span>🇲🇽 ${fmt(totalMXN)}</span><span>🇺🇸 ${fmt(totalUSD,'USD')}</span><span>💱 $${tc}</span>${eurStr}${deltaStr}`;
+  const _ps=getPriceSummary();
+  const _nps=document.getElementById('navPriceStatus');
+  if(_nps){
+    if(_ps.live>0)_nps.innerHTML=`<span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block"></span>${_ps.live}/${_ps.total}`;
+    else if(_ps.total>0)_nps.innerHTML=`<span style="width:6px;height:6px;border-radius:50%;background:var(--text3);display:inline-block"></span>${_ps.total}`;
+    else _nps.innerHTML='';
+  }
 }
 function updateNavUser(user){
   if(!user)return;
