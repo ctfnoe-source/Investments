@@ -4559,18 +4559,17 @@ getRedirectResult(auth).then(result => {
 });
 
 // ── Login — función global, llamada desde cualquier botón ──────────────────
-window._doGoogleLogin = async function(btnEl) {
+window._doGoogleLogin = function(btnEl) {
   const spinnerHtml = '<span style="display:inline-block;width:20px;height:20px;border:2px solid rgba(10,132,255,0.2);border-top-color:#0A84FF;border-radius:50%;animation:spin 0.7s linear infinite;margin-right:8px;vertical-align:middle"></span> Conectando...';
   if(btnEl){ btnEl.disabled = true; btnEl.innerHTML = spinnerHtml; }
   window._log('_doGoogleLogin llamado');
 
-  // Siempre usar popup — en iOS Safari el popup funciona si se abre
-  // directamente desde el gesto del usuario (este click).
-  // signInWithRedirect falla en iOS por ITP (bloquea cookies de terceros).
-  try {
-    await signInWithPopup(auth, new GoogleAuthProvider());
-    window._log('signInWithPopup OK');
-  } catch(e){
+  // Abrir popup SINCRÓNICAMENTE — sin ningún await antes
+  // Safari bloquea popups si hay código async antes de window.open
+  const provider = new GoogleAuthProvider();
+  signInWithPopup(auth, provider).then(result => {
+    window._log('signInWithPopup OK: '+result.user.email);
+  }).catch(e => {
     window._log('signInWithPopup error: '+e.code);
     if(btnEl){ btnEl.disabled = false; btnEl.innerHTML = 'Continuar con Google'; }
     if(e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request'){
@@ -4578,7 +4577,7 @@ window._doGoogleLogin = async function(btnEl) {
     } else {
       showLogin();
     }
-  }
+  });
 };
 
 // Attach también al botón del loginOverlay
