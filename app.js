@@ -1810,28 +1810,27 @@ function renderDashboard(){
     </div>
 
     <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden">
-      <div style="padding:12px 20px 0">
-        <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
-          <div style="display:flex;align-items:baseline;gap:10px">
-            <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:rgba(245,166,35,0.85)">📈 ${t('patrimonioTotal')}</span>
-            <span style="font-size:22px;font-weight:800;letter-spacing:-0.03em;color:rgba(245,166,35,0.95)">${fmt(patrimonio)}</span>
+      <div style="padding:8px 16px 6px;display:flex;align-items:center;justify-content:space-between;gap:6px;border-bottom:0.5px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:nowrap;overflow:hidden">
+          <div style="display:flex;align-items:baseline;gap:6px;flex-shrink:0">
+            <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgba(245,166,35,0.85)">📈 ${t('patrimonioTotal')}</span>
+            <span style="font-size:14px;font-weight:800;letter-spacing:-0.02em;color:rgba(245,166,35,0.95)">${fmt(patrimonio)}</span>
           </div>
-          <div style="display:flex;gap:20px;align-items:center">
-            <div style="text-align:center">
-              <div style="font-size:9px;color:var(--text3);text-transform:uppercase;font-weight:700;letter-spacing:0.05em;margin-bottom:1px">${t('gananciaNetaTotal')}</div>
-              <div style="font-size:14px;font-weight:800;color:${pctCol(patrimonioRendPuro)}">${patrimonioRendPuro>=0?'+':''}${fmt(patrimonioRendPuro)}</div>
-            </div>
-            ${rendAnualReal !== null ? `
-            <div style="width:0.5px;height:28px;background:var(--border)"></div>
-            <div style="text-align:center">
-              <div style="font-size:9px;color:var(--text3);text-transform:uppercase;font-weight:700;letter-spacing:0.05em;margin-bottom:1px">${t('cagrReal')} · ${Math.round((new Date(hist[hist.length-1].date)-new Date(hist[0].date))/(1000*60*60*24))}d</div>
-              <div style="font-size:14px;font-weight:800;color:${pctCol(rendAnualReal)}">${rendAnualReal>=0?'+':''}${(rendAnualReal*100).toFixed(1)}%</div>
-            </div>` : ''}
-            <div style="width:0.5px;height:28px;background:var(--border)"></div>
-            <div style="display:flex;gap:4px">${rangeButtonsHTML}</div>
+          <span style="color:var(--border);flex-shrink:0">|</span>
+          <div style="display:flex;align-items:baseline;gap:5px;flex-shrink:0">
+            <span style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:600;letter-spacing:0.04em">${t('gananciaNetaTotal')}</span>
+            <span style="font-size:13px;font-weight:800;color:${pctCol(patrimonioRendPuro)}">${patrimonioRendPuro>=0?'+':''}${fmt(patrimonioRendPuro)}</span>
           </div>
+          ${rendAnualReal !== null ? `
+          <span style="color:var(--border);flex-shrink:0">|</span>
+          <div style="display:flex;align-items:baseline;gap:5px;flex-shrink:0">
+            <span style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:600;letter-spacing:0.04em">${t('cagrReal')} <span style="font-weight:400;font-size:9px">${Math.round((new Date(hist[hist.length-1].date)-new Date(hist[0].date))/(1000*60*60*24))}d</span></span>
+            <span style="font-size:13px;font-weight:800;color:${pctCol(rendAnualReal)}">${rendAnualReal>=0?'+':''}${(rendAnualReal*100).toFixed(1)}%</span>
+          </div>` : ''}
         </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding-bottom:8px;border-bottom:0.5px solid var(--border)">
+      </div>
+      <div style="padding:5px 16px 6px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;border-bottom:0.5px solid var(--border)">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:3px;background:rgba(245,166,35,0.95);border-radius:2px"></span>${t('patrimonioTotal2')}</span>
           <span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:3px;background:#30D158;border-radius:2px"></span>${t('gananciaReal')}</span>
           <span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:3px;background:rgba(10,132,255,0.85);border-radius:2px"></span>${t('proyeccion')} ${(re*100).toFixed(0)}%</span>
@@ -1839,6 +1838,7 @@ function renderDashboard(){
           <span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:12px;height:2px;border-top:1.5px dashed rgba(48,209,88,0.7)"></span>${t('gpNoRealizada')} %</span>
           ${(settings.alphaVantageKey||settings.finnhubKey)?`<span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:12px;height:2px;border-top:1.5px dashed rgba(220,50,80,0.7)"></span>S&P 500 %</span>`:''}
         </div>
+        <div style="display:flex;gap:4px;flex-shrink:0">${rangeButtonsHTML}</div>
       </div>
       <div style="padding:0 20px 14px">
         <div class="chart-container" style="height:200px">${hist.length < 2 ? `<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text3)"><div style="font-size:32px">📈</div><div style="font-size:13px;font-weight:600;color:var(--text2)">${t('graficoApareceraManana')}</div><div style="font-size:11px;text-align:center;max-width:220px;line-height:1.5">${t('necesitas2dias')}<br>${t('vuelveManana')}</div></div>` : `<canvas id="chartEvo"></canvas>`}</div>
@@ -2180,6 +2180,24 @@ function renderDashboard(){
             yAxisID:'y',
           },
           {
+            label: t('patrimonioTotal2'),
+            data:realDates.map((d,i)=>({x:d,y:patrimonioVals[i]})),
+            borderColor:'rgba(245,166,35,0.95)',
+            backgroundColor:'transparent',
+            borderWidth:1,
+            fill:false,
+            tension:0.4,
+            pointRadius: realDates.map((d,i) => i===realDates.length-1 ? dynLastRadius : (_evoEvt[d] ? 1.5 : 0)),
+            pointBackgroundColor: realDates.map((_,i) => i===realDates.length-1 ? (isDark?'#1C1C1E':'#fff') : 'rgba(245,166,35,0.9)'),
+            pointBorderColor: realDates.map((_,i) => i===realDates.length-1 ? 'rgba(245,166,35,0.95)' : 'transparent'),
+            pointBorderWidth: realDates.map((_,i) => i===realDates.length-1 ? 2 : 0),
+            pointHoverRadius:6,
+            pointHoverBackgroundColor:'rgba(245,166,35,1)',
+            pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
+            pointHoverBorderWidth:2,
+            yAxisID:'y2',
+          },
+          {
             label: t('proyeccion')+' '+((re*100).toFixed(0))+'% '+t('anual'),
             data: projDatesAdj.filter(d=>d<=todayDateStr).map((d,i)=>({x:d,y:projValsAdj[i]})),
             borderColor:'rgba(10,132,255,0.85)',
@@ -2200,24 +2218,6 @@ function renderDashboard(){
           ...((()=>{if(!_sp500Data||(!(settings.alphaVantageKey||settings.finnhubKey)))return[];const _ed=[];platforms.forEach(p=>{if(p.fechaInicio)_ed.push(p.fechaInicio);});movements.forEach(m=>{if(m.fecha)_ed.push(m.fecha);});_ed.sort();const _fo=_ed.length>0?_ed[0]:todayDateStr;const _pts=sp500ReturnPct(_sp500Data,_fo);const _d=_pts.filter(p=>!xMin||new Date(p.date+'T00:00:00').getTime()>=xMin).map(p=>({x:p.date,y:p.pct}));if(!_d.length)return[];return[{label:'S&P 500 %',data:_d,borderColor:isDark?'rgba(255,100,130,0.65)':'rgba(220,50,80,0.6)',backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,4],fill:false,tension:0.4,pointRadius:_d.map((_,i)=>i===_d.length-1?2:0),pointHoverRadius:4,yAxisID:'yc'}];})()),
           ...((()=>{const _pd=hist.filter(s=>!xMin||new Date(s.date+'T00:00:00').getTime()>=xMin).map(s=>{const g=Math.round((s.value-(s.capital||s.value))-(tickerList.reduce((sum,tk)=>{const gp=tk.gpNoRealizada||0;return sum+(tk.moneda==='MXN'?gp:gp*tc);},0)));const cap=s.capital||s.value;return{x:s.date,y:cap>0?Math.round((g/cap)*10000)/100:0};});if(!_pd.length)return[];return[{label:t('rendPlataformas')+' %',data:_pd,borderColor:'rgba(10,132,255,0.65)',backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,4],fill:false,tension:0.4,pointRadius:_pd.map((_,i)=>i===_pd.length-1?2:0),pointHoverRadius:4,yAxisID:'yc'}];})()),
           ...((()=>{const _tgh=patrimonioRendPuro;const _pph=_tgh!==0?totalRend/_tgh:0;const _id=hist.filter(s=>!xMin||new Date(s.date+'T00:00:00').getTime()>=xMin).map(s=>{const tg=s.value-(s.capital||s.value);const ig=Math.round(tg*(1-_pph));const cap=totalInvertidoUSD>0?totalInvertidoUSD*tc:(s.capital||s.value);return{x:s.date,y:cap>0?Math.round((ig/cap)*10000)/100:0};});if(!_id.length)return[];return[{label:t('gpNoRealizada')+' %',data:_id,borderColor:'rgba(48,209,88,0.65)',backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,4],fill:false,tension:0.4,pointRadius:_id.map((_,i)=>i===_id.length-1?2:0),pointHoverRadius:4,yAxisID:'yc'}];})()),
-          {
-            label: t('patrimonioTotal2'),
-            data:realDates.map((d,i)=>({x:d,y:patrimonioVals[i]})),
-            borderColor:'rgba(245,166,35,0.95)',
-            backgroundColor:'transparent',
-            borderWidth:2,
-            fill:false,
-            tension:0.4,
-            pointRadius: realDates.map((d,i) => i===realDates.length-1 ? dynLastRadius : (_evoEvt[d] ? 1.5 : 0)),
-            pointBackgroundColor: realDates.map((_,i) => i===realDates.length-1 ? (isDark?'#1C1C1E':'#fff') : 'rgba(245,166,35,0.9)'),
-            pointBorderColor: realDates.map((_,i) => i===realDates.length-1 ? 'rgba(245,166,35,0.95)' : 'transparent'),
-            pointBorderWidth: realDates.map((_,i) => i===realDates.length-1 ? 2 : 0),
-            pointHoverRadius:6,
-            pointHoverBackgroundColor:'rgba(245,166,35,1)',
-            pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
-            pointHoverBorderWidth:2,
-            yAxisID:'y2',
-          },
         ]
       },options:{
         responsive:true,
