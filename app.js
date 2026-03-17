@@ -3,8 +3,6 @@ import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp } from "https://
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 // ==================== MÓDULO PRINCIPAL ====================
 
-window._log = function(msg){ try{ const d=document.getElementById("_debugLog"); if(!d) return; const p=document.createElement("p"); p.style.margin="0"; p.textContent=new Date().toLocaleTimeString()+" "+msg; d.prepend(p); }catch(e){} };
-window._log("APP.JS CARGADO");
 
 function escHtml(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 const LS = {
@@ -4533,7 +4531,6 @@ window.signOutUser=async()=>{
 
 // ── Auth redirect — siempre usar localStorage (sessionStorage se borra en iOS) ──
 let _redirectPending = true; // bloquea showLogin hasta que getRedirectResult resuelva
-window._log('_redirectPending=true, localStorage._authRedirect='+localStorage.getItem('_authRedirect'));
 
 if(localStorage.getItem('_authRedirect') === '1'){
   localStorage.removeItem('_authRedirect');
@@ -4547,13 +4544,11 @@ if(localStorage.getItem('_authRedirect') === '1'){
 
 getRedirectResult(auth).then(result => {
   _redirectPending = false;
-  window._log('getRedirectResult: user='+(result&&result.user?result.user.email:'null'));
   if(!result || !result.user){
     if(!window._currentUser && !window._showingWelcomeGate) showLogin();
   }
 }).catch(err => {
   _redirectPending = false;
-  window._log('getRedirectResult ERROR: '+err.code+' '+err.message);
   console.error('[Auth] getRedirectResult error:', err.code, err.message);
   if(!window._currentUser) showLogin();
 });
@@ -4562,15 +4557,12 @@ getRedirectResult(auth).then(result => {
 window._doGoogleLogin = function(btnEl) {
   const spinnerHtml = '<span style="display:inline-block;width:20px;height:20px;border:2px solid rgba(10,132,255,0.2);border-top-color:#0A84FF;border-radius:50%;animation:spin 0.7s linear infinite;margin-right:8px;vertical-align:middle"></span> Conectando...';
   if(btnEl){ btnEl.disabled = true; btnEl.innerHTML = spinnerHtml; }
-  window._log('_doGoogleLogin llamado');
 
   // Abrir popup SINCRÓNICAMENTE — sin ningún await antes
   // Safari bloquea popups si hay código async antes de window.open
   const provider = new GoogleAuthProvider();
   signInWithPopup(auth, provider).then(result => {
-    window._log('signInWithPopup OK: '+result.user.email);
   }).catch(e => {
-    window._log('signInWithPopup error: '+e.code);
     if(btnEl){ btnEl.disabled = false; btnEl.innerHTML = 'Continuar con Google'; }
     if(e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request'){
       showLogin(t('signinError'));
@@ -4983,7 +4975,6 @@ window.eliminarUsuario = async function(uid){
 };
 
 onAuthStateChanged(auth,async user=>{
-  window._log('onAuthStateChanged: '+(user?user.email:'null')+' pending='+_redirectPending);
   if(user){
     window._currentUser=user;
     const uid = user.uid;
