@@ -1341,14 +1341,22 @@ function saveAll(changedMovId, deletedMovId, changedSnapDate){
   LS.set('platforms',platforms);LS.set('movements',movements);LS.set('goals',goals);LS.set('settings',settings);
   LS.set('recurrentes',recurrentes);LS.set('patrimonioHistory',patrimonioHistory);
   _recalcAndSaveSnapshot();
-  // Renderizar inmediatamente con los datos actuales para que la UI responda al instante
-  renderPageInternal(currentTab);
+  // No re-renderizar si hay un input inline activo en plataformas (editPlatField)
+  // para evitar que el render destruya el campo mientras el usuario escribe
+  const _activeInPlat = document.activeElement && document.getElementById('page-plataformas') &&
+    document.getElementById('page-plataformas').contains(document.activeElement) &&
+    (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT');
+  if (!_activeInPlat) {
+    renderPageInternal(currentTab);
+  }
   // buildHistoricalSnapshots es costoso — debounce para que cambios rápidos consecutivos
   // (ej: eliminar varios movimientos seguidos) no apilen múltiples reconstrucciones
   clearTimeout(window._snapshotDebounce);
   window._snapshotDebounce = setTimeout(() => {
     buildHistoricalSnapshots();
     LS.set('patrimonioHistory', patrimonioHistory);
+    // Si había un input activo, renderizar ahora que ya terminó el snapshot
+    if (_activeInPlat) renderPageInternal(currentTab);
   }, 300);
   if (!_isOnline) { queueSave(window.getAppData()); setOfflineBanner('offline'); }
   else if(typeof window.saveToFirebase==='function') {
