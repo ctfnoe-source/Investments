@@ -2438,7 +2438,7 @@ function renderDashboard(){
         chartInstances.chartInvTipo.data.datasets[0].borderColor=isDark?'#1C1C1E':'#fff';
         chartInstances.chartInvTipo.update('none');
       } else {
-        chartInstances.chartInvTipo=new Chart(ctxI,{type:'doughnut',data:{labels:invE.map(([k])=>k),datasets:[{data:invE.map(([,v])=>v),backgroundColor:invE.map((_,i)=>COLORS[i%COLORS.length]),borderWidth:2,borderColor:isDark?'#1C1C1E':'#fff',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',cornerRadius:12,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>{const total=invE.reduce((s,[,v])=>s+v,0);return ' '+ctx.label+': '+((ctx.parsed/total)*100).toFixed(1)+'% ('+fmt(ctx.parsed)+')';}}}}}}});
+        chartInstances.chartInvTipo=new Chart(ctxI,{type:'doughnut',data:{labels:invE.map(([k])=>k),datasets:[{data:invE.map(([,v])=>v),backgroundColor:invE.map((_,i)=>COLORS[i%COLORS.length]),borderWidth:2,borderColor:isDark?'#1C1C1E':'#fff',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',cornerRadius:12,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>{const total=invE.reduce((s,[,v])=>s+v,0);return ' '+ctx.label+': '+((ctx.parsed/total)*100).toFixed(1)+'% ('+fmt(ctx.parsed)+')';}}}}}});
       }
     }
 
