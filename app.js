@@ -867,7 +867,7 @@ async function updateAllPrices(forceRefresh=false) {
   await updateFX();
   const tickerSet = new Map();
   movements.forEach(m => { if (m.seccion === 'inversiones' && m.ticker) { const key = (m.moneda === 'MXN' ? m.ticker.toUpperCase() + '_MXN' : m.ticker.toUpperCase()); tickerSet.set(key, {type: m.tipoActivo, moneda: m.moneda||'USD', ticker: m.ticker.toUpperCase()}); } });
-  if (forceRefresh) { const c = getPriceCache(); tickerSet.forEach((_, k) => { delete c[k]; }); setPriceCache(c); LS.set('sp500_history', null); _sp500Data = null; }
+  if (forceRefresh) { const c = getPriceCache(); tickerSet.forEach((_, k) => { delete c[k]; }); setPriceCache(c); LS.set('sp500_history', null); _sp500Data = null; LS.set('qqq_history', null); _qqqData = null; }
   const tickerArr = [...tickerSet.entries()].sort((a, b) => {
     const aIsMXN = a[1].moneda === 'MXN' ? 1 : 0;
     const bIsMXN = b[1].moneda === 'MXN' ? 1 : 0;
@@ -994,6 +994,56 @@ function sp500ReturnPct(sp500data, fechaOrigen) {
 }
 
 let _sp500Data = null; // cache en memoria durante la sesión
+const QQQ_CACHE_KEY = 'qqq_history';
+function getQQQCache() { return LS.get(QQQ_CACHE_KEY) || null; }
+function setQQQCache(data) { LS.set(QQQ_CACHE_KEY, { data, ts: Date.now() }); }
+function isQQQCacheFresh(cached) {
+  if (!cached || !cached.ts) return false;
+  const c = new Date(cached.ts), n = new Date();
+  return c.getFullYear()===n.getFullYear() && c.getMonth()===n.getMonth() && c.getDate()===n.getDate();
+}
+async function fetchQQQHistory() {
+  const cached = getQQQCache();
+  if (isQQQCacheFresh(cached)) return cached.data;
+  const avKey = settings.alphaVantageKey || '';
+  const fhKey = settings.finnhubKey || '';
+  if (!avKey && !fhKey) return null;
+  let result = { dates: [], closes: [] };
+  if (avKey) {
+    try {
+      const r = await fetchWithTimeout(`https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY&symbol=QQQ&apikey=${avKey}`);
+      if (r.ok) {
+        const d = await r.json();
+        if (d['Monthly Time Series']) {
+          const series = d['Monthly Time Series'];
+          const entries = Object.entries(series).map(([date, v]) => ({ date, close: parseFloat(v['4. close']) })).filter(e => e.close > 0).sort((a, b) => a.date.localeCompare(b.date));
+          result.dates = entries.map(e => e.date);
+          result.closes = entries.map(e => e.close);
+        }
+      }
+    } catch(e) { /* silencioso */ }
+  }
+  if (fhKey) {
+    try {
+      const r = await fetchWithTimeout(`https://finnhub.io/api/v1/quote?symbol=QQQ&token=${fhKey}`);
+      if (r.ok) {
+        const d = await r.json();
+        if (d.c && d.c > 0) {
+          const todayStr = new Date().toISOString().split('T')[0];
+          if (result.dates.length > 0) {
+            const lastMonth = result.dates[result.dates.length-1].substring(0,7);
+            const todayMonth = todayStr.substring(0,7);
+            if (lastMonth === todayMonth) { result.dates[result.dates.length-1] = todayStr; result.closes[result.closes.length-1] = d.c; }
+            else { result.dates.push(todayStr); result.closes.push(d.c); }
+          } else { result.dates.push(todayStr); result.closes.push(d.c); }
+        }
+      }
+    } catch(e) { /* silencioso */ }
+  }
+  if (result.dates.length > 0) { setQQQCache(result); return result; }
+  return null;
+}
+let _qqqData = null; // cache en memoria durante la sesión
 
 function getPriceInfo(ticker, type, moneda) {
   ticker = ticker.toUpperCase(); moneda = (moneda || 'USD').toUpperCase();
@@ -1830,10 +1880,10 @@ function renderDashboard(){
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:3px;background:rgba(245,166,35,0.95);border-radius:2px"></span>${t('patrimonioTotal2')}</span>
           <span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:3px;background:#30D158;border-radius:2px"></span>${t('gananciaReal')}</span>
-
+          <span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:3px;background:rgba(10,132,255,0.85);border-radius:2px"></span>${t('proyeccion')} ${(re*100).toFixed(0)}%</span>
           <span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:12px;height:2px;border-top:1.5px dashed rgba(10,132,255,0.7)"></span>${t('rendPlataformas')} %</span>
           <span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:12px;height:2px;border-top:1.5px dashed rgba(48,209,88,0.7)"></span>${t('gpNoRealizada')} %</span>
-          ${(settings.alphaVantageKey||settings.finnhubKey)?`<span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:12px;height:2px;border-top:1.5px dashed rgba(220,50,80,0.7)"></span>S&P 500 %</span>`:''}
+          ${(settings.alphaVantageKey||settings.finnhubKey)?`<span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:12px;height:2px;border-top:1.5px dashed rgba(220,50,80,0.7)"></span>S&P 500 %</span><span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:12px;height:2px;border-top:1.5px dashed rgba(50,130,240,0.7)"></span>NASDAQ %</span>`:''}
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0">${rangeButtonsHTML}</div>
       </div>
@@ -1931,6 +1981,9 @@ function renderDashboard(){
   updateNav(patrimonio,totalMXN,totalUSDCurrent,tc,totalRend,deltaHoy,deltaHoyPct);
 
   // Cargar S&P500 de forma asíncrona y re-renderizar el chart cuando lleguen los datos
+  if (!_qqqData && (settings.alphaVantageKey || settings.finnhubKey)) {
+    fetchQQQHistory().then(data => { if (data && data.dates.length > 0) { _qqqData = data; } });
+  }
   if (!_sp500Data && (settings.alphaVantageKey || settings.finnhubKey)) {
     fetchSP500History().then(data => {
       if (data && data.dates.length > 0) {
@@ -2174,7 +2227,7 @@ function renderDashboard(){
             pointHoverBackgroundColor:'#30D158',
             pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
             pointHoverBorderWidth:2,
-            yAxisID:'y',
+            yAxisID:'y2',
           },
           {
             label: t('patrimonioTotal2'),
@@ -2194,8 +2247,26 @@ function renderDashboard(){
             pointHoverBorderWidth:2,
             yAxisID:'y2',
           },
-
+          {
+            label: t('proyeccion')+' '+((re*100).toFixed(0))+'% '+t('anual'),
+            data: projDatesAdj.filter(d=>d<=todayDateStr).map((d,i)=>({x:d,y:projValsAdj[i]})),
+            borderColor:'rgba(10,132,255,0.85)',
+            backgroundColor:'transparent',
+            borderWidth:1,
+            fill:false,
+            tension:0.4,
+            pointRadius: (()=>{ const d=projDatesAdj.filter(dd=>dd<=todayDateStr); return d.map((_,i)=>i===d.length-1?2.3:0); })(),
+            pointBackgroundColor: (()=>{ const d=projDatesAdj.filter(dd=>dd<=todayDateStr); return d.map((_,i)=>i===d.length-1?(isDark?'#1C1C1E':'#fff'):'rgba(10,132,255,0.85)'); })(),
+            pointBorderColor: (()=>{ const d=projDatesAdj.filter(dd=>dd<=todayDateStr); return d.map((_,i)=>i===d.length-1?'rgba(10,132,255,0.85)':'transparent'); })(),
+            pointBorderWidth: (()=>{ const d=projDatesAdj.filter(dd=>dd<=todayDateStr); return d.map((_,i)=>i===d.length-1?2:0); })(),
+            pointHoverRadius:5,
+            pointHoverBackgroundColor:'rgba(10,132,255,0.9)',
+            pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
+            pointHoverBorderWidth:2,
+            yAxisID:'y2',
+          },
           ...((()=>{if(!_sp500Data||(!(settings.alphaVantageKey||settings.finnhubKey)))return[];const _ed=[];platforms.forEach(p=>{if(p.fechaInicio)_ed.push(p.fechaInicio);});movements.forEach(m=>{if(m.fecha)_ed.push(m.fecha);});_ed.sort();const _fo=_ed.length>0?_ed[0]:todayDateStr;const _pts=sp500ReturnPct(_sp500Data,_fo);const _d=_pts.filter(p=>!xMin||new Date(p.date+'T00:00:00').getTime()>=xMin).map(p=>({x:p.date,y:p.pct}));if(!_d.length)return[];return[{label:'S&P 500 %',data:_d,borderColor:isDark?'rgba(255,100,130,0.65)':'rgba(220,50,80,0.6)',backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,4],fill:false,tension:0.4,pointRadius:_d.map((_,i)=>i===_d.length-1?2:0),pointHoverRadius:4,yAxisID:'yc'}];})()),
+          ...((()=>{if(!_qqqData||(!(settings.alphaVantageKey||settings.finnhubKey)))return[];const _edq=[];platforms.forEach(p=>{if(p.fechaInicio)_edq.push(p.fechaInicio);});movements.forEach(m=>{if(m.fecha)_edq.push(m.fecha);});_edq.sort();const _foq=_edq.length>0?_edq[0]:todayDateStr;const _ptsq=sp500ReturnPct(_qqqData,_foq);const _dq=_ptsq.filter(p=>!xMin||new Date(p.date+'T00:00:00').getTime()>=xMin).map(p=>({x:p.date,y:p.pct}));if(!_dq.length)return[];return[{label:'NASDAQ (QQQ) %',data:_dq,borderColor:isDark?'rgba(120,180,255,0.7)':'rgba(50,130,240,0.65)',backgroundColor:'transparent',borderWidth:1.5,borderDash:[3,3],fill:false,tension:0.4,pointRadius:_dq.map((_,i)=>i===_dq.length-1?2:0),pointHoverRadius:4,yAxisID:'yc'}];})()),
           ...((()=>{const _pd=hist.filter(s=>!xMin||new Date(s.date+'T00:00:00').getTime()>=xMin).map(s=>{const g=Math.round((s.value-(s.capital||s.value))-(tickerList.reduce((sum,tk)=>{const gp=tk.gpNoRealizada||0;return sum+(tk.moneda==='MXN'?gp:gp*tc);},0)));const cap=s.capital||s.value;return{x:s.date,y:cap>0?Math.round((g/cap)*10000)/100:0};});if(!_pd.length)return[];return[{label:t('rendPlataformas')+' %',data:_pd,borderColor:'rgba(10,132,255,0.65)',backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,4],fill:false,tension:0.4,pointRadius:_pd.map((_,i)=>i===_pd.length-1?2:0),pointHoverRadius:4,yAxisID:'yc'}];})()),
           ...((()=>{const _tgh=patrimonioRendPuro;const _pph=_tgh!==0?totalRend/_tgh:0;const _id=hist.filter(s=>!xMin||new Date(s.date+'T00:00:00').getTime()>=xMin).map(s=>{const tg=s.value-(s.capital||s.value);const ig=Math.round(tg*(1-_pph));const cap=totalInvertidoUSD>0?totalInvertidoUSD*tc:(s.capital||s.value);return{x:s.date,y:cap>0?Math.round((ig/cap)*10000)/100:0};});if(!_id.length)return[];return[{label:t('gpNoRealizada')+' %',data:_id,borderColor:'rgba(48,209,88,0.65)',backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,4],fill:false,tension:0.4,pointRadius:_id.map((_,i)=>i===_id.length-1?2:0),pointHoverRadius:4,yAxisID:'yc'}];})()),
         ]
@@ -2263,15 +2334,9 @@ function renderDashboard(){
             },
             border:{display:false}
           },
-          y:{
+          y2:{
             position:'left',
             grid:{color:isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)'},
-            ticks:{font:{size:11},color:tickColor,callback:v=>fmt(v),maxTicksLimit:5},
-            border:{display:false}
-          },
-          y2:{
-            position:'right',
-            grid:{display:false},
             ticks:{font:{size:10},color:isDark?'rgba(245,166,35,0.5)':'rgba(180,120,0,0.5)',callback:v=>fmt(v),maxTicksLimit:5},
             border:{display:false}
           },
