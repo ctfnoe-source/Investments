@@ -1,6 +1,6 @@
 {
-  "name": "InvestTracker",
-  "short_name": "InvestTracker",
+  "name": "TrackFolio",
+  "short_name": "TrackFolio",
   "description": "Tu dashboard financiero personal — inversiones, gastos y metas",
   "start_url": "/",
   "display": "standalone",

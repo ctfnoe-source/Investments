@@ -41,7 +41,7 @@ const I18N = {
     syncingMsg:'Sincronizando cambios pendientes…',
     syncedMsg:'¡Sincronizado!',
     // login
-    loginTitle:'InvestTracker',
+    loginTitle:'TrackFolio',
     loginSub:'Tu dashboard financiero personal.<br>Inicia sesión con tu cuenta de Google para continuar.',
     loginBtn:'Continuar con Google',
     loginLock:'🔒 Solo el propietario autorizado puede acceder',
@@ -232,7 +232,7 @@ const I18N = {
     offlineMsg:'No internet — changes saved locally',
     syncingMsg:'Syncing pending changes…',
     syncedMsg:'Synced!',
-    loginTitle:'InvestTracker',
+    loginTitle:'TrackFolio',
     loginSub:'Your personal financial dashboard.<br>Sign in with your Google account to continue.',
     loginBtn:'Continue with Google',
     loginLock:'🔒 Only the authorized owner can access',
@@ -3909,8 +3909,8 @@ function _buildAiContext() {
     const todasPlats = plats.map(p=>`${p.name} (${p.type}/${p.moneda}): balance ${fmtPlat(p.saldo,p.moneda)}, return ${p.rendimiento>=0?'+':''}${fmtPlat(p.rendimiento,p.moneda)}`).join('\n');
 
     return `${_lang === 'es' 
-      ? 'Eres un asistente financiero personal para la aplicación InvestTracker. Tienes acceso a los datos REALES del usuario. Responde en español, de forma concisa y amigable. NO des consejos de inversión formales. Puedes analizar los datos y dar observaciones útiles. Cuando te pregunten sobre movimientos específicos, búscalos en la lista proporcionada.'
-      : 'You are a personal financial assistant for the InvestTracker app. You have access to the user\'s REAL data. Respond in Spanish (if the user writes in Spanish) or English accordingly, concisely and friendly. DO NOT give formal investment advice. You CAN analyze the data and give useful observations. When asked about specific movements, look for them in the provided list.'}
+      ? 'Eres un asistente financiero personal para la aplicación TrackFolio. Tienes acceso a los datos REALES del usuario. Responde en español, de forma concisa y amigable. NO des consejos de inversión formales. Puedes analizar los datos y dar observaciones útiles. Cuando te pregunten sobre movimientos específicos, búscalos en la lista proporcionada.'
+      : 'You are a personal financial assistant for the TrackFolio app. You have access to the user\'s REAL data. Respond in Spanish (if the user writes in Spanish) or English accordingly, concisely and friendly. DO NOT give formal investment advice. You CAN analyze the data and give useful observations. When asked about specific movements, look for them in the provided list.'}
 
 FINANCIAL SUMMARY (${new Date().toLocaleDateString('es-ES')}):
 - Total net worth: ${fmt(patrimonio)} MXN (platforms: ${fmt(totalPlats)}, investments: ${fmt(totalInv)})
@@ -4026,7 +4026,7 @@ async function _aiCallSingle(provider, key, messages, test=false) {
         const _orCtrl=new AbortController();const _orTout=setTimeout(()=>_orCtrl.abort(),15000);
         let r;try{r=await fetch('https://openrouter.ai/api/v1/chat/completions',{
           method:'POST',
-          headers:{'Content-Type':'application/json','Authorization':'Bearer '+key,'HTTP-Referer':window.location.origin,'X-Title':'InvestTracker'},
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+key,'HTTP-Referer':window.location.origin,'X-Title':'TrackFolio'},
           signal:_orCtrl.signal,
           body:JSON.stringify({model,max_tokens:maxTokens,messages:[{role:'system',content:systemPrompt},...messages.map(m=>({role:m.role,content:m.content}))]})
         });}finally{clearTimeout(_orTout);}
@@ -4550,7 +4550,7 @@ if(localStorage.getItem('_authRedirect') === '1'){
   const lo = document.getElementById('loginOverlay');
   const card = lo && lo.querySelector('.login-card');
   if(lo){ lo.classList.remove('hidden'); }
-  if(card) card.innerHTML = '<div style="font-size:40px;margin-bottom:16px">💼</div><div style="font-size:18px;font-weight:700;margin-bottom:8px;color:var(--text)">InvestTracker</div><div style="display:flex;align-items:center;gap:8px;justify-content:center;font-size:14px;color:var(--text2)"><span style="width:18px;height:18px;border:2px solid rgba(10,132,255,0.2);border-top-color:#0A84FF;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block"></span> Iniciando sesión...</div>';
+  if(card) card.innerHTML = '<div style="font-size:40px;margin-bottom:16px">💼</div><div style="font-size:18px;font-weight:700;margin-bottom:8px;color:var(--text)">TrackFolio</div><div style="display:flex;align-items:center;gap:8px;justify-content:center;font-size:14px;color:var(--text2)"><span style="width:18px;height:18px;border:2px solid rgba(10,132,255,0.2);border-top-color:#0A84FF;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block"></span> Iniciando sesión...</div>';
 }
 
 getRedirectResult(auth).then(result => {
@@ -4750,7 +4750,7 @@ function showWelcomeGate(user, trialExpirado){
 
   el.innerHTML = `<div style="background:var(--card,#fff);border-radius:24px;padding:40px 32px;max-width:400px;width:90%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.12)">
     <div style="font-size:48px;margin-bottom:12px">📊</div>
-    <div style="font-size:22px;font-weight:800;letter-spacing:-0.03em;margin-bottom:6px">InvestTracker</div>
+    <div style="font-size:22px;font-weight:800;letter-spacing:-0.03em;margin-bottom:6px">TrackFolio</div>
     <div style="font-size:13px;color:#888;margin-bottom:24px;line-height:1.5">${t('welcomeDesc')}</div>
 
     <!-- Botón de pago principal -->

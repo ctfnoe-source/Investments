@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>InvestTracker — Controla tus Inversiones y Finanzas</title>
+  <title>TrackFolio — Controla tus Inversiones y Finanzas</title>
   <!-- SEO -->
   <meta name="description" content="Dashboard financiero personal para rastrear inversiones, gastos y metas. La alternativa inteligente a Excel. Pago único, sin suscripción.">
   <meta name="keywords" content="investment tracker, portfolio tracker, control de inversiones, dashboard financiero, finanzas personales, rastrear inversiones, control de gastos, metas financieras, patrimonio personal, gestor de cartera">
-  <meta name="author" content="InvestTracker">
+  <meta name="author" content="TrackFolio">
   <meta name="google-site-verification" content="wEo3yEh6liZ1rg8cD6wsZ5D-rr5mUdXrmG8tNuxgzzo">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://trackfolio.pages.dev">
 
   <!-- Open Graph (para redes sociales) -->
-  <meta property="og:title" content="InvestTracker — Controla tus Inversiones y Finanzas">
+  <meta property="og:title" content="TrackFolio — Controla tus Inversiones y Finanzas">
   <meta property="og:description" content="Dashboard financiero personal para rastrear inversiones, gastos y metas. La alternativa inteligente a Excel. Pago único, sin suscripción.">
   <meta property="og:url" content="https://trackfolio.pages.dev">
   <meta property="og:type" content="website">
@@ -22,7 +22,7 @@
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="InvestTracker — Controla tus Inversiones y Finanzas">
+  <meta name="twitter:title" content="TrackFolio — Controla tus Inversiones y Finanzas">
   <meta name="twitter:description" content="Dashboard financiero personal para rastrear inversiones, gastos y metas. La alternativa inteligente a Excel.">
   <meta name="twitter:image" content="https://trackfolio.pages.dev/icon-512.png">
 
@@ -31,21 +31,36 @@
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "InvestTracker",
+    "name": "TrackFolio",
     "url": "https://trackfolio.pages.dev",
-    "description": "Dashboard financiero personal para rastrear inversiones, gastos y metas. La alternativa inteligente a Excel y Google Sheets.",
+    "description": "Dashboard financiero personal para rastrear inversiones, gastos y metas. La alternativa inteligente a Excel y Google Sheets. Multimoneda, offline, PWA.",
     "applicationCategory": "FinanceApplication",
-    "operatingSystem": "Web, iOS, Android",
+    "operatingSystem": "Web, iOS, Android, Windows, macOS",
     "offers": {
       "@type": "Offer",
       "price": "20",
       "priceCurrency": "USD",
       "priceValidUntil": "2027-12-31",
-      "availability": "https://schema.org/InStock"
+      "availability": "https://schema.org/InStock",
+      "description": "Pago único, acceso de por vida. Sin suscripción."
     },
-    "featureList": ["Dashboard financiero en tiempo real","Rastreo de inversiones","Control de gastos","Metas financieras","PWA offline","Multimoneda"],
-    "author": { "@type": "Organization", "name": "InvestTracker" },
-    "inLanguage": ["es", "en"]
+    "featureList": [
+      "Dashboard financiero en tiempo real",
+      "Rastreo de inversiones — acciones, ETFs, cripto, fondos",
+      "Control de gastos y presupuesto por categoría",
+      "Metas de ahorro e inversión",
+      "PWA — funciona offline en iPhone y Android",
+      "Multimoneda — USD, EUR, MXN, GBP",
+      "Sincronización en la nube con Firebase",
+      "Precios en tiempo real"
+    ],
+    "author": { "@type": "Organization", "name": "TrackFolio" },
+    "inLanguage": ["es", "en"],
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "5",
+      "ratingCount": "1"
+    }
   }
   </script>
 
@@ -58,7 +73,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="InvestTracker">
+  <meta name="apple-mobile-web-app-title" content="TrackFolio">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -164,7 +179,7 @@
 
 <div id="landingPage">
   <nav class="ld-nav">
-    <div class="ld-nav-logo">💼 InvestTracker</div>
+    <div class="ld-nav-logo">💼 TrackFolio</div>
     <div style="display:flex;align-items:center;gap:10px">
       <button class="ld-btn-outline" onclick="if(window._doGoogleLogin)window._doGoogleLogin(this)" data-i18n="login">Probar gratis</button>
       <button class="ld-btn-primary" onclick="if(window._doGoogleLogin)window._doGoogleLogin(this)" data-i18n="buy">Comprar — $20</button>
@@ -186,7 +201,7 @@
           <div class="ld-dot" style="background:#FF5F57"></div>
           <div class="ld-dot" style="background:#FFBD2E"></div>
           <div class="ld-dot" style="background:#28C840"></div>
-          <div class="ld-mockup-url">trackfolio.pages.dev — InvestTracker Dashboard</div>
+          <div class="ld-mockup-url">trackfolio.pages.dev — TrackFolio Dashboard</div>
         </div>
         <div class="ld-screen">
           <div class="dm-nav">
@@ -327,43 +342,114 @@
       <div style="margin-top:12px;font-size:11px;color:#AEAEB2">Pago procesado por Mercado Pago</div>
     </div>
   </section>
-  <!-- FAQ: contenido indexable para Google — mejora SEO y long-tail keywords -->
-  <section style="padding:60px 24px;max-width:720px;margin:0 auto" itemscope itemtype="https://schema.org/FAQPage">
-    <h2 style="font-size:clamp(22px,3.5vw,36px);font-weight:800;letter-spacing:-.03em;text-align:center;margin-bottom:40px;color:#1D1D1F">Preguntas frecuentes</h2>
-    <div style="display:flex;flex-direction:column;gap:0" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
-      <details style="border-bottom:1px solid rgba(0,0,0,.07);padding:18px 0">
-        <summary itemprop="name" style="font-size:15px;font-weight:700;cursor:pointer;color:#1D1D1F;list-style:none">¿Qué es InvestTracker?</summary>
-        <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
-          <p itemprop="text" style="font-size:14px;color:#86868B;margin-top:10px;line-height:1.7">InvestTracker es un dashboard financiero personal que te permite rastrear inversiones, controlar gastos y definir metas financieras. Es la alternativa inteligente a las plantillas de Excel y Google Sheets, sin necesidad de fórmulas.</p>
-        </div>
-      </details>
-      <details style="border-bottom:1px solid rgba(0,0,0,.07);padding:18px 0" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
-        <summary itemprop="name" style="font-size:15px;font-weight:700;cursor:pointer;color:#1D1D1F;list-style:none">¿Cuánto cuesta InvestTracker?</summary>
-        <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
-          <p itemprop="text" style="font-size:14px;color:#86868B;margin-top:10px;line-height:1.7">InvestTracker tiene un precio único de $20 USD. Es un pago único que te da acceso de por vida, sin suscripciones ni cobros mensuales. Incluye todas las funciones y actualizaciones futuras.</p>
-        </div>
-      </details>
-      <details style="border-bottom:1px solid rgba(0,0,0,.07);padding:18px 0" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
-        <summary itemprop="name" style="font-size:15px;font-weight:700;cursor:pointer;color:#1D1D1F;list-style:none">¿Funciona en móvil y en computadora?</summary>
-        <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
-          <p itemprop="text" style="font-size:14px;color:#86868B;margin-top:10px;line-height:1.7">Sí. InvestTracker es una PWA (Progressive Web App) que funciona en cualquier dispositivo: iPhone, Android, Mac, Windows. Puedes instalarla en tu pantalla de inicio y usarla incluso sin conexión a internet.</p>
-        </div>
-      </details>
-      <details style="border-bottom:1px solid rgba(0,0,0,.07);padding:18px 0" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
-        <summary itemprop="name" style="font-size:15px;font-weight:700;cursor:pointer;color:#1D1D1F;list-style:none">¿Qué tipos de inversiones puedo rastrear?</summary>
-        <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
-          <p itemprop="text" style="font-size:14px;color:#86868B;margin-top:10px;line-height:1.7">Puedes rastrear acciones, criptomonedas, fondos de inversión, ETFs, bienes raíces y cualquier plataforma financiera. InvestTracker consolida todo tu patrimonio en un solo lugar con precios en tiempo real.</p>
-        </div>
-      </details>
-      <details style="padding:18px 0" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
-        <summary itemprop="name" style="font-size:15px;font-weight:700;cursor:pointer;color:#1D1D1F;list-style:none">¿Es seguro? ¿Quién puede ver mis datos?</summary>
-        <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
-          <p itemprop="text" style="font-size:14px;color:#86868B;margin-top:10px;line-height:1.7">Tus datos son privados y solo tú tienes acceso. InvestTracker usa Firebase de Google con autenticación segura. Nadie más puede ver tu información financiera.</p>
-        </div>
-      </details>
+  <!-- Sección SEO: texto rico en palabras clave, visible para Google -->
+  <section style="padding:60px 24px;max-width:760px;margin:0 auto;text-align:center">
+    <h2 style="font-size:clamp(22px,3.5vw,36px);font-weight:800;letter-spacing:-.03em;margin-bottom:16px;color:#1D1D1F" id="seo-desc-title">El dashboard financiero que siempre quisiste</h2>
+    <p style="font-size:16px;color:#86868B;line-height:1.8;max-width:660px;margin:0 auto 20px">TrackFolio nació de la frustración de gestionar finanzas personales en hojas de cálculo complicadas. Si tienes inversiones en bolsa, criptomonedas, fondos, bienes raíces o simplemente quieres saber en qué se va tu dinero cada mes, TrackFolio lo hace todo desde una sola pantalla — sin fórmulas, sin errores, sin perder horas.</p>
+    <p style="font-size:16px;color:#86868B;line-height:1.8;max-width:660px;margin:0 auto">Diseñado para freelancers, autónomos e inversores individuales que quieren tener el control total de su patrimonio personal. Compatible con múltiples monedas: USD, EUR, MXN, GBP y más. Funciona en iPhone, Android, Mac y Windows, incluso sin internet.</p>
+  </section>
+
+  <!-- Sección de beneficios clave — palabras clave long-tail -->
+  <section style="padding:20px 24px 60px;max-width:960px;margin:0 auto">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
+      <div style="background:#fff;border-radius:16px;padding:24px;border:1px solid rgba(0,0,0,.06)">
+        <div style="font-size:24px;margin-bottom:10px">📊</div>
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:8px;color:#1D1D1F">Control de inversiones en tiempo real</h3>
+        <p style="font-size:13px;color:#86868B;line-height:1.7">Conecta tus plataformas de inversión y ve tu rentabilidad, ganancias y pérdidas actualizadas al momento. Soporte para acciones, ETFs, cripto, SOFIPO, fondos y más.</p>
+      </div>
+      <div style="background:#fff;border-radius:16px;padding:24px;border:1px solid rgba(0,0,0,.06)">
+        <div style="font-size:24px;margin-bottom:10px">💳</div>
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:8px;color:#1D1D1F">Presupuesto y control de gastos personal</h3>
+        <p style="font-size:13px;color:#86868B;line-height:1.7">Define presupuestos por categoría, registra tus gastos mensuales y descubre exactamente en qué se va tu dinero. Ideal para freelancers que gestionan ingresos variables.</p>
+      </div>
+      <div style="background:#fff;border-radius:16px;padding:24px;border:1px solid rgba(0,0,0,.06)">
+        <div style="font-size:24px;margin-bottom:10px">🎯</div>
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:8px;color:#1D1D1F">Metas de ahorro e inversión</h3>
+        <p style="font-size:13px;color:#86868B;line-height:1.7">Crea metas financieras personalizadas — fondo de emergencia, retiro, viaje, vivienda — y sigue tu progreso con gráficas claras y proyecciones realistas.</p>
+      </div>
+      <div style="background:#fff;border-radius:16px;padding:24px;border:1px solid rgba(0,0,0,.06)">
+        <div style="font-size:24px;margin-bottom:10px">🌍</div>
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:8px;color:#1D1D1F">Multimoneda — USD, EUR, MXN y más</h3>
+        <p style="font-size:13px;color:#86868B;line-height:1.7">Gestiona tu patrimonio en múltiples monedas con tipos de cambio actualizados. Perfecto para quienes invierten en mercados internacionales o viven entre países.</p>
+      </div>
+      <div style="background:#fff;border-radius:16px;padding:24px;border:1px solid rgba(0,0,0,.06)">
+        <div style="font-size:24px;margin-bottom:10px">📱</div>
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:8px;color:#1D1D1F">App móvil — sin App Store</h3>
+        <p style="font-size:13px;color:#86868B;line-height:1.7">Instala TrackFolio directamente desde tu navegador en iPhone o Android. Funciona offline, sin pasar por App Store ni Google Play. Un pago único, acceso de por vida.</p>
+      </div>
+      <div style="background:#fff;border-radius:16px;padding:24px;border:1px solid rgba(0,0,0,.06)">
+        <div style="font-size:24px;margin-bottom:10px">🔒</div>
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:8px;color:#1D1D1F">Tu información, solo tuya</h3>
+        <p style="font-size:13px;color:#86868B;line-height:1.7">Tus datos financieros son privados y están protegidos con autenticación de Google. No compartimos ni vendemos tu información con terceros, nunca.</p>
+      </div>
     </div>
   </section>
-  <footer class="ld-footer">© 2026 InvestTracker · Tu dashboard financiero personal · <a href="/cdn-cgi/l/email-protection#34475b445b46405174404655575f525b585d5b1a44555351471a505142" style="color:#AEAEB2">Contacto</a></footer>
+
+  <!-- FAQ: bilingüe, Schema.org para Google Rich Results -->
+  <section style="padding:40px 24px 60px;max-width:720px;margin:0 auto" itemscope itemtype="https://schema.org/FAQPage">
+    <h2 style="font-size:clamp(22px,3.5vw,36px);font-weight:800;letter-spacing:-.03em;text-align:center;margin-bottom:8px;color:#1D1D1F" id="faq-title">Preguntas frecuentes</h2>
+    <p style="text-align:center;color:#86868B;margin-bottom:36px;font-size:15px" id="faq-sub">Todo lo que necesitas saber antes de empezar</p>
+    <div style="display:flex;flex-direction:column;gap:0">
+
+      <details style="border-bottom:1px solid rgba(0,0,0,.07);padding:18px 0" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <summary itemprop="name" style="font-size:15px;font-weight:700;cursor:pointer;color:#1D1D1F;list-style:none" id="faq-q1">¿Qué es TrackFolio?</summary>
+        <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
+          <p itemprop="text" style="font-size:14px;color:#86868B;margin-top:10px;line-height:1.7" id="faq-a1">TrackFolio es un dashboard financiero personal que te permite rastrear inversiones, controlar gastos y definir metas financieras. Es la alternativa inteligente a las plantillas de Excel y Google Sheets — sin fórmulas, sin errores, sin complicaciones. Todo en una sola app.</p>
+        </div>
+      </details>
+
+      <details style="border-bottom:1px solid rgba(0,0,0,.07);padding:18px 0" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <summary itemprop="name" style="font-size:15px;font-weight:700;cursor:pointer;color:#1D1D1F;list-style:none" id="faq-q2">¿Cuánto cuesta TrackFolio?</summary>
+        <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
+          <p itemprop="text" style="font-size:14px;color:#86868B;margin-top:10px;line-height:1.7" id="faq-a2">TrackFolio cuesta $20 USD, un único pago. No hay suscripciones mensuales ni cobros ocultos. Pagas una vez y tienes acceso de por vida, incluyendo todas las actualizaciones futuras.</p>
+        </div>
+      </details>
+
+      <details style="border-bottom:1px solid rgba(0,0,0,.07);padding:18px 0" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <summary itemprop="name" style="font-size:15px;font-weight:700;cursor:pointer;color:#1D1D1F;list-style:none" id="faq-q3">¿Funciona en iPhone y Android?</summary>
+        <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
+          <p itemprop="text" style="font-size:14px;color:#86868B;margin-top:10px;line-height:1.7" id="faq-a3">Sí. TrackFolio es una PWA (Progressive Web App) que funciona en cualquier dispositivo: iPhone, Android, Mac, Windows y Linux. Puedes instalarla directamente desde Safari o Chrome en tu pantalla de inicio y usarla sin internet.</p>
+        </div>
+      </details>
+
+      <details style="border-bottom:1px solid rgba(0,0,0,.07);padding:18px 0" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <summary itemprop="name" style="font-size:15px;font-weight:700;cursor:pointer;color:#1D1D1F;list-style:none" id="faq-q4">¿Qué tipos de inversiones puedo rastrear?</summary>
+        <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
+          <p itemprop="text" style="font-size:14px;color:#86868B;margin-top:10px;line-height:1.7" id="faq-a4">Puedes rastrear acciones, ETFs, criptomonedas, fondos de inversión, SOFIPO, bienes raíces, depósitos bancarios y cualquier plataforma financiera. TrackFolio consolida todo tu patrimonio en un solo lugar con precios en tiempo real.</p>
+        </div>
+      </details>
+
+      <details style="border-bottom:1px solid rgba(0,0,0,.07);padding:18px 0" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <summary itemprop="name" style="font-size:15px;font-weight:700;cursor:pointer;color:#1D1D1F;list-style:none" id="faq-q5">¿Es mejor que una hoja de Excel o Google Sheets?</summary>
+        <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
+          <p itemprop="text" style="font-size:14px;color:#86868B;margin-top:10px;line-height:1.7" id="faq-a5">Para el control de finanzas personales, sí. TrackFolio no requiere fórmulas ni mantenimiento manual. Los precios se actualizan automáticamente, puedes usarlo desde el móvil sin perder funcionalidad, y todos tus datos están seguros en la nube.</p>
+        </div>
+      </details>
+
+      <details style="border-bottom:1px solid rgba(0,0,0,.07);padding:18px 0" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <summary itemprop="name" style="font-size:15px;font-weight:700;cursor:pointer;color:#1D1D1F;list-style:none" id="faq-q6">¿Puedo probar TrackFolio antes de pagar?</summary>
+        <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
+          <p itemprop="text" style="font-size:14px;color:#86868B;margin-top:10px;line-height:1.7" id="faq-a6">Sí. Ofrecemos una prueba gratuita de 20 minutos con acceso completo a todas las funciones. No necesitas tarjeta de crédito para probarlo.</p>
+        </div>
+      </details>
+
+      <details style="border-bottom:1px solid rgba(0,0,0,.07);padding:18px 0" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <summary itemprop="name" style="font-size:15px;font-weight:700;cursor:pointer;color:#1D1D1F;list-style:none" id="faq-q7">¿Es seguro guardar mis datos financieros aquí?</summary>
+        <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
+          <p itemprop="text" style="font-size:14px;color:#86868B;margin-top:10px;line-height:1.7" id="faq-a7">Tus datos están protegidos con Firebase de Google y autenticación segura. Solo tú tienes acceso a tu información. No compartimos, vendemos ni analizamos tus datos financieros.</p>
+        </div>
+      </details>
+
+      <details style="padding:18px 0" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+        <summary itemprop="name" style="font-size:15px;font-weight:700;cursor:pointer;color:#1D1D1F;list-style:none" id="faq-q8">¿Funciona para freelancers y autónomos?</summary>
+        <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
+          <p itemprop="text" style="font-size:14px;color:#86868B;margin-top:10px;line-height:1.7" id="faq-a8">Perfectamente. TrackFolio te permite registrar ingresos variables, controlar gastos por categoría, definir un presupuesto mensual y visualizar tu patrimonio total — todo lo que un freelancer necesita para tener sus finanzas bajo control.</p>
+        </div>
+      </details>
+
+    </div>
+  </section>
+  <footer class="ld-footer">© 2026 TrackFolio · Tu dashboard financiero personal · <a href="/cdn-cgi/l/email-protection#96f5e2f0f8f9f3d6f1fbf7fffab8f5f9fb" style="color:#AEAEB2">Contacto</a></footer>
 </div>
 
 <!-- Login overlay (aparece al hacer click) -->
@@ -371,7 +457,7 @@
   <button class="ld-back" onclick="window._hideLandingLogin()">← Volver</button>
   <div class="login-card">
     <div class="login-logo">💼</div>
-    <div class="login-title">InvestTracker</div>
+    <div class="login-title">TrackFolio</div>
     <div class="login-sub">Tu dashboard financiero personal.<br>Inicia sesión con tu cuenta de Google para continuar.</div>
     <button class="btn-google" id="btnGoogleLoginLanding" onclick="if(window._doGoogleLogin)window._doGoogleLogin(this);else document.getElementById('btnGoogleLogin').click()">
       <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
@@ -382,7 +468,7 @@
   </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 window._showLoginOverlay = function() {
   document.getElementById('landingPage').style.display = 'none';
   document.getElementById('landingLoginOverlay').style.display = 'flex';
@@ -393,17 +479,35 @@ window._hideLandingLogin = function() {
 };
 // i18n
 (function(){
-  const es={badge:'La alternativa inteligente a Excel',h1a:'Controla tu dinero.',h1b:'Sin fórmulas.',sub:'Dashboard financiero personal para rastrear inversiones, gastos y metas.',cta1:'Empezar ahora — $20 pago único',cta2:'Ver features ↓',note:'Pago único · Sin suscripción · Acceso de por vida',feat_title:'Todo lo que necesitas',feat_sub:'Sin hojas de cálculo. Solo tus finanzas, claras y en tiempo real.',f1t:'Dashboard en tiempo real',f1d:'Ve tu patrimonio, rentabilidad y distribución de activos de un vistazo.',f2t:'Rastreo de inversiones',f2d:'Acciones, cripto, fondos, bienes raíces. Todas tus plataformas actualizadas.',f3t:'Control de gastos',f3d:'Categoriza tus gastos y descubre en qué se va tu dinero.',f4t:'Metas financieras',f4d:'Define objetivos de ahorro e inversión y visualiza tu progreso.',f5t:'PWA — instálala como app',f5d:'Funciona en móvil y desktop. Instálala y úsala offline.',f6t:'Privado y seguro',f6d:'Firebase + autenticación Google. Solo tú tienes acceso.',price_title:'Precio simple y honesto',price_sub:'Sin sorpresas. Pagas una vez y es tuyo para siempre.'};
-  const en={badge:'The smart alternative to Excel',h1a:'Control your money.',h1b:'No formulas.',sub:'Personal finance dashboard to track investments, expenses and goals.',cta1:'Get started — $20 one-time',cta2:'See features ↓',note:'One-time payment · No subscription · Lifetime access',feat_title:'Everything you need',feat_sub:'No spreadsheets. Just your finances, clear and in real time.',f1t:'Real-time dashboard',f1d:'See your net worth, returns and asset allocation at a glance.',f2t:'Investment tracking',f2d:'Stocks, crypto, funds, real estate. All platforms updated.',f3t:'Expense control',f3d:'Categorize your expenses and find out where your money goes.',f4t:'Financial goals',f4d:'Set savings targets and visualize your progress.',f5t:'PWA — install as an app',f5d:'Works on mobile and desktop. Install and use offline.',f6t:'Private and secure',f6d:'Firebase + Google auth. Only you have access.',price_title:'Simple, honest pricing',price_sub:'No surprises. Pay once and it is yours forever.'};
+  const es={badge:'La alternativa inteligente a Excel',h1a:'Controla tu dinero.',h1b:'Sin fórmulas.',sub:'Dashboard financiero personal para rastrear inversiones, gastos y metas.',cta1:'Empezar ahora — $20 pago único',cta2:'Ver features ↓',note:'Pago único · Sin suscripción · Acceso de por vida',feat_title:'Todo lo que necesitas',feat_sub:'Sin hojas de cálculo. Solo tus finanzas, claras y en tiempo real.',f1t:'Dashboard en tiempo real',f1d:'Ve tu patrimonio, rentabilidad y distribución de activos de un vistazo.',f2t:'Rastreo de inversiones',f2d:'Acciones, cripto, fondos, bienes raíces. Todas tus plataformas actualizadas.',f3t:'Control de gastos',f3d:'Categoriza tus gastos y descubre en qué se va tu dinero.',f4t:'Metas financieras',f4d:'Define objetivos de ahorro e inversión y visualiza tu progreso.',f5t:'PWA — instálala como app',f5d:'Funciona en móvil y desktop. Instálala y úsala offline.',f6t:'Privado y seguro',f6d:'Firebase + autenticación Google. Solo tú tienes acceso.',price_title:'Precio simple y honesto',price_sub:'Sin sorpresas. Pagas una vez y es tuyo para siempre.',login:'Probar gratis',buy:'Comprar — $20'};
+  const en={badge:'The smart alternative to Excel',h1a:'Control your money.',h1b:'No formulas.',sub:'Personal finance dashboard to track investments, expenses and goals.',cta1:'Get started — $20 one-time',cta2:'See features ↓',note:'One-time payment · No subscription · Lifetime access',feat_title:'Everything you need',feat_sub:'No spreadsheets. Just your finances, clear and in real time.',f1t:'Real-time dashboard',f1d:'See your net worth, returns and asset allocation at a glance.',f2t:'Investment tracking',f2d:'Stocks, crypto, funds, real estate. All platforms updated.',f3t:'Expense control',f3d:'Categorize your expenses and find out where your money goes.',f4t:'Financial goals',f4d:'Set savings targets and visualize your progress.',f5t:'PWA — install as an app',f5d:'Works on mobile and desktop. Install and use offline.',f6t:'Private and secure',f6d:'Firebase + Google auth. Only you have access.',price_title:'Simple, honest pricing',price_sub:'No surprises. Pay once and it is yours forever.',login:'Try free',buy:'Buy — $20'};
   const t = (navigator.language||'es').startsWith('es') ? es : en;
   document.querySelectorAll('[data-i18n]').forEach(el => { const k=el.getAttribute('data-i18n'); if(t[k])el.innerHTML=t[k]; });
+  // Translate new SEO sections
+  const isEN = !(navigator.language||'es').startsWith('es');
+  if(isEN){
+    const sd=document.getElementById('seo-desc-title'); if(sd) sd.textContent='The financial dashboard you always wanted';
+    const faqT=document.getElementById('faq-title'); if(faqT) faqT.textContent='Frequently asked questions';
+    const faqS=document.getElementById('faq-sub'); if(faqS) faqS.textContent='Everything you need to know before you start';
+    const faqMap={
+      'faq-q1':'What is TrackFolio?','faq-a1':'TrackFolio is a personal finance dashboard that lets you track investments, control expenses and set financial goals. It is the smart alternative to Excel and Google Sheets — no formulas, no errors, no hassle. Everything in one app.',
+      'faq-q2':'How much does TrackFolio cost?','faq-a2':'TrackFolio costs $20 USD — a single, one-time payment. No monthly subscriptions, no hidden fees. Pay once and get lifetime access including all future updates.',
+      'faq-q3':'Does it work on iPhone and Android?','faq-a3':'Yes. TrackFolio is a PWA (Progressive Web App) that works on any device: iPhone, Android, Mac, Windows and Linux. Install it directly from Safari or Chrome to your home screen and use it offline.',
+      'faq-q4':'What types of investments can I track?','faq-a4':'You can track stocks, ETFs, cryptocurrencies, mutual funds, real estate, bank deposits and any financial platform. TrackFolio consolidates your entire net worth in one place with real-time prices.',
+      'faq-q5':'Is it better than an Excel or Google Sheets template?','faq-a5':'For personal finance management, yes. TrackFolio requires no formulas or manual maintenance. Prices update automatically, it works fully on mobile, and your data is safely backed up to the cloud.',
+      'faq-q6':'Can I try TrackFolio before paying?','faq-a6':'Yes. We offer a free 20-minute trial with full access to all features. No credit card required.',
+      'faq-q7':'Is it safe to store my financial data here?','faq-a7':'Your data is protected with Google Firebase and secure authentication. Only you have access to your information. We never share, sell or analyze your financial data.',
+      'faq-q8':'Does it work for freelancers and self-employed?','faq-a8':'Perfectly. TrackFolio lets you record variable income, track expenses by category, set a monthly budget and visualize your total net worth — everything a freelancer needs to stay on top of their finances.'
+    };
+    Object.entries(faqMap).forEach(([id,text])=>{ const el=document.getElementById(id); if(el) el.textContent=text; });
+  }
 })();
 </script>
 
 <div id="loginOverlay" style="display:none">
   <div class="login-card">
     <div class="login-logo">💼</div>
-    <div class="login-title">InvestTracker</div>
+    <div class="login-title">TrackFolio</div>
     <div class="login-sub">Tu dashboard financiero personal.<br>Inicia sesión con tu cuenta de Google para continuar.</div>
     <button class="btn-google" id="btnGoogleLogin">
       <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
@@ -484,7 +588,7 @@ window._hideLandingLogin = function() {
 <div id="pwaInstallBanner" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9000;background:var(--card,#fff);border:1px solid var(--border,#e5e5ea);border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,0.18);padding:16px 20px;max-width:340px;width:calc(100% - 40px);font-family:'DM Sans',sans-serif;align-items:center;gap:14px">
   <div style="font-size:36px;flex-shrink:0">💼</div>
   <div style="flex:1;min-width:0">
-    <div style="font-size:14px;font-weight:800;letter-spacing:-0.02em;margin-bottom:2px">Instalar InvestTracker</div>
+    <div style="font-size:14px;font-weight:800;letter-spacing:-0.02em;margin-bottom:2px">Instalar TrackFolio</div>
     <div style="font-size:12px;color:#666;line-height:1.4">Accede desde tu pantalla de inicio, sin navegador y sin internet.</div>
   </div>
   <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
@@ -593,6 +697,4 @@ window.addEventListener('appinstalled', () => {
     transition:transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s;
   }
   #aiFab:hover { transform:scale(1.1); box-shadow:0 6px 24px rgba(10,132,255,0.5); }
-  #aiFab:active { transform:scale(0.95); }
-  #aiMsgsContainer::-webkit-scrollbar { width:4px; }
-  #aiMsgsContainer::-webkit-scrollbar-thumb { background:var(--border); bor
+  #aiFab:active { transf
