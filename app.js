@@ -3488,11 +3488,11 @@ function renderInversiones(){
       </div>
 
       <!-- POSICIONES CERRADAS -->
-      <div class="card" style="${cerradas.length===0?'opacity:0.5':''}">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div class="card" style="${cerradas.length===0?'opacity:0.5':''};padding:${cerradas.length<=3?'14px 20px':'20px 24px'}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
           <div class="card-title" style="margin:0">🔒 ${t('posicionesCerradas')} <span style="font-size:11px;font-weight:600;color:var(--text2);margin-left:4px">${cerradas.length}</span></div>
         </div>
-        <div style="max-height:${cerradas.length > 0 ? Math.min(cerradas.length * 60 + 20, 320) : 80}px;overflow-y:auto;margin:0 -4px;padding:0 4px">
+        <div style="max-height:${cerradas.length > 0 ? Math.min(cerradas.length * 58 + 16, 320) : 60}px;overflow-y:auto;margin:0 -4px;padding:0 4px">
         ${cerradas.length > 0 ? cerradas.map(cp => {
           const tipoClass = cp.type==='Acción'?'badge-green':cp.type==='ETF'?'badge-blue':cp.type==='Crypto'?'badge-orange':'badge-gray';
           return `<div class="list-item" style="padding:10px 0">
