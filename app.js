@@ -4979,7 +4979,13 @@ window.openAdminPanel = async function(){
             <div style="font-size:11px;color:var(--text2)">${u.email||''}</div>
           </div>
         </div>
-        <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:${u.aprobado?'rgba(48,209,88,0.1)':'rgba(255,159,10,0.1)'};color:${u.aprobado?'var(--green)':'var(--orange)'}">${u.aprobado?'✅ '+t('active'):'⏳ '+t('pending')}</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:${u.aprobado?'rgba(48,209,88,0.1)':'rgba(255,159,10,0.1)'};color:${u.aprobado?'var(--green)':'var(--orange)'}">${u.aprobado?'✅ '+t('active'):'⏳ '+t('pending')}</span>
+          ${u.pagado
+            ? `<span style="font-size:10px;font-weight:600;color:var(--green)">💳 $20 USD · ${u.pagadoEn ? new Date(u.pagadoEn).toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</span>`
+            : `<span style="font-size:10px;color:var(--text3)">Sin pago registrado</span>`
+          }
+        </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">
         <div style="background:var(--card2);border-radius:8px;padding:6px 8px;text-align:center">
@@ -5007,12 +5013,28 @@ window.openAdminPanel = async function(){
     </div>`).join('');
 
   const pending = usageData.filter(u=>!u.aprobado).length;
+  const pagados = usageData.filter(u=>u.pagado).length;
+  const ingresos = pagados * 20;
   openModal(`<div style="padding:8px 0">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
       <div style="font-size:18px;font-weight:800">👑 ${t('adminPanel')}</div>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
         ${pending>0?`<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(255,159,10,0.1);color:var(--orange)">${pending} ${t('pending')}</span>`:''}
         <span style="font-size:11px;color:var(--text2)">${usageData.length} ${usageData.length===1?t('user'):t('users')}</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+      <div style="background:var(--card2);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:20px;font-weight:800;color:var(--blue)">${usageData.length}</div>
+        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em">Usuarios</div>
+      </div>
+      <div style="background:var(--card2);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:20px;font-weight:800;color:var(--green)">${pagados}</div>
+        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em">Pagados</div>
+      </div>
+      <div style="background:var(--card2);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:20px;font-weight:800;color:var(--green)">$${ingresos}</div>
+        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em">USD ingresados</div>
       </div>
     </div>
     <div style="max-height:420px;overflow-y:auto;margin:0 -4px;padding:0 4px">
