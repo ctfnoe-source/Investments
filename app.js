@@ -491,8 +491,15 @@ function setOfflineBanner(state) {
 }
 
 function queueSave(data) {
-  _offlineQueue.push({ data, ts: Date.now() });
-  if (_offlineQueue.length > 20) _offlineQueue = _offlineQueue.slice(-20);
+  // Guardar solo un snapshot por "tipo" de dato, no acumular estados completos
+  // Esto evita que al reconectar se sobrescriban datos de Firebase con estados viejos
+  const existing = _offlineQueue.findIndex(q => q.type === 'fullState');
+  const entry = { type: 'fullState', data, ts: Date.now() };
+  if (existing >= 0) {
+    _offlineQueue[existing] = entry; // reemplazar en lugar de acumular
+  } else {
+    _offlineQueue.push(entry);
+  }
   LS.set('offlineQueue', _offlineQueue);
 }
 
@@ -500,7 +507,19 @@ async function flushOfflineQueue() {
   if (!_offlineQueue.length) return;
   if (typeof window.saveToFirebase !== 'function') return;
   setOfflineBanner('syncing');
-  try { await window.saveToFirebase(true); _offlineQueue = []; LS.set('offlineQueue', []); setOfflineBanner('synced'); }
+  try {
+    // Antes de aplicar el queue, verificar que no haya datos más nuevos en Firebase
+    // Solo sincronizar si el timestamp del queue es más reciente que el último sync
+    const lastSync = LS.get('lastFirebaseSync') || 0;
+    const latestQueued = Math.max(..._offlineQueue.map(q => q.ts));
+    if (latestQueued > lastSync) {
+      await window.saveToFirebase(true);
+      LS.set('lastFirebaseSync', Date.now());
+    }
+    _offlineQueue = [];
+    LS.set('offlineQueue', []);
+    setOfflineBanner('synced');
+  }
   catch(e) { setOfflineBanner('offline'); }
 }
 
@@ -594,13 +613,27 @@ const CRYPTO_MAP = {
   'TON':'the-open-network','PEPE':'pepe','WIF':'dogwifcoin',
 };
 
+// Fetch con timeout para APIs de precios — evita que la app se cuelgue si una API no responde
+async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const r = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timer);
+    return r;
+  } catch(e) {
+    clearTimeout(timer);
+    throw e;
+  }
+}
+
 async function fetchCryptoPrice(ticker) {
   const coinId = CRYPTO_MAP[ticker.toUpperCase()]; if(!coinId) return null;
-  try { const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`); if(!r.ok) throw new Error(); const d = await r.json(); return d[coinId]?.usd || null; } catch { return null; }
+  try { const r = await fetchWithTimeout(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`); if(!r.ok) throw new Error(); const d = await r.json(); return d[coinId]?.usd || null; } catch { return null; }
 }
 async function fetchStockPrice(ticker) {
   const k = settings.finnhubKey||''; if(!k) return null;
-  try { const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker.toUpperCase()}&token=${k}`); if(!r.ok) throw new Error(); const d = await r.json(); return (d.c && d.c > 0) ? d.c : null; } catch { return null; }
+  try { const r = await fetchWithTimeout(`https://finnhub.io/api/v1/quote?symbol=${ticker.toUpperCase()}&token=${k}`); if(!r.ok) throw new Error(); const d = await r.json(); return (d.c && d.c > 0) ? d.c : null; } catch { return null; }
 }
 async function fetchAlphaVantagePrice(ticker, targetMoneda) {
   const k = settings.alphaVantageKey || ''; if (!k) return null;
@@ -619,7 +652,7 @@ async function fetchAlphaVantagePrice(ticker, targetMoneda) {
   const usdeur = (fx?.usdeur) || (settings.tipoEUR && settings.tipoCambio ? settings.tipoEUR/settings.tipoCambio : null);
   for (const sym of allSymbols) {
     try {
-      const r = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(sym)}&apikey=${k}`);
+      const r = await fetchWithTimeout(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(sym)}&apikey=${k}`);
       if (!r.ok) continue;
       const d = await r.json();
       if (d.Note || d.Information) { return null; }
@@ -656,7 +689,7 @@ async function fetchFX() {
   const isValid = cached && isFxCacheFresh(cached.ts) && cached.gbpmxn && cached.usdmxn >= 15 && cached.usdmxn <= 30;
   if (isValid) { _fxCache = cached; return cached; }
   try {
-    const r = await fetch('https://api.frankfurter.app/latest?from=USD&to=MXN,EUR,GBP');
+    const r = await fetchWithTimeout('https://api.frankfurter.app/latest?from=USD&to=MXN,EUR,GBP');
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const d = await r.json();
     const gbpmxn = d.rates.MXN / d.rates.GBP;
@@ -702,7 +735,7 @@ async function forceUpdateFX() {
   const btn = document.querySelector('[onclick*=forceUpdateFX]');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ ' + t('actualizando'); }
   try {
-    const r = await fetch('https://api.frankfurter.app/latest?from=USD&to=MXN,EUR,GBP');
+    const r = await fetchWithTimeout('https://api.frankfurter.app/latest?from=USD&to=MXN,EUR,GBP');
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const d = await r.json();
     const gbpmxn = d.rates.MXN / d.rates.GBP;
@@ -870,7 +903,7 @@ async function fetchSP500History() {
   // 1) Histórico mensual via Alpha Vantage
   if (avKey) {
     try {
-      const r = await fetch(
+      const r = await fetchWithTimeout(
         `https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY&symbol=SPY&apikey=${avKey}`
       );
       if (r.ok) {
@@ -891,7 +924,7 @@ async function fetchSP500History() {
   // 2) Precio de hoy via Finnhub
   if (fhKey) {
     try {
-      const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=SPY&token=${fhKey}`);
+      const r = await fetchWithTimeout(`https://finnhub.io/api/v1/quote?symbol=SPY&token=${fhKey}`);
       if (r.ok) {
         const d = await r.json();
         if (d.c && d.c > 0) {
@@ -3874,7 +3907,7 @@ async function testAlphaVantage(){
   if(!k){el.innerHTML='<span style="color:var(--red)">⚠️ '+t('enterApiKey')+'</span>';return;}
   el.innerHTML='<span class="spinner"></span> '+t('testingWith')+' VUAA.LON...';
   try {
-    const r=await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=VUAA.LON&apikey=${k}`);
+    const r=await fetchWithTimeout(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=VUAA.LON&apikey=${k}`);
     const d=await r.json();
     const q=d['Global Quote'];
     if(q&&q['05. price']&&parseFloat(q['05. price'])>0){
@@ -3887,7 +3920,7 @@ async function testAlphaVantage(){
   } catch(e){el.innerHTML=`<span style="color:var(--red)">❌ ${e.message}</span>`;}
 }
 
-async function testFinnhub(){const finEl=document.getElementById('finnhubKeyInput');const k=(finEl?finEl.value.trim():'')||settings.finnhubKey||'';if(k){settings.finnhubKey=k;saveAll();}const el=document.getElementById('finnhubTestResult');if(!k){el.innerHTML='<span style="color:var(--red)">⚠️ '+t('enterApiKey')+'</span>';return;}el.innerHTML='<span class="spinner"></span> '+t('testing')+'...';try{const r=await fetch(`https://finnhub.io/api/v1/quote?symbol=AAPL&token=${k}`),d=await r.json();if(d.c&&d.c>0)el.innerHTML=`<span style="color:var(--green)">✅ AAPL: $${d.c.toFixed(2)}</span>`;else el.innerHTML='<span style="color:var(--orange)">⚠️ '+t('unexpectedResponse')+'</span>';}catch(e){el.innerHTML=`<span style="color:var(--red)">❌ ${e.message}</span>`;}}
+async function testFinnhub(){const finEl=document.getElementById('finnhubKeyInput');const k=(finEl?finEl.value.trim():'')||settings.finnhubKey||'';if(k){settings.finnhubKey=k;saveAll();}const el=document.getElementById('finnhubTestResult');if(!k){el.innerHTML='<span style="color:var(--red)">⚠️ '+t('enterApiKey')+'</span>';return;}el.innerHTML='<span class="spinner"></span> '+t('testing')+'...';try{const r=await fetchWithTimeout(`https://finnhub.io/api/v1/quote?symbol=AAPL&token=${k}`),d=await r.json();if(d.c&&d.c>0)el.innerHTML=`<span style="color:var(--green)">✅ AAPL: $${d.c.toFixed(2)}</span>`;else el.innerHTML='<span style="color:var(--orange)">⚠️ '+t('unexpectedResponse')+'</span>';}catch(e){el.innerHTML=`<span style="color:var(--red)">❌ ${e.message}</span>`;}}
 
 // ============================================
 // AI ASSISTANT
@@ -4725,6 +4758,7 @@ window.saveAllMovementsToFirebase = async function(){
     );
     await Promise.all([...saves, ...snapSaves]);
     setFbStatus('ok');
+    LS.set('lastFirebaseSync', Date.now()); // para cola offline
   }catch(e){ setFbStatus('error'); }
 };
 
