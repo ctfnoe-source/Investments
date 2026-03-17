@@ -2174,7 +2174,7 @@ function renderDashboard(){
             pointHoverBackgroundColor:'#30D158',
             pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
             pointHoverBorderWidth:2,
-            yAxisID:'y',
+            yAxisID:'y2',
           },
           {
             label: t('patrimonioTotal2'),
@@ -2210,7 +2210,7 @@ function renderDashboard(){
             pointHoverBackgroundColor:'rgba(10,132,255,0.9)',
             pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
             pointHoverBorderWidth:2,
-            yAxisID:'y',
+            yAxisID:'y2',
           },
           ...((()=>{if(!_sp500Data||(!(settings.alphaVantageKey||settings.finnhubKey)))return[];const _ed=[];platforms.forEach(p=>{if(p.fechaInicio)_ed.push(p.fechaInicio);});movements.forEach(m=>{if(m.fecha)_ed.push(m.fecha);});_ed.sort();const _fo=_ed.length>0?_ed[0]:todayDateStr;const _pts=sp500ReturnPct(_sp500Data,_fo);const _d=_pts.filter(p=>!xMin||new Date(p.date+'T00:00:00').getTime()>=xMin).map(p=>({x:p.date,y:p.pct}));if(!_d.length)return[];return[{label:'S&P 500 %',data:_d,borderColor:isDark?'rgba(255,100,130,0.65)':'rgba(220,50,80,0.6)',backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,4],fill:false,tension:0.4,pointRadius:_d.map((_,i)=>i===_d.length-1?2:0),pointHoverRadius:4,yAxisID:'yc'}];})()),
           ...((()=>{const _pd=hist.filter(s=>!xMin||new Date(s.date+'T00:00:00').getTime()>=xMin).map(s=>{const g=Math.round((s.value-(s.capital||s.value))-(tickerList.reduce((sum,tk)=>{const gp=tk.gpNoRealizada||0;return sum+(tk.moneda==='MXN'?gp:gp*tc);},0)));const cap=s.capital||s.value;return{x:s.date,y:cap>0?Math.round((g/cap)*10000)/100:0};});if(!_pd.length)return[];return[{label:t('rendPlataformas')+' %',data:_pd,borderColor:'rgba(10,132,255,0.65)',backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,4],fill:false,tension:0.4,pointRadius:_pd.map((_,i)=>i===_pd.length-1?2:0),pointHoverRadius:4,yAxisID:'yc'}];})()),
@@ -2280,19 +2280,14 @@ function renderDashboard(){
             },
             border:{display:false}
           },
-          y:{
-            grid:{display:false},
-            ticks:{font:{size:11},color:tickColor,callback:v=>fmt(v),maxTicksLimit:5},
-            border:{display:false}
-          },
           y2:{
-            position:'right',
-            grid:{color:isDark?'rgba(245,166,35,0.06)':'rgba(245,166,35,0.05)'},
-            ticks:{font:{size:10},color:isDark?'rgba(245,166,35,0.45)':'rgba(180,120,0,0.45)',callback:v=>'$'+(v/1000000).toFixed(2)+'M',maxTicksLimit:4},
+            position:'left',
+            grid:{color:isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)'},
+            ticks:{font:{size:10},color:isDark?'rgba(245,166,35,0.5)':'rgba(180,120,0,0.5)',callback:v=>fmt(v),maxTicksLimit:5},
             border:{display:false}
           },
           yc:{
-            position:'left',
+            position:'right',
             grid:{display:false},
             ticks:{font:{size:10},color:isDark?'rgba(150,150,160,0.4)':'rgba(100,100,110,0.35)',callback:v=>(v>=0?'+':'')+v.toFixed(1)+'%',maxTicksLimit:4},
             border:{display:false}
