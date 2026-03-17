@@ -4677,12 +4677,13 @@ window._doGoogleLogin = async function(btnEl) {
 };
 
 // ── Attach login to both buttons on DOMContentLoaded ──────────────────────
-document.addEventListener('DOMContentLoaded', function _attachLoginBtn(){
+// Módulos JS corren después de que el DOM está listo — no necesitamos DOMContentLoaded
+(function _attachLoginBtn(){
   const btn = document.getElementById('btnGoogleLogin');
   if(btn) btn.addEventListener('click', () => window._doGoogleLogin(btn));
   const btnLanding = document.getElementById('btnGoogleLoginLanding');
   if(btnLanding) btnLanding.addEventListener('click', () => window._doGoogleLogin(btnLanding));
-}, { once: true });
+})();
 
 let _ignoreSnapCount=0,_saveTimeout=null,_unsub=null,_unsubRegistro=null;
 
