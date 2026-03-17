@@ -1822,20 +1822,7 @@ function renderDashboard(){
       <div style="padding:14px 20px 10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
         <div>
           <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(245,166,35,0.9);margin-bottom:6px">📈 ${t('patrimonioTotal')} · <span style="color:rgba(245,166,35,0.95);font-size:14px;font-weight:800;letter-spacing:-0.02em">${fmt(patrimonio)}</span></div>
-          <div style="display:flex;gap:14px;flex-wrap:wrap">
-            <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px">
-              <span style="display:inline-block;width:16px;height:3px;background:rgba(245,166,35,0.95);border-radius:2px"></span>
-              ${t('patrimonioTotal2')}
-            </span>
-            <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px">
-              <span style="display:inline-block;width:16px;height:3px;background:#30D158;border-radius:2px"></span>
-              ${t('gananciaReal')}
-            </span>
-            <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px">
-              <span style="display:inline-block;width:16px;height:3px;background:rgba(10,132,255,0.85);border-radius:2px"></span>
-              ${t('proyeccion')} ${(re*100).toFixed(0)}%
-            </span>
-          </div>
+
         </div>
         <div style="display:flex;gap:16px;align-items:center">
           <div style="text-align:right">
@@ -1852,13 +1839,13 @@ function renderDashboard(){
         </div>
       </div>
       <div style="padding:0 20px 8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
-          <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:16px;height:3px;background:rgba(245,166,35,0.95);border-radius:2px"></span>${t('patrimonioTotal2')}</span>
-          <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:16px;height:3px;background:#30D158;border-radius:2px"></span>${t('gananciaReal')}</span>
-          <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:16px;height:3px;background:rgba(10,132,255,0.85);border-radius:2px"></span>${t('proyeccion')} ${(re*100).toFixed(0)}%</span>
-          <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:16px;height:3px;background:rgba(10,132,255,0.5);border-radius:2px;border-top:1px dashed rgba(10,132,255,0.8)"></span>${t('rendPlataformas')} %</span>
-          <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:16px;height:3px;background:rgba(48,209,88,0.5);border-radius:2px;border-top:1px dashed rgba(48,209,88,0.8)"></span>${t('gpNoRealizada')} %</span>
-          ${(settings.alphaVantageKey||settings.finnhubKey)?`<span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:16px;height:3px;background:rgba(220,50,80,0.6);border-radius:2px;border-top:1px dashed rgba(220,50,80,0.8)"></span>S&P 500 %${_sp500Data?'':' ⏳'}</span>`:''}
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+          <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:16px;height:3px;background:rgba(245,166,35,0.95);border-radius:2px"></span>${t('patrimonioTotal2')}</span>
+          <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:16px;height:3px;background:#30D158;border-radius:2px"></span>${t('gananciaReal')}</span>
+          <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:16px;height:3px;background:rgba(10,132,255,0.85);border-radius:2px"></span>${t('proyeccion')} ${(re*100).toFixed(0)}%</span>
+          <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:14px;height:2px;background:rgba(10,132,255,0.5);border-top:1.5px dashed rgba(10,132,255,0.7)"></span>${t('rendPlataformas')} %</span>
+          <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:14px;height:2px;background:rgba(48,209,88,0.5);border-top:1.5px dashed rgba(48,209,88,0.7)"></span>${t('gpNoRealizada')} %</span>
+          ${(settings.alphaVantageKey||settings.finnhubKey)?`<span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:14px;height:2px;background:rgba(220,50,80,0.5);border-top:1.5px dashed rgba(220,50,80,0.7)"></span>S&P 500 %</span>`:''}
         </div>
         <div style="display:flex;gap:5px;flex-wrap:wrap">${rangeButtonsHTML}</div>
       </div>
@@ -2237,57 +2224,9 @@ function renderDashboard(){
             pointHoverBorderWidth:2,
             yAxisID:'y',
           },
-          // ── Comparación: S&P500 % ──────────────────────────────────────
-          ...((()=>{
-            if(!_sp500Data||(!(settings.alphaVantageKey||settings.finnhubKey)))return[];
-            const _ed3=[];platforms.forEach(p=>{if(p.fechaInicio)_ed3.push(p.fechaInicio);});movements.forEach(m=>{if(m.fecha)_ed3.push(m.fecha);});_ed3.sort();
-            const _fo3=_ed3.length>0?_ed3[0]:todayDateStr;
-            const _pts3=sp500ReturnPct(_sp500Data,_fo3);
-            const _d3=_pts3.filter(p=>!xMin||new Date(p.date+'T00:00:00').getTime()>=xMin).map(p=>({x:p.date,y:p.pct}));
-            if(!_d3.length)return[];
-            return[{
-              label:'S&P 500 %',data:_d3,
-              borderColor:isDark?'rgba(255,100,130,0.7)':'rgba(220,50,80,0.65)',
-              backgroundColor:'transparent',borderWidth:1,borderDash:[4,3],fill:false,tension:0.4,
-              pointRadius:_d3.map((_,i)=>i===_d3.length-1?2:0),
-              pointHoverRadius:5,yAxisID:'yc',
-            }];
-          })()),
-          // ── Comparación: Rendimiento % plataformas ────────────────────
-          ...((()=>{
-            const _pd=hist.filter(s=>!xMin||new Date(s.date+'T00:00:00').getTime()>=xMin).map(s=>{
-              const g=Math.round((s.value-(s.capital||s.value))-(tickerList.reduce((sum,tk)=>{const gp=tk.gpNoRealizada||0;return sum+(tk.moneda==='MXN'?gp:gp*tc);},0)));
-              const cap=s.capital||s.value;
-              return{x:s.date,y:cap>0?Math.round((g/cap)*10000)/100:0};
-            });
-            if(!_pd.length)return[];
-            return[{
-              label:t('rendPlataformas')+' %',data:_pd,
-              borderColor:'rgba(10,132,255,0.7)',backgroundColor:'transparent',
-              borderWidth:1,borderDash:[4,3],fill:false,tension:0.4,
-              pointRadius:_pd.map((_,i)=>i===_pd.length-1?2:0),
-              pointHoverRadius:5,yAxisID:'yc',
-            }];
-          })()),
-          // ── Comparación: G/P % inversiones ────────────────────────────
-          ...((()=>{
-            const _tgh=patrimonioRendPuro;
-            const _pph=_tgh!==0?totalRend/_tgh:0;
-            const _id=hist.filter(s=>!xMin||new Date(s.date+'T00:00:00').getTime()>=xMin).map(s=>{
-              const tg=s.value-(s.capital||s.value);
-              const ig=Math.round(tg*(1-_pph));
-              const cap=totalInvertidoUSD>0?totalInvertidoUSD*tc:(s.capital||s.value);
-              return{x:s.date,y:cap>0?Math.round((ig/cap)*10000)/100:0};
-            });
-            if(!_id.length)return[];
-            return[{
-              label:t('gpNoRealizada')+' %',data:_id,
-              borderColor:'rgba(48,209,88,0.7)',backgroundColor:'transparent',
-              borderWidth:1,borderDash:[4,3],fill:false,tension:0.4,
-              pointRadius:_id.map((_,i)=>i===_id.length-1?2:0),
-              pointHoverRadius:5,yAxisID:'yc',
-            }];
-          })()),
+          ...((()=>{if(!_sp500Data||(!(settings.alphaVantageKey||settings.finnhubKey)))return[];const _ed=[];platforms.forEach(p=>{if(p.fechaInicio)_ed.push(p.fechaInicio);});movements.forEach(m=>{if(m.fecha)_ed.push(m.fecha);});_ed.sort();const _fo=_ed.length>0?_ed[0]:todayDateStr;const _pts=sp500ReturnPct(_sp500Data,_fo);const _d=_pts.filter(p=>!xMin||new Date(p.date+'T00:00:00').getTime()>=xMin).map(p=>({x:p.date,y:p.pct}));if(!_d.length)return[];return[{label:'S&P 500 %',data:_d,borderColor:isDark?'rgba(255,100,130,0.65)':'rgba(220,50,80,0.6)',backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,4],fill:false,tension:0.4,pointRadius:_d.map((_,i)=>i===_d.length-1?2:0),pointHoverRadius:4,yAxisID:'yc'}];})()),
+          ...((()=>{const _pd=hist.filter(s=>!xMin||new Date(s.date+'T00:00:00').getTime()>=xMin).map(s=>{const g=Math.round((s.value-(s.capital||s.value))-(tickerList.reduce((sum,tk)=>{const gp=tk.gpNoRealizada||0;return sum+(tk.moneda==='MXN'?gp:gp*tc);},0)));const cap=s.capital||s.value;return{x:s.date,y:cap>0?Math.round((g/cap)*10000)/100:0};});if(!_pd.length)return[];return[{label:t('rendPlataformas')+' %',data:_pd,borderColor:'rgba(10,132,255,0.65)',backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,4],fill:false,tension:0.4,pointRadius:_pd.map((_,i)=>i===_pd.length-1?2:0),pointHoverRadius:4,yAxisID:'yc'}];})()),
+          ...((()=>{const _tgh=patrimonioRendPuro;const _pph=_tgh!==0?totalRend/_tgh:0;const _id=hist.filter(s=>!xMin||new Date(s.date+'T00:00:00').getTime()>=xMin).map(s=>{const tg=s.value-(s.capital||s.value);const ig=Math.round(tg*(1-_pph));const cap=totalInvertidoUSD>0?totalInvertidoUSD*tc:(s.capital||s.value);return{x:s.date,y:cap>0?Math.round((ig/cap)*10000)/100:0};});if(!_id.length)return[];return[{label:t('gpNoRealizada')+' %',data:_id,borderColor:'rgba(48,209,88,0.65)',backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,4],fill:false,tension:0.4,pointRadius:_id.map((_,i)=>i===_id.length-1?2:0),pointHoverRadius:4,yAxisID:'yc'}];})()),
         ]
       },options:{
         responsive:true,
@@ -2367,7 +2306,7 @@ function renderDashboard(){
           yc:{
             position:'right',
             grid:{display:false},
-            ticks:{font:{size:10},color:isDark?'rgba(150,150,160,0.5)':'rgba(100,100,110,0.45)',callback:v=>(v>=0?'+':'')+v.toFixed(1)+'%',maxTicksLimit:4},
+            ticks:{font:{size:10},color:isDark?'rgba(150,150,160,0.45)':'rgba(100,100,110,0.4)',callback:v=>(v>=0?'+':'')+v.toFixed(1)+'%',maxTicksLimit:4},
             border:{display:false}
           }
         }
