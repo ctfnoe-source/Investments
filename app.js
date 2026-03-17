@@ -1807,15 +1807,63 @@ function renderDashboard(){
         <button class="btn btn-primary btn-sm" onclick="updateAllPrices(true)" ${priceUpdateState.loading?'disabled':''} id="btnUpdate">${btnLabel}</button>
       </div>
     </div>
-    <div class="grid-8" style="margin-bottom:16px">
-      <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">${t('valorPlataformas')}</div><div class="stat-value">${fmt(totalMXN)}</div><div class="stat-sub"><span style="color:${pctCol(totalRend)};font-weight:700">${fmtPct(invInicial?totalRend/invInicial:0)}</span> ${t('return')}</div></div>
-      <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">${t('rendPlataformas')}</div><div class="stat-value" style="color:${pctCol(totalRend)}">${fmt(totalRend)}</div><div class="stat-sub">${platsConTasa>0?`<span style="color:var(--teal)">⚡${fmt(totalRendAuto)} ${t('auto')}</span>`:t('rendimientoSobre')}</div></div>
-      <div class="card stat" style="border-top:3px solid var(--green)"><div class="stat-label">${t('valorInversiones')}</div><div class="stat-value">${fmt(totalInvMXN)}</div><div class="stat-sub">${tickerList.length} ${t('posiciones2')} · ${priceSummary.live>0?t('preciosHoy'):t('costoPosicion')}</div></div>
-      <div class="card stat" style="border-top:3px solid var(--green)"><div class="stat-label">${t('gpNoRealizada')}</div><div class="stat-value" style="color:${pctCol(gpNoRealizadaTotal)}">${fmt(gpNoRealizadaTotal)}</div><div class="stat-sub">${fmtPct(totalInvertidoUSD?gpNoRealizadaTotal/(totalInvertidoUSD*tc):0)} ${t('sobreCapital')}</div></div>
-      <div class="card stat" style="border-top:3px solid var(--purple)"><div class="stat-label">${t('rentabilidadTotal')}</div><div class="stat-value" style="color:${rentabilidadTotal!==null?pctCol(rentabilidadTotal):'var(--text2)'}">${rentabilidadTotal!==null?(rentabilidadTotal>=0?'+':'')+(rentabilidadTotal*100).toFixed(2)+'%':'—'}</div><div class="stat-sub">${rentabilidadTotal!==null?t('sobreCapital'):t('sinHistorial')}</div></div>
-      <div class="card stat" style="border-top:3px solid var(--purple)"><div class="stat-label">${t('concentracion')}</div><div class="stat-value" style="font-size:14px">${topPlat?.name||'—'}</div><div class="stat-sub"><span style="color:var(--orange);font-weight:700">${(maxConc*100).toFixed(1)}%</span> · ${riskLvl}</div></div>
-      <div class="card stat" style="border-top:3px solid var(--orange)"><div class="stat-label">${t('gastosMes')} ${curLabel}</div><div class="stat-value" style="color:${totGastoMes>0?'var(--red)':'var(--text)'}">${fmtD(totGastoMes)}</div><div class="stat-sub">${totalPresupuesto>0?(pctPresUsado*100).toFixed(0)+'% '+t('budget'):totIngMes>0||ingresoMensualEUR>0?fmtD(totIngMes>0?totIngMes:ingresoMensualEUR)+' '+t('income'):''}</div></div>
-      <div class="card stat" style="border-top:3px solid var(--orange)"><div class="stat-label">${t('balanceMes')} ${curLabel}</div><div class="stat-value" style="color:${pctCol(balMes)}">${fmtD(balMes)}</div><div class="stat-sub">${(pctAhorro*100).toFixed(0)}% ${t('ahorro')}${totIngMes===0&&ingresoMensualEUR>0?` (${t('est')})`:''}</div></div>
+    <div class="card" style="margin-bottom:10px;padding:18px 20px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px">
+        <div style="min-width:180px">
+          <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--text2);margin-bottom:4px">${t('patrimonioTotal')}</div>
+          <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
+            <span style="font-size:30px;font-weight:700;letter-spacing:-0.02em;color:var(--text)">${fmt(patrimonio)}</span>
+            ${deltaHoy!==0?`<span style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:5px;background:${deltaHoy>=0?'rgba(52,199,89,0.12)':'rgba(255,69,58,0.10)'};color:${deltaHoy>=0?'var(--green)':'var(--red)'}">${deltaHoy>=0?'+':''}${fmt(deltaHoy)} hoy</span>`:''}
+          </div>
+          <div style="font-size:11px;color:var(--text2);display:flex;flex-wrap:wrap;gap:8px">
+            <span>${t('gananciaNetaTotal')}: <span style="font-weight:600;color:${pctCol(patrimonioRendPuro)}">${patrimonioRendPuro>=0?'+':''}${fmt(patrimonioRendPuro)}</span></span>
+            ${rendAnualReal!==null?`<span style="color:var(--text3)">·</span><span>CAGR: <span style="font-weight:600;color:${pctCol(rendAnualReal)}">${rendAnualReal>=0?'+':''}${(rendAnualReal*100).toFixed(1)}%</span></span>`:''}
+            ${rentabilidadTotal!==null&&_sp500Data?`<span style="color:var(--text3)">·</span><span>S&P500: <span style="font-weight:600;color:var(--blue)">${(()=>{const _ed=[];platforms.forEach(p=>{if(p.fechaInicio)_ed.push(p.fechaInicio);});movements.forEach(m=>{if(m.fecha)_ed.push(m.fecha);});_ed.sort();const _fo=_ed.length>0?_ed[0]:todayDateStr;const _pts=sp500ReturnPct(_sp500Data,_fo);const _lp=_pts[_pts.length-1];return _lp?(_lp.pct>=0?'+':'')+_lp.pct.toFixed(1)+'%':'—';})()}</span></span>`:''}
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;flex:1;justify-content:flex-end;min-width:260px">
+          <div style="background:var(--card2);border-radius:10px;padding:11px 13px;min-width:140px;flex:1">
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text2);margin-bottom:3px">${t('plataformas')}</div>
+            <div style="font-size:16px;font-weight:700;margin-bottom:2px">${fmt(totalMXN)}</div>
+            <div style="font-size:10px;color:var(--text2);margin-bottom:6px">${plats.map(p=>p.type).filter((v,i,a)=>a.indexOf(v)===i).slice(0,3).join(' · ')||'—'}</div>
+            <div style="border-top:0.5px solid var(--border);padding-top:5px;display:flex;justify-content:space-between;font-size:11px">
+              <span style="color:var(--text2)">${t('return')}</span><span style="font-weight:600;color:${pctCol(totalRend)}">${totalRend>=0?'+':''}${fmt(totalRend)} <span style="font-weight:400;color:var(--text3)">(${fmtPct(invInicial?totalRend/invInicial:0)})</span></span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:2px">
+              <span style="color:var(--text2)">hoy</span><span style="font-weight:600;color:${pctCol(deltaHoy*0.6)}">${deltaHoy>=0?'+':''}${fmt(Math.round(deltaHoy*0.6))}</span>
+            </div>
+          </div>
+          <div style="background:var(--card2);border-radius:10px;padding:11px 13px;min-width:140px;flex:1">
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text2);margin-bottom:3px">${t('inversiones')}</div>
+            <div style="font-size:16px;font-weight:700;margin-bottom:2px">${fmt(totalInvMXN)}</div>
+            <div style="font-size:10px;color:var(--text2);margin-bottom:6px">${tickerList.length} ${t('posiciones2')} · ${priceSummary.live>0?t('preciosHoy'):t('costoPosicion')}</div>
+            <div style="border-top:0.5px solid var(--border);padding-top:5px;display:flex;justify-content:space-between;font-size:11px">
+              <span style="color:var(--text2)">${t('gpNoRealizada')}</span><span style="font-weight:600;color:${pctCol(gpNoRealizadaTotal)}">${gpNoRealizadaTotal>=0?'+':''}${fmt(gpNoRealizadaTotal)} <span style="font-weight:400;color:var(--text3)">(${fmtPct(totalInvertidoUSD?gpNoRealizadaTotal/(totalInvertidoUSD*tc):0)})</span></span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:2px">
+              <span style="color:var(--text2)">hoy</span><span style="font-weight:600;color:${pctCol(deltaHoy*0.4)}">${deltaHoy>=0?'+':''}${fmt(Math.round(deltaHoy*0.4))}</span>
+            </div>
+          </div>
+          <div style="background:var(--card2);border-radius:10px;padding:11px 13px;min-width:140px;flex:1">
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text2);margin-bottom:3px">${t('gastosMes')} ${curLabel}</div>
+            <div style="font-size:16px;font-weight:700;color:${totGastoMes>0?'var(--red)':'var(--text)'};margin-bottom:2px">${fmtD(totGastoMes)}</div>
+            <div style="font-size:10px;color:var(--text2);margin-bottom:6px">${totalPresupuesto>0?`de ${fmtD(eurToDash(totalPresupuesto))} ${t('budget')}`:(totIngMes>0||ingresoMensualEUR>0)?`de ${fmtD(totIngMes>0?totIngMes:ingresoMensualEUR)} ${t('income')}`:MONTHS[cm-1]}</div>
+            <div style="border-top:0.5px solid var(--border);padding-top:5px;display:flex;justify-content:space-between;font-size:11px">
+              <span style="color:var(--text2)">${t('balanceMes')}</span><span style="font-weight:600;color:${pctCol(balMes)}">${fmtD(balMes)}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:2px">
+              <span style="color:var(--text2)">${t('ahorro')}</span><span style="font-weight:600;color:${pctCol(pctAhorro)}">${(pctAhorro*100).toFixed(0)}%${totIngMes===0&&ingresoMensualEUR>0?` (${t('est')})`:''}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      ${totalPresupuesto>0||totGastoMes>0?`<div style="margin-top:12px;padding-top:10px;border-top:0.5px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div style="flex:1;min-width:160px">
+          <div style="height:4px;border-radius:2px;background:var(--card2);overflow:hidden"><div style="height:100%;border-radius:2px;background:${pctPresUsado>1?'var(--red)':pctPresUsado>0.85?'var(--orange)':'var(--green)'};width:${Math.min(pctPresUsado*100,100).toFixed(1)}%;transition:width 0.4s ease"></div></div>
+        </div>
+        <span style="font-size:11px;color:var(--text2);white-space:nowrap">${fmtD(totGastoMes)} / ${fmtD(eurToDash(totalPresupuesto))} &nbsp;·&nbsp; <span style="font-weight:600;color:${pctPresUsado>1?'var(--red)':pctPresUsado>0.85?'var(--orange)':'var(--green)'}">${(pctPresUsado*100).toFixed(0)}%</span></span>
+        ${alerts.length>0?`<span style="font-size:11px;padding:2px 8px;border-radius:5px;background:${alerts[0].level==='error'?'rgba(255,69,58,0.08)':'rgba(255,159,10,0.08)'};border:0.5px solid ${alerts[0].level==='error'?'rgba(255,69,58,0.2)':'rgba(255,159,10,0.2)'};color:${alerts[0].level==='error'?'var(--red)':'var(--orange)'}">${alerts[0].msg.replace(/<[^>]+>/g,'')}</span>`:''}
+      </div>`:''}
     </div>
 
     <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden">
