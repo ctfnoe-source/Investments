@@ -1810,23 +1810,20 @@ function renderDashboard(){
     </div>
 
     <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden">
-      <div style="padding:8px 16px 6px;display:flex;align-items:center;justify-content:space-between;gap:6px;border-bottom:0.5px solid var(--border)">
-        <div style="display:flex;align-items:center;gap:14px;flex-wrap:nowrap;overflow:hidden">
-          <div style="display:flex;align-items:baseline;gap:6px;flex-shrink:0">
-            <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgba(245,166,35,0.85)">📈 ${t('patrimonioTotal')}</span>
-            <span style="font-size:14px;font-weight:800;letter-spacing:-0.02em;color:rgba(245,166,35,0.95)">${fmt(patrimonio)}</span>
-          </div>
-          <span style="color:var(--border);flex-shrink:0">|</span>
-          <div style="display:flex;align-items:baseline;gap:5px;flex-shrink:0">
-            <span style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:600;letter-spacing:0.04em">${t('gananciaNetaTotal')}</span>
-            <span style="font-size:13px;font-weight:800;color:${pctCol(patrimonioRendPuro)}">${patrimonioRendPuro>=0?'+':''}${fmt(patrimonioRendPuro)}</span>
-          </div>
+      <div style="padding:8px 20px 8px;display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;border-bottom:0.5px solid var(--border)">
+        <div style="display:flex;align-items:baseline;gap:7px">
+          <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgba(245,166,35,0.85)">📈 ${t('patrimonioTotal')}</span>
+          <span style="font-size:14px;font-weight:800;letter-spacing:-0.02em;color:rgba(245,166,35,0.95)">${fmt(patrimonio)}</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:6px;justify-content:center">
+          <span style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:600;letter-spacing:0.04em">${t('gananciaNetaTotal')}</span>
+          <span style="font-size:13px;font-weight:800;color:${pctCol(patrimonioRendPuro)}">${patrimonioRendPuro>=0?'+':''}${fmt(patrimonioRendPuro)}</span>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:6px;justify-content:flex-end">
           ${rendAnualReal !== null ? `
-          <span style="color:var(--border);flex-shrink:0">|</span>
-          <div style="display:flex;align-items:baseline;gap:5px;flex-shrink:0">
-            <span style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:600;letter-spacing:0.04em">${t('cagrReal')} <span style="font-weight:400;font-size:9px">${Math.round((new Date(hist[hist.length-1].date)-new Date(hist[0].date))/(1000*60*60*24))}d</span></span>
-            <span style="font-size:13px;font-weight:800;color:${pctCol(rendAnualReal)}">${rendAnualReal>=0?'+':''}${(rendAnualReal*100).toFixed(1)}%</span>
-          </div>` : ''}
+          <span style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:600;letter-spacing:0.04em">${t('cagrReal')} <span style="font-weight:400;font-size:9px">${Math.round((new Date(hist[hist.length-1].date)-new Date(hist[0].date))/(1000*60*60*24))}d</span></span>
+          <span style="font-size:13px;font-weight:800;color:${pctCol(rendAnualReal)}">${rendAnualReal>=0?'+':''}${(rendAnualReal*100).toFixed(1)}%</span>
+          ` : '<span></span>'}
         </div>
       </div>
       <div style="padding:5px 16px 6px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;border-bottom:0.5px solid var(--border)">
@@ -2290,14 +2287,14 @@ function renderDashboard(){
           },
           y2:{
             position:'right',
-            grid:{display:false},
-            ticks:{font:{size:10},color:isDark?'rgba(245,166,35,0.5)':'rgba(245,166,35,0.6)',callback:v=>fmt(v),maxTicksLimit:4},
+            grid:{color:isDark?'rgba(245,166,35,0.06)':'rgba(245,166,35,0.05)'},
+            ticks:{font:{size:10},color:isDark?'rgba(245,166,35,0.45)':'rgba(180,120,0,0.45)',callback:v=>'$'+(v/1000000).toFixed(2)+'M',maxTicksLimit:4},
             border:{display:false}
           },
           yc:{
-            position:'right',
+            position:'left',
             grid:{display:false},
-            ticks:{font:{size:10},color:isDark?'rgba(150,150,160,0.45)':'rgba(100,100,110,0.4)',callback:v=>(v>=0?'+':'')+v.toFixed(1)+'%',maxTicksLimit:4},
+            ticks:{font:{size:10},color:isDark?'rgba(150,150,160,0.4)':'rgba(100,100,110,0.35)',callback:v=>(v>=0?'+':'')+v.toFixed(1)+'%',maxTicksLimit:4},
             border:{display:false}
           }
         }
