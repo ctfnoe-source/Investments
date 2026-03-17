@@ -4610,8 +4610,8 @@ window.signOutUser=async()=>{
 // a Google redirect and need to call getRedirectResult to complete the sign-in.
 let _redirectPending = false;
 
-if(sessionStorage.getItem('_authRedirect') === '1'){
-  sessionStorage.removeItem('_authRedirect');
+if(localStorage.getItem('_authRedirect') === '1'){
+  localStorage.removeItem('_authRedirect');
   _redirectPending = true;
   // Show spinner — replace login card content while Firebase processes the token
   const lo = document.getElementById('loginOverlay');
@@ -4649,7 +4649,7 @@ document.addEventListener('DOMContentLoaded', function _attachLoginBtn(){
 
     try {
       if(useRedirect){
-        sessionStorage.setItem('_authRedirect', '1');
+        localStorage.setItem('_authRedirect', '1');
         await signInWithRedirect(auth, new GoogleAuthProvider());
         return; // navigates away
       }
@@ -4659,7 +4659,7 @@ document.addEventListener('DOMContentLoaded', function _attachLoginBtn(){
       const popupFailed = ['auth/popup-blocked','auth/popup-closed-by-user','auth/cancelled-popup-request'].includes(e.code);
       if(popupFailed){
         try {
-          sessionStorage.setItem('_authRedirect', '1');
+          localStorage.setItem('_authRedirect', '1');
           btn.innerHTML = spinnerHtml + t('connecting');
           await signInWithRedirect(auth, new GoogleAuthProvider());
           return;
