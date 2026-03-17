@@ -194,6 +194,10 @@ const I18N = {
     manageUsersDesc:'Gestionar usuarios y accesos',
     accessPending:'Acceso pendiente',
     welcomeDesc:'Tu dashboard financiero personal para inversiones, gastos y metas.',
+    payBtn:'💳 Comprar acceso — $20 USD',
+    payDesc:'Pago único · Sin suscripción · Acceso de por vida',
+    payOr:'o',
+    payProcessing:'Procesando...',
     trialBtn:'Probar 20 minutos gratis',
     trialUsed:'Ya usaste tu prueba gratuita',
     contactBtn:'Contactar para obtener acceso',
@@ -365,6 +369,10 @@ const I18N = {
     manageUsersDesc:'Manage users and access',
     accessPending:'Access pending',
     welcomeDesc:'Your personal financial dashboard for investments, expenses and goals.',
+    payBtn:'💳 Buy access — $20 USD',
+    payDesc:'One-time payment · No subscription · Lifetime access',
+    payOr:'or',
+    payProcessing:'Processing...',
     trialBtn:'Try free for 20 minutes',
     trialUsed:'Your free trial has been used',
     contactBtn:'Contact us for full access',
@@ -4818,7 +4826,7 @@ function showWelcomeGate(user, trialExpirado){
         const resp = await fetch('/mp-create-preference', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ uid: uid, email: user.email, lang: window.__lang || 'es' })
+          body: JSON.stringify({ uid: user.uid, email: user.email, lang: window.__lang || 'es' })
         });
         const data = await resp.json();
         const url = data.init_point || data.sandbox_init_point;
