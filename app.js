@@ -3,6 +3,8 @@ import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp } from "https://
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 // ==================== MÓDULO PRINCIPAL ====================
 
+window._log = function(msg){ try{ const d=document.getElementById("_debugLog"); if(!d) return; const p=document.createElement("p"); p.style.margin="0"; p.textContent=new Date().toLocaleTimeString()+" "+msg; d.prepend(p); }catch(e){} };
+window._log("APP.JS CARGADO");
 
 function escHtml(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 const LS = {
@@ -4531,6 +4533,7 @@ window.signOutUser=async()=>{
 
 // ── Auth redirect — siempre usar localStorage (sessionStorage se borra en iOS) ──
 let _redirectPending = true; // bloquea showLogin hasta que getRedirectResult resuelva
+window._log('_redirectPending=true, localStorage._authRedirect='+localStorage.getItem('_authRedirect'));
 
 if(localStorage.getItem('_authRedirect') === '1'){
   localStorage.removeItem('_authRedirect');
@@ -4544,11 +4547,13 @@ if(localStorage.getItem('_authRedirect') === '1'){
 
 getRedirectResult(auth).then(result => {
   _redirectPending = false;
+  window._log('getRedirectResult: user='+(result&&result.user?result.user.email:'null'));
   if(!result || !result.user){
     if(!window._currentUser && !window._showingWelcomeGate) showLogin();
   }
 }).catch(err => {
   _redirectPending = false;
+  window._log('getRedirectResult ERROR: '+err.code+' '+err.message);
   console.error('[Auth] getRedirectResult error:', err.code, err.message);
   if(!window._currentUser) showLogin();
 });
@@ -4557,12 +4562,15 @@ getRedirectResult(auth).then(result => {
 window._doGoogleLogin = function(btnEl) {
   const spinnerHtml = '<span style="display:inline-block;width:20px;height:20px;border:2px solid rgba(10,132,255,0.2);border-top-color:#0A84FF;border-radius:50%;animation:spin 0.7s linear infinite;margin-right:8px;vertical-align:middle"></span> Conectando...';
   if(btnEl){ btnEl.disabled = true; btnEl.innerHTML = spinnerHtml; }
+  window._log('_doGoogleLogin llamado');
 
   // Abrir popup SINCRÓNICAMENTE — sin ningún await antes
   // Safari bloquea popups si hay código async antes de window.open
   const provider = new GoogleAuthProvider();
   signInWithPopup(auth, provider).then(result => {
+    window._log('signInWithPopup OK: '+result.user.email);
   }).catch(e => {
+    window._log('signInWithPopup error: '+e.code);
     if(btnEl){ btnEl.disabled = false; btnEl.innerHTML = 'Continuar con Google'; }
     if(e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request'){
       showLogin(t('signinError'));
@@ -4736,6 +4744,20 @@ function showWelcomeGate(user, trialExpirado){
     <div style="font-size:48px;margin-bottom:12px">📊</div>
     <div style="font-size:22px;font-weight:800;letter-spacing:-0.03em;margin-bottom:6px">InvestTracker</div>
     <div style="font-size:13px;color:#888;margin-bottom:24px;line-height:1.5">${t('welcomeDesc')}</div>
+
+    <!-- Botón de pago principal -->
+    <button id="btnPagar" style="width:100%;padding:15px;border-radius:16px;border:none;background:linear-gradient(135deg,#00b1ea,#009ee3);color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:6px;letter-spacing:-0.02em;box-shadow:0 4px 16px rgba(0,158,227,0.3)">
+      💳 ${t('payBtn')}
+    </button>
+    <div style="font-size:11px;color:#aaa;margin-bottom:16px">${t('payDesc')}</div>
+
+    <!-- Divisor -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <div style="flex:1;height:1px;background:var(--border,#e5e5ea)"></div>
+      <span style="font-size:11px;color:#bbb">${t('payOr')}</span>
+      <div style="flex:1;height:1px;background:var(--border,#e5e5ea)"></div>
+    </div>
+
     ${trialBtn}
     <a href="mailto:${adminEmail}" style="display:block;width:100%;padding:13px;border-radius:16px;border:1.5px solid #0A84FF;color:#0A84FF;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;text-decoration:none;box-sizing:border-box">✉️ ${t('contactBtn')}</a>
     <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px">
@@ -4783,6 +4805,31 @@ function showWelcomeGate(user, trialExpirado){
       if(typeof setupFirestore==='function') setupFirestore(uid);
       if(typeof startTrialBanner==='function') startTrialBanner();
       if(window.renderPage) window.renderPage(window.currentTab||'dashboard');
+    });
+  }
+
+  // Botón pagar con Mercado Pago
+  const btnPagar = document.getElementById('btnPagar');
+  if(btnPagar){
+    btnPagar.addEventListener('click', async function(){
+      this.disabled = true;
+      this.textContent = t('payProcessing');
+      try {
+        const resp = await fetch('/mp-create-preference', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uid: uid, email: user.email, lang: window.__lang || 'es' })
+        });
+        const data = await resp.json();
+        const url = data.init_point || data.sandbox_init_point;
+        if(url) { window.location.href = url; }
+        else { throw new Error('No se pudo crear el link de pago'); }
+      } catch(err) {
+        console.error('[Pay] Error:', err);
+        this.disabled = false;
+        this.textContent = t('payBtn');
+        alert('Error al conectar con el sistema de pago. Intenta de nuevo.');
+      }
     });
   }
 }
@@ -4975,6 +5022,7 @@ window.eliminarUsuario = async function(uid){
 };
 
 onAuthStateChanged(auth,async user=>{
+  window._log('onAuthStateChanged: '+(user?user.email:'null')+' pending='+_redirectPending);
   if(user){
     window._currentUser=user;
     const uid = user.uid;
