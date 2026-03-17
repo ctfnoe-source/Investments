@@ -192,6 +192,10 @@ const I18N = {
     accessPending:'Acceso pendiente',
     welcomeDesc:'Tu dashboard financiero personal para inversiones, gastos y metas.',
     trialBtn:'Probar 20 minutos gratis',
+    payBtn:'💳 Pagar $20 USD — Acceso de por vida',
+    payDesc:'Pago único · Acceso inmediato · Sin suscripción',
+    payProcessing:'⏳ Procesando pago...',
+    payOr:'o',
     trialUsed:'Ya usaste tu prueba gratuita',
     contactBtn:'Contactar para obtener acceso',
     trialBanner:'Modo prueba', trialMinutes:'min restantes',
@@ -363,6 +367,10 @@ const I18N = {
     accessPending:'Access pending',
     welcomeDesc:'Your personal financial dashboard for investments, expenses and goals.',
     trialBtn:'Try free for 20 minutes',
+    payBtn:'💳 Pay $20 USD — Lifetime Access',
+    payDesc:'One-time payment · Instant access · No subscription',
+    payProcessing:'⏳ Processing payment...',
+    payOr:'or',
     trialUsed:'Your free trial has been used',
     contactBtn:'Contact us for full access',
     trialBanner:'Trial mode', trialMinutes:'min remaining',
@@ -1852,7 +1860,7 @@ function renderDashboard(){
         <div class="card-title" style="margin:0">🎯 ${t('progresoDeMetas')}</div>
         <button class="btn btn-secondary btn-sm" onclick="switchTab('metas')">${t('verTodo')}</button>
       </div>
-      ${goals.length>0?`<div class="grid-2">${goals.slice(0,4).map(g=>{let actual=0;const patrimonioTotal=totalMXN+totalInvMXN;if(g.clase==='Patrimonio Total'||g.clase==='Todos')actual=patrimonioTotal;else if(g.clase==='Plataformas')actual=totalMXN;else if(g.clase==='Inversiones')actual=totalInvMXN;else if(g.clase==='Ingreso Mensual')actual=ingresoMensualEUR;else actual=patrimonioTotal;const pct=g.meta>0?actual/g.meta:0;const sc=pct>=1?'var(--green)':pct>=0.8?'var(--orange)':pct>=0.3?'var(--blue)':'var(--text2)';const st=pct>=1?t('lograda'):pct>=0.8?t('casi'):pct>=0.3?t('enProceso'):t('inicio');return`<div style="padding:12px;background:var(--card2);border-radius:12px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:13px;font-weight:700">${g.nombre}</div><span style="font-size:11px;font-weight:700;color:${sc}">${st}</span></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:6px"><span style="font-weight:700;color:var(--text)">${fmt(actual)}</span><span>${t('goalLabel')}: ${fmt(g.meta)}</span></div><div class="progress-bg"><div class="progress-fill" style="background:${sc};width:${Math.min(pct*100,100).toFixed(1)}%"></div></div><div style="text-align:right;font-size:11px;font-weight:800;color:${sc};margin-top:4px">${(pct*100).toFixed(1)}%</div></div>`;}).join('')}</div>`:`<div style="text-align:center;padding:24px;color:var(--text2);font-size:13px">${t('sinMetas')} — <button class="btn btn-primary btn-sm" onclick="switchTab('metas')">${t('crear')} →</button></div>`}
+      ${goals.length>0?`<div class="grid-2">${goals.slice(0,4).map(g=>{let actual=0;const patrimonioTotal=totalMXN+totalInvMXN;if(g.clase==='Patrimonio Total'||g.clase==='Todos')actual=patrimonioTotal;else if(g.clase==='Plataformas')actual=totalMXN;else if(g.clase==='Inversiones')actual=totalInvMXN;else if(g.clase==='Ingreso Mensual')actual=ingresoMensualEUR;else actual=patrimonioTotal;const pct=g.meta>0?actual/g.meta:0;const sc=pct>=1?'var(--green)':pct>=0.8?'var(--orange)':pct>=0.3?'var(--blue)':'var(--text2)';const st=pct>=1?t('lograda'):pct>=0.8?t('casi'):pct>=0.3?t('enProceso'):t('inicio');return`<div style="padding:12px;background:var(--card2);border-radius:12px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:13px;font-weight:700">${escHtml(g.nombre)}</div><span style="font-size:11px;font-weight:700;color:${sc}">${st}</span></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:6px"><span style="font-weight:700;color:var(--text)">${fmt(actual)}</span><span>${t('goalLabel')}: ${fmt(g.meta)}</span></div><div class="progress-bg"><div class="progress-fill" style="background:${sc};width:${Math.min(pct*100,100).toFixed(1)}%"></div></div><div style="text-align:right;font-size:11px;font-weight:800;color:${sc};margin-top:4px">${(pct*100).toFixed(1)}%</div></div>`;}).join('')}</div>`:`<div style="text-align:center;padding:24px;color:var(--text2);font-size:13px">${t('sinMetas')} — <button class="btn btn-primary btn-sm" onclick="switchTab('metas')">${t('crear')} →</button></div>`}
     </div>
 
   `;
@@ -3224,7 +3232,7 @@ function openRecurrentesModal(){
       ${recurrentes.map(r=>`
         <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--card2);border-radius:12px;margin-bottom:8px">
           <div style="font-size:20px">${r.icon||'📌'}</div>
-          <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">${r.nombre}</div><div style="font-size:11px;color:var(--text2)">${r.frecuencia} · ${t('dia')} ${r.dia}</div></div>
+          <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">${escHtml(r.nombre)}</div><div style="font-size:11px;color:var(--text2)">${r.frecuencia} · ${t('dia')} ${r.dia}</div></div>
           <div style="font-size:15px;font-weight:800;color:var(--red);margin-right:8px">-${fmt(r.importe)}</div>
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0"><input type="checkbox" ${r.activo?'checked':''} onchange="toggleRecurrente('${r.id}',this.checked)" style="accent-color:var(--blue);width:16px;height:16px"><span style="font-size:11px;color:var(--text2)">${r.activo?t('activo'):t('inactivo')}</span></label>
           <button class="edit-btn" onclick="openEditRecurrenteModal('${r.id}')">✏️</button>
@@ -3512,7 +3520,7 @@ function renderMetas(){
             <div style="position:absolute;left:10px;top:4px;width:22px;height:22px;border-radius:50%;background:${g.sc};display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:800;z-index:1;box-shadow:0 0 0 3px var(--card)">${g.pct>=1?'✓':Math.round(g.pct*100)+'%'}</div>
             <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:4px">
               <div>
-                <div style="font-size:14px;font-weight:700">${g.nombre}</div>
+                <div style="font-size:14px;font-weight:700">${escHtml(g.nombre)}</div>
                 <div style="font-size:11px;color:var(--text2);margin-top:1px">${g.clase}${g.fechaLimite?' · '+t('fechaLimite')+' '+g.fechaLimite:''}</div>
               </div>
               <div style="text-align:right;flex-shrink:0">
@@ -3538,7 +3546,7 @@ function renderMetas(){
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
             <div>
-              <div style="font-size:16px;font-weight:700">${g.nombre}</div>
+              <div style="font-size:16px;font-weight:700">${escHtml(g.nombre)}</div>
               <div style="font-size:11px;color:var(--text2)">${g.clase} · ${g.fechaLimite||t('sinFecha')}</div>
             </div>
             <div style="display:flex;gap:6px;align-items:center">
@@ -4494,12 +4502,105 @@ function getMetaRef(uid) {
 }
 
 function setFbStatus(s){let el=document.getElementById('fbStatus');if(!el)return;el.style.display=s?'block':'none';const map={syncing:['⏳ '+t('sync'),'rgba(10,132,255,0.1)','#0A84FF'],ok:['☁️ '+t('synced'),'rgba(48,209,88,0.1)','#30D158'],error:['⚠️ '+t('noConnection'),'rgba(255,69,58,0.1)','#FF453A'],offline:['📴 '+t('offline'),'rgba(0,0,0,0.06)','#86868B']};const[text,bg,color]=map[s]||map.offline;el.textContent=text;el.style.background=bg;el.style.color=color;if(s==='ok'){setTimeout(()=>{if(el)el.style.display='none';},3000);}}
-function showApp(){document.getElementById('loginOverlay').classList.add('hidden');document.getElementById('mainNav').style.display='';document.getElementById('mainContainer').style.display='';document.getElementById('mobileNav').style.display='';document.getElementById('accessDenied').classList.remove('show');}
-function showLogin(msg){document.getElementById('loginOverlay').classList.remove('hidden');document.getElementById('mainNav').style.display='none';document.getElementById('mainContainer').style.display='none';document.getElementById('mobileNav').style.display='none';document.getElementById('accessDenied').classList.remove('show');if(msg){const el=document.getElementById('loginError');el.textContent=msg;el.style.display='block';}}
+function showApp(){const _lo2=document.getElementById('loginOverlay');_lo2.style.display='none';_lo2.classList.add('hidden');const lp=document.getElementById('landingPage');const ll=document.getElementById('landingLoginOverlay');if(lp)lp.style.display='none';if(ll)ll.style.display='none';document.getElementById('mainNav').style.display='';document.getElementById('mainContainer').style.display='';document.getElementById('mobileNav').style.display='';document.getElementById('accessDenied').classList.remove('show');}
+function showLogin(msg){document.getElementById('mainNav').style.display='none';document.getElementById('mainContainer').style.display='none';document.getElementById('mobileNav').style.display='none';document.getElementById('accessDenied').classList.remove('show');const lp=document.getElementById('landingPage');const ll=document.getElementById('landingLoginOverlay');const _lo=document.getElementById('loginOverlay');if(msg){if(lp)lp.style.display='none';if(ll)ll.style.display='flex';_lo.style.display='flex';_lo.classList.remove('hidden');const el=document.getElementById('loginError');if(el){el.textContent=msg;el.style.display='block';}}else{_lo.style.display='none';_lo.classList.add('hidden');if(ll)ll.style.display='none';if(lp){lp.style.display='block';}}}
+
+
+
+// ── Helper: tiempo relativo ────────────────────────────────────────────────
+function timeAgo(ts) {
+  if(!ts) return '';
+  const diff = Date.now() - new Date(ts).getTime();
+  const m = Math.floor(diff / 60000);
+  const h = Math.floor(diff / 3600000);
+  const d = Math.floor(diff / 86400000);
+  if(m < 1) return 'hace un momento';
+  if(m < 60) return `hace ${m} min`;
+  if(h < 24) return `hace ${h}h`;
+  if(d < 30) return `hace ${d}d`;
+  return new Date(ts).toLocaleDateString('es', {day:'numeric', month:'short', year:'numeric'});
+}
+
+// ── Presencia en tiempo real (lastSeen) ───────────────────────────────────
+let _lastSeenInterval = null;
+
+async function updateLastSeen(uid) {
+  try {
+    const { doc: _doc, setDoc: _setDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    await _setDoc(_doc(db, 'registros', uid), { lastSeen: Date.now() }, { merge: true });
+  } catch(e) {}
+}
+
+function startLastSeen(uid) {
+  updateLastSeen(uid); // inmediato al entrar
+  if(_lastSeenInterval) clearInterval(_lastSeenInterval);
+  _lastSeenInterval = setInterval(() => updateLastSeen(uid), 2 * 60 * 1000); // cada 2 min
+}
+
+function stopLastSeen() {
+  if(_lastSeenInterval) { clearInterval(_lastSeenInterval); _lastSeenInterval = null; }
+}
+
+
+
+// ── Inyectar animación pulse-red para badge admin ─────────────────────────
+(function(){
+  const s = document.createElement('style');
+  s.textContent = '@keyframes pulse-red{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.3)}}';
+  document.head.appendChild(s);
+})();
+
+// ── Notificación de nuevo usuario para admin ──────────────────────────────
+let _adminUserCount = null;
+let _unsubAdminUsers = null;
+
+function startAdminNewUserListener() {
+  import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js").then(({ collection, onSnapshot: _onSnap }) => {
+    if(_unsubAdminUsers) { _unsubAdminUsers(); _unsubAdminUsers = null; }
+    _unsubAdminUsers = _onSnap(collection(db, 'registros'), (snap) => {
+      const count = snap.size - 1; // excluir admin
+      if(_adminUserCount === null) {
+        _adminUserCount = count; // primera carga, no notificar
+        return;
+      }
+      if(count > _adminUserCount) {
+        // Nuevo usuario — mostrar badge
+        _adminUserCount = count;
+        showAdminBadge();
+      }
+    });
+  });
+}
+
+function showAdminBadge() {
+  // Badge en el botón de ajustes en el nav
+  const tabs = document.querySelectorAll('[data-tab="ajustes"]');
+  tabs.forEach(tab => {
+    if(!tab.querySelector('.admin-badge')) {
+      const badge = document.createElement('span');
+      badge.className = 'admin-badge';
+      badge.style.cssText = 'display:inline-block;width:8px;height:8px;border-radius:50%;background:#ff453a;margin-left:4px;vertical-align:middle;animation:pulse-red 1.5s infinite';
+      tab.appendChild(badge);
+    }
+  });
+  // Notificación visual
+  const notif = document.createElement('div');
+  notif.style.cssText = 'position:fixed;top:70px;right:16px;z-index:9999;background:var(--card);border:1px solid rgba(255,69,58,0.3);border-radius:14px;padding:10px 16px;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.15);display:flex;align-items:center;gap:8px;cursor:pointer;max-width:260px';
+  notif.innerHTML = '👤 <span>Nuevo usuario registrado</span>';
+  notif.onclick = () => { notif.remove(); window.openAdminPanel('pendientes'); };
+  document.body.appendChild(notif);
+  setTimeout(() => notif.remove(), 8000);
+}
+
+function clearAdminBadge() {
+  document.querySelectorAll('.admin-badge').forEach(b => b.remove());
+}
 
 window.signOutUser=async()=>{
   if(_unsub){_unsub();_unsub=null;}
   if(_unsubRegistro){_unsubRegistro();_unsubRegistro=null;}
+  stopLastSeen();
+  if(_unsubAdminUsers){_unsubAdminUsers();_unsubAdminUsers=null;}
   await signOut(auth);window.location.reload();
 };
 
@@ -4723,38 +4824,69 @@ function showWelcomeGate(user, trialExpirado){
     document.body.appendChild(el);
   }
 
+  const uid = user.uid;
   const trialBtn = !trialExpirado
-    ? `<button id="btnStartTrial" style="width:100%;padding:14px;border-radius:16px;border:none;background:linear-gradient(135deg,#0A84FF,#BF5AF2);color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:10px;letter-spacing:-0.02em">⚡ ${t('trialBtn')}</button>`
-    : `<div style="padding:10px 16px;background:rgba(255,69,58,0.06);border:1px solid rgba(255,69,58,0.2);border-radius:12px;font-size:12px;color:#FF453A;font-weight:600;margin-bottom:10px">⏰ ${t('trialUsed')}</div>`;
+    ? `<button id="btnStartTrial" style="width:100%;padding:12px;border-radius:14px;border:1.5px solid var(--border,#e5e5ea);background:none;color:var(--text,#000);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:8px">⚡ ${t('trialBtn')}</button>`
+    : `<div style="padding:8px 12px;background:rgba(255,69,58,0.06);border:1px solid rgba(255,69,58,0.2);border-radius:10px;font-size:11px;color:#FF453A;font-weight:600;margin-bottom:8px">⏰ ${t('trialUsed')}</div>`;
 
   const adminEmail = 'ctfnoe@gmail.com';
 
-  el.innerHTML = `<div style="background:var(--card,#fff);border-radius:24px;padding:40px 32px;max-width:400px;width:90%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.12)">
+  el.innerHTML = `<div style="background:var(--card,#fff);border-radius:24px;padding:40px 32px;max-width:420px;width:90%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.12)">
     <div style="font-size:48px;margin-bottom:12px">📊</div>
     <div style="font-size:22px;font-weight:800;letter-spacing:-0.03em;margin-bottom:6px">InvestTracker</div>
     <div style="font-size:13px;color:#888;margin-bottom:24px;line-height:1.5">${t('welcomeDesc')}</div>
-    ${trialBtn}
-    <a href="mailto:${adminEmail}" style="display:block;width:100%;padding:13px;border-radius:16px;border:1.5px solid #0A84FF;color:#0A84FF;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;text-decoration:none;box-sizing:border-box">✉️ ${t('contactBtn')}</a>
-    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px">
-      <span style="font-size:12px;color:#aaa;user-select:all">${adminEmail}</span>
-      <button id="btnCopyAdminEmail" onclick="
-        navigator.clipboard.writeText('${adminEmail}').then(()=>{
-          this.textContent='✅';
-          this.style.color='#30D158';
-          setTimeout(()=>{this.textContent='📋';this.style.color='#aaa';},2000);
-        }).catch(()=>{
-          const ta=document.createElement('textarea');ta.value='${adminEmail}';
-          document.body.appendChild(ta);ta.select();document.execCommand('copy');
-          ta.remove();this.textContent='✅';this.style.color='#30D158';
-          setTimeout(()=>{this.textContent='📋';this.style.color='#aaa';},2000);
-        })
-      " style="background:none;border:none;cursor:pointer;font-size:14px;color:#aaa;padding:2px 4px;border-radius:6px;transition:color 0.2s" title="Copiar email">📋</button>
+
+    <!-- Botón de pago principal -->
+    <button id="btnPagar" style="width:100%;padding:15px;border-radius:16px;border:none;background:linear-gradient(135deg,#00b1ea,#009ee3);color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:6px;letter-spacing:-0.02em;box-shadow:0 4px 16px rgba(0,158,227,0.3)">
+      ${t('payBtn')}
+    </button>
+    <div style="font-size:11px;color:#aaa;margin-bottom:20px">${t('payDesc')}</div>
+
+    <!-- Divisor -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <div style="flex:1;height:1px;background:var(--border,#e5e5ea)"></div>
+      <span style="font-size:11px;color:#bbb">${t('payOr')}</span>
+      <div style="flex:1;height:1px;background:var(--border,#e5e5ea)"></div>
     </div>
+
+    <!-- Trial y contacto -->
+    ${trialBtn}
+    <a href="mailto:${adminEmail}" style="display:block;width:100%;padding:11px;border-radius:14px;border:1.5px solid #0A84FF;color:#0A84FF;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:16px;text-decoration:none;box-sizing:border-box">✉️ ${t('contactBtn')}</a>
+
     <div style="font-size:11px;color:#ccc;margin-bottom:16px;word-break:break-all">${user.email}</div>
     <button onclick="window.signOutUser()" style="padding:8px 20px;border-radius:20px;border:1px solid #ddd;background:none;cursor:pointer;font-size:12px;color:#888;font-family:inherit">← ${t('salir')}</button>
   </div>`;
   el.style.display = 'flex';
   window._showingWelcomeGate = true;
+
+  // Botón pagar con Mercado Pago
+  const btnPagar = document.getElementById('btnPagar');
+  if(btnPagar){
+    btnPagar.addEventListener('click', async function(){
+      this.disabled = true;
+      this.textContent = t('payProcessing');
+      try {
+        const resp = await fetch('/mp-create-preference', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uid: uid, email: user.email, lang: window.__lang || 'es' })
+        });
+        const data = await resp.json();
+        // En pruebas usar sandbox_init_point, en producción init_point
+        const url = data.sandbox_init_point || data.init_point;
+        if(url) {
+          window.location.href = url;
+        } else {
+          throw new Error('No se pudo crear el link de pago');
+        }
+      } catch(err) {
+        console.error('[Pay] Error:', err);
+        this.disabled = false;
+        this.textContent = t('payBtn');
+        alert('Error al conectar con el sistema de pago. Intenta de nuevo.');
+      }
+    });
+  }
 
   // Botón probar
   const btnTrial = document.getElementById('btnStartTrial');
@@ -4822,7 +4954,7 @@ function startTrialBanner(){
 }
 
 function showPending(user){
-  document.getElementById('loginOverlay').classList.add('hidden');
+  const _lo2=document.getElementById('loginOverlay');_lo2.style.display='none';_lo2.classList.add('hidden');
   document.getElementById('mainNav').style.display='none';
   document.getElementById('mainContainer').style.display='none';
   document.getElementById('mobileNav').style.display='none';
@@ -4848,13 +4980,18 @@ function hidePending(){
   if(el) el.style.display = 'none';
 }
 
-window.openAdminPanel = async function(){
+window.openAdminPanel = async function(filtro){
+  clearAdminBadge();
+  filtro = filtro || 'todos';
   openModal('<div style="padding:8px 0"><div style="font-size:18px;font-weight:800;margin-bottom:16px">👑 '+t('adminPanel')+'</div><div style="text-align:center;padding:32px;color:var(--text2)"><span class="spinner"></span> '+t('loadingUsers')+'...</div></div>');
 
   const { collection, getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
   const snap = await getDocs(collection(db, 'registros'));
   const userMetas = [];
   snap.forEach(d => { if(d.id !== ADMIN_UID) userMetas.push({uid: d.id, ...d.data()}); });
+
+  const NOW = Date.now();
+  const ONLINE_MS = 3 * 60 * 1000; // 3 minutos = en línea
 
   const usageData = await Promise.all(userMetas.map(async u => {
     try {
@@ -4871,27 +5008,48 @@ window.openAdminPanel = async function(){
         movGas: gasSnap.size,
         snaps: snapSnap.size,
         totalMovs: platSnap.size + invSnap.size + gasSnap.size,
+        enLinea: u.lastSeen && (NOW - u.lastSeen) < ONLINE_MS,
       };
     } catch(e) {
-      return { ...u, movPlat:0, movInv:0, movGas:0, snaps:0, totalMovs:0 };
+      return { ...u, movPlat:0, movInv:0, movGas:0, snaps:0, totalMovs:0, enLinea:false };
     }
   }));
 
   usageData.sort((a,b) => {
+    if(a.enLinea !== b.enLinea) return a.enLinea ? -1 : 1;
     if(a.aprobado !== b.aprobado) return a.aprobado ? 1 : -1;
     return b.totalMovs - a.totalMovs;
   });
 
-  const rows = usageData.map(u => `
+  // Aplicar filtro
+  const totalEnLinea = usageData.filter(u=>u.enLinea).length;
+  const totalAprobados = usageData.filter(u=>u.aprobado).length;
+  const totalPendientes = usageData.filter(u=>!u.aprobado).length;
+
+  const filtrados = usageData.filter(u => {
+    if(filtro === 'enlinea') return u.enLinea;
+    if(filtro === 'aprobados') return u.aprobado;
+    if(filtro === 'pendientes') return !u.aprobado;
+    return true;
+  });
+
+  const filterBtnStyle = (f) => `padding:5px 14px;border-radius:20px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.2s;` +
+    (filtro===f ? `background:var(--blue);color:#fff;` : `background:var(--card2);color:var(--text2);`);
+
+  const rows = filtrados.map(u => `
     <div style="padding:14px 0;border-bottom:0.5px solid var(--border)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:36px;height:36px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex-shrink:0">
-            ${(u.displayName||u.email||'?')[0].toUpperCase()}
+          <div style="position:relative;flex-shrink:0">
+            <div style="width:36px;height:36px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800">
+              ${(u.displayName||u.email||'?')[0].toUpperCase()}
+            </div>
+            ${u.enLinea ? '<div style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:#30d158;border:2px solid var(--card)"></div>' : ''}
           </div>
           <div>
-            <div style="font-size:13px;font-weight:700">${u.displayName||t('noName')}</div>
-            <div style="font-size:11px;color:var(--text2)">${u.email||''}</div>
+            <div style="font-size:13px;font-weight:700">${escHtml(u.displayName||t('noName'))} ${u.enLinea?'<span style="font-size:10px;color:#30d158;font-weight:700">● en línea</span>':''}</div>
+            <div style="font-size:11px;color:var(--text2)">${escHtml(u.email||'')}</div>
+            ${u.creadoEn ? `<div style="font-size:10px;color:var(--text3)">📅 Registro: ${timeAgo(u.creadoEn)}</div>` : ''}
           </div>
         </div>
         <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:${u.aprobado?'rgba(48,209,88,0.1)':'rgba(255,159,10,0.1)'};color:${u.aprobado?'var(--green)':'var(--orange)'}">${u.aprobado?'✅ '+t('active'):'⏳ '+t('pending')}</span>
@@ -4921,17 +5079,19 @@ window.openAdminPanel = async function(){
       </div>
     </div>`).join('');
 
-  const pending = usageData.filter(u=>!u.aprobado).length;
   openModal(`<div style="padding:8px 0">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
       <div style="font-size:18px;font-weight:800">👑 ${t('adminPanel')}</div>
-      <div style="display:flex;gap:8px">
-        ${pending>0?`<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(255,159,10,0.1);color:var(--orange)">${pending} ${t('pending')}</span>`:''}
-        <span style="font-size:11px;color:var(--text2)">${usageData.length} ${usageData.length===1?t('user'):t('users')}</span>
-      </div>
+      <span style="font-size:11px;color:var(--text2)">${usageData.length} ${usageData.length===1?t('user'):t('users')}</span>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+      <button onclick="window.openAdminPanel('todos')" style="${filterBtnStyle('todos')}">Todos (${usageData.length})</button>
+      <button onclick="window.openAdminPanel('enlinea')" style="${filterBtnStyle('enlinea')}">🟢 En línea (${totalEnLinea})</button>
+      <button onclick="window.openAdminPanel('aprobados')" style="${filterBtnStyle('aprobados')}">✅ Aprobados (${totalAprobados})</button>
+      <button onclick="window.openAdminPanel('pendientes')" style="${filterBtnStyle('pendientes')}">⏳ Pendientes (${totalPendientes})</button>
     </div>
     <div style="max-height:420px;overflow-y:auto;margin:0 -4px;padding:0 4px">
-      ${rows || '<div style="text-align:center;padding:32px;color:var(--text2)">'+t('noUsers')+'</div>'}
+      ${rows || '<div style="text-align:center;padding:32px;color:var(--text2)">Sin usuarios en este filtro</div>'}
     </div>
   </div>`);
 };
@@ -4971,6 +5131,26 @@ window.eliminarUsuario = async function(uid){
   window.openAdminPanel();
 };
 
+
+// ── Detectar regreso de Mercado Pago ──────────────────────────────────────
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  const payment = params.get('payment');
+  if(payment === 'success') {
+    // Limpiar URL
+    window.history.replaceState({}, '', window.location.pathname);
+    // Mostrar mensaje mientras Firebase actualiza el acceso
+    const div = document.createElement('div');
+    div.id = 'paySuccessBanner';
+    div.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(135deg,#00b1ea,#009ee3);color:#fff;text-align:center;padding:14px;font-size:14px;font-weight:700;font-family:"DM Sans",sans-serif';
+    div.textContent = '✅ ¡Pago exitoso! Activando tu acceso...';
+    document.body.prepend(div);
+    setTimeout(() => div.remove(), 6000);
+  } else if(payment === 'failure') {
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+})();
+
 onAuthStateChanged(auth,async user=>{
   if(user){
     window._currentUser=user;
@@ -4979,7 +5159,7 @@ onAuthStateChanged(auth,async user=>{
     const { setDoc: _setDoc, getDoc: _getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
     const metaRef = getMetaRef(uid);
     const metaSnap = await _getDoc(metaRef);
-    const isAdmin = uid === ADMIN_UID || user.email === 'ctfnoe@gmail.com';
+    const isAdmin = uid === ADMIN_UID;
 
     const perfilData = {
       uid, email: user.email, displayName: user.displayName,
@@ -5002,7 +5182,7 @@ onAuthStateChanged(auth,async user=>{
     const registroRef = doc(db, 'registros', uid);
     const registroSnap = await _getDoc(registroRef);
     const aprobado = registroSnap.exists() && registroSnap.data()?.aprobado === true;
-    console.log('[Auth] uid:', uid, '| email:', user.email, '| isAdmin:', uid === ADMIN_UID || user.email === 'ctfnoe@gmail.com', '| aprobado:', aprobado);
+    // log eliminado por seguridad
 
     // ── Sistema de acceso / prueba ───────────────────────────────────
     if(!aprobado && !isAdmin){
@@ -5034,6 +5214,10 @@ onAuthStateChanged(auth,async user=>{
     resetToEmpty();
     if(typeof updateNavUser==='function') updateNavUser(user);
     showApp(); setupFirestore(uid);
+    startLastSeen(uid);
+    // ── Listener de nuevos usuarios (badge en admin) ───────────────────
+    if(isAdmin) startAdminNewUserListener();
+
     if(window._trialStart) startTrialBanner(); // mostrar contador si está en prueba
 
     if(_unsubRegistro){_unsubRegistro();_unsubRegistro=null;}
