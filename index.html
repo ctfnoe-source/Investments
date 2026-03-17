@@ -62,6 +62,7 @@
 </head>
 <body>
 
+<div id="_debugLog" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;padding:8px;max-height:40vh;overflow-y:auto;font-size:11px;display:block"></div>
 <div class="offline-banner" id="offlineBanner">
   <span id="offlineIcon">📴</span>
   <span id="offlineText">Sin internet — cambios guardados localmente</span>
@@ -98,7 +99,7 @@
     <button class="ld-cta-big" onclick="window._doGoogleLogin(this)">Empezar ahora — $20 pago único</button>
     <div class="ld-note">Pago único · Sin suscripción · Acceso de por vida</div>
   </section>
-  <div class="ld-footer">© 2026 InvestTracker · <a href="mailto:ctfnoe@gmail.com" style="color:#AEAEB2">Contacto</a></div>
+  <div class="ld-footer">© 2026 InvestTracker · <a href="/cdn-cgi/l/email-protection#117265777f7e7451767c70787d3f727e7c" style="color:#AEAEB2">Contacto</a></div>
 </div>
 
 <!-- FIN LANDING PAGE -->
@@ -184,7 +185,7 @@
   <div class="modal wide" id="modalContent"></div>
 </div>
 
-<script type="module" src="app.js"></script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="module" src="app.js"></script>
 
 <!-- PWA: registro del service worker + banner de instalación -->
 <div id="pwaInstallBanner" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9000;background:var(--card,#fff);border:1px solid var(--border,#e5e5ea);border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,0.18);padding:16px 20px;max-width:340px;width:calc(100% - 40px);font-family:'DM Sans',sans-serif;align-items:center;gap:14px">
@@ -301,11 +302,4 @@ window.addEventListener('appinstalled', () => {
   #aiFab:hover { transform:scale(1.1); box-shadow:0 6px 24px rgba(10,132,255,0.5); }
   #aiFab:active { transform:scale(0.95); }
   #aiMsgsContainer::-webkit-scrollbar { width:4px; }
-  #aiMsgsContainer::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
-</style>
-
-<button id="aiFab" onclick="window.toggleAiChat()" title="Asistente IA">✦</button>
-<div id="aiChatPanel"></div>
-
-</body>
-</html>
+  #aiMsgsContainer::-webkit-scrollbar-thumb { background:var(--border); border-radius:

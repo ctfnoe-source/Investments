@@ -3,6 +3,9 @@ import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp } from "https://
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 // ==================== MÓDULO PRINCIPAL ====================
 
+window._log = function(msg){ try{ const d=document.getElementById("_debugLog"); if(!d) return; const p=document.createElement("p"); p.style.margin="0"; p.textContent=new Date().toLocaleTimeString()+" "+msg; d.prepend(p); }catch(e){} };
+window._log("APP.JS CARGADO");
+
 function escHtml(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 const LS = {
   get(k) { try { const v = localStorage.getItem('fp_'+k); return v ? JSON.parse(v) : null; } catch { return null; } },
@@ -4530,6 +4533,7 @@ window.signOutUser=async()=>{
 
 // ── Auth redirect — siempre usar localStorage (sessionStorage se borra en iOS) ──
 let _redirectPending = true; // bloquea showLogin hasta que getRedirectResult resuelva
+window._log('_redirectPending=true, localStorage._authRedirect='+localStorage.getItem('_authRedirect'));
 
 if(localStorage.getItem('_authRedirect') === '1'){
   localStorage.removeItem('_authRedirect');
@@ -4543,11 +4547,13 @@ if(localStorage.getItem('_authRedirect') === '1'){
 
 getRedirectResult(auth).then(result => {
   _redirectPending = false;
+  window._log('getRedirectResult: user='+(result&&result.user?result.user.email:'null'));
   if(!result || !result.user){
     if(!window._currentUser && !window._showingWelcomeGate) showLogin();
   }
 }).catch(err => {
   _redirectPending = false;
+  window._log('getRedirectResult ERROR: '+err.code+' '+err.message);
   console.error('[Auth] getRedirectResult error:', err.code, err.message);
   if(!window._currentUser) showLogin();
 });
@@ -4983,6 +4989,7 @@ window.eliminarUsuario = async function(uid){
 };
 
 onAuthStateChanged(auth,async user=>{
+  window._log('onAuthStateChanged: '+(user?user.email:'null')+' pending='+_redirectPending);
   if(user){
     window._currentUser=user;
     const uid = user.uid;
