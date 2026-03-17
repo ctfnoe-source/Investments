@@ -129,6 +129,7 @@ const I18N = {
     // Movimientos
     movimientosTitulo:'Movimientos', movimientosSubtitulo:'Registro unificado',
     nuevoMovimiento:'+ Nuevo', buscar:'Buscar...',
+    budgetExceeded:'Presupuesto excedido', atBudget:'Al límite del presupuesto',
     // Plataformas titulos
     plataformasTitulo:'Plataformas', plataformasSubtitulo:'Bancos · SOFIPOs · ETFs · Fondos · CETES · Multi‑moneda',
     transferenciaEntrePlataformas:'↔ Transferencia', nuevaPlataforma:'+ Plataforma',
@@ -307,6 +308,7 @@ const I18N = {
     seccionPlataformas:'Platforms', seccionInversiones:'Investments', seccionGastos:'Expenses',
     movimientosTitulo:'Transactions', movimientosSubtitulo:'Unified log',
     nuevoMovimiento:'+ New', buscar:'Search...',
+    budgetExceeded:'Budget exceeded', atBudget:'Near budget limit',
     plataformasTitulo:'Platforms', plataformasSubtitulo:'Banks · SOFIPOs · ETFs · Funds · CETES · Multi‑currency',
     transferenciaEntrePlataformas:'↔ Transfer', nuevaPlataforma:'+ Platform',
     expectedAnnualReturn:'Expected Annual Return',
@@ -1510,9 +1512,14 @@ function getBudgetAlerts(){
     if(pres>0){
       const pct=real/pres;
       if(pct>1.001)alerts.push({level:'error',msg:`🔴 <strong>${cat.icon} ${cat.name}</strong>: ${t('budgetExceeded')} (${fmtA(real)} / ${fmtA(pres)})`});
-      else if(pct>=0.85&&pct<=1.001)alerts.push({level:'warn',msg:`🟡 <strong>${cat.icon} ${cat.name}</strong>: ${t('atBudget')} ${(pct*100).toFixed(0)}% (${fmtA(real)} / ${fmtA(pres)})`});
     }
   });
+  // Total monthly budget check
+  const totalPres=EXPENSE_CATS.reduce((s,cat)=>s+(budgets[cat.id]||0),0);
+  const totalReal=EXPENSE_CATS.reduce((s,cat)=>s+(byCat[cat.id]||0),0);
+  if(totalPres>0&&totalReal>totalPres*1.001&&!alerts.some(a=>a.level==='error')){
+    alerts.unshift({level:'warn',msg:`🟡 ${t('sobrePresupuesto')}: ${fmtA(totalReal)} / ${fmtA(totalPres)}`});
+  }
   return alerts;
 }
 
@@ -3456,7 +3463,7 @@ function renderInversiones(){
   document.getElementById('page-inversiones').innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
       <div><div class="section-title">📈 ${t('seccionInversiones')}</div><div class="section-sub">${abiertas.length} ${t('posicionesAbiertas')} · ${cerradas.length} ${t('posicionesCerradas')}</div></div>
-      <button class="btn btn-primary btn-sm" onclick="openMovModal('inversiones')">+ ${t('agregarMovimiento')}</button>
+      <button class="btn btn-primary btn-sm" onclick="openMovModal('inversiones')">${t('nuevoMovimiento')}</button>
     </div>
 
     <div class="grid-4" style="margin-bottom:16px">
