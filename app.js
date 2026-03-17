@@ -1361,6 +1361,58 @@ function saveAll(changedMovId, deletedMovId, changedSnapDate){
   }
 }
 
+// ==================== ANALYTICS ====================
+// Guarda eventos en Firestore: usuarios/{uid}/analytics/{fecha}
+// Cada documento es un dia. Se acumulan eventos por tab y sesion.
+// Para ver los datos: Firebase Console -> Firestore -> usuarios -> {uid} -> analytics
+const _analytics = {
+  _sessionStart: Date.now(),
+  _tabStart: Date.now(),
+  _lastTab: null,
+
+  tabView(tab) {
+    try {
+      const uid = window._currentUser && window._currentUser.uid;
+      if (!uid) return;
+      const now = Date.now();
+      const timeInPrev = this._lastTab ? Math.round((now - this._tabStart) / 1000) : 0;
+      this._flush(uid, {
+        type: 'tab_view',
+        tab: tab,
+        prevTab: this._lastTab,
+        timeInPrevSecs: timeInPrev,
+        ts: new Date().toISOString(),
+      });
+      this._lastTab = tab;
+      this._tabStart = now;
+    } catch(e) {}
+  },
+
+  event(name, data) {
+    try {
+      data = data || {};
+      const uid = window._currentUser && window._currentUser.uid;
+      if (!uid) return;
+      const payload = Object.assign({ type: 'event', name: name, ts: new Date().toISOString() }, data);
+      this._flush(uid, payload);
+    } catch(e) {}
+  },
+
+  async _flush(uid, payload) {
+    try {
+      const fb = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const ref = fb.doc(db, 'usuarios', uid, 'analytics', dateStr);
+      const snap = await fb.getDoc(ref);
+      const existing = snap.exists() ? (snap.data().events || []) : [];
+      if (existing.length >= 200) return;
+      await fb.setDoc(ref, { events: [...existing, payload], date: dateStr }, { merge: true });
+    } catch(e) {}
+  },
+};
+window._analytics = _analytics;
+// ==================== FIN ANALYTICS ====================
+
 function switchTab(tab){
   currentTab=tab; window.currentTab=tab;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -1371,6 +1423,7 @@ function switchTab(tab){
   const nt=document.querySelector('[data-tab="'+tab+'"]');if(nt)nt.classList.add('active');
   document.querySelectorAll('.mobile-nav-item[data-tab="'+tab+'"]').forEach(t=>t.classList.add('active'));
   Object.keys(chartInstances).forEach(k=>{if(chartInstances[k]){chartInstances[k].destroy();delete chartInstances[k];}});
+  _analytics.tabView(tab);
   renderPageInternal(tab);
 }
 document.querySelectorAll('.nav-tab').forEach(btn=>btn.addEventListener('click',()=>switchTab(btn.dataset.tab)));
