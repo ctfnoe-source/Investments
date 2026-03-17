@@ -800,6 +800,7 @@ async function fetchPrice(ticker, type, moneda) {
     }
     if (price === null) {
       const finnhubPrice = await fetchStockPrice(ticker);
+      // Solo aplicar ratio check si hay caché MXN para comparar; si no, aceptar directamente
       if (finnhubPrice !== null) {
         const cachedMXN2 = getCachedPrice(ticker.toUpperCase() + '_MXN');
         const fx2 = _fxCache || LS.get('fxCache');
@@ -807,11 +808,7 @@ async function fetchPrice(ticker, type, moneda) {
         if (cachedMXN2 && tcLive2) {
           const expectedUSD = cachedMXN2.price / tcLive2;
           const ratio = finnhubPrice / expectedUSD;
-          if (ratio < 0.1 || ratio > 10) {
-            // discard
-          } else {
-            price = finnhubPrice; source = 'finnhub';
-          }
+          if (ratio >= 0.1 && ratio <= 10) { price = finnhubPrice; source = 'finnhub'; }
         } else {
           price = finnhubPrice; source = 'finnhub';
         }
@@ -1350,9 +1347,9 @@ function getTickerPositions(){
     const t=m.ticker.toUpperCase();
     const moneda=(m.moneda||'USD').toUpperCase();
     const key = moneda==='MXN' ? t+'_MXN' : t;
-    if(!tickers[key])tickers[key]={ticker:t,type:m.tipoActivo,moneda,cantC:0,cantV:0,costoTotal:0,ventasTotal:0,movs:[],brokers:{}};
-    if(m.tipoMov==='Compra'){tickers[key].cantC+=m.cantidad||0;tickers[key].costoTotal+=m.montoTotal||0;}
-    if(m.tipoMov==='Venta'){tickers[key].cantV+=m.cantidad||0;tickers[key].ventasTotal+=m.montoTotal||0;}
+    if(!tickers[key])tickers[key]={ticker:t,type:m.tipoActivo,moneda,cantC:0,cantV:0,costoTotal:0,ventasTotal:0,comisionTotal:0,movs:[],brokers:{}};
+    if(m.tipoMov==='Compra'){tickers[key].cantC+=m.cantidad||0;tickers[key].costoTotal+=m.montoTotal||0;tickers[key].comisionTotal+=m.comision||0;}
+    if(m.tipoMov==='Venta'){tickers[key].cantV+=m.cantidad||0;tickers[key].ventasTotal+=m.montoTotal||0;tickers[key].comisionTotal+=m.comision||0;}
     tickers[key].movs.push(m);
     // Track per-broker breakdown
     const broker=m.broker||'';
@@ -1843,6 +1840,7 @@ function renderDashboard(){
             </div>
             <div style="text-align:right;align-self:center">
               <div style="font-size:11px;font-weight:600;color:var(--text2)">${precioCompra}</div>
+              ${tk.comisionTotal>0?`<div style="font-size:10px;color:var(--text3);margin-top:1px" title="Comisiones acumuladas">com. ${cur}${tk.comisionTotal.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>`:''}
             </div>
             <div style="text-align:right;align-self:center">
               <div style="font-size:11px;font-weight:700" class="${tk.priceCssClass}">${tk.priceLabel}</div>
@@ -2415,46 +2413,73 @@ function renderDashboard(){
     tickerList.forEach(tk=>{if(tk.cantActual>0){const v=(tk.valorActual||tk.costoPosicion)*(tk.moneda==='MXN'?1:tc);at[tk.type]=(at[tk.type]||0)+v;}});
     const de=Object.entries(at).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
     const ctxD=document.getElementById('chartDistro');
-    if(ctxD&&de.length>0){if(chartInstances.chartDistro){chartInstances.chartDistro.destroy();delete chartInstances.chartDistro;}chartInstances.chartDistro=new Chart(ctxD,{type:'doughnut',data:{labels:de.map(([k])=>k),datasets:[{data:de.map(([,v])=>v),backgroundColor:de.map((_,i)=>COLORS[i%COLORS.length]),borderWidth:2,borderColor:isDark?'#1C1C1E':'#fff',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',cornerRadius:12,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>' '+ctx.label+': '+((ctx.parsed/de.reduce((s,[,v])=>s+v,0)*100)).toFixed(1)+'%'}}}}});}
+    if(ctxD&&de.length>0){
+      if(chartInstances.chartDistro){
+        chartInstances.chartDistro.data.labels=de.map(([k])=>k);
+        chartInstances.chartDistro.data.datasets[0].data=de.map(([,v])=>v);
+        chartInstances.chartDistro.data.datasets[0].backgroundColor=de.map((_,i)=>COLORS[i%COLORS.length]);
+        chartInstances.chartDistro.data.datasets[0].borderColor=isDark?'#1C1C1E':'#fff';
+        chartInstances.chartDistro.update('none');
+      } else {
+        chartInstances.chartDistro=new Chart(ctxD,{type:'doughnut',data:{labels:de.map(([k])=>k),datasets:[{data:de.map(([,v])=>v),backgroundColor:de.map((_,i)=>COLORS[i%COLORS.length]),borderWidth:2,borderColor:isDark?'#1C1C1E':'#fff',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',cornerRadius:12,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>' '+ctx.label+': '+((ctx.parsed/de.reduce((s,[,v])=>s+v,0)*100)).toFixed(1)+'%'}}}}});
+      }
+    }
 
     const inv={};
     tickerList.forEach(tk=>{if(tk.cantActual>0){const v=(tk.valorActual||tk.costoPosicion)*(tk.moneda==='MXN'?1:tc);inv[tk.type]=(inv[tk.type]||0)+v;}});
     if(totalMXN>0) inv['Platforms']=totalMXN;
     const invE=Object.entries(inv).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
     const ctxI=document.getElementById('chartInvTipo');
-    if(ctxI&&invE.length>0){if(chartInstances.chartInvTipo){chartInstances.chartInvTipo.destroy();delete chartInstances.chartInvTipo;}chartInstances.chartInvTipo=new Chart(ctxI,{type:'doughnut',data:{labels:invE.map(([k])=>k),datasets:[{data:invE.map(([,v])=>v),backgroundColor:invE.map((_,i)=>COLORS[i%COLORS.length]),borderWidth:2,borderColor:isDark?'#1C1C1E':'#fff',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',cornerRadius:12,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>{const total=invE.reduce((s,[,v])=>s+v,0);return ' '+ctx.label+': '+((ctx.parsed/total)*100).toFixed(1)+'% ('+fmt(ctx.parsed)+')';}}}}}});}
+    if(ctxI&&invE.length>0){
+      if(chartInstances.chartInvTipo){
+        chartInstances.chartInvTipo.data.labels=invE.map(([k])=>k);
+        chartInstances.chartInvTipo.data.datasets[0].data=invE.map(([,v])=>v);
+        chartInstances.chartInvTipo.data.datasets[0].backgroundColor=invE.map((_,i)=>COLORS[i%COLORS.length]);
+        chartInstances.chartInvTipo.data.datasets[0].borderColor=isDark?'#1C1C1E':'#fff';
+        chartInstances.chartInvTipo.update('none');
+      } else {
+        chartInstances.chartInvTipo=new Chart(ctxI,{type:'doughnut',data:{labels:invE.map(([k])=>k),datasets:[{data:invE.map(([,v])=>v),backgroundColor:invE.map((_,i)=>COLORS[i%COLORS.length]),borderWidth:2,borderColor:isDark?'#1C1C1E':'#fff',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',cornerRadius:12,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>{const total=invE.reduce((s,[,v])=>s+v,0);return ' '+ctx.label+': '+((ctx.parsed/total)*100).toFixed(1)+'% ('+fmt(ctx.parsed)+')';}}}}}}});
+      }
+    }
 
     const ctxGC = document.getElementById('chartGastosCat');
     if(ctxGC && topCats.length > 0) {
-      if(chartInstances.chartGastosCat){chartInstances.chartGastosCat.destroy();delete chartInstances.chartGastosCat;}
-      chartInstances.chartGastosCat = new Chart(ctxGC, {
-        type:'doughnut',
-        data:{
-          labels: topCats.map(([id])=>catName(id)),
-          datasets:[{
-            data: topCats.map(([,v])=>v),
-            backgroundColor: topCats.map((_,i)=>COLORS[i%COLORS.length]),
-            borderWidth:2,
-            borderColor: isDark?'#1C1C1E':'#fff',
-            hoverOffset:6
-          }]
-        },
-        options:{
-          responsive:true, maintainAspectRatio:false, cutout:'62%',
-          plugins:{
-            legend:{display:false},
-            tooltip:{
-              backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',
-              cornerRadius:12, padding:10,
-              bodyFont:{family:'DM Sans',size:12},
-              callbacks:{label:ctx=>{
-                const total=topCats.reduce((s,[,v])=>s+v,0);
-                return ' '+ctx.label+': '+((ctx.parsed/total)*100).toFixed(1)+'% ('+fmtD(ctx.parsed)+')';
-              }}
+      if(chartInstances.chartGastosCat){
+        chartInstances.chartGastosCat.data.labels=topCats.map(([id])=>catName(id));
+        chartInstances.chartGastosCat.data.datasets[0].data=topCats.map(([,v])=>v);
+        chartInstances.chartGastosCat.data.datasets[0].backgroundColor=topCats.map((_,i)=>COLORS[i%COLORS.length]);
+        chartInstances.chartGastosCat.data.datasets[0].borderColor=isDark?'#1C1C1E':'#fff';
+        chartInstances.chartGastosCat.update('none');
+      } else {
+        chartInstances.chartGastosCat = new Chart(ctxGC, {
+          type:'doughnut',
+          data:{
+            labels: topCats.map(([id])=>catName(id)),
+            datasets:[{
+              data: topCats.map(([,v])=>v),
+              backgroundColor: topCats.map((_,i)=>COLORS[i%COLORS.length]),
+              borderWidth:2,
+              borderColor: isDark?'#1C1C1E':'#fff',
+              hoverOffset:6
+            }]
+          },
+          options:{
+            responsive:true, maintainAspectRatio:false, cutout:'62%',
+            plugins:{
+              legend:{display:false},
+              tooltip:{
+                backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',
+                cornerRadius:12, padding:10,
+                bodyFont:{family:'DM Sans',size:12},
+                callbacks:{label:ctx=>{
+                  const total=topCats.reduce((s,[,v])=>s+v,0);
+                  return ' '+ctx.label+': '+((ctx.parsed/total)*100).toFixed(1)+'% ('+fmtD(ctx.parsed)+')';
+                }}
+              }
             }
           }
-        }
-      });
+        });
+      }
     }
   },50);
 }
@@ -3403,6 +3428,7 @@ function renderInversiones(){
                 <span style="margin:0 4px">·</span>
                 <span>${(pctPort*100).toFixed(1)}%</span>
                 ${brokersInfo?`<span style="margin-left:4px">· 🏦 ${brokersInfo}</span>`:''}
+                ${pos.comisionTotal>0?`<span style="margin-left:4px;color:var(--text3)">· com. ${pos.moneda==='MXN'?'$':'US$'}${pos.comisionTotal.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>`:''}
               </div>
             </div>
             <div style="text-align:right;flex-shrink:0">
@@ -3429,6 +3455,7 @@ function renderInversiones(){
                 <span style="font-weight:600">${cp.type}</span>
                 <span style="margin:0 4px">·</span>
                 <span>${t('costo')} ${fmtFull(cp.costoTotal)} ${cp.moneda}</span>
+                ${cp.comisionTotal>0?`<span style="margin-left:4px;color:var(--text3)">· com. ${cp.moneda==='MXN'?'$':'US$'}${cp.comisionTotal.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>`:''}
               </div>
             </div>
             <div style="text-align:right;flex-shrink:0">
