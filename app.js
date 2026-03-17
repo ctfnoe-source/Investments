@@ -1011,7 +1011,7 @@ function getPriceSummary() {
 }
 
 const COLORS=['#6E9EF5','#4DC78A','#F5A54A','#A97DD1','#F07070','#52BED8','#D4A843','#8A9BB0','#7B79D4','#E87FA0','#45C27A','#35B5B0','#E8705A','#6F6DC9','#C47AC0','#E05577','#9A8A7A','#4AA8C0'];
-const COLORS_BAR=COLORS.map(c=>{const r=parseInt(c.slice(1,3),16),g=parseInt(c.slice(3,5),16),b=parseInt(c.slice(5,7),16);return`rgba(${r},${g},${b},0.75)`;});
+const COLORS_BAR=['rgba(99,130,201,0.82)','rgba(72,185,132,0.82)','rgba(228,152,72,0.82)','rgba(160,110,195,0.82)','rgba(220,100,100,0.82)','rgba(72,175,200,0.82)','rgba(195,163,68,0.82)','rgba(130,148,170,0.82)','rgba(115,112,200,0.82)','rgba(210,115,145,0.82)','rgba(68,185,115,0.82)','rgba(55,172,165,0.82)','rgba(215,108,88,0.82)','rgba(105,102,192,0.82)','rgba(180,115,180,0.82)'];
 const MONTHS_ES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const MONTHS_EN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MONTHS=new Proxy([],{get(_,i){const m=_lang==='en'?MONTHS_EN:MONTHS_ES;return typeof i==='string'&&!isNaN(i)?m[+i]:m[i];}});
@@ -2525,7 +2525,8 @@ function renderDashboard(){
         chartInstances.chartDistro.data.datasets[0].backgroundColor=de.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]);
         chartInstances.chartDistro.update('none');
       } else {
-        chartInstances.chartDistro=new Chart(ctxD,{type:'bar',data:{labels:de.map(([k])=>k),datasets:[{data:de.map(([,v])=>v),backgroundColor:de.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]),borderRadius:6,borderSkipped:false,barThickness:18}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',cornerRadius:12,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>' '+ctx.label+': '+((ctx.parsed.x/de.reduce((s,[,v])=>s+v,0)*100)).toFixed(1)+'%'}}},scales:{x:{display:false,grid:{display:false},ticks:{display:false}},y:{grid:{display:false},border:{display:false},ticks:{color:isDark?'rgba(235,235,245,0.6)':'rgba(60,60,67,0.6)',font:{family:'DM Sans',size:11},padding:4}}}}});
+        chartInstances.chartDistro=new Chart(ctxD,{type:'bar',data:{labels:de.map(([k])=>k),datasets:[{data:de.map(([,v])=>v),backgroundColor:de.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]),borderRadius:8,borderSkipped:false,barThickness:14}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:{duration:600,easing:'easeOutQuart'},plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(28,28,30,0.96)':'rgba(29,29,31,0.92)',cornerRadius:10,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>' '+ctx.label+': '+((ctx.parsed.x/de.reduce((s,[,v])=>s+v,0)*100)).toFixed(1)+'%'}},pctLabels:{display:true}},scales:{x:{display:false,grid:{display:false},ticks:{display:false},max:de.reduce((s,[,v])=>s+v,0)*1.22},y:{grid:{display:false},border:{display:false},ticks:{color:isDark?'rgba(235,235,245,0.55)':'rgba(60,60,67,0.55)',font:{family:'DM Sans',size:11,weight:'500'},padding:6}}}}});
+
       }
     }
 
@@ -2541,7 +2542,8 @@ function renderDashboard(){
         chartInstances.chartInvTipo.data.datasets[0].backgroundColor=invE.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]);
         chartInstances.chartInvTipo.update('none');
       } else {
-        chartInstances.chartInvTipo=new Chart(ctxI,{type:'bar',data:{labels:invE.map(([k])=>k),datasets:[{data:invE.map(([,v])=>v),backgroundColor:invE.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]),borderRadius:6,borderSkipped:false,barThickness:18}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',cornerRadius:12,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>{const total=invE.reduce((s,[,v])=>s+v,0);return ' '+ctx.label+': '+((ctx.parsed.x/total)*100).toFixed(1)+'% ('+fmt(ctx.parsed.x)+')';}}}},scales:{x:{display:false,grid:{display:false},ticks:{display:false}},y:{grid:{display:false},border:{display:false},ticks:{color:isDark?'rgba(235,235,245,0.6)':'rgba(60,60,67,0.6)',font:{family:'DM Sans',size:11},padding:4}}}}});
+        chartInstances.chartInvTipo=new Chart(ctxI,{type:'bar',data:{labels:invE.map(([k])=>k),datasets:[{data:invE.map(([,v])=>v),backgroundColor:invE.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]),borderRadius:8,borderSkipped:false,barThickness:14}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:{duration:600,easing:'easeOutQuart'},plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(28,28,30,0.96)':'rgba(29,29,31,0.92)',cornerRadius:10,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>{const total=invE.reduce((s,[,v])=>s+v,0);return ' '+ctx.label+': '+((ctx.parsed.x/total)*100).toFixed(1)+'% ('+fmt(ctx.parsed.x)+')';}}}},scales:{x:{display:false,grid:{display:false},ticks:{display:false},max:invE.reduce((s,[,v])=>s+v,0)*1.22},y:{grid:{display:false},border:{display:false},ticks:{color:isDark?'rgba(235,235,245,0.55)':'rgba(60,60,67,0.55)',font:{family:'DM Sans',size:11,weight:'500'},padding:6}}}}});
+
       }
     }
 
@@ -2560,19 +2562,21 @@ function renderDashboard(){
             datasets:[{
               data: topCats.map(([,v])=>v),
               backgroundColor: topCats.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]),
-              borderRadius:6,
+              borderRadius:8,
               borderSkipped:false,
-              barThickness:18
+              barThickness:14
             }]
           },
           options:{
             indexAxis:'y',
             responsive:true, maintainAspectRatio:false,
+            animation:{duration:600,easing:'easeOutQuart'},
             plugins:{
               legend:{display:false},
               tooltip:{
-                backgroundColor:isDark?'rgba(44,44,46,0.97)':'rgba(29,29,31,0.94)',
-                cornerRadius:12, padding:10,
+                backgroundColor:isDark?'rgba(28,28,30,0.96)':'rgba(29,29,31,0.92)',
+                cornerRadius:10, padding:10,
+                titleFont:{family:'DM Sans',size:12,weight:'700'},
                 bodyFont:{family:'DM Sans',size:12},
                 callbacks:{label:ctx=>{
                   const total=topCats.reduce((s,[,v])=>s+v,0);
@@ -2581,10 +2585,11 @@ function renderDashboard(){
               }
             },
             scales:{
-              x:{display:false,grid:{display:false},ticks:{display:false}},
-              y:{grid:{display:false},border:{display:false},ticks:{color:isDark?'rgba(235,235,245,0.6)':'rgba(60,60,67,0.6)',font:{family:'DM Sans',size:11},padding:4}}
+              x:{display:false,grid:{display:false},ticks:{display:false},max:topCats.reduce((s,[,v])=>s+v,0)*1.22},
+              y:{grid:{display:false},border:{display:false},ticks:{color:isDark?'rgba(235,235,245,0.55)':'rgba(60,60,67,0.55)',font:{family:'DM Sans',size:11,weight:'500'},padding:6}}
             }
-          }
+          },
+
         });
       }
     }
