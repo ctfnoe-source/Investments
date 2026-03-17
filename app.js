@@ -2212,29 +2212,11 @@ function renderDashboard(){
       chartInstances.chartEvo=new Chart(ctxE,{type:'line',plugins:[_makeGlowPlugin('glowEvo')],data:{
         datasets:[
           {
-            label: t('gananciaReal'),
-            data:realDates.map((d,i)=>({x:d,y:realVals[i]})),
-            borderColor:'#30D158',
-            backgroundColor: 'transparent',
-            borderWidth:1,
-            fill:false,
-            tension:0.4,
-            pointRadius: realDates.map((d,i) => i===realDates.length-1 ? dynLastRadius : (_evoEvt[d] ? 1.5 : 0)),
-            pointBackgroundColor: realDates.map((_,i) => i===realDates.length-1 ? (isDark?'#1C1C1E':'#fff') : '#30D158'),
-            pointBorderColor: realDates.map((_,i) => i===realDates.length-1 ? '#30D158' : 'transparent'),
-            pointBorderWidth: realDates.map((_,i) => i===realDates.length-1 ? 2 : 0),
-            pointHoverRadius:6,
-            pointHoverBackgroundColor:'#30D158',
-            pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
-            pointHoverBorderWidth:2,
-            yAxisID:'y2',
-          },
-          {
             label: t('patrimonioTotal2'),
-            data:realDates.map((d,i)=>({x:d,y:patrimonioVals[i]})),
+            data:(()=>{const base=patrimonioVals[0]||1;return realDates.map((d,i)=>({x:d,y:base>0?Math.round((patrimonioVals[i]-base)/base*10000)/100:0}));})(),
             borderColor:'rgba(245,166,35,0.95)',
             backgroundColor:'transparent',
-            borderWidth:1,
+            borderWidth:2,
             fill:false,
             tension:0.4,
             pointRadius: realDates.map((d,i) => i===realDates.length-1 ? dynLastRadius : (_evoEvt[d] ? 1.5 : 0)),
@@ -2245,7 +2227,25 @@ function renderDashboard(){
             pointHoverBackgroundColor:'rgba(245,166,35,1)',
             pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
             pointHoverBorderWidth:2,
-            yAxisID:'y2',
+            yAxisID:'yc',
+          },
+          {
+            label: t('gananciaReal'),
+            data:(()=>{const capBase=patrimonioVals[0]||1;return realDates.map((d,i)=>({x:d,y:capBase>0?Math.round(realVals[i]/capBase*10000)/100:0}));})(),
+            borderColor:'#30D158',
+            backgroundColor: 'transparent',
+            borderWidth:1.5,
+            fill:false,
+            tension:0.4,
+            pointRadius: realDates.map((d,i) => i===realDates.length-1 ? dynLastRadius : (_evoEvt[d] ? 1.5 : 0)),
+            pointBackgroundColor: realDates.map((_,i) => i===realDates.length-1 ? (isDark?'#1C1C1E':'#fff') : '#30D158'),
+            pointBorderColor: realDates.map((_,i) => i===realDates.length-1 ? '#30D158' : 'transparent'),
+            pointBorderWidth: realDates.map((_,i) => i===realDates.length-1 ? 2 : 0),
+            pointHoverRadius:6,
+            pointHoverBackgroundColor:'#30D158',
+            pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
+            pointHoverBorderWidth:2,
+            yAxisID:'yc',
           },
           {
             label: t('proyeccion')+' '+((re*100).toFixed(0))+'% '+t('anual'),
@@ -2294,11 +2294,10 @@ function renderDashboard(){
                 return raw;
               },
               label: ctx => {
-                // No mostrar si el dataset está oculto
                 if (ctx.dataset.hidden) return null;
                 const val = ctx.parsed.y;
-                const icons = ['🟢','🟡','🔵'];
-                return ` ${icons[ctx.datasetIndex]||'⚪'} ${ctx.dataset.label}: ${fmtFull(val)}`;
+                const sign = val >= 0 ? '+' : '';
+                return ` ${ctx.dataset.label}: ${sign}${val.toFixed(2)}%`;
               },
               afterBody: items => {
                 const lines = [];
@@ -2334,16 +2333,10 @@ function renderDashboard(){
             },
             border:{display:false}
           },
-          y2:{
+          yc:{
             position:'left',
             grid:{color:isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)'},
-            ticks:{font:{size:10},color:isDark?'rgba(245,166,35,0.5)':'rgba(180,120,0,0.5)',callback:v=>fmt(v),maxTicksLimit:5},
-            border:{display:false}
-          },
-          yc:{
-            position:'right',
-            grid:{display:false},
-            ticks:{font:{size:10},color:isDark?'rgba(150,150,160,0.4)':'rgba(100,100,110,0.35)',callback:v=>(v>=0?'+':'')+v.toFixed(1)+'%',maxTicksLimit:4},
+            ticks:{font:{size:11},color:tickColor,callback:v=>(v>=0?'+':'')+v.toFixed(1)+'%',maxTicksLimit:6},
             border:{display:false}
           }
         }
