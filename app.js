@@ -1509,7 +1509,7 @@ function applyRecurrentes() {
 }
 
 function loadFromRemote(remote){
-  if(Date.now()-_lastLocalSave<3000) return;
+  if(Date.now()-_lastLocalSave<15000) return;
   if(remote.platforms)platforms=remote.platforms.map(p=>({tasaAnual:0,fechaInicio:today(),moneda:'MXN',...p}));
   if(remote.goals)goals=remote.goals;
   if(remote.settings){
@@ -3368,6 +3368,7 @@ function renderGastos(){
 
 function updateBudget(catId,value,moneda){
   if(!settings.budgets)settings.budgets={};
+  _lastLocalSave = Date.now(); // proteger contra sobreescritura de Firebase
   let valEUR=Number(value)||0;
   if(moneda&&moneda!=='EUR'){
     const fx=_fxCache||LS.get('fxCache');
