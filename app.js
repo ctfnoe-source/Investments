@@ -897,7 +897,8 @@ function isSP500CacheFresh(cached) {
 async function fetchSP500History() {
   const cached = getSP500Cache();
   const _lastClose = cached?.data?.closes?.[cached.data.closes.length-1];
-  if (isSP500CacheFresh(cached) && _lastClose && _lastClose > 0) return cached.data;
+  const _cacheHasHistory = cached?.data?.closes?.length >= 3;
+  if (isSP500CacheFresh(cached) && _lastClose && _lastClose > 0 && _cacheHasHistory) return cached.data;
 
   const avKey = settings.alphaVantageKey || '';
   const fhKey = settings.finnhubKey || '';
@@ -925,8 +926,8 @@ async function fetchSP500History() {
       }
     } catch(e) { /* silencioso */ }
   }
-  // 1b) Si no hay AV key, usar Finnhub candles para historial mensual (2 años)
-  if (!avKey && fhKey && result.dates.length === 0) {
+  // 1b) Usar Finnhub candles si no hay historial suficiente (AV ausente o rate-limited)
+  if (fhKey && result.dates.length < 3) {
     try {
       const toTs = Math.floor(Date.now()/1000);
       const fromTs = toTs - 60*60*24*365*2; // 2 años atrás
@@ -1036,7 +1037,8 @@ function isQQQCacheFresh(cached) {
 async function fetchQQQHistory() {
   const cached = getQQQCache();
   const _qlastClose = cached?.data?.closes?.[cached.data.closes.length-1];
-  if (isQQQCacheFresh(cached) && _qlastClose && _qlastClose > 0) return cached.data;
+  const _qcacheHasHistory = cached?.data?.closes?.length >= 3;
+  if (isQQQCacheFresh(cached) && _qlastClose && _qlastClose > 0 && _qcacheHasHistory) return cached.data;
   const avKey = settings.alphaVantageKey || '';
   const fhKey = settings.finnhubKey || '';
   if (!avKey && !fhKey) return null;
@@ -1055,8 +1057,8 @@ async function fetchQQQHistory() {
       }
     } catch(e) { /* silencioso */ }
   }
-  // 1b) Si no hay AV key, usar Finnhub candles para historial mensual QQQ
-  if (!avKey && fhKey && result.dates.length === 0) {
+  // 1b) Usar Finnhub candles si no hay historial suficiente
+  if (fhKey && result.dates.length < 3) {
     try {
       const toTs = Math.floor(Date.now()/1000);
       const fromTs = toTs - 60*60*24*365*2;
@@ -2098,8 +2100,10 @@ function renderDashboard(){
   if (_sp500Data?.closes?.[_sp500Data.closes.length-1] === 0) { _sp500Data = null; }
   if (_qqqData?.closes?.[_qqqData.closes.length-1] === 0) { _qqqData = null; }
   // Limpiar cache en LS si el último valor guardado es 0
-  const _sp5cache=LS.get('sp500_history'); if(_sp5cache?.data?.closes?.length && _sp5cache.data.closes[_sp5cache.data.closes.length-1]===0) LS.set('sp500_history',null);
-  const _qqqcache=LS.get('qqq_history'); if(_qqqcache?.data?.closes?.length && _qqqcache.data.closes[_qqqcache.data.closes.length-1]===0) LS.set('qqq_history',null);
+  const _sp5cache=LS.get('sp500_history');
+  if(_sp5cache?.data?.closes?.length && (_sp5cache.data.closes[_sp5cache.data.closes.length-1]===0 || _sp5cache.data.closes.length < 3)) LS.set('sp500_history',null);
+  const _qqqcache=LS.get('qqq_history');
+  if(_qqqcache?.data?.closes?.length && (_qqqcache.data.closes[_qqqcache.data.closes.length-1]===0 || _qqqcache.data.closes.length < 3)) LS.set('qqq_history',null);
 
   // Fetch SP500 y QQQ de forma asíncrona — re-renderizar chart cuando lleguen
   const _needSP = !_sp500Data && (settings.alphaVantageKey || settings.finnhubKey);
