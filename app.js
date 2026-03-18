@@ -2546,6 +2546,13 @@ function renderDashboard(){
         const _gcTotal=topCats.reduce((s,[,v])=>s+v,0);
     _renderHTMLBars('chartGastosCat', topCats.map(([id,v])=>[catName(id),v]), _gcTotal, fmt, COLORS_BAR);
 
+    setTimeout(()=>{ _runProactiveAiAlert(); }, 4000);
+    setTimeout(()=>{
+      if(typeof updateFX==='function') updateFX();
+      if(typeof flushOfflineQueue==='function') flushOfflineQueue();
+    },1200);
+    requestAnimationFrame(() => { if(typeof _observeBarCharts==='function') _observeBarCharts(); });
+}
 
 function openMovModal(sec){
   const s=sec||'plataformas';
