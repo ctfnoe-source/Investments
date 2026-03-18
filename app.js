@@ -1224,6 +1224,11 @@ function fmtFull(n, cur) {
 function fmtPct(n) { return (n==null||isNaN(n)) ? '0.00%' : (n>=0?'+':'') + (n*100).toFixed(2) + '%'; }
 function pctCol(n) { return n >= 0 ? 'var(--green)' : 'var(--red)'; }
 function fmtPlat(n, moneda) { return fmt(n, moneda || 'MXN'); }
+function fmtMovGasto(m) {
+  const orig = m.monedaOrig || 'MXN';
+  const val = (orig !== 'MXN' && m.montoOriginal != null) ? m.montoOriginal : m.importe;
+  return fmt(val, orig);
+}
 
 const DEFAULT_PLATFORMS=[];
 const DEFAULT_MOVS=[];
@@ -2630,7 +2635,7 @@ function _buildMovRow(m, transferGroups) {
   } else {
     det=catName(m.categoria);
     tipo=m.tipo+(m.esRecurrente?' 🔄':'');
-    monto=fmt(m.importe);
+    monto=fmtMovGasto(m);
   }
   const secCell = m.tipoPlat==='Transferencia salida'&&m.transferId
     ? `<span class="badge badge-teal">↔ TRANSFER</span>`
@@ -3201,7 +3206,7 @@ function renderGastos(){
   const hiddenCatCount = EXPENSE_CATS.filter(cat=>(budgets[cat.id]||0)===0 && (byCat[cat.id]||0)===0).length;
   const hiddenHint = (!window._showAllCats && hiddenCatCount>0) ? `<tr><td colspan="6" style="text-align:center;padding:10px 0;font-size:11px;color:var(--text3)">${hiddenCatCount} ${t('catOcultas')} · <button class="btn btn-sm" style="font-size:11px;padding:2px 8px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="window._showAllCats=true;renderGastos()">${t('mostrarTodas')}</button></td></tr>` : '';
 
-  const movRows=mesMovs.length>0?mesMovs.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).map(m=>`<tr><td style="color:var(--text2);font-size:12px">${m.fecha}</td><td style="font-weight:500">${m.tipo==='Ingreso'?'💰 '+t('ingreso'):catName(m.categoria)} ${m.esRecurrente?'<span class="badge badge-purple">🔄 '+t('auto')+'</span>':''}</td><td><span class="badge ${m.tipo==='Ingreso'?'badge-green':'badge-red'}">${m.tipo}</span></td><td style="font-weight:700">${fmtEUR(toEUR(m))}</td><td style="color:var(--text2);font-size:11px">${m.notas||'—'}</td><td><button class="edit-btn" onclick="openEditMovModal('${m.id}')">✏️</button><button class="del-btn" onclick="deleteMovement('${m.id}')">×</button></td></tr>`).join(''):`<tr><td colspan="6" style="text-align:center;color:var(--text2);padding:24px">${t('sinMovs')}</td></tr>`;
+  const movRows=mesMovs.length>0?mesMovs.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).map(m=>`<tr><td style="color:var(--text2);font-size:12px">${m.fecha}</td><td style="font-weight:500">${m.tipo==='Ingreso'?'💰 '+t('ingreso'):catName(m.categoria)} ${m.esRecurrente?'<span class="badge badge-purple">🔄 '+t('auto')+'</span>':''}</td><td><span class="badge ${m.tipo==='Ingreso'?'badge-green':'badge-red'}">${m.tipo}</span></td><td style="font-weight:700">${fmtMovGasto(m)}</td><td style="color:var(--text2);font-size:11px">${m.notas||'—'}</td><td><button class="edit-btn" onclick="openEditMovModal('${m.id}')">✏️</button><button class="del-btn" onclick="deleteMovement('${m.id}')">×</button></td></tr>`).join(''):`<tr><td colspan="6" style="text-align:center;color:var(--text2);padding:24px">${t('sinMovs')}</td></tr>`;
 
   document.getElementById('page-gastos').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
@@ -3353,7 +3358,7 @@ function renderGastos(){
                   <span style="font-size:13px;font-weight:700">${m.tipo==='Ingreso'?'💰 '+t('ingreso'):catName(m.categoria)}</span>
                   ${m.esRecurrente?'<span class="badge badge-purple" style="margin-left:4px">🔄</span>':''}
                 </div>
-                <span style="font-size:14px;font-weight:800;color:${m.tipo==='Ingreso'?'var(--green)':'var(--red)'}">${m.tipo==='Ingreso'?'+':'−'}${fmtEUR(toEUR(m))}</span>
+                <span style="font-size:14px;font-weight:800;color:${m.tipo==='Ingreso'?'var(--green)':'var(--red)'}">${m.tipo==='Ingreso'?'+':'−'}${fmtMovGasto(m)}</span>
               </div>
               <div style="display:flex;justify-content:space-between;align-items:center">
                 <span style="font-size:11px;color:var(--text2)">${m.fecha}${m.notas?` · ${escHtml(m.notas)}`:''}</span>
