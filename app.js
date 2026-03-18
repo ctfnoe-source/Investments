@@ -1773,6 +1773,24 @@ window._toggleEvoSeries = function(key) {
   }
 };
 
+function _renderHTMLBars(containerId, entries, total, fmtFn, colorArr) {
+  const el = document.getElementById(containerId);
+  if (!el || !entries.length) return;
+  const max = entries[0][1];
+  el.innerHTML = entries.map(([label, val], i) => {
+    const pct = total > 0 ? (val / total * 100).toFixed(1) : '0.0';
+    const barW = max > 0 ? (val / max * 100).toFixed(1) : '0';
+    const col = colorArr[i % colorArr.length];
+    return \`<div style="display:flex;align-items:center;gap:8px;padding:3px 4px">
+      <div style="font-size:11px;color:var(--text2);width:90px;flex-shrink:0;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">\${label}</div>
+      <div style="flex:1;height:14px;background:var(--card2);border-radius:7px;overflow:hidden">
+        <div style="height:100%;width:\${barW}%;background:\${col};border-radius:7px;transition:width 0.4s ease"></div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);width:38px;flex-shrink:0;text-align:right">\${pct}%</div>
+    </div>\`;
+  }).join('');
+}
+
 function renderDashboard(){
   const tc=settings.tipoCambio,re=settings.rendimientoEsperado??0.06;
   const eurmxn=getEurMxn();
@@ -2046,11 +2064,11 @@ function renderDashboard(){
     <div class="grid-1-1-1" style="margin-bottom:16px">
       <div class="card">
         <div class="card-title">📊 ${t('distribucionPorTipo')}</div>
-        <div class="chart-container" style="height:160px;width:100%"><canvas id="chartDistro"></canvas></div>
+        <div id="chartDistro" style="padding:4px 0"></div>
       </div>
       <div class="card">
         <div class="card-title">💼 ${t('inversionesPorTipo')}</div>
-        <div class="chart-container" style="height:160px;width:100%"><canvas id="chartInvTipo"></canvas></div>
+        <div id="chartInvTipo" style="padding:4px 0"></div>
       </div>
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
@@ -2058,7 +2076,7 @@ function renderDashboard(){
           <button class="btn btn-sm" style="font-size:11px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="switchTab('gastos')">${t('verDetalle')} →</button>
         </div>
         ${topCats.length>0?`
-          <div class="chart-container" style="height:160px;width:100%"><canvas id="chartGastosCat"></canvas></div>
+          <div id="chartGastosCat" style="padding:4px 0"></div>
           </div>`
         :`<div style="text-align:center;color:var(--text2);padding:24px;font-size:13px">${t('sinGastosEsteMes')}</div>`}
       </div>
@@ -2515,249 +2533,18 @@ function renderDashboard(){
     const at={};plats.forEach(p=>{at[p.type]=(at[p.type]||0)+platSaldoToMXN(p);});
     tickerList.forEach(tk=>{if(tk.cantActual>0){const v=(tk.valorActual||tk.costoPosicion)*(tk.moneda==='MXN'?1:tc);at[tk.type]=(at[tk.type]||0)+v;}});
     const de=Object.entries(at).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
-    const ctxD=document.getElementById('chartDistro');
-    if(ctxD&&de.length>0){
-      if(chartInstances.chartDistro){
-        chartInstances.chartDistro.data.labels=de.map(([k])=>k);
-        chartInstances.chartDistro.data.datasets[0].data=de.map(([,v])=>v);
-        chartInstances.chartDistro.data.datasets[0].backgroundColor=de.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]);
-        chartInstances.chartDistro.update('none');
-      } else {
-        chartInstances.chartDistro=new Chart(ctxD,{type:'bar',data:{labels:de.map(([k])=>k),datasets:[{data:de.map(([,v])=>v),backgroundColor:de.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]),borderRadius:8,borderSkipped:false,barThickness:14}]},options:{indexAxis:'y',responsive:false,maintainAspectRatio:false,animation:{duration:600,easing:'easeOutQuart'},plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(28,28,30,0.96)':'rgba(29,29,31,0.92)',cornerRadius:10,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>' '+ctx.label+': '+((ctx.parsed.x/de.reduce((s,[,v])=>s+v,0)*100)).toFixed(1)+'%'}},pctLabels:{display:true}},scales:{x:{display:false,grid:{display:false},ticks:{display:false},max:de.reduce((s,[,v])=>s+v,0)*1.22},y:{grid:{display:false},border:{display:false},ticks:{color:isDark?'rgba(235,235,245,0.55)':'rgba(60,60,67,0.55)',font:{family:'DM Sans',size:11,weight:'500'},padding:6}}}}});
-
-      }
-    }
+    const _deTotal=de.reduce((s,[,v])=>s+v,0);
+    _renderHTMLBars('chartDistro', de, _deTotal, fmt, COLORS_BAR);
 
     const inv={};
     tickerList.forEach(tk=>{if(tk.cantActual>0){const v=(tk.valorActual||tk.costoPosicion)*(tk.moneda==='MXN'?1:tc);inv[tk.type]=(inv[tk.type]||0)+v;}});
     if(totalMXN>0) inv['Platforms']=totalMXN;
     const invE=Object.entries(inv).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
-    const ctxI=document.getElementById('chartInvTipo');
-    if(ctxI&&invE.length>0){
-      if(chartInstances.chartInvTipo){
-        chartInstances.chartInvTipo.data.labels=invE.map(([k])=>k);
-        chartInstances.chartInvTipo.data.datasets[0].data=invE.map(([,v])=>v);
-        chartInstances.chartInvTipo.data.datasets[0].backgroundColor=invE.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]);
-        chartInstances.chartInvTipo.update('none');
-      } else {
-        chartInstances.chartInvTipo=new Chart(ctxI,{type:'bar',data:{labels:invE.map(([k])=>k),datasets:[{data:invE.map(([,v])=>v),backgroundColor:invE.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]),borderRadius:8,borderSkipped:false,barThickness:14}]},options:{indexAxis:'y',responsive:false,maintainAspectRatio:false,animation:{duration:600,easing:'easeOutQuart'},plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(28,28,30,0.96)':'rgba(29,29,31,0.92)',cornerRadius:10,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>{const total=invE.reduce((s,[,v])=>s+v,0);return ' '+ctx.label+': '+((ctx.parsed.x/total)*100).toFixed(1)+'% ('+fmt(ctx.parsed.x)+')';}}}},scales:{x:{display:false,grid:{display:false},ticks:{display:false},max:invE.reduce((s,[,v])=>s+v,0)*1.22},y:{grid:{display:false},border:{display:false},ticks:{color:isDark?'rgba(235,235,245,0.55)':'rgba(60,60,67,0.55)',font:{family:'DM Sans',size:11,weight:'500'},padding:6}}}}});
+    const _invTotal=invE.reduce((s,[,v])=>s+v,0);
+    _renderHTMLBars('chartInvTipo', invE, _invTotal, fmt, COLORS_BAR);
 
-      }
-    }
-
-    const ctxGC = document.getElementById('chartGastosCat');
-    if(ctxGC && topCats.length > 0) {
-      if(chartInstances.chartGastosCat){
-        chartInstances.chartGastosCat.data.labels=topCats.map(([id])=>catName(id));
-        chartInstances.chartGastosCat.data.datasets[0].data=topCats.map(([,v])=>v);
-        chartInstances.chartGastosCat.data.datasets[0].backgroundColor=topCats.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]);
-        chartInstances.chartGastosCat.update('none');
-      } else {
-        chartInstances.chartGastosCat = new Chart(ctxGC, {
-          type:'bar',
-          data:{
-            labels: topCats.map(([id])=>catName(id)),
-            datasets:[{
-              data: topCats.map(([,v])=>v),
-              backgroundColor: topCats.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]),
-              borderRadius:8,
-              borderSkipped:false,
-              barThickness:14
-            }]
-          },
-          options:{
-            indexAxis:'y',
-            responsive:false, maintainAspectRatio:false,
-            animation:{duration:600,easing:'easeOutQuart'},
-            plugins:{
-              legend:{display:false},
-              tooltip:{
-                backgroundColor:isDark?'rgba(28,28,30,0.96)':'rgba(29,29,31,0.92)',
-                cornerRadius:10, padding:10,
-                titleFont:{family:'DM Sans',size:12,weight:'700'},
-                bodyFont:{family:'DM Sans',size:12},
-                callbacks:{label:ctx=>{
-                  const total=topCats.reduce((s,[,v])=>s+v,0);
-                  return ' '+ctx.label+': '+((ctx.parsed.x/total)*100).toFixed(1)+'% ('+fmtD(ctx.parsed.x)+')';
-                }}
-              }
-            },
-            scales:{
-              x:{display:false,grid:{display:false},ticks:{display:false},max:topCats.reduce((s,[,v])=>s+v,0)*1.22},
-              y:{grid:{display:false},border:{display:false},ticks:{color:isDark?'rgba(235,235,245,0.55)':'rgba(60,60,67,0.55)',font:{family:'DM Sans',size:11,weight:'500'},padding:6}}
-            }
-          },
-
-        });
-      }
-    }
-  },50);
-}
-
-// ============================================
-// MOVIMIENTOS
-// ============================================
-let _movPage = 1;
-const MOV_PAGE_SIZE = 30;
-let _movFiltered = [];
-
-function _buildMovRow(m, transferGroups) {
-  let det='',tipo='',monto='',extra='';
-  const notas=m.notas||m.desc||'';
-  let rowClass='';
-  if(m.seccion==='plataformas'){
-    if(m.tipoPlat==='Transferencia salida'&&m.transferId){
-      const grp=transferGroups[m.transferId]||[];
-      const entrada=grp.find(x=>x.tipoPlat==='Transferencia entrada');
-      det=`<strong>${m.platform}</strong> → <strong>${entrada?.platform||'?'}</strong>`;
-      tipo='↔ '+t('transferencia'); monto=fmt(m.monto); rowClass='transfer-row';
-    } else { det=m.platform; tipo=m.tipoPlat; monto=fmt(m.monto); }
-  } else if(m.seccion==='inversiones'){
-    det=`<strong>${escHtml(m.ticker)}</strong> · ${m.broker}`;
-    const _tipoColor=m.tipoMov==='Compra'?'var(--green)':m.tipoMov==='Venta'?'var(--red)':m.tipoMov==='Dividendo'?'var(--blue)':'var(--text2)';
-    const _tipoBadge=`<span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:10px;font-weight:800;background:${_tipoColor}18;color:${_tipoColor}">${m.tipoMov}</span>`;
-    tipo=_tipoBadge+' <span style="font-size:11px;color:var(--text2)">'+m.tipoActivo+' · '+(m.moneda||'USD')+'</span>';
-    monto=fmt(m.montoTotal,m.moneda);
-    extra=m.cantidad+'×'+fmtFull(m.precioUnit);
-  } else {
-    det=catName(m.categoria);
-    tipo=m.tipo+(m.esRecurrente?' 🔄':'');
-    monto=fmt(m.importe);
-  }
-  const secCell = m.tipoPlat==='Transferencia salida'&&m.transferId
-    ? `<span class="badge badge-teal">↔ TRANSFER</span>`
-    : secBadge(m.seccion);
-
-  if (isMobile()) {
-    return `<div class="mov-card ${rowClass}" style="background:var(--card2);border-radius:12px;padding:12px 14px;border:0.5px solid var(--border);margin-bottom:8px">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          ${secCell}
-          <span style="font-size:12px;font-weight:700">${det}</span>
-        </div>
-        <div style="font-size:15px;font-weight:800;flex-shrink:0">${monto}</div>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <span style="font-size:11px;color:var(--text2)">${m.fecha} · ${tipo}</span>
-          ${extra?`<span style="font-size:11px;color:var(--text2)"> · ${extra}</span>`:''}
-          ${notas?`<div style="font-size:11px;color:var(--text3);margin-top:2px">${notas}</div>`:''}
-        </div>
-        <div style="display:flex;gap:4px;flex-shrink:0">
-          <button class="edit-btn" onclick="openEditMovModal('${m.id}')" style="opacity:0.8">✏️</button>
-          <button class="del-btn" onclick="deleteMovement('${m.id}')" style="opacity:0.8">×</button>
-        </div>
-      </div>
-    </div>`;
-  }
-
-  return `<tr class="${rowClass}">
-    <td style="color:var(--text2);font-size:12px">${m.fecha}</td>
-    <td>${secCell}</td>
-    <td>${det}</td>
-    <td style="color:var(--text2);font-size:12px">${tipo}</td>
-    <td style="font-weight:700">${monto}</td>
-    <td style="color:var(--text2);font-size:11px">${extra}</td>
-    <td style="color:var(--text2);font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${notas||'—'}</td>
-    <td style="white-space:nowrap">
-      <button class="edit-btn" onclick="openEditMovModal('${m.id}')" title="${t('editar')}">✏️</button>
-      <button class="del-btn" onclick="deleteMovement('${m.id}')" title="${t('eliminar')}">×</button>
-    </td>
-  </tr>`;
-}
-
-function _appendMovRows() {
-  const tbody = document.getElementById('movTbody');
-  const sentinel = document.getElementById('movSentinel');
-  if (!tbody) return;
-  const transferGroups = {};
-  movements.forEach(m => { if(m.transferId) transferGroups[m.transferId]=(transferGroups[m.transferId]||[]).concat(m); });
-  const start = (_movPage - 1) * MOV_PAGE_SIZE;
-  const chunk = _movFiltered.slice(start, start + MOV_PAGE_SIZE);
-  if (chunk.length === 0) { if (sentinel) sentinel.style.display='none'; return; }
-  chunk.forEach(m => { tbody.insertAdjacentHTML('beforeend', _buildMovRow(m, transferGroups)); });
-  _movPage++;
-  const loaded = Math.min((_movPage-1)*MOV_PAGE_SIZE, _movFiltered.length);
-  if (loaded >= _movFiltered.length) { if (sentinel) sentinel.style.display='none'; }
-}
-
-function _setupMovScroll() {
-  const sentinel = document.getElementById('movSentinel');
-  if (!sentinel) return;
-  if (window._movObserver) window._movObserver.disconnect();
-  window._movObserver = new IntersectionObserver(entries => {
-    if (entries[0].isIntersecting) _appendMovRows();
-  }, { rootMargin: '200px' });
-  window._movObserver.observe(sentinel);
-}
-
-function renderMovimientos(){
-  const transferGroups={};
-  movements.forEach(m=>{ if(m.transferId) transferGroups[m.transferId]=(transferGroups[m.transferId]||[]).concat(m); });
-  _movFiltered=movements.filter(m=>{
-    if(movFilter.seccion!=='todas'&&m.seccion!==movFilter.seccion) return false;
-    if(m.tipoPlat==='Transferencia entrada'&&m.transferId&&movFilter.seccion==='todas') return false;
-    if(movFilter.search){const s=movFilter.search.toLowerCase();const text=[m.platform,m.ticker,m.broker,m.tipoPlat,m.tipoMov,m.tipo,m.notas,m.desc,m.categoria].filter(Boolean).join(' ').toLowerCase();if(!text.includes(s))return false;}
-    return true;
-  }).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
-  _movPage=1;
-
-  const prevFocused = document.activeElement?.id === 'movSearchInput';
-  const prevCursor = prevFocused ? document.getElementById('movSearchInput')?.selectionStart : null;
-
-  const isEmpty = _movFiltered.length===0;
-  const noMovsAtAll = movements.length===0;
-  const emptyContent = isEmpty ? `
-    <div style="text-align:center;padding:56px 24px">
-      <div style="font-size:44px;margin-bottom:14px">${noMovsAtAll?'📋':movFilter.search?'🔍':'📭'}</div>
-      <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">
-        ${movFilter.search?t('noResultados')+' "'+movFilter.search+'"':noMovsAtAll?t('sinMovimientos'):t('sinMovimientosSeccion')}
-      </div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:24px">
-        ${movFilter.search?t('intentaOtroTermino'):t('registraMovimientos')}
-      </div>
-      ${!movFilter.search?`<button class="btn btn-primary" onclick="openMovModal()">${t('agregar')} ${t('primerMovimiento')}</button>`:''}
-    </div>` : '';
-  const emptyHtml = isEmpty ? `<tr><td colspan="8">${emptyContent}</td></tr>` : '';
-
-  document.getElementById('page-movimientos').innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px">
-      <div>
-        <div class="section-title">${t('movimientosTitulo')}</div>
-        <div class="section-sub">${t('movimientosSubtitulo')} · ${movements.length} ${t('totalLabel')}</div>
-      </div>
-      <button class="btn btn-primary" onclick="openMovModal()">${t('nuevoMovimiento')}</button>
-    </div>
-    <div class="filter-pills">
-      ${['todas','plataformas','inversiones','gastos'].map(s=>`<button class="pill mov-pill ${movFilter.seccion===s?'active':''}" data-sec="${s}" onclick="movFilter.seccion='${s}';renderMovimientos()">${s==='todas'?t('todo'):s==='plataformas'?t('seccionPlataformas'):s==='inversiones'?t('seccionInversiones'):t('seccionGastos')}</button>`).join('')}
-      <input class="pill-search" id="movSearchInput" placeholder="${t('buscar')}" value="${movFilter.search}" oninput="movFilter.search=this.value;renderMovimientos()">
-      <span style="font-size:12px;color:var(--text2);margin-left:4px">${_movFiltered.length} ${t('movimientos')}</span>
-    </div>
-    <div class="card-flat">
-      ${isMobile() ? `
-        <div id="movTbody" style="padding:12px">${isEmpty ? emptyContent : ''}</div>
-        <div id="movSentinel" style="height:4px"></div>
-      ` : `
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>${t('fecha')}</th><th>${t('seccion')}</th><th>${t('detalle')}</th><th>${t('tipo')}</th><th>${t('monto')}</th><th>${t('extra')}</th><th>${t('notas')}</th><th style="width:70px"></th></tr></thead>
-          <tbody id="movTbody">${emptyHtml}</tbody>
-        </table>
-        <div id="movSentinel" style="height:4px"></div>
-      </div>`}
-    </div>
-  `;
-
-  if (!isEmpty) {
-    _appendMovRows();
-    setTimeout(_setupMovScroll, 60);
-  }
-
-  if (prevFocused) {
-    const inp = document.getElementById('movSearchInput');
-    if (inp) { inp.focus(); if (prevCursor !== null) inp.setSelectionRange(prevCursor, prevCursor); }
-  }
-}
+        const _gcTotal=topCats.reduce((s,[,v])=>s+v,0);
+    _renderHTMLBars('chartGastosCat', topCats.map(([id,v])=>[catName(id),v]), _gcTotal, fmt, COLORS_BAR);
 
 
 function openMovModal(sec){
