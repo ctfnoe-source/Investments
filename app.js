@@ -36,6 +36,21 @@ const I18N = {
     asignar:'asignar', usado:'usado',
     catOcultas1:'categorías ocultas', catOcultas2:'Mostrar todas',
     catOcultasSA:'categorías sin asignar ocultas',
+    // Gastos — keys faltantes
+    usandoIngresoPlaneado:'Usando ingreso planeado',
+    registrarIngreso:'Registrar ingreso real',
+    sobranteExplicacion:'Capital sobrante acumulado por mes',
+    enEUR:'en EUR',
+    current:'actual',
+    usoPresupuesto:'Uso del presupuesto',
+    libre:'libre',
+    excedido:'excedido',
+    registradoEsteMes:'registrado este mes',
+    gastado:'Gastado',
+    presupuesto:'Presupuesto',
+    mesSobrante:'Sobrante del mes',
+    catOcultas:'categorías ocultas',
+    mostrarTodas:'Mostrar todas',
     // offline/sync
     offlineMsg:'Sin internet — cambios guardados localmente',
     syncingMsg:'Sincronizando cambios pendientes…',
@@ -233,6 +248,21 @@ const I18N = {
     asignar:'assign', usado:'used',
     catOcultas1:'categories hidden', catOcultas2:'Show all',
     catOcultasSA:'unassigned categories hidden',
+    // Expenses — missing keys
+    usandoIngresoPlaneado:'Using planned income',
+    registrarIngreso:'Register actual income',
+    sobranteExplicacion:'Accumulated monthly surplus',
+    enEUR:'in EUR',
+    current:'current',
+    usoPresupuesto:'Budget usage',
+    libre:'free',
+    excedido:'exceeded',
+    registradoEsteMes:'recorded this month',
+    gastado:'Spent',
+    presupuesto:'Budget',
+    mesSobrante:'Monthly surplus',
+    catOcultas:'categories hidden',
+    mostrarTodas:'Show all',
     offlineMsg:'No internet — changes saved locally',
     syncingMsg:'Syncing pending changes…',
     syncedMsg:'Synced!',
@@ -3166,7 +3196,7 @@ function renderGastos(){
     const restStr=pres>0?(rest>=0?'+':'')+fmtEUR(rest):'—';const restCol=rest>=0?'var(--green)':'var(--red)';
     const barHtml=pres>0?`<div style="display:flex;align-items:center;gap:6px"><div class="progress-bg" style="flex:1;height:6px"><div class="progress-fill" style="background:${barC};width:${Math.min(pctUso,100).toFixed(0)}%"></div></div><span style="font-size:10px;font-weight:700;color:${pctUso>100?'var(--red)':'var(--text2)'}"> ${pctUso.toFixed(0)}%</span></div>`:`<span style="font-size:10px;color:var(--text3)">${t('sinAsignar')}</span>`;
     const presDisplay=presEUR?Math.round(eurToMon(presEUR)*100)/100:'';
-    return`<tr><td style="font-weight:600">${cat.icon} ${cat.name}</td><td><input type="number" class="form-input" style="width:100px;padding:5px 8px;font-size:13px;font-weight:700;text-align:right" value="${presDisplay}" placeholder="0" onchange="updateBudget('${cat.id}',this.value,${JSON.stringify(monedaMostrar)})"></td><td style="font-size:12px;color:var(--text2)">${pctIng}</td><td style="font-weight:600;${real>pres&&pres>0?'color:var(--red)':''}">${fmtEUR(real)}</td><td style="font-weight:600;color:${restCol}">${restStr}</td><td style="width:150px">${barHtml}</td></tr>`;
+    return`<tr><td style="font-weight:600">${cat.icon} ${cat.name}</td><td><input type="number" class="form-input" style="width:100px;padding:5px 8px;font-size:13px;font-weight:700;text-align:right" value="${presDisplay}" placeholder="0" onchange="updateBudget('${cat.id}',this.value,${JSON.stringify(monedaMostrar)})" onblur="updateBudget('${cat.id}',this.value,${JSON.stringify(monedaMostrar)});renderGastos()"></td><td style="font-size:12px;color:var(--text2)">${pctIng}</td><td style="font-weight:600;${real>pres&&pres>0?'color:var(--red)':''}">${fmtEUR(real)}</td><td style="font-weight:600;color:${restCol}">${restStr}</td><td style="width:150px">${barHtml}</td></tr>`;
   }).join('');
   const hiddenCatCount = EXPENSE_CATS.filter(cat=>(budgets[cat.id]||0)===0 && (byCat[cat.id]||0)===0).length;
   const hiddenHint = (!window._showAllCats && hiddenCatCount>0) ? `<tr><td colspan="6" style="text-align:center;padding:10px 0;font-size:11px;color:var(--text3)">${hiddenCatCount} ${t('catOcultas')} · <button class="btn btn-sm" style="font-size:11px;padding:2px 8px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="window._showAllCats=true;renderGastos()">${t('mostrarTodas')}</button></td></tr>` : '';
