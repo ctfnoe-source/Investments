@@ -212,6 +212,9 @@ const I18N = {
     trialExpiredTitle:'Tu prueba ha terminado',
     trialExpiredDesc:'Para obtener acceso completo, contáctate con el administrador:',
     trialExpiredBtn:'Contactar administrador',
+    iaPlaceholder:'Pregúntame algo sobre tus finanzas...',
+    configureApiKeyFirst:'Configura una API key en Ajustes para usar la IA',
+    iaAskMe:'Pregúntame sobre tus inversiones, gastos o metas.',
   },
   en: {
     tabDashboard:'📊 Dashboard', tabMovimientos:'📋 Transactions', tabPlataformas:'🏦 Platforms',
@@ -388,6 +391,9 @@ const I18N = {
     trialExpiredTitle:'Your trial has ended',
     trialExpiredDesc:'To get full access, contact the administrator:',
     trialExpiredBtn:'Contact administrator',
+    iaPlaceholder:'Ask me anything about your finances...',
+    configureApiKeyFirst:'Set up an API key in Settings to use the AI',
+    iaAskMe:'Ask me about your investments, expenses or goals.',
   }
 };
 let _lang = (typeof window.__initLang !== 'undefined' ? window.__initLang : null) || LS.get('lang') || 'es';
@@ -1505,7 +1511,11 @@ function saveAll(changedMovId, deletedMovId, changedSnapDate){
     document.getElementById('page-plataformas') &&
     document.getElementById('page-plataformas').contains(document.activeElement) &&
     (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT');
-  if (!_activeInPlat) renderPageInternal(currentTab);
+  const _activeInGastos = document.activeElement &&
+    document.getElementById('page-gastos') &&
+    document.getElementById('page-gastos').contains(document.activeElement) &&
+    (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT');
+  if (!_activeInPlat && !_activeInGastos) renderPageInternal(currentTab);
   // buildHistoricalSnapshots es costoso — debounce para que cambios rápidos consecutivos
   // (ej: eliminar varios movimientos seguidos) no apilen múltiples reconstrucciones
   clearTimeout(window._snapshotDebounce);
@@ -4022,9 +4032,14 @@ function _buildAiContext() {
     gastosM.forEach(m=>{bycat[m.categoria]=(bycat[m.categoria]||0)+(m.importe||0);});
 
     const ing = settings.ingresos||{};
-    const sueldo = ing.sueldo||ing.sueldoRaw||0;
-    const totalIng = sueldo+(ing.extrasEUR||0)+(ing.otrosEUR||0);
-    const balance = totalIng - totalGastos;
+    // Trabajar siempre en EUR internamente (igual que renderDashboard)
+    const monedaSueldo = ing.monedaSueldo || 'EUR';
+    const sueldoEUR = monedaSueldo === 'EUR' ? (ing.sueldoRaw||0) : (ing.sueldo||0);
+    const extrasEUR = ing.extrasEUR||ing.extras||0;
+    const otrosEUR  = ing.otrosEUR||ing.otros||0;
+    const totalIng  = sueldoEUR + extrasEUR + otrosEUR;
+    const sueldo    = sueldoEUR;
+    const balance   = totalIng - totalGastos;
 
     // Plataformas completas
     const todasPlats = plats.map(p=>{
@@ -4091,7 +4106,7 @@ function _buildAiContext() {
 === RESUMEN FINANCIERO (${new Date().toLocaleDateString('es-ES')}) ===
 - Patrimonio total: ${fmt(patrimonio)} MXN (plataformas: ${fmt(totalPlats)} | inversiones: ${fmt(totalInv)})
 - Tipo de cambio: USD/MXN = ${tc} | EUR/MXN = ${settings.tipoEUR||'N/A'}
-- Ingreso mensual estimado: EUR ${totalIng.toFixed(0)} (sueldo: EUR ${sueldo.toFixed(0)}, extras: EUR ${(ing.extrasEUR||0).toFixed(0)}, otros: EUR ${(ing.otrosEUR||0).toFixed(0)})
+- Ingreso mensual estimado: EUR ${totalIng.toFixed(0)} (sueldo: EUR ${sueldoEUR.toFixed(0)}, extras: EUR ${extrasEUR.toFixed(0)}, otros: EUR ${otrosEUR.toFixed(0)}) [moneda original: ${monedaSueldo}]
 - Gastos mes ${mesKey}: EUR ${totalGastos.toFixed(0)}
 - Balance mes: EUR ${balance.toFixed(0)} (${totalIng>0?((balance/totalIng)*100).toFixed(0):'--'}% ahorro)
 
@@ -4229,7 +4244,7 @@ async function _aiCallSingle(provider, key, messages, test=false) {
 
 async function _aiCall(messages, test=false) {
   const keys = settings.aiKeys || {};
-  const order = ['groq','gemini','deepseek','openrouter'];
+  const order = ['openrouter','groq','gemini','deepseek'];
   const available = order.filter(p => !!keys[p]);
   if (available.length === 0) throw new Error(t('noApiKeys'));
 
@@ -4255,7 +4270,7 @@ function _renderAiChat() {
   const hasKey = Object.values(settings.aiKeys||{}).some(v=>!!v);
   const provider = settings.aiProvider || 'claude';
   const keys = settings.aiKeys||{};
-  const activeProviders = ['groq','gemini','deepseek','openrouter'].filter(p=>!!keys[p]);
+  const activeProviders = ['openrouter','groq','gemini','deepseek'].filter(p=>!!keys[p]);
   const providerLabel = activeProviders.length === 0 ? t('notConfigured') :
     activeProviders.length === 1 ? (activeProviders[0].charAt(0).toUpperCase()+activeProviders[0].slice(1)+' ✦') :
     (_aiLastProvider ? (_aiLastProvider.charAt(0).toUpperCase()+_aiLastProvider.slice(1)+' ✦') : activeProviders.length + ' '+t('providers')+' ✦');
