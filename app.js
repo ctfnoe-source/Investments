@@ -1545,7 +1545,7 @@ function saveAll(changedMovId, deletedMovId, changedSnapDate){
     document.getElementById('page-gastos') &&
     document.getElementById('page-gastos').contains(document.activeElement) &&
     (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT');
-  if (!_activeInPlat && !_activeInGastos) renderPageInternal(currentTab);
+  if (!_activeInPlat && !_activeInGastos && !window._budgetEditInProgress) renderPageInternal(currentTab);
   // buildHistoricalSnapshots es costoso — debounce para que cambios rápidos consecutivos
   // (ej: eliminar varios movimientos seguidos) no apilen múltiples reconstrucciones
   clearTimeout(window._snapshotDebounce);
@@ -3312,12 +3312,16 @@ function renderGastos(){
               const pctUso = pres>0 ? real/pres*100 : 0;
               const barC = pctUso>100?'var(--red)':pctUso>85?'var(--orange)':'var(--green)';
               const rest = pres - real;
+              const presDisplay=pres?Math.round(eurToMon(pres)*100)/100:0;
               return `<div style="background:var(--card2);border-radius:10px;padding:10px 12px">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
                   <span style="font-size:13px;font-weight:700">${cat.icon} ${cat.name}</span>
-                  <div style="text-align:right">
-                    <span style="font-size:13px;font-weight:800;color:${real>pres&&pres>0?'var(--red)':'var(--text)'}">${fmtEUR(real)}</span>
-                    ${pres>0?`<span style="font-size:11px;color:var(--text2)"> / ${fmtEUR(pres)}</span>`:''}
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div style="text-align:right">
+                      <span style="font-size:13px;font-weight:800;color:${real>pres&&pres>0?'var(--red)':'var(--text)'}">${fmtEUR(real)}</span>
+                      ${pres>0?`<span style="font-size:11px;color:var(--text2)"> / <span class="editable" style="cursor:pointer;border-bottom:1px dashed var(--text3)" onclick="editBudgetField('${cat.id}',this,${JSON.stringify(monedaMostrar)},${JSON.stringify(presDisplay)})">${fmtEUR(pres)}</span></span>`:''}
+                    </div>
+                    <button class="edit-btn" style="opacity:0.7;font-size:13px" onclick="editBudgetField('${cat.id}',this.previousElementSibling?.querySelector('.editable')||this,${JSON.stringify(monedaMostrar)},${JSON.stringify(presDisplay)})" title="${t('editar')}">✏️</button>
                   </div>
                 </div>
                 ${pres>0?`
@@ -3328,7 +3332,7 @@ function renderGastos(){
                     <span>${pctUso.toFixed(0)}% ${t('usado')}</span>
                     <span style="color:${rest>=0?'var(--green)':'var(--red)'};font-weight:700">${rest>=0?'+':''}${fmtEUR(rest)}</span>
                   </div>
-                `:`<div style="font-size:10px;color:var(--text3)">${t('sinAsignar')} · <button class="btn btn-sm" style="font-size:10px;padding:1px 6px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="switchTab('ajustes')">${t('asignar')}</button></div>`}
+                `:`<div style="font-size:10px;color:var(--text3)">${t('sinAsignar')} · <button class="btn btn-sm" style="font-size:10px;padding:1px 6px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="editBudgetField('${cat.id}',this,${JSON.stringify(monedaMostrar)},0)">${t('asignar')}</button></div>`}
               </div>`;
             }).filter(Boolean);
             const hiddenCount = EXPENSE_CATS.filter(cat=>(budgets[cat.id]||0)===0&&(byCat[cat.id]||0)===0).length;
@@ -3369,6 +3373,7 @@ function renderGastos(){
 function updateBudget(catId,value,moneda){
   if(!settings.budgets)settings.budgets={};
   _lastLocalSave = Date.now();
+  window._budgetEditInProgress = true;
   let valEUR=Number(value)||0;
   if(moneda&&moneda!=='EUR'){
     const fx=_fxCache||LS.get('fxCache');
@@ -3381,8 +3386,31 @@ function updateBudget(catId,value,moneda){
   }
   settings.budgets[catId]=Math.round(valEUR*100)/100;
   saveAll();
+  window._budgetEditInProgress = false;
 }
 function editBudgetField(catId, el, moneda, currentVal) {
+  // En móvil el botón ✏️ puede pasarse como `el`; en ese caso usamos un modal simple
+  const isBtn = el && (el.tagName === 'BUTTON' || el.classList.contains('edit-btn'));
+  if (isBtn) {
+    // Vista móvil: abrir un pequeño modal de edición de presupuesto
+    const monSymbol = moneda === 'EUR' ? '€' : moneda === 'USD' ? 'US$' : moneda === 'GBP' ? '£' : '$';
+    openModal(`<div class="modal-header"><div class="modal-title">✏️ ${t('presupuesto')}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+      <div style="padding:20px">
+        <div class="form-group">
+          <label class="form-label">${t('presupuesto')} (${monSymbol})</label>
+          <input id="budgetEditInput" type="number" step="any" min="0" class="form-input" value="${currentVal||0}" style="font-size:16px;font-weight:700;text-align:right">
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px">
+          <button class="btn btn-secondary" style="flex:1" onclick="closeModal()">${t('cancelar')||'Cancelar'}</button>
+          <button class="btn" style="flex:1" onclick="updateBudget('${catId}',document.getElementById('budgetEditInput').value,${JSON.stringify(moneda)});closeModal();setTimeout(()=>{if(currentTab==='gastos')renderGastos();},100)">${t('guardar')||'Guardar'}</button>
+        </div>
+      </div>`);
+    setTimeout(() => {
+      const inp = document.getElementById('budgetEditInput');
+      if (inp) { inp.focus(); inp.select(); }
+    }, 50);
+    return;
+  }
   const originalEl = el.cloneNode(true);
   const input = document.createElement('input');
   input.type = 'number';
