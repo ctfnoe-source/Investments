@@ -3196,7 +3196,7 @@ function renderGastos(){
     const restStr=pres>0?(rest>=0?'+':'')+fmtEUR(rest):'—';const restCol=rest>=0?'var(--green)':'var(--red)';
     const barHtml=pres>0?`<div style="display:flex;align-items:center;gap:6px"><div class="progress-bg" style="flex:1;height:6px"><div class="progress-fill" style="background:${barC};width:${Math.min(pctUso,100).toFixed(0)}%"></div></div><span style="font-size:10px;font-weight:700;color:${pctUso>100?'var(--red)':'var(--text2)'}"> ${pctUso.toFixed(0)}%</span></div>`:`<span style="font-size:10px;color:var(--text3)">${t('sinAsignar')}</span>`;
     const presDisplay=presEUR?Math.round(eurToMon(presEUR)*100)/100:'';
-    return`<tr><td style="font-weight:600">${cat.icon} ${cat.name}</td><td><input type="number" class="form-input" style="width:100px;padding:5px 8px;font-size:13px;font-weight:700;text-align:right" value="${presDisplay}" placeholder="0" onchange="updateBudget('${cat.id}',this.value,${JSON.stringify(monedaMostrar)})" onblur="updateBudget('${cat.id}',this.value,${JSON.stringify(monedaMostrar)});renderGastos()"></td><td style="font-size:12px;color:var(--text2)">${pctIng}</td><td style="font-weight:600;${real>pres&&pres>0?'color:var(--red)':''}">${fmtEUR(real)}</td><td style="font-weight:600;color:${restCol}">${restStr}</td><td style="width:150px">${barHtml}</td></tr>`;
+    return`<tr><td style="font-weight:600">${cat.icon} ${cat.name}</td><td><span class="editable" style="font-weight:700;font-size:13px;cursor:pointer" onclick="editBudgetField('${cat.id}',this,${JSON.stringify(monedaMostrar)},${JSON.stringify(presDisplay||0)})">${presDisplay||'—'}</span></td><td style="font-size:12px;color:var(--text2)">${pctIng}</td><td style="font-weight:600;${real>pres&&pres>0?'color:var(--red)':''}">${fmtEUR(real)}</td><td style="font-weight:600;color:${restCol}">${restStr}</td><td style="width:150px">${barHtml}</td></tr>`;
   }).join('');
   const hiddenCatCount = EXPENSE_CATS.filter(cat=>(budgets[cat.id]||0)===0 && (byCat[cat.id]||0)===0).length;
   const hiddenHint = (!window._showAllCats && hiddenCatCount>0) ? `<tr><td colspan="6" style="text-align:center;padding:10px 0;font-size:11px;color:var(--text3)">${hiddenCatCount} ${t('catOcultas')} · <button class="btn btn-sm" style="font-size:11px;padding:2px 8px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="window._showAllCats=true;renderGastos()">${t('mostrarTodas')}</button></td></tr>` : '';
@@ -3368,7 +3368,7 @@ function renderGastos(){
 
 function updateBudget(catId,value,moneda){
   if(!settings.budgets)settings.budgets={};
-  _lastLocalSave = Date.now(); // proteger contra sobreescritura de Firebase
+  _lastLocalSave = Date.now();
   let valEUR=Number(value)||0;
   if(moneda&&moneda!=='EUR'){
     const fx=_fxCache||LS.get('fxCache');
@@ -3381,6 +3381,37 @@ function updateBudget(catId,value,moneda){
   }
   settings.budgets[catId]=Math.round(valEUR*100)/100;
   saveAll();
+}
+function editBudgetField(catId, el, moneda, currentVal) {
+  const originalEl = el.cloneNode(true);
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.step = 'any';
+  input.min = '0';
+  input.value = currentVal || 0;
+  input.className = 'form-input';
+  input.style.cssText = 'width:100px;padding:4px 8px;font-size:13px;font-weight:700;text-align:right';
+  let _committed = false;
+  const finish = () => {
+    if (_committed) return;
+    _committed = true;
+    updateBudget(catId, input.value, moneda);
+    // Reemplazar el input con el span actualizado después de guardar
+    setTimeout(() => { if(currentTab==='gastos') renderGastos(); }, 100);
+  };
+  const cancel = () => {
+    if (_committed) return;
+    _committed = true;
+    input.replaceWith(originalEl);
+  };
+  input.onblur = finish;
+  input.onkeydown = e => {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+  };
+  el.replaceWith(input);
+  input.focus();
+  input.select();
 }
 function updateIngreso(tipo,value){if(!settings.ingresos)settings.ingresos={};settings.ingresos[tipo]=Number(value)||0;saveAll();}
 function updateIngresoConMoneda(tipo,value,moneda){
@@ -5621,6 +5652,7 @@ window.deletePlatform = deletePlatform;
 window.openAddPlatformModal = openAddPlatformModal;
 window.addPlatform = addPlatform;
 window.updateBudget = updateBudget;
+window.editBudgetField = editBudgetField;
 window.updateIngreso = updateIngreso;
 window.updateIngresoConMoneda = updateIngresoConMoneda;
 window.openRecurrentesModal = openRecurrentesModal;
