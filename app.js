@@ -931,21 +931,22 @@ async function fetchSP500History() {
       const r = await fetchWithTimeout(`https://finnhub.io/api/v1/quote?symbol=SPY&token=${fhKey}`);
       if (r.ok) {
         const d = await r.json();
-        if (d.c && d.c > 0) {
+        const _price = (d.c && d.c > 0) ? d.c : (d.pc && d.pc > 0) ? d.pc : 0;
+        if (_price > 0) {
           const todayStr = new Date().toISOString().split('T')[0];
           if (result.dates.length > 0) {
             const lastMonth = result.dates[result.dates.length-1].substring(0,7);
             const todayMonth = todayStr.substring(0,7);
             if (lastMonth === todayMonth) {
               result.dates[result.dates.length-1] = todayStr;
-              result.closes[result.closes.length-1] = d.c;
+              result.closes[result.closes.length-1] = _price;
             } else {
               result.dates.push(todayStr);
-              result.closes.push(d.c);
+              result.closes.push(_price);
             }
           } else {
             result.dates.push(todayStr);
-            result.closes.push(d.c);
+            result.closes.push(_price);
           }
         }
       }
@@ -1028,14 +1029,15 @@ async function fetchQQQHistory() {
       const r = await fetchWithTimeout(`https://finnhub.io/api/v1/quote?symbol=QQQ&token=${fhKey}`);
       if (r.ok) {
         const d = await r.json();
-        if (d.c && d.c > 0) {
+        const _qprice = (d.c && d.c > 0) ? d.c : (d.pc && d.pc > 0) ? d.pc : 0;
+        if (_qprice > 0) {
           const todayStr = new Date().toISOString().split('T')[0];
           if (result.dates.length > 0) {
             const lastMonth = result.dates[result.dates.length-1].substring(0,7);
             const todayMonth = todayStr.substring(0,7);
-            if (lastMonth === todayMonth) { result.dates[result.dates.length-1] = todayStr; result.closes[result.closes.length-1] = d.c; }
-            else { result.dates.push(todayStr); result.closes.push(d.c); }
-          } else { result.dates.push(todayStr); result.closes.push(d.c); }
+            if (lastMonth === todayMonth) { result.dates[result.dates.length-1] = todayStr; result.closes[result.closes.length-1] = _qprice; }
+            else { result.dates.push(todayStr); result.closes.push(_qprice); }
+          } else { result.dates.push(todayStr); result.closes.push(_qprice); }
         }
       }
     } catch(e) { /* silencioso */ }
@@ -1859,6 +1861,7 @@ function renderDashboard(){
       <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">${t('rendPlataformas')}</div><div class="stat-value" style="color:${pctCol(totalRend)}">${fmt(totalRend)}</div><div class="stat-sub">${platsConTasa>0?`<span style="color:var(--teal)">⚡${fmt(totalRendAuto)} ${t('auto')}</span>`:t('rendimientoSobre')}</div></div>
       <div class="card stat" style="border-top:3px solid var(--green)"><div class="stat-label">${t('valorInversiones')}</div><div class="stat-value">${fmt(totalInvMXN)}</div><div class="stat-sub">${tickerList.length} ${t('posiciones2')} · ${priceSummary.live>0?t('preciosHoy'):t('costoPosicion')}</div></div>
       <div class="card stat" style="border-top:3px solid var(--green)"><div class="stat-label">${t('gpNoRealizada')}</div><div class="stat-value" style="color:${pctCol(gpNoRealizadaTotal)}">${fmt(gpNoRealizadaTotal)}</div><div class="stat-sub">${fmtPct(totalInvertidoUSD?gpNoRealizadaTotal/(totalInvertidoUSD*tc):0)} ${t('sobreCapital')}</div></div>
+      <div class="card stat" style="border-top:3px solid var(--teal)"><div class="stat-label">${t('gpRealizada')}</div><div class="stat-value" style="color:${pctCol(gpRealizadaTotal)}">${gpRealizadaTotal>=0?'+':''}${fmt(gpRealizadaTotal)}</div><div class="stat-sub">${(()=>{const divs=tickerList.reduce((s,tk)=>s+(tk.dividendoTotal||0)*(tk.moneda==='MXN'?1:tc),0);return divs>0?'💰 '+fmt(Math.round(divs))+' div.':t('gpTotal');})()}</div></div>
       <div class="card stat" style="border-top:3px solid var(--purple)"><div class="stat-label">${t('rentabilidadTotal')}</div><div class="stat-value" style="color:${rentabilidadTotal!==null?pctCol(rentabilidadTotal):'var(--text2)'}">${rentabilidadTotal!==null?(rentabilidadTotal>=0?'+':'')+(rentabilidadTotal*100).toFixed(2)+'%':'—'}</div><div class="stat-sub">${rentabilidadTotal!==null?t('sobreCapital'):t('sinHistorial')}</div></div>
       <div class="card stat" style="border-top:3px solid var(--purple)"><div class="stat-label">${t('concentracion')}</div><div class="stat-value" style="font-size:14px">${topPlat?.name||'—'}</div><div class="stat-sub"><span style="color:var(--orange);font-weight:700">${(maxConc*100).toFixed(1)}%</span> · ${riskLvl}</div></div>
       <div class="card stat" style="border-top:3px solid var(--orange)"><div class="stat-label">${t('gastosMes')} ${curLabel}</div><div class="stat-value" style="color:${totGastoMes>0?'var(--red)':'var(--text)'}">${fmtD(totGastoMes)}</div><div class="stat-sub">${totalPresupuesto>0?(pctPresUsado*100).toFixed(0)+'% '+t('budget'):totIngMes>0||ingresoMensualEUR>0?fmtD(totIngMes>0?totIngMes:ingresoMensualEUR)+' '+t('income'):''}</div></div>
