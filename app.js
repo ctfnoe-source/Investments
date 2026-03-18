@@ -1600,7 +1600,7 @@ function closeModal(){document.getElementById('modalOverlay').classList.remove('
 
 function typeBadge(type){const map={'SOFIPO':'badge-green','BANCO':'badge-blue','BOLSA/ETFs':'badge-orange','CUENTA DIGITAL':'badge-purple','FONDOS':'badge-purple','FONDOS RETIRO':'badge-purple','DEUDA/CETES':'badge-blue'};return`<span class="badge ${map[type]||'badge-blue'}">${type}</span>`;}
 function monedaBadge(moneda){return`<span class="moneda-flag moneda-${moneda||'MXN'}">${moneda==='USD'?'🇺🇸 USD':moneda==='EUR'?'🇪🇺 EUR':'🇲🇽 MXN'}</span>`;}
-function secBadge(sec){const map={plataformas:['PLATFORM','badge-blue'],inversiones:['INVESTMENT','badge-green'],gastos:['EXPENSE','badge-orange'],transferencia:['TRANSFER','badge-teal']};const[label,cls]=map[sec]||['—',''];return`<span class="badge ${cls}">${label}</span>`;}
+function secBadge(sec){const labES={plataformas:'PLATAFORMA',inversiones:'INVERSIÓN',gastos:'GASTO',transferencia:'TRANSFERENCIA'};const labEN={plataformas:'PLATFORM',inversiones:'INVESTMENT',gastos:'EXPENSE',transferencia:'TRANSFER'};const lab=_lang==='es'?labES:labEN;const cls={plataformas:'badge-blue',inversiones:'badge-green',gastos:'badge-orange',transferencia:'badge-teal'};return`<span class="badge ${cls[sec]||''}">  ${lab[sec]||sec||'—'}</span>`;}
 function catName(id){const c=EXPENSE_CATS.find(x=>x.id===id);return c?c.icon+' '+c.name:id;}
 function statCard(label,value,sub,color,borderColor){
   let tint='';
@@ -4027,9 +4027,18 @@ function _buildAiContext() {
     const now = new Date();
     const mesKey = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
     const gastosM = movements.filter(m=>m.seccion==='gastos'&&m.fecha&&m.fecha.startsWith(mesKey));
-    const totalGastos = gastosM.reduce((s,m)=>s+(m.importe||0),0);
+    // Convertir gastos a EUR igual que renderGastos (importe está en MXN)
+    const _eurmxnAi = getEurMxn();
+    const _fxAi = _fxCache||LS.get('fxCache');
+    const _usdeurAi = _fxAi?.usdeur||(settings.tipoCambio&&settings.tipoEUR?settings.tipoCambio/settings.tipoEUR:0.88);
+    const toEURAi = m => {
+      if(m.monedaOrig==='EUR'){ if(m.montoOriginal!=null)return m.montoOriginal; return m.importeEUR||Math.round(m.importe/_eurmxnAi*100)/100; }
+      if(m.monedaOrig==='USD'){ if(m.montoOriginal!=null)return Math.round(m.montoOriginal*(_fxAi?.usdmxn||settings.tipoCambio||17)/_eurmxnAi*100)/100; return Math.round(m.importe/_eurmxnAi*100)/100; }
+      return Math.round(m.importe/_eurmxnAi*100)/100;
+    };
+    const totalGastos = gastosM.filter(m=>m.tipo==='Gasto').reduce((s,m)=>s+toEURAi(m),0);
     const bycat = {};
-    gastosM.forEach(m=>{bycat[m.categoria]=(bycat[m.categoria]||0)+(m.importe||0);});
+    gastosM.filter(m=>m.tipo==='Gasto').forEach(m=>{bycat[m.categoria]=(bycat[m.categoria]||0)+toEURAi(m);});
 
     const ing = settings.ingresos||{};
     // Trabajar siempre en EUR internamente (igual que renderDashboard)
@@ -4058,13 +4067,27 @@ function _buildAiContext() {
 
     // Presupuestos por categoria vs gasto real
     const budgets = settings.budgets||{};
+    const monLabel = monedaSueldo;
+    const _eurmxnAiD = getEurMxn();
+    const _fxAiD = _fxCache||LS.get('fxCache');
+    const _usdeurAiD = _fxAiD?.usdeur||0.88;
+    const _gbpeurAiD = _fxAiD?(_fxAiD.usdeur/(_fxAiD.usdgbp||1)):1.17;
+    const eurToMonAi = v => {
+      if(monedaSueldo==='EUR') return v;
+      if(monedaSueldo==='MXN') return v*_eurmxnAiD;
+      if(monedaSueldo==='USD') return v/_usdeurAiD;
+      if(monedaSueldo==='GBP') return v/_gbpeurAiD;
+      return v;
+    };
     const presupuestosStr = EXPENSE_CATS.map(cat=>{
-      const pres = budgets[cat.id]||0;
-      const real = bycat[cat.id]||0;
-      if(pres===0 && real===0) return null;
+      const presEUR = budgets[cat.id]||0;
+      const realEUR = bycat[cat.id]||0;
+      if(presEUR===0 && realEUR===0) return null;
+      const pres = eurToMonAi(presEUR);
+      const real = eurToMonAi(realEUR);
       const pct = pres>0?((real/pres)*100).toFixed(0)+'%':'sin presupuesto';
       const estado = pres>0?(real>pres?'EXCEDIDO':real>pres*0.8?'cerca del limite':'ok'):'';
-      return `${cat.icon} ${cat.name}: presupuesto EUR ${pres.toFixed(0)}, gastado EUR ${real.toFixed(0)} (${pct}) ${estado}`;
+      return `${cat.icon} ${cat.name}: presupuesto ${monLabel} ${pres.toFixed(0)}, gastado ${monLabel} ${real.toFixed(0)} (${pct}) ${estado}`;
     }).filter(Boolean).join('\n');
 
     // Metas completas con porcentaje
@@ -4106,9 +4129,9 @@ function _buildAiContext() {
 === RESUMEN FINANCIERO (${new Date().toLocaleDateString('es-ES')}) ===
 - Patrimonio total: ${fmt(patrimonio)} MXN (plataformas: ${fmt(totalPlats)} | inversiones: ${fmt(totalInv)})
 - Tipo de cambio: USD/MXN = ${tc} | EUR/MXN = ${settings.tipoEUR||'N/A'}
-- Ingreso mensual estimado: EUR ${totalIng.toFixed(0)} (sueldo: EUR ${sueldoEUR.toFixed(0)}, extras: EUR ${extrasEUR.toFixed(0)}, otros: EUR ${otrosEUR.toFixed(0)}) [moneda original: ${monedaSueldo}]
-- Gastos mes ${mesKey}: EUR ${totalGastos.toFixed(0)}
-- Balance mes: EUR ${balance.toFixed(0)} (${totalIng>0?((balance/totalIng)*100).toFixed(0):'--'}% ahorro)
+- Ingreso mensual estimado: ${monedaSueldo} ${eurToMonAi(totalIng).toFixed(0)} (sueldo: ${eurToMonAi(sueldoEUR).toFixed(0)}, extras: ${eurToMonAi(extrasEUR).toFixed(0)}, otros: ${eurToMonAi(otrosEUR).toFixed(0)})
+- Gastos mes ${mesKey}: ${monedaSueldo} ${eurToMonAi(totalGastos).toFixed(0)}
+- Balance mes: ${monedaSueldo} ${eurToMonAi(balance).toFixed(0)} (${totalIng>0?((balance/totalIng)*100).toFixed(0):'--'}% ahorro)
 
 === PLATAFORMAS (${plats.length} total) ===
 ${todasPlats||'ninguna'}
@@ -4244,7 +4267,7 @@ async function _aiCallSingle(provider, key, messages, test=false) {
 
 async function _aiCall(messages, test=false) {
   const keys = settings.aiKeys || {};
-  const order = ['openrouter','groq','gemini','deepseek'];
+  const order = ['groq','openrouter','gemini','deepseek'];
   const available = order.filter(p => !!keys[p]);
   if (available.length === 0) throw new Error(t('noApiKeys'));
 
@@ -4270,7 +4293,7 @@ function _renderAiChat() {
   const hasKey = Object.values(settings.aiKeys||{}).some(v=>!!v);
   const provider = settings.aiProvider || 'claude';
   const keys = settings.aiKeys||{};
-  const activeProviders = ['openrouter','groq','gemini','deepseek'].filter(p=>!!keys[p]);
+  const activeProviders = ['groq','openrouter','gemini','deepseek'].filter(p=>!!keys[p]);
   const providerLabel = activeProviders.length === 0 ? t('notConfigured') :
     activeProviders.length === 1 ? (activeProviders[0].charAt(0).toUpperCase()+activeProviders[0].slice(1)+' ✦') :
     (_aiLastProvider ? (_aiLastProvider.charAt(0).toUpperCase()+_aiLastProvider.slice(1)+' ✦') : activeProviders.length + ' '+t('providers')+' ✦');
