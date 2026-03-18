@@ -3196,7 +3196,7 @@ function renderGastos(){
     const restStr=pres>0?(rest>=0?'+':'')+fmtEUR(rest):'—';const restCol=rest>=0?'var(--green)':'var(--red)';
     const barHtml=pres>0?`<div style="display:flex;align-items:center;gap:6px"><div class="progress-bg" style="flex:1;height:6px"><div class="progress-fill" style="background:${barC};width:${Math.min(pctUso,100).toFixed(0)}%"></div></div><span style="font-size:10px;font-weight:700;color:${pctUso>100?'var(--red)':'var(--text2)'}"> ${pctUso.toFixed(0)}%</span></div>`:`<span style="font-size:10px;color:var(--text3)">${t('sinAsignar')}</span>`;
     const presDisplay=presEUR?Math.round(eurToMon(presEUR)*100)/100:'';
-    return`<tr><td style="font-weight:600">${cat.icon} ${cat.name}</td><td><span class="editable" style="font-weight:700;font-size:13px;cursor:pointer" onclick="editBudgetField('${cat.id}',this,${JSON.stringify(monedaMostrar)},${JSON.stringify(presDisplay||0)})">${presDisplay||'—'}</span></td><td style="font-size:12px;color:var(--text2)">${pctIng}</td><td style="font-weight:600;${real>pres&&pres>0?'color:var(--red)':''}">${fmtEUR(real)}</td><td style="font-weight:600;color:${restCol}">${restStr}</td><td style="width:150px">${barHtml}</td></tr>`;
+    return`<tr><td style="font-weight:600">${cat.icon} ${cat.name}</td><td><span class="editable" style="font-weight:700;font-size:13px;cursor:pointer" onclick="editBudgetField('${cat.id}',this,'${monedaMostrar}',${Number(presDisplay||0)})">${presDisplay||'—'}</span></td><td style="font-size:12px;color:var(--text2)">${pctIng}</td><td style="font-weight:600;${real>pres&&pres>0?'color:var(--red)':''}">${fmtEUR(real)}</td><td style="font-weight:600;color:${restCol}">${restStr}</td><td style="width:150px">${barHtml}</td></tr>`;
   }).join('');
   const hiddenCatCount = EXPENSE_CATS.filter(cat=>(budgets[cat.id]||0)===0 && (byCat[cat.id]||0)===0).length;
   const hiddenHint = (!window._showAllCats && hiddenCatCount>0) ? `<tr><td colspan="6" style="text-align:center;padding:10px 0;font-size:11px;color:var(--text3)">${hiddenCatCount} ${t('catOcultas')} · <button class="btn btn-sm" style="font-size:11px;padding:2px 8px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="window._showAllCats=true;renderGastos()">${t('mostrarTodas')}</button></td></tr>` : '';
@@ -3319,9 +3319,9 @@ function renderGastos(){
                   <div style="display:flex;align-items:center;gap:8px">
                     <div style="text-align:right">
                       <span style="font-size:13px;font-weight:800;color:${real>pres&&pres>0?'var(--red)':'var(--text)'}">${fmtEUR(real)}</span>
-                      ${pres>0?`<span style="font-size:11px;color:var(--text2)"> / <span class="editable" style="cursor:pointer;border-bottom:1px dashed var(--text3)" onclick="editBudgetField('${cat.id}',this,${JSON.stringify(monedaMostrar)},${JSON.stringify(presDisplay)})">${fmtEUR(pres)}</span></span>`:''}
+                      ${pres>0?`<span style="font-size:11px;color:var(--text2)"> / <span class="editable" style="cursor:pointer;border-bottom:1px dashed var(--text3)" onclick="editBudgetField('${cat.id}',this,'${monedaMostrar}',${Number(presDisplay||0)})">${fmtEUR(pres)}</span></span>`:''}
                     </div>
-                    <button class="edit-btn" style="opacity:0.7;font-size:13px" onclick="editBudgetField('${cat.id}',this.previousElementSibling?.querySelector('.editable')||this,${JSON.stringify(monedaMostrar)},${JSON.stringify(presDisplay)})" title="${t('editar')}">✏️</button>
+                    <button class="edit-btn" style="opacity:0.7;font-size:13px" onclick="editBudgetField('${cat.id}',this.previousElementSibling?.querySelector('.editable')||this,'${monedaMostrar}',${Number(presDisplay||0)})" title="${t('editar')}">✏️</button>
                   </div>
                 </div>
                 ${pres>0?`
@@ -3332,7 +3332,7 @@ function renderGastos(){
                     <span>${pctUso.toFixed(0)}% ${t('usado')}</span>
                     <span style="color:${rest>=0?'var(--green)':'var(--red)'};font-weight:700">${rest>=0?'+':''}${fmtEUR(rest)}</span>
                   </div>
-                `:`<div style="font-size:10px;color:var(--text3)">${t('sinAsignar')} · <button class="btn btn-sm" style="font-size:10px;padding:1px 6px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="editBudgetField('${cat.id}',this,${JSON.stringify(monedaMostrar)},0)">${t('asignar')}</button></div>`}
+                `:`<div style="font-size:10px;color:var(--text3)">${t('sinAsignar')} · <button class="btn btn-sm" style="font-size:10px;padding:1px 6px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="editBudgetField('${cat.id}',this,'${monedaMostrar}',0)">${t('asignar')}</button></div>`}
               </div>`;
             }).filter(Boolean);
             const hiddenCount = EXPENSE_CATS.filter(cat=>(budgets[cat.id]||0)===0&&(byCat[cat.id]||0)===0).length;
