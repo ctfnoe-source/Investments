@@ -701,4 +701,14 @@ window.addEventListener('appinstalled', () => {
     transition:transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s;
   }
   #aiFab:hover { transform:scale(1.1); box-shadow:0 6px 24px rgba(10,132,255,0.5); }
-  #aiFab:active { transf
+  #aiFab:active { transform:scale(0.95); }
+</style>
+
+<!-- Panel del chat IA -->
+<div id="aiChatPanel"></div>
+
+<!-- Botón flotante IA -->
+<button id="aiFab" onclick="window.toggleAiChat()" title="Asistente IA">🤖</button>
+
+</body>
+</html>
