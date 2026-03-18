@@ -1568,9 +1568,26 @@ function switchTab(tab){
   if(pageEl) pageEl.classList.add('active');
   const nt=document.querySelector('[data-tab="'+tab+'"]');if(nt)nt.classList.add('active');
   document.querySelectorAll('.mobile-nav-item[data-tab="'+tab+'"]').forEach(t=>t.classList.add('active'));
-  Object.keys(chartInstances).forEach(k=>{if(chartInstances[k]){chartInstances[k].destroy();delete chartInstances[k];}});
+  // Only destroy non-dashboard charts when leaving — dashboard charts survive tab switches
+  // This prevents the blank chart bug on mobile when returning to dashboard
+  const _dashCharts = new Set(['chartDistro','chartInvTipo','chartGastosCat','chartEvo']);
+  const _leavingDashboard = (currentTab !== 'dashboard');
+  Object.keys(chartInstances).forEach(k=>{
+    if(chartInstances[k]){
+      // Keep dashboard charts alive unless we're re-rendering dashboard itself
+      if(_dashCharts.has(k) && tab !== 'dashboard') return;
+      chartInstances[k].destroy();
+      delete chartInstances[k];
+    }
+  });
   _analytics.tabView(tab);
   renderPageInternal(tab);
+  // When returning to dashboard, resize charts in case canvas dimensions changed on mobile
+  if(tab === 'dashboard') {
+    requestAnimationFrame(() => {
+      _dashCharts.forEach(k => { if(chartInstances[k]) chartInstances[k].resize(); });
+    });
+  }
 }
 document.querySelectorAll('.nav-tab').forEach(btn=>btn.addEventListener('click',()=>switchTab(btn.dataset.tab)));
 function openModal(html){document.getElementById('modalContent').innerHTML=html;document.getElementById('modalOverlay').classList.add('open');}
