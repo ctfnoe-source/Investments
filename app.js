@@ -905,7 +905,7 @@ async function fetchSP500History() {
 
   let result = { dates: [], closes: [] };
 
-  // 1) Histórico mensual via Alpha Vantage
+  // 1a) Histórico mensual via Alpha Vantage
   if (avKey) {
     try {
       const r = await fetchWithTimeout(
@@ -919,6 +919,27 @@ async function fetchSP500History() {
             .map(([date, v]) => ({ date, close: parseFloat(v['4. close']) }))
             .filter(e => e.close > 0)
             .sort((a, b) => a.date.localeCompare(b.date));
+          result.dates = entries.map(e => e.date);
+          result.closes = entries.map(e => e.close);
+        }
+      }
+    } catch(e) { /* silencioso */ }
+  }
+  // 1b) Si no hay AV key, usar Finnhub candles para historial mensual (2 años)
+  if (!avKey && fhKey && result.dates.length === 0) {
+    try {
+      const toTs = Math.floor(Date.now()/1000);
+      const fromTs = toTs - 60*60*24*365*2; // 2 años atrás
+      const r = await fetchWithTimeout(
+        \`https://finnhub.io/api/v1/stock/candle?symbol=SPY&resolution=M&from=\${fromTs}&to=\${toTs}&token=\${fhKey}\`
+      );
+      if (r.ok) {
+        const d = await r.json();
+        if (d.s === 'ok' && d.t && d.c) {
+          const entries = d.t.map((ts, i) => ({
+            date: new Date(ts*1000).toISOString().split('T')[0],
+            close: d.c[i]
+          })).filter(e => e.close > 0);
           result.dates = entries.map(e => e.date);
           result.closes = entries.map(e => e.close);
         }
@@ -1028,6 +1049,22 @@ async function fetchQQQHistory() {
         if (d['Monthly Time Series']) {
           const series = d['Monthly Time Series'];
           const entries = Object.entries(series).map(([date, v]) => ({ date, close: parseFloat(v['4. close']) })).filter(e => e.close > 0).sort((a, b) => a.date.localeCompare(b.date));
+          result.dates = entries.map(e => e.date);
+          result.closes = entries.map(e => e.close);
+        }
+      }
+    } catch(e) { /* silencioso */ }
+  }
+  // 1b) Si no hay AV key, usar Finnhub candles para historial mensual QQQ
+  if (!avKey && fhKey && result.dates.length === 0) {
+    try {
+      const toTs = Math.floor(Date.now()/1000);
+      const fromTs = toTs - 60*60*24*365*2;
+      const r = await fetchWithTimeout(`https://finnhub.io/api/v1/stock/candle?symbol=QQQ&resolution=M&from=${fromTs}&to=${toTs}&token=${fhKey}`);
+      if (r.ok) {
+        const d = await r.json();
+        if (d.s === 'ok' && d.t && d.c) {
+          const entries = d.t.map((ts, i) => ({ date: new Date(ts*1000).toISOString().split('T')[0], close: d.c[i] })).filter(e => e.close > 0);
           result.dates = entries.map(e => e.date);
           result.closes = entries.map(e => e.close);
         }
@@ -1662,16 +1699,24 @@ if (!window._hiddenSeries) window._hiddenSeries = new Set();
 window._toggleEvoSeries = function(key) {
   if (window._hiddenSeries.has(key)) window._hiddenSeries.delete(key);
   else window._hiddenSeries.add(key);
-  // Update chart datasets visibility
   const chart = chartInstances && chartInstances.chartEvo;
   if (chart) {
-    const keyMap = ['patrimonio','ganancia','rendPlat','gpInv','sp500','nasdaq'];
-    chart.data.datasets.forEach((ds, i) => {
-      const k = keyMap[i];
-      if (k) ds.hidden = window._hiddenSeries.has(k);
+    // Match datasets by label substring — robust to order changes
+    const labelMap = {
+      patrimonio: s => s.includes('atrimonio'),
+      ganancia:   s => s.includes('anancia real') || s.includes('eal Gain'),
+      sp500:      s => s.includes('S&P'),
+      nasdaq:     s => s.includes('NASDAQ') || s.includes('QQQ'),
+      rendPlat:   s => s.includes('Plataformas') || s.includes('Platforms'),
+      gpInv:      s => s.includes('No Realizada') || s.includes('Unrealized'),
+    };
+    chart.data.datasets.forEach(ds => {
+      for (const [k, test] of Object.entries(labelMap)) {
+        if (test(ds.label || '')) { ds.hidden = window._hiddenSeries.has(k); break; }
+      }
     });
     chart.update('none');
-    // Re-render legend chips
+    // Update chip styles
     const leg = document.getElementById('chartEvoLegend');
     if (leg) {
       leg.querySelectorAll('span[onclick]').forEach(el => {
