@@ -2894,9 +2894,9 @@ function saveMovement(sec){
   else{if(!d.importe)return;mov.categoria=d.categoria;mov.tipo=d.tipo;
     const importeRaw=Number(d.importe);const monedaGasto=d.monedaGasto||'MXN';
     {const _fx=_fxCache||LS.get('fxCache');const _eurmxn=(_fx?.eurmxn)||settings.tipoEUR||17;const _usdmxn=(_fx?.usdmxn)||settings.tipoCambio||17;const _gbpmxn=_usdmxn/(_fx?.usdgbp||0.78);
-    if(monedaGasto==='EUR'){mov.importe=Math.round(importeRaw*_eurmxn*100)/100;mov.monedaOrig='EUR';mov.montoOriginal=importeRaw;mov.notas=(d.notas?d.notas+' · ':'')+'€'+importeRaw+' → $'+mov.importe+' MXN (FX '+_eurmxn.toFixed(2)+')';}
-    else if(monedaGasto==='USD'){mov.importe=Math.round(importeRaw*_usdmxn*100)/100;mov.monedaOrig='USD';mov.montoOriginal=importeRaw;mov.notas=(d.notas?d.notas+' · ':'')+'US$'+importeRaw+' → $'+mov.importe+' MXN (FX '+_usdmxn.toFixed(2)+')';}
-    else if(monedaGasto==='GBP'){mov.importe=Math.round(importeRaw*_gbpmxn*100)/100;mov.monedaOrig='GBP';mov.montoOriginal=importeRaw;mov.notas=(d.notas?d.notas+' · ':'')+'£'+importeRaw+' → $'+mov.importe+' MXN (FX '+_gbpmxn.toFixed(2)+')';}
+    if(monedaGasto==='EUR'){mov.importe=Math.round(importeRaw*_eurmxn*100)/100;mov.monedaOrig='EUR';mov.montoOriginal=importeRaw;mov.notas=d.notas||'';}
+    else if(monedaGasto==='USD'){mov.importe=Math.round(importeRaw*_usdmxn*100)/100;mov.monedaOrig='USD';mov.montoOriginal=importeRaw;mov.notas=d.notas||'';}
+    else if(monedaGasto==='GBP'){mov.importe=Math.round(importeRaw*_gbpmxn*100)/100;mov.monedaOrig='GBP';mov.montoOriginal=importeRaw;mov.notas=d.notas||'';}
     else{mov.importe=importeRaw;mov.monedaOrig='MXN';mov.notas=d.notas||'';}}
   }
   movements=[mov,...movements];saveAll(mov.id);closeModal();
@@ -2952,9 +2952,9 @@ function updateMovement(id){
       updated.categoria=d.categoria;updated.tipo=d.tipo;
       const importeRaw=Number(d.importe);const monedaGasto=d.monedaGasto||'MXN';
       {const _fx=_fxCache||LS.get('fxCache');const _eurmxn=(_fx?.eurmxn)||settings.tipoEUR||17;const _usdmxn=(_fx?.usdmxn)||settings.tipoCambio||17;const _gbpmxn=_usdmxn/(_fx?.usdgbp||0.78);
-      if(monedaGasto==='EUR'){updated.importe=Math.round(importeRaw*_eurmxn*100)/100;updated.monedaOrig='EUR';updated.montoOriginal=importeRaw;updated.notas=(d.notas?d.notas+' · ':'')+'€'+importeRaw+' → $'+updated.importe+' MXN (FX '+_eurmxn.toFixed(2)+')';}
-      else if(monedaGasto==='USD'){updated.importe=Math.round(importeRaw*_usdmxn*100)/100;updated.monedaOrig='USD';updated.montoOriginal=importeRaw;updated.notas=(d.notas?d.notas+' · ':'')+'US$'+importeRaw+' → $'+updated.importe+' MXN (FX '+_usdmxn.toFixed(2)+')';}
-      else if(monedaGasto==='GBP'){updated.importe=Math.round(importeRaw*_gbpmxn*100)/100;updated.monedaOrig='GBP';updated.montoOriginal=importeRaw;updated.notas=(d.notas?d.notas+' · ':'')+'£'+importeRaw+' → $'+updated.importe+' MXN (FX '+_gbpmxn.toFixed(2)+')';}
+      if(monedaGasto==='EUR'){updated.importe=Math.round(importeRaw*_eurmxn*100)/100;updated.monedaOrig='EUR';updated.montoOriginal=importeRaw;updated.notas=d.notas||'';}
+      else if(monedaGasto==='USD'){updated.importe=Math.round(importeRaw*_usdmxn*100)/100;updated.monedaOrig='USD';updated.montoOriginal=importeRaw;updated.notas=d.notas||'';}
+      else if(monedaGasto==='GBP'){updated.importe=Math.round(importeRaw*_gbpmxn*100)/100;updated.monedaOrig='GBP';updated.montoOriginal=importeRaw;updated.notas=d.notas||'';}
       else{updated.importe=importeRaw;updated.monedaOrig='MXN';updated.notas=d.notas||'';}}
     }
     return updated;
