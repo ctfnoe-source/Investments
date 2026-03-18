@@ -1943,8 +1943,9 @@ function renderDashboard(){
           <button class="btn btn-sm" style="font-size:11px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="switchTab('inversiones')">${t('verDetalle')} →</button>
         </div>
         ${tickerList.filter(tk=>tk.cantActual>0).length>0?`
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;margin-bottom:6px;padding:0 4px">
+        <div style="display:grid;grid-template-columns:1.1fr 0.6fr 0.9fr 0.9fr 0.9fr;gap:0;margin-bottom:6px;padding:0 4px">
           <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em">Activo</div>
+          <div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.05em;text-align:right">Div.</div>
           <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;text-align:right">P. Compra</div>
           <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;text-align:right">P. Actual</div>
           <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;text-align:right">G/P</div>
@@ -1955,22 +1956,25 @@ function renderDashboard(){
           const cur=tk.moneda==='MXN'?'$':'US$';
           const precioCompra=cur+tk.precioCostoPromedio.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});
           const cantStr=tk.cantActual%1===0?tk.cantActual:parseFloat(tk.cantActual.toFixed(4));
-          return`<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;padding:8px 4px;border-bottom:0.5px solid var(--border)">
+          const _gpT=(tk.gpNoRealizada||0)+(tk.dividendoTotal||0);
+          const _gpPct=tk.costoPosicion>0?_gpT/tk.costoPosicion:null;
+          return`<div style="display:grid;grid-template-columns:1.1fr 0.6fr 0.9fr 0.9fr 0.9fr;gap:0;padding:8px 4px;border-bottom:0.5px solid var(--border)">
             <div style="display:flex;align-items:center;gap:6px;min-width:0">
               <span class="badge ${tipoClass}" style="flex-shrink:0">${tk.ticker}</span>
               <span style="font-size:10px;color:var(--text3);white-space:nowrap">×${cantStr}</span>
             </div>
             <div style="text-align:right;align-self:center">
+              ${tk.dividendoTotal>0?`<div style="font-size:11px;font-weight:700;color:var(--blue)">+${fmtFull(tk.dividendoTotal)}</div>`:'<div style="font-size:10px;color:var(--text3)">—</div>'}
+            </div>
+            <div style="text-align:right;align-self:center">
               <div style="font-size:11px;font-weight:600;color:var(--text2)">${precioCompra}</div>
-              ${tk.comisionTotal>0?`<div style="font-size:10px;color:var(--text3);margin-top:1px" title="Comisiones acumuladas">com. ${cur}${tk.comisionTotal.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>`:''}
             </div>
             <div style="text-align:right;align-self:center">
               <div style="font-size:11px;font-weight:700" class="${tk.priceCssClass}">${tk.priceLabel}</div>
             </div>
             <div style="text-align:right;align-self:center">
-              <div style="font-size:12px;font-weight:800;color:${pctCol((tk.gpNoRealizada||0)+(tk.dividendoTotal||0))}">${tk.gpNoRealizada!==null?(((tk.gpNoRealizada||0)+(tk.dividendoTotal||0))>=0?'+':'')+fmtFull((tk.gpNoRealizada||0)+(tk.dividendoTotal||0)):'—'}</div>
-              <div style="font-size:10px;font-weight:600;color:${pctCol(tk.pctNoRealizada)}">${tk.gpNoRealizada!==null?fmtPct(tk.pctNoRealizada):''}</div>
-              ${tk.dividendoTotal>0?`<div style="font-size:10px;color:var(--blue)">💰 +${fmtFull(tk.dividendoTotal)}</div>`:''}
+              <div style="font-size:12px;font-weight:800;color:${pctCol(_gpT)}">${tk.gpNoRealizada!==null?(_gpT>=0?'+':'')+fmtFull(_gpT):'—'}</div>
+              <div style="font-size:10px;font-weight:600;color:${pctCol(_gpPct)}">${_gpPct!==null?fmtPct(_gpPct):''}</div>
             </div>
           </div>`;
         }).join('')}
@@ -1996,8 +2000,11 @@ function renderDashboard(){
     fetchQQQHistory().then(data => { if (data && data.dates.length > 0) { _qqqData = data; } });
   }
   // Clear in-memory sp500 if last value is 0 so it re-fetches with previous close
-  if (_sp500Data && _sp500Data.closes && _sp500Data.closes[_sp500Data.closes.length-1] === 0) _sp500Data = null;
-  if (_qqqData && _qqqData.closes && _qqqData.closes[_qqqData.closes.length-1] === 0) _qqqData = null;
+  if (_sp500Data && _sp500Data.closes && _sp500Data.closes[_sp500Data.closes.length-1] === 0) { _sp500Data = null; LS.set('sp500_history', null); }
+  if (_qqqData && _qqqData.closes && _qqqData.closes[_qqqData.closes.length-1] === 0) { _qqqData = null; LS.set('qqq_history', null); }
+  // Also clear LS cache if stored last close is 0
+  const _sp5cache=LS.get('sp500_history'); if(_sp5cache?.data?.closes?.length && _sp5cache.data.closes[_sp5cache.data.closes.length-1]===0) LS.set('sp500_history',null);
+  const _qqqcache=LS.get('qqq_history'); if(_qqqcache?.data?.closes?.length && _qqqcache.data.closes[_qqqcache.data.closes.length-1]===0) LS.set('qqq_history',null);
   if (!_sp500Data && (settings.alphaVantageKey || settings.finnhubKey)) {
     fetchSP500History().then(data => {
       if (data && data.dates.length > 0) {
@@ -2337,10 +2344,10 @@ function renderDashboard(){
             ticks:{font:{size:10},color:isDark?'rgba(200,200,210,0.55)':'rgba(80,80,90,0.5)',callback:v=>(v>=0?'+':'')+v.toFixed(1)+'%',maxTicksLimit:8},
             border:{display:false},
             afterDataLimits(axis){
-              // Compress % range — use only bottom 40% of chart height
-              // by extending max upward so data sits in lower portion
-              const range=axis.max-axis.min||1;
-              axis.max=axis.min+(range/0.40);
+              // Compress % into bottom 45% of chart, and ensure minimum spread of 4%
+              const range=Math.max(axis.max-axis.min, 4);
+              axis.min=axis.min-(range*0.1);
+              axis.max=axis.min+(range/0.45);
             }
           },
           y2:{
@@ -3405,23 +3412,29 @@ function renderInversiones(){
           const gpMXN = valorMXN - costoMXN;
           const pctPort = totalValor > 0 ? valorMXN/totalValor : 0;
           const brokersInfo = pos.brokersSaldo&&pos.brokersSaldo.length>0 ? pos.brokersSaldo.map(b=>b.broker+(b.cantActual!==pos.cantActual?' ('+( b.cantActual%1===0?b.cantActual:parseFloat(b.cantActual.toFixed(4)))+')':'')).join(', ') : '';
-          return `<div class="list-item" style="padding:10px 0">
-            <div style="display:flex;align-items:center;gap:8px;min-width:0">
+          const _invGpT=(pos.gpNoRealizada||0)+(pos.dividendoTotal||0);
+          const _invGpPct=pos.costoPosicion>0?_invGpT/pos.costoPosicion:null;
+          const _cur=pos.moneda==='MXN'?'$':'US$';
+          return `<div style="display:grid;grid-template-columns:1.4fr 0.7fr 0.9fr 0.9fr 1fr;gap:0;padding:10px 4px;border-bottom:0.5px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:6px;min-width:0">
               <span class="badge ${tipoClass}">${pos.ticker}</span>
-              <div style="font-size:11px;color:var(--text2);min-width:0">
-                <span>×${pos.cantActual%1===0?pos.cantActual:parseFloat(pos.cantActual.toFixed(4))}</span>
-                <span style="margin:0 4px">·</span>
-                <span class="${pos.priceCssClass}">${pos.priceLabel}</span>
-                <span style="margin:0 4px">·</span>
-                <span>${(pctPort*100).toFixed(1)}%</span>
-                ${brokersInfo?`<span style="margin-left:4px">· 🏦 ${brokersInfo}</span>`:''}
-                ${pos.comisionTotal>0?`<span style="margin-left:4px;color:var(--text3)">· com. ${pos.moneda==='MXN'?'$':'US$'}${pos.comisionTotal.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>`:''}
+              <div style="font-size:10px;color:var(--text2);min-width:0;overflow:hidden">
+                <div><span>×${pos.cantActual%1===0?pos.cantActual:parseFloat(pos.cantActual.toFixed(4))}</span> <span class="${pos.priceCssClass}">${pos.priceLabel}</span></div>
+                <div style="color:var(--text3)">${(pctPort*100).toFixed(1)}% port.${brokersInfo?' · '+brokersInfo:''}</div>
               </div>
             </div>
-            <div style="text-align:right;flex-shrink:0">
-              <div style="font-size:13px;font-weight:800;color:${pctCol((pos.gpNoRealizada||0)+(pos.dividendoTotal||0))}">${pos.gpNoRealizada!==null?(((pos.gpNoRealizada||0)+(pos.dividendoTotal||0))>=0?'+':'')+fmtFull((pos.gpNoRealizada||0)+(pos.dividendoTotal||0))+' '+pos.moneda:t('sinPrecio')}</div>
-              <div style="font-size:10px;font-weight:600;color:${pctCol(pos.pctNoRealizada)}">${pos.gpNoRealizada!==null?fmtPct(pos.pctNoRealizada):''}</div>
-              ${pos.dividendoTotal>0?`<div style="font-size:11px;color:var(--blue);margin-top:2px">💰 div. +${fmtFull(pos.dividendoTotal)} ${pos.moneda}</div>`:''}
+            <div style="text-align:right;align-self:center">
+              ${pos.dividendoTotal>0?`<div style="font-size:12px;font-weight:700;color:var(--blue)">+${fmtFull(pos.dividendoTotal)}</div><div style="font-size:10px;color:var(--text3)">${pos.moneda}</div>`:'<div style="font-size:10px;color:var(--text3)">—</div>'}
+            </div>
+            <div style="text-align:right;align-self:center">
+              <div style="font-size:11px;font-weight:600;color:var(--text2)">${_cur}${pos.precioCostoPromedio.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+            </div>
+            <div style="text-align:right;align-self:center">
+              <div style="font-size:11px;font-weight:700" class="${pos.priceCssClass}">${pos.priceLabel}</div>
+            </div>
+            <div style="text-align:right;align-self:center">
+              <div style="font-size:13px;font-weight:800;color:${pctCol(_invGpT)}">${pos.gpNoRealizada!==null?(_invGpT>=0?'+':'')+fmtFull(_invGpT)+' '+pos.moneda:t('sinPrecio')}</div>
+              <div style="font-size:10px;font-weight:600;color:${pctCol(_invGpPct)}">${_invGpPct!==null?fmtPct(_invGpPct):''}</div>
             </div>
           </div>`;
         }).join('') : `<div style="text-align:center;color:var(--text2);padding:48px 24px"><div style="font-size:40px;margin-bottom:12px">📈</div><div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">${t('sinPosicionesAbiertas')}</div><div style="font-size:13px;margin-bottom:20px">${t('registraPrimeraCompra')}</div><button class="btn btn-primary" onclick="openMovModal('inversiones')">+ ${t('primerMovimiento')}</button></div>`}
