@@ -2452,7 +2452,7 @@ function renderDashboard(){
           },
           yc:{
             position:'left',
-            grid:{color:isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)'},
+            grid:{display:false},
             ticks:{font:{size:10},color:isDark?'rgba(200,200,210,0.55)':'rgba(80,80,90,0.5)',callback:v=>(v>=0?'+':'')+v.toFixed(1)+'%',maxTicksLimit:8},
             border:{display:false},
             afterDataLimits(axis){

@@ -82,7 +82,7 @@ body {
 .nav-logo { font-size: 18px; font-weight: 800; letter-spacing: -0.03em; color: var(--text); margin-right: 24px; cursor: pointer; white-space: nowrap; user-select: none; }
 .nav-tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; flex: 1 1 0; min-width: 0; }
 .nav-tabs::-webkit-scrollbar { display: none; }
-.nav-tab { padding: 7px 10px; font-size: 12px; font-weight: 400; color: var(--text2); cursor: pointer; border-radius: 22px; background: transparent; border: none; font-family: var(--font); white-space: nowrap; transition: all 0.2s; flex-shrink: 0; }
+.nav-tab { padding: 7px 7px; font-size: 12px; font-weight: 400; color: var(--text2); cursor: pointer; border-radius: 22px; background: transparent; border: none; font-family: var(--font); white-space: nowrap; transition: all 0.2s; flex-shrink: 0; }
 .nav-tab:hover { background: rgba(128,128,128,0.08); }
 .nav-tab.active { font-weight: 600; color: var(--blue); background: rgba(10,132,255,0.08); }
 .dark-toggle {
