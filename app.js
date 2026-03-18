@@ -896,7 +896,8 @@ function isSP500CacheFresh(cached) {
 
 async function fetchSP500History() {
   const cached = getSP500Cache();
-  if (isSP500CacheFresh(cached)) return cached.data;
+  const _lastClose = cached?.data?.closes?.[cached.data.closes.length-1];
+  if (isSP500CacheFresh(cached) && _lastClose && _lastClose > 0) return cached.data;
 
   const avKey = settings.alphaVantageKey || '';
   const fhKey = settings.finnhubKey || '';
@@ -1005,7 +1006,8 @@ function isQQQCacheFresh(cached) {
 }
 async function fetchQQQHistory() {
   const cached = getQQQCache();
-  if (isQQQCacheFresh(cached)) return cached.data;
+  const _qlastClose = cached?.data?.closes?.[cached.data.closes.length-1];
+  if (isQQQCacheFresh(cached) && _qlastClose && _qlastClose > 0) return cached.data;
   const avKey = settings.alphaVantageKey || '';
   const fhKey = settings.finnhubKey || '';
   if (!avKey && !fhKey) return null;
@@ -1860,7 +1862,7 @@ function renderDashboard(){
       <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">${t('valorPlataformas')}</div><div class="stat-value">${fmt(totalMXN)}</div><div class="stat-sub"><span style="color:${pctCol(totalRend)};font-weight:700">${fmtPct(invInicial?totalRend/invInicial:0)}</span> ${t('return')}</div></div>
       <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">${t('rendPlataformas')}</div><div class="stat-value" style="color:${pctCol(totalRend)}">${fmt(totalRend)}</div><div class="stat-sub">${platsConTasa>0?`<span style="color:var(--teal)">⚡${fmt(totalRendAuto)} ${t('auto')}</span>`:t('rendimientoSobre')}</div></div>
       <div class="card stat" style="border-top:3px solid var(--green)"><div class="stat-label">${t('valorInversiones')}</div><div class="stat-value">${fmt(totalInvMXN)}</div><div class="stat-sub">${tickerList.length} ${t('posiciones2')} · ${priceSummary.live>0?t('preciosHoy'):t('costoPosicion')}</div></div>
-      <div class="card stat" style="border-top:3px solid var(--green)"><div class="stat-label">${t('gpNoRealizada')}</div><div class="stat-value" style="color:${pctCol(gpNoRealizadaTotal)}">${fmt(gpNoRealizadaTotal)}</div><div class="stat-sub">${fmtPct(totalInvertidoUSD?gpNoRealizadaTotal/(totalInvertidoUSD*tc):0)} ${t('sobreCapital')}</div></div>
+      <div class="card stat" style="border-top:3px solid var(--green)"><div class="stat-label">${t('gpTotal')}</div><div class="stat-value" style="color:${pctCol(gpNoRealizadaTotal+gpRealizadaTotal)}">${(gpNoRealizadaTotal+gpRealizadaTotal)>=0?'+':''}${fmt(gpNoRealizadaTotal+gpRealizadaTotal)}</div><div class="stat-sub" style="display:flex;flex-direction:column;gap:1px"><span style="color:var(--text2)">No real.: <span style="color:${pctCol(gpNoRealizadaTotal)};font-weight:600">${gpNoRealizadaTotal>=0?'+':''}${fmt(gpNoRealizadaTotal)}</span></span><span style="color:var(--text2)">Realiz.: <span style="color:${pctCol(gpRealizadaTotal)};font-weight:600">${gpRealizadaTotal>=0?'+':''}${fmt(gpRealizadaTotal)}</span></span></div></div>
       <div class="card stat" style="border-top:3px solid var(--teal)"><div class="stat-label">${t('gpRealizada')}</div><div class="stat-value" style="color:${pctCol(gpRealizadaTotal)}">${gpRealizadaTotal>=0?'+':''}${fmt(gpRealizadaTotal)}</div><div class="stat-sub">${(()=>{const divs=tickerList.reduce((s,tk)=>s+(tk.dividendoTotal||0)*(tk.moneda==='MXN'?1:tc),0);return divs>0?'💰 '+fmt(Math.round(divs))+' div.':t('gpTotal');})()}</div></div>
       <div class="card stat" style="border-top:3px solid var(--purple)"><div class="stat-label">${t('rentabilidadTotal')}</div><div class="stat-value" style="color:${rentabilidadTotal!==null?pctCol(rentabilidadTotal):'var(--text2)'}">${rentabilidadTotal!==null?(rentabilidadTotal>=0?'+':'')+(rentabilidadTotal*100).toFixed(2)+'%':'—'}</div><div class="stat-sub">${rentabilidadTotal!==null?t('sobreCapital'):t('sinHistorial')}</div></div>
       <div class="card stat" style="border-top:3px solid var(--purple)"><div class="stat-label">${t('concentracion')}</div><div class="stat-value" style="font-size:14px">${topPlat?.name||'—'}</div><div class="stat-sub"><span style="color:var(--orange);font-weight:700">${(maxConc*100).toFixed(1)}%</span> · ${riskLvl}</div></div>
@@ -1967,8 +1969,9 @@ function renderDashboard(){
               <div style="font-size:11px;font-weight:700" class="${tk.priceCssClass}">${tk.priceLabel}</div>
             </div>
             <div style="text-align:right;align-self:center">
-              <div style="font-size:12px;font-weight:800;color:${pctCol(tk.gpNoRealizada)}">${tk.gpNoRealizada!==null?(tk.gpNoRealizada>=0?'+':'')+fmtFull(tk.gpNoRealizada):'—'}</div>
+              <div style="font-size:12px;font-weight:800;color:${pctCol((tk.gpNoRealizada||0)+(tk.dividendoTotal||0))}">${tk.gpNoRealizada!==null?(((tk.gpNoRealizada||0)+(tk.dividendoTotal||0))>=0?'+':'')+fmtFull((tk.gpNoRealizada||0)+(tk.dividendoTotal||0)):'—'}</div>
               <div style="font-size:10px;font-weight:600;color:${pctCol(tk.pctNoRealizada)}">${tk.gpNoRealizada!==null?fmtPct(tk.pctNoRealizada):''}</div>
+              ${tk.dividendoTotal>0?`<div style="font-size:10px;color:var(--blue)">💰 +${fmtFull(tk.dividendoTotal)}</div>`:''}
             </div>
           </div>`;
         }).join('')}
@@ -3414,8 +3417,9 @@ function renderInversiones(){
               </div>
             </div>
             <div style="text-align:right;flex-shrink:0">
-              <div style="font-size:13px;font-weight:800;color:${pctCol(pos.gpNoRealizada)}">${pos.gpNoRealizada!==null?(pos.gpNoRealizada>=0?'+':'')+fmtFull(pos.gpNoRealizada)+' '+pos.moneda:t('sinPrecio')}</div>
+              <div style="font-size:13px;font-weight:800;color:${pctCol((pos.gpNoRealizada||0)+(pos.dividendoTotal||0))}">${pos.gpNoRealizada!==null?(((pos.gpNoRealizada||0)+(pos.dividendoTotal||0))>=0?'+':'')+fmtFull((pos.gpNoRealizada||0)+(pos.dividendoTotal||0))+' '+pos.moneda:t('sinPrecio')}</div>
               <div style="font-size:10px;font-weight:600;color:${pctCol(pos.pctNoRealizada)}">${pos.gpNoRealizada!==null?fmtPct(pos.pctNoRealizada):''}</div>
+              ${pos.dividendoTotal>0?`<div style="font-size:11px;color:var(--blue);margin-top:2px">💰 div. +${fmtFull(pos.dividendoTotal)} ${pos.moneda}</div>`:''}
             </div>
           </div>`;
         }).join('') : `<div style="text-align:center;color:var(--text2);padding:48px 24px"><div style="font-size:40px;margin-bottom:12px">📈</div><div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">${t('sinPosicionesAbiertas')}</div><div style="font-size:13px;margin-bottom:20px">${t('registraPrimeraCompra')}</div><button class="btn btn-primary" onclick="openMovModal('inversiones')">+ ${t('primerMovimiento')}</button></div>`}
