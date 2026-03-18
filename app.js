@@ -1995,26 +1995,28 @@ function renderDashboard(){
 
   updateNav(patrimonio,totalMXN,totalUSDCurrent,tc,totalRend,deltaHoy,deltaHoyPct);
 
-  // Cargar S&P500 de forma asíncrona y re-renderizar el chart cuando lleguen los datos
-  if (!_qqqData && (settings.alphaVantageKey || settings.finnhubKey)) {
-    fetchQQQHistory().then(data => { if (data && data.dates.length > 0) { _qqqData = data; } });
-  }
-  // Clear in-memory sp500 if last value is 0 so it re-fetches with previous close
-  if (_sp500Data && _sp500Data.closes && _sp500Data.closes[_sp500Data.closes.length-1] === 0) { _sp500Data = null; LS.set('sp500_history', null); }
-  if (_qqqData && _qqqData.closes && _qqqData.closes[_qqqData.closes.length-1] === 0) { _qqqData = null; LS.set('qqq_history', null); }
-  // Also clear LS cache if stored last close is 0
+  // Limpiar cache en memoria si el último valor es 0 (mercado cerrado previo fetch)
+  if (_sp500Data?.closes?.[_sp500Data.closes.length-1] === 0) { _sp500Data = null; }
+  if (_qqqData?.closes?.[_qqqData.closes.length-1] === 0) { _qqqData = null; }
+  // Limpiar cache en LS si el último valor guardado es 0
   const _sp5cache=LS.get('sp500_history'); if(_sp5cache?.data?.closes?.length && _sp5cache.data.closes[_sp5cache.data.closes.length-1]===0) LS.set('sp500_history',null);
   const _qqqcache=LS.get('qqq_history'); if(_qqqcache?.data?.closes?.length && _qqqcache.data.closes[_qqqcache.data.closes.length-1]===0) LS.set('qqq_history',null);
-  if (!_sp500Data && (settings.alphaVantageKey || settings.finnhubKey)) {
-    fetchSP500History().then(data => {
-      if (data && data.dates.length > 0) {
-        _sp500Data = data;
-        if (currentTab === 'dashboard') {
-          if (chartInstances.chartEvo) { chartInstances.chartEvo.destroy(); delete chartInstances.chartEvo; }
-          if (chartInstances.chartComp) { chartInstances.chartComp.destroy(); delete chartInstances.chartComp; }
-          renderDashboard();
-        }
+
+  // Fetch SP500 y QQQ de forma asíncrona — re-renderizar chart cuando lleguen
+  const _needSP = !_sp500Data && (settings.alphaVantageKey || settings.finnhubKey);
+  const _needQQQ = !_qqqData && (settings.alphaVantageKey || settings.finnhubKey);
+  if (_needSP || _needQQQ) {
+    const _rerender = () => {
+      if (currentTab === 'dashboard') {
+        if (chartInstances.chartEvo) { chartInstances.chartEvo.destroy(); delete chartInstances.chartEvo; }
+        renderDashboard();
       }
+    };
+    if (_needSP) fetchSP500History().then(data => {
+      if (data?.dates?.length > 0) { _sp500Data = data; _rerender(); }
+    }).catch(() => {});
+    if (_needQQQ) fetchQQQHistory().then(data => {
+      if (data?.dates?.length > 0) { _qqqData = data; _rerender(); }
     }).catch(() => {});
   }
 
@@ -2252,7 +2254,7 @@ function renderDashboard(){
           },
           {
             label: t('gananciaReal'),
-            data:(()=>{const capBase=patrimonioVals[0]||1;return realDates.map((d,i)=>({x:d,y:capBase>0?Math.round(realVals[i]/capBase*10000)/100:0}));})(),
+            data:(()=>{return realDates.map((d,i)=>({x:d,y:patrimonioVals[i]>0?Math.round(realVals[i]/patrimonioVals[i]*10000)/100:0}));})(),
             borderColor:'#30D158',
             backgroundColor: 'transparent',
             borderWidth:1.5,
