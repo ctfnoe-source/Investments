@@ -1781,13 +1781,13 @@ function _renderHTMLBars(containerId, entries, total, fmtFn, colorArr) {
     const pct = total > 0 ? (val / total * 100).toFixed(1) : '0.0';
     const barW = max > 0 ? (val / max * 100).toFixed(1) : '0';
     const col = colorArr[i % colorArr.length];
-    return \`<div style="display:flex;align-items:center;gap:8px;padding:3px 4px">
-      <div style="font-size:11px;color:var(--text2);width:90px;flex-shrink:0;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">\${label}</div>
-      <div style="flex:1;height:14px;background:var(--card2);border-radius:7px;overflow:hidden">
-        <div style="height:100%;width:\${barW}%;background:\${col};border-radius:7px;transition:width 0.4s ease"></div>
-      </div>
-      <div style="font-size:11px;color:var(--text3);width:38px;flex-shrink:0;text-align:right">\${pct}%</div>
-    </div>\`;
+    return '<div style="display:flex;align-items:center;gap:8px;padding:3px 4px">'
+      + '<div style="font-size:11px;color:var(--text2);width:90px;flex-shrink:0;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + label + '</div>'
+      + '<div style="flex:1;height:14px;background:var(--card2);border-radius:7px;overflow:hidden">'
+      + '<div style="height:100%;width:' + barW + '%;background:' + col + ';border-radius:7px;transition:width 0.4s ease"></div>'
+      + '</div>'
+      + '<div style="font-size:11px;color:var(--text3);width:38px;flex-shrink:0;text-align:right">' + pct + '%</div>'
+      + '</div>';
   }).join('');
 }
 
