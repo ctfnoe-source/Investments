@@ -546,13 +546,13 @@ window._hideLandingLogin = function() {
       <button class="nav-tab" data-tab="inversiones">📈 Inversiones</button>
       <button class="nav-tab" data-tab="gastos">💳 Gastos</button>
       <button class="nav-tab" data-tab="metas">🎯 Metas</button>
-      <button class="nav-tab" data-tab="ajustes">⚙️ Ajustes</button>
     </div>
     <div style="display:flex;align-items:center;gap:5px;padding:0 8px;flex-shrink:0;max-width:160px;min-width:0">
       <span id="navPriceStatus" style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:3px;overflow:hidden;white-space:nowrap;min-width:0;flex-shrink:1"></span>
       <button id="btnUpdate" onclick="updateAllPrices(true)" title="Actualizar precios" style="font-size:13px;padding:4px 8px;border-radius:20px;border:1px solid var(--border);background:var(--card2);cursor:pointer;line-height:1;transition:opacity 0.2s;flex-shrink:0">🔄</button>
     </div>
     <div class="nav-user" id="navUser">
+      <button class="nav-tab" data-tab="ajustes" onclick="switchTab('ajustes')" title="Ajustes" style="font-size:13px;padding:4px 8px;border-radius:20px;border:1px solid var(--border);background:var(--card2);cursor:pointer;line-height:1;flex-shrink:0;font-family:var(--font)">⚙️</button>
       <div id="fbStatus" style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;white-space:nowrap;transition:all 0.3s;flex-shrink:0;display:none"></div>
       <button id="langToggleBtn" onclick="toggleLang()" title="Switch language" style="background:var(--card2);border:1px solid var(--border);border-radius:20px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;color:var(--text2);font-family:var(--font);transition:all 0.2s">🌐 EN</button>
       <button class="dark-toggle" id="darkToggle" onclick="toggleDark()" title="Modo oscuro">

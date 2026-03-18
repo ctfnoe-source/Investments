@@ -926,24 +926,28 @@ async function fetchSP500History() {
       }
     } catch(e) { /* silencioso */ }
   }
-  // 1b) Usar Finnhub candles si no hay historial suficiente (AV ausente o rate-limited)
+  // 1b) Usar Finnhub candles si no hay historial suficiente
   if (fhKey && result.dates.length < 3) {
-    try {
-      const toTs = Math.floor(Date.now()/1000);
-      const fromTs = toTs - 60*60*24*365*2; // 2 años atrás
-      const r = await fetchWithTimeout(`https://finnhub.io/api/v1/stock/candle?symbol=SPY&resolution=M&from=${fromTs}&to=${toTs}&token=${fhKey}`);
-      if (r.ok) {
-        const d = await r.json();
-        if (d.s === 'ok' && d.t && d.c) {
-          const entries = d.t.map((ts, i) => ({
-            date: new Date(ts*1000).toISOString().split('T')[0],
-            close: d.c[i]
-          })).filter(e => e.close > 0);
-          result.dates = entries.map(e => e.date);
-          result.closes = entries.map(e => e.close);
+    // Try monthly candles first (2 years), then weekly (3 months) as fallback
+    for (const [res, days] of [['M', 365*2], ['W', 90]]) {
+      try {
+        const toTs = Math.floor(Date.now()/1000);
+        const fromTs = toTs - 60*60*24*days;
+        const r = await fetchWithTimeout(`https://finnhub.io/api/v1/stock/candle?symbol=SPY&resolution=${res}&from=${fromTs}&to=${toTs}&token=${fhKey}`);
+        if (r.ok) {
+          const d = await r.json();
+          if (d.s === 'ok' && d.t && d.c && d.t.length > 1) {
+            const entries = d.t.map((ts, i) => ({
+              date: new Date(ts*1000).toISOString().split('T')[0],
+              close: d.c[i]
+            })).filter(e => e.close > 0);
+            result.dates = entries.map(e => e.date);
+            result.closes = entries.map(e => e.close);
+            break; // got data, stop trying
+          }
         }
-      }
-    } catch(e) { /* silencioso */ }
+      } catch(e) { /* silencioso */ }
+    }
   }
 
   // 2) Precio de hoy via Finnhub (c=current, pc=previous close)
@@ -1059,19 +1063,22 @@ async function fetchQQQHistory() {
   }
   // 1b) Usar Finnhub candles si no hay historial suficiente
   if (fhKey && result.dates.length < 3) {
-    try {
-      const toTs = Math.floor(Date.now()/1000);
-      const fromTs = toTs - 60*60*24*365*2;
-      const r = await fetchWithTimeout(`https://finnhub.io/api/v1/stock/candle?symbol=QQQ&resolution=M&from=${fromTs}&to=${toTs}&token=${fhKey}`);
-      if (r.ok) {
-        const d = await r.json();
-        if (d.s === 'ok' && d.t && d.c) {
-          const entries = d.t.map((ts, i) => ({ date: new Date(ts*1000).toISOString().split('T')[0], close: d.c[i] })).filter(e => e.close > 0);
-          result.dates = entries.map(e => e.date);
-          result.closes = entries.map(e => e.close);
+    for (const [res, days] of [['M', 365*2], ['W', 90]]) {
+      try {
+        const toTs = Math.floor(Date.now()/1000);
+        const fromTs = toTs - 60*60*24*days;
+        const r = await fetchWithTimeout(`https://finnhub.io/api/v1/stock/candle?symbol=QQQ&resolution=${res}&from=${fromTs}&to=${toTs}&token=${fhKey}`);
+        if (r.ok) {
+          const d = await r.json();
+          if (d.s === 'ok' && d.t && d.c && d.t.length > 1) {
+            const entries = d.t.map((ts, i) => ({ date: new Date(ts*1000).toISOString().split('T')[0], close: d.c[i] })).filter(e => e.close > 0);
+            result.dates = entries.map(e => e.date);
+            result.closes = entries.map(e => e.close);
+            break;
+          }
         }
-      }
-    } catch(e) { /* silencioso */ }
+      } catch(e) { /* silencioso */ }
+    }
   }
   if (fhKey) {
     try {
