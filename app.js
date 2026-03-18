@@ -1886,7 +1886,7 @@ function renderDashboard(){
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:3px;background:rgba(245,166,35,0.95);border-radius:2px"></span>${t('patrimonioTotal2')}</span>
           <span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:3px;background:#30D158;border-radius:2px"></span>${t('gananciaReal')}</span>
-          <span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:3px;background:rgba(10,132,255,0.85);border-radius:2px"></span>${t('proyeccion')} ${(re*100).toFixed(0)}%</span>
+          
           <span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:3px;background:rgba(10,132,255,0.85);border-radius:2px"></span>${t('rendPlataformas')} %</span>
           <span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:3px;background:rgba(48,209,88,0.85);border-radius:2px"></span>${t('gpNoRealizada')} %</span>
           ${(settings.alphaVantageKey||settings.finnhubKey)?`<span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:3px;background:rgba(220,50,80,0.9);border-radius:2px"></span>S&P 500 %</span><span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:3px;background:rgba(50,130,240,0.9);border-radius:2px"></span>NASDAQ %</span>`:''}
@@ -2219,10 +2219,10 @@ function renderDashboard(){
         datasets:[
           {
             label: t('patrimonioTotal2'),
-            data:(()=>{const base=patrimonioVals[0]||1;return realDates.map((d,i)=>({x:d,y:base>0?Math.round((patrimonioVals[i]-base)/base*10000)/100:0}));})(),
+            data:realDates.map((d,i)=>({x:d,y:patrimonioVals[i]})),
             borderColor:'rgba(245,166,35,0.95)',
             backgroundColor:'transparent',
-            borderWidth:2,
+            borderWidth:1.5,
             fill:false,
             tension:0.4,
             pointRadius: realDates.map((d,i) => i===realDates.length-1 ? dynLastRadius : (_evoEvt[d] ? 1.5 : 0)),
@@ -2233,7 +2233,7 @@ function renderDashboard(){
             pointHoverBackgroundColor:'rgba(245,166,35,1)',
             pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
             pointHoverBorderWidth:2,
-            yAxisID:'yc',
+            yAxisID:'y2',
           },
           {
             label: t('gananciaReal'),
@@ -2253,24 +2253,7 @@ function renderDashboard(){
             pointHoverBorderWidth:2,
             yAxisID:'yc',
           },
-          {
-            label: t('proyeccion')+' '+((re*100).toFixed(0))+'% '+t('anual'),
-            data: projDatesAdj.filter(d=>d<=todayDateStr).map((d,i)=>({x:d,y:projValsAdj[i]})),
-            borderColor:'rgba(10,132,255,0.85)',
-            backgroundColor:'transparent',
-            borderWidth:1,
-            fill:false,
-            tension:0.4,
-            pointRadius: (()=>{ const d=projDatesAdj.filter(dd=>dd<=todayDateStr); return d.map((_,i)=>i===d.length-1?2.3:0); })(),
-            pointBackgroundColor: (()=>{ const d=projDatesAdj.filter(dd=>dd<=todayDateStr); return d.map((_,i)=>i===d.length-1?(isDark?'#1C1C1E':'#fff'):'rgba(10,132,255,0.85)'); })(),
-            pointBorderColor: (()=>{ const d=projDatesAdj.filter(dd=>dd<=todayDateStr); return d.map((_,i)=>i===d.length-1?'rgba(10,132,255,0.85)':'transparent'); })(),
-            pointBorderWidth: (()=>{ const d=projDatesAdj.filter(dd=>dd<=todayDateStr); return d.map((_,i)=>i===d.length-1?2:0); })(),
-            pointHoverRadius:5,
-            pointHoverBackgroundColor:'rgba(10,132,255,0.9)',
-            pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
-            pointHoverBorderWidth:2,
-            yAxisID:'y2',
-          },
+
           ...((()=>{if(!_sp500Data||(!(settings.alphaVantageKey||settings.finnhubKey)))return[];const _ed=[];platforms.forEach(p=>{if(p.fechaInicio)_ed.push(p.fechaInicio);});movements.forEach(m=>{if(m.fecha)_ed.push(m.fecha);});_ed.sort();const _fo=_ed.length>0?_ed[0]:todayDateStr;const _pts=sp500ReturnPct(_sp500Data,_fo);const _d=_pts.filter(p=>!xMin||new Date(p.date+'T00:00:00').getTime()>=xMin).map(p=>({x:p.date,y:p.pct}));if(!_d.length)return[];return[{label:'S&P 500 %',data:_d,borderColor:isDark?'rgba(255,90,120,0.9)':'rgba(220,50,80,0.9)',backgroundColor:'transparent',borderWidth:1.5,fill:false,tension:0.4,pointRadius:_d.map((_,i)=>i===_d.length-1?2:0),pointHoverRadius:4,yAxisID:'yc'}];})()),
           ...((()=>{if(!_qqqData||(!(settings.alphaVantageKey||settings.finnhubKey)))return[];const _edq=[];platforms.forEach(p=>{if(p.fechaInicio)_edq.push(p.fechaInicio);});movements.forEach(m=>{if(m.fecha)_edq.push(m.fecha);});_edq.sort();const _foq=_edq.length>0?_edq[0]:todayDateStr;const _ptsq=sp500ReturnPct(_qqqData,_foq);const _dq=_ptsq.filter(p=>!xMin||new Date(p.date+'T00:00:00').getTime()>=xMin).map(p=>({x:p.date,y:p.pct}));if(!_dq.length)return[];return[{label:'NASDAQ (QQQ) %',data:_dq,borderColor:isDark?'rgba(90,160,255,0.9)':'rgba(50,130,240,0.9)',backgroundColor:'transparent',borderWidth:1.5,fill:false,tension:0.4,pointRadius:_dq.map((_,i)=>i===_dq.length-1?2:0),pointHoverRadius:4,yAxisID:'yc'}];})()),
           ...((()=>{const _pd=hist.filter(s=>!xMin||new Date(s.date+'T00:00:00').getTime()>=xMin).map(s=>{const g=Math.round((s.value-(s.capital||s.value))-(tickerList.reduce((sum,tk)=>{const gp=tk.gpNoRealizada||0;return sum+(tk.moneda==='MXN'?gp:gp*tc);},0)));const cap=s.capital||s.value;return{x:s.date,y:cap>0?Math.round((g/cap)*10000)/100:0};});if(!_pd.length)return[];return[{label:t('rendPlataformas')+' %',data:_pd,borderColor:'rgba(10,132,255,0.85)',backgroundColor:'transparent',borderWidth:1.5,fill:false,tension:0.4,pointRadius:_pd.map((_,i)=>i===_pd.length-1?2:0),pointHoverRadius:4,yAxisID:'yc'}];})()),
@@ -2343,6 +2326,12 @@ function renderDashboard(){
             position:'left',
             grid:{color:isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)'},
             ticks:{font:{size:11},color:tickColor,callback:v=>(v>=0?'+':'')+v.toFixed(1)+'%',maxTicksLimit:6},
+            border:{display:false}
+          },
+          y2:{
+            position:'right',
+            grid:{display:false},
+            ticks:{font:{size:10},color:isDark?'rgba(245,166,35,0.45)':'rgba(180,120,0,0.4)',callback:v=>fmt(v),maxTicksLimit:5},
             border:{display:false}
           }
         }
@@ -2701,7 +2690,22 @@ function saveMovement(sec){
   }
   let mov={id:uid(),seccion:sec,fecha:d.fecha||today()};
   if(sec==='plataformas'){if(!d.platform||!d.monto)return;mov.platform=d.platform;mov.tipoPlat=d.tipoPlat;mov.monto=Number(d.monto);mov.desc=d.desc||'';}
-  else if(sec==='inversiones'){if(!d.ticker||!d.cantidad||!d.precioUnit)return;mov.tipoActivo=d.tipoActivo;mov.ticker=d.ticker.toUpperCase();mov.broker=d.broker;mov.tipoMov=d.tipoMov;mov.cantidad=Number(d.cantidad);mov.precioUnit=Number(d.precioUnit);mov.montoTotal=mov.cantidad*mov.precioUnit;mov.moneda=d.moneda||'USD';mov.comision=Number(d.comision)||0;mov.notas=d.notas||'';}
+  else if(sec==='inversiones'){
+    if(!d.ticker)return;
+    const _tipo=d.tipoMov||'Compra';
+    if(_tipo==='Dividendo'||_tipo==='Comisión'){
+      if(!d.cantidad)return;
+      mov.tipoActivo=d.tipoActivo||'ETF';mov.ticker=d.ticker.toUpperCase();mov.broker=d.broker||'';
+      mov.tipoMov=_tipo;mov.cantidad=Number(d.cantidad);mov.precioUnit=1;
+      mov.montoTotal=Number(d.cantidad);mov.moneda=d.moneda||'USD';mov.comision=0;mov.notas=d.notas||'';
+    } else {
+      if(!d.cantidad||!d.precioUnit)return;
+      mov.tipoActivo=d.tipoActivo;mov.ticker=d.ticker.toUpperCase();mov.broker=d.broker;mov.tipoMov=_tipo;
+      mov.cantidad=Number(d.cantidad);mov.precioUnit=Number(d.precioUnit);
+      mov.montoTotal=mov.cantidad*mov.precioUnit;mov.moneda=d.moneda||'USD';
+      mov.comision=Number(d.comision)||0;mov.notas=d.notas||'';
+    }
+  }
   else{if(!d.importe)return;mov.categoria=d.categoria;mov.tipo=d.tipo;
     const importeRaw=Number(d.importe);const monedaGasto=d.monedaGasto||'MXN';
     {const _fx=_fxCache||LS.get('fxCache');const _eurmxn=(_fx?.eurmxn)||settings.tipoEUR||17;const _usdmxn=(_fx?.usdmxn)||settings.tipoCambio||17;const _gbpmxn=_usdmxn/(_fx?.usdgbp||0.78);
@@ -3758,7 +3762,7 @@ function renderAjustes(){
           })()}
         </div>
       </div>
-      <div class="card"><div class="card-title">📈 ${t('expectedAnnualReturn')}</div><div style="display:flex;align-items:center;gap:10px;margin-top:8px"><input type="number" step="0.5" class="form-input" style="width:80px;font-size:20px;font-weight:700;text-align:center" value="${((settings.rendimientoEsperado||0.06)*100)}" onchange="window.settings.rendimientoEsperado=Number(this.value)/100;saveAll()"><span style="font-size:14px;color:var(--text2)">% ${t('anual')}</span></div></div>
+      
     </div>
     <div class="grid-2" style="margin-bottom:16px">
       <div class="card">
@@ -4479,6 +4483,18 @@ window.showAportaciones = showAportaciones;
     var tmEl=document.getElementById('invTipoMov');
     var box =document.getElementById('invSellInfoBox');
     var cLbl=document.getElementById('invCantLabel');
+    var _tm=tmEl?tmEl.value:'Compra';
+    var _pGrp=document.getElementById('invPrecioUnit');
+    var _cGrp=document.querySelector('[name="comision"]');
+    if(_tm==='Dividendo'||_tm==='Comisión'){
+      if(cLbl)cLbl.textContent=_tm==='Dividendo'?'Monto dividendo recibido':'Monto comisión';
+      if(_pGrp)_pGrp.closest('.form-group').style.display='none';
+      if(_cGrp)_cGrp.closest('.form-group').style.display='none';
+    } else {
+      if(cLbl)cLbl.textContent=typeof t==='function'?t('cantidad'):'Cantidad';
+      if(_pGrp)_pGrp.closest('.form-group').style.display='';
+      if(_cGrp)_cGrp.closest('.form-group').style.display='';
+    }
     var bLbl=document.getElementById('invBrokerLabel');
     var bInp=document.getElementById('invBroker');
     var bDL =document.getElementById('brokerList');
