@@ -1546,7 +1546,7 @@ function getTickerPositions(){
     tkp.precioActual=pi.price;tkp.priceLabel=pi.label;tkp.priceCssClass=pi.cssClass;tkp.priceTooltip=pi.tooltip||'';
     tkp.valorActual=tkp.precioActual&&tkp.cantActual>0?tkp.cantActual*tkp.precioActual:null;
     tkp.costoPosicion=tkp.cantActual*tkp.precioCostoPromedio;
-    tkp.gpNoRealizada=tkp.valorActual!==null?tkp.valorActual-tkp.costoPosicion:null;
+    tkp.gpNoRealizada=tkp.valorActual!==null?tkp.valorActual-tkp.costoPosicion-(tkp.comisionTotal||0):null;
     tkp.pctNoRealizada=tkp.costoPosicion>0&&tkp.gpNoRealizada!==null?tkp.gpNoRealizada/tkp.costoPosicion:null;
     tkp.gpRealizada=tkp.cantV>0?tkp.ventasTotal-(tkp.precioCostoPromedio*tkp.cantV):0;
     return tkp;
@@ -2213,7 +2213,7 @@ function renderDashboard(){
         datasets:[
           {
             label: t('patrimonioTotal2'),
-            data:(()=>{const base=patrimonioVals[0]||1;return realDates.map((d,i)=>({x:d,y:base>0?Math.round((patrimonioVals[i]-base)/base*10000)/100:0}));})(),
+            data:realDates.map((d,i)=>({x:d,y:patrimonioVals[i]})),
             borderColor:'rgba(245,166,35,0.95)',
             backgroundColor:'transparent',
             borderWidth:2,
@@ -2227,7 +2227,7 @@ function renderDashboard(){
             pointHoverBackgroundColor:'rgba(245,166,35,1)',
             pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
             pointHoverBorderWidth:2,
-            yAxisID:'yc',
+            yAxisID:'y2',
           },
           {
             label: t('gananciaReal'),
@@ -2296,6 +2296,7 @@ function renderDashboard(){
               label: ctx => {
                 if (ctx.dataset.hidden) return null;
                 const val = ctx.parsed.y;
+                if (ctx.dataset.yAxisID === 'y2') return ` ${ctx.dataset.label}: ${fmt(val)}`;
                 const sign = val >= 0 ? '+' : '';
                 return ` ${ctx.dataset.label}: ${sign}${val.toFixed(2)}%`;
               },
@@ -2337,6 +2338,12 @@ function renderDashboard(){
             position:'left',
             grid:{color:isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)'},
             ticks:{font:{size:11},color:tickColor,callback:v=>(v>=0?'+':'')+v.toFixed(1)+'%',maxTicksLimit:6},
+            border:{display:false}
+          },
+          y2:{
+            position:'right',
+            grid:{display:false},
+            ticks:{font:{size:10},color:isDark?'rgba(245,166,35,0.45)':'rgba(180,120,0,0.4)',callback:v=>fmt(v),maxTicksLimit:5},
             border:{display:false}
           }
         }
