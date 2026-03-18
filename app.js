@@ -3400,15 +3400,12 @@ function renderGastos(){
       </div>
       <button class="btn btn-secondary" onclick="switchTab('movimientos');openMovModal('gastos')">+ ${t('gasto')}</button>
     </div>
-    <div class="card" style="margin-bottom:16px;border-top:3px solid var(--purple)">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <div class="card-title" style="margin:0">${t('recurrentesTitulo')} — ${fmtEUR(totalRecurrente)}/${t('mes')}</div>
-        <button class="btn btn-sm" style="background:rgba(191,90,242,0.1);color:var(--purple);border:none;font-weight:700" onclick="openRecurrentesModal()">${t('recurrentesGestionar')}</button>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">
-        ${recurrentes.filter(r=>r.activo).slice(0,6).map(r=>`<div class="recurrente-card"><div class="recurrente-icon" style="background:${r.color||'var(--card2)'}22">${r.icon||'📌'}</div><div class="recurrente-info"><div class="recurrente-name">${r.nombre}</div><div class="recurrente-meta">${r.frecuencia} · ${t('dia')} ${r.dia}</div></div><div class="recurrente-amount" style="color:var(--red)">-${fmtEUR(r.importe)}</div></div>`).join('')}
-        ${recurrentes.filter(r=>r.activo).length===0?'<div style="color:var(--text2);font-size:13px;padding:8px">'+t('sinRecurrentes')+'</div>':''}
-      </div>
+    <div style="margin-bottom:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-sm" style="background:rgba(191,90,242,0.10);color:var(--purple);border:1px solid rgba(191,90,242,0.25);font-weight:700;display:flex;align-items:center;gap:6px;flex-shrink:0" onclick="openRecurrentesModal()">
+        🔄 ${t('recurrentesTitulo')}${totalRecurrente>0?` — ${fmtEUR(totalRecurrente)}/${t('mes')}`:''}
+      </button>
+      ${recurrentes.filter(r=>r.activo).slice(0,4).map(r=>`<span style="font-size:11px;color:var(--text2);background:var(--card2);border:0.5px solid var(--border);border-radius:20px;padding:3px 10px;white-space:nowrap">${r.icon||'📌'} ${r.nombre} <span style="color:var(--red);font-weight:700">-${fmtEUR(r.importe)}</span></span>`).join('')}
+      ${recurrentes.filter(r=>r.activo).length>4?`<span style="font-size:11px;color:var(--text3)">+${recurrentes.filter(r=>r.activo).length-4} ${_lang==='es'?'más':'more'}</span>`:''}
     </div>
     <div class="card" style="margin-bottom:16px;border-top:3px solid var(--green)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px">
@@ -3448,7 +3445,7 @@ function renderGastos(){
       </div>
     </div>
 
-    ${totIngEUR===0&&totalIngPlaneadoEUR>0?`<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:rgba(10,132,255,0.06);border:1px solid rgba(10,132,255,0.15);border-radius:10px;margin-bottom:16px;font-size:12px;color:var(--text2)"><span>💡</span><span>${t('usandoIngresoPlaneado', fmtEUR(totalIngPlaneadoEUR))} <button class="btn btn-sm" style="font-size:11px;padding:2px 8px;margin-left:4px;background:none;border:1px solid var(--border);cursor:pointer" onclick="switchTab('movimientos');openMovModal('gastos')">+ ${t('registrarIngreso')}</button></span></div>`:''}
+
 
     <div class="grid-4" style="margin-bottom:16px">
       <div class="card stat" style="border-top:3px solid var(--teal)">
