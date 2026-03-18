@@ -4024,61 +4024,104 @@ function _buildAiContext() {
     const ing = settings.ingresos||{};
     const sueldo = ing.sueldo||ing.sueldoRaw||0;
     const totalIng = sueldo+(ing.extrasEUR||0)+(ing.otrosEUR||0);
-
-    const topPlats = [...plats].sort((a,b)=>platSaldoToMXN(b)-platSaldoToMXN(a)).slice(0,5)
-      .map(p=>`${p.name} (${p.type}): ${fmtPlat(p.saldo,p.moneda)}, return ${p.rendimiento>=0?'+':''}${fmtPlat(p.rendimiento,p.moneda)}`).join('; ');
-
-    const topInv = tickers.filter(t=>t.cantActual>0).slice(0,5)
-      .map(tkr=>`${tkr.ticker} (${tkr.type}): ×${tkr.cantActual}, G/L ${tkr.gpNoRealizada!=null?(tkr.gpNoRealizada>=0?'+':'')+tkr.gpNoRealizada.toFixed(0)+' '+tkr.moneda:'no price'}`).join('; ');
-
-    const metasSummary = goals.slice(0,4).map(g=>`${g.nombre}: goal ${fmt(g.meta)}, current ${fmt(g.actual||0)}`).join('; ');
-
     const balance = totalIng - totalGastos;
 
-    const movRecientes = movements
-      .filter(m => m.fecha)
-      .sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''))
-      .slice(0, 500)
-      .map(m => `[${m.fecha}] ${m.seccion||''} | ${m.categoria||''} | ${m.desc||m.notas||''} | ${m.monedaOrig||'MXN'} ${(m.importe||0).toFixed(2)}`)
-      .join('\n');
+    // Plataformas completas
+    const todasPlats = plats.map(p=>{
+      const tasaStr = p.tasaAnual>0 ? `, tasa ${p.tasaAnual}% anual` : '';
+      const rendAutoStr = p.rendimientoAuto>0 ? `, rendAuto ${fmtPlat(p.rendimientoAuto,p.moneda)}` : '';
+      return `${p.name} (${p.type}/${p.moneda}): saldo ${fmtPlat(p.saldo,p.moneda)}, rendimiento ${p.rendimiento>=0?'+':''}${fmtPlat(p.rendimiento,p.moneda)}${rendAutoStr}${tasaStr}`;
+    }).join('\n');
 
+    // Inversiones completas
+    const todasInv = tickers.filter(t=>t.cantActual>0).map(tkr=>{
+      const gpNR = tkr.gpNoRealizada!=null?(tkr.gpNoRealizada>=0?'+':'')+tkr.gpNoRealizada.toFixed(2)+' '+tkr.moneda:'sin precio';
+      const gpR  = tkr.gpRealizada!=0?`, G/P realizada: ${tkr.gpRealizada>=0?'+':''}${tkr.gpRealizada.toFixed(2)} ${tkr.moneda}`:'';
+      const precioStr = tkr.precioActual?`, precio actual: ${tkr.precioActual.toFixed(2)} ${tkr.moneda}`:'';
+      return `${tkr.ticker} (${tkr.type||''}): x${tkr.cantActual}, costo promedio ${tkr.precioCostoPromedio.toFixed(2)} ${tkr.moneda}, G/P no realizada: ${gpNR}${gpR}${precioStr}`;
+    }).join('\n');
+
+    // Presupuestos por categoria vs gasto real
+    const budgets = settings.budgets||{};
+    const presupuestosStr = EXPENSE_CATS.map(cat=>{
+      const pres = budgets[cat.id]||0;
+      const real = bycat[cat.id]||0;
+      if(pres===0 && real===0) return null;
+      const pct = pres>0?((real/pres)*100).toFixed(0)+'%':'sin presupuesto';
+      const estado = pres>0?(real>pres?'EXCEDIDO':real>pres*0.8?'cerca del limite':'ok'):'';
+      return `${cat.icon} ${cat.name}: presupuesto EUR ${pres.toFixed(0)}, gastado EUR ${real.toFixed(0)} (${pct}) ${estado}`;
+    }).filter(Boolean).join('\n');
+
+    // Metas completas con porcentaje
+    const metasSummary = goals.map(g=>{
+      const pct = g.meta>0?((g.actual||0)/g.meta*100).toFixed(0):0;
+      return `${g.nombre}: meta ${fmt(g.meta)}, actual ${fmt(g.actual||0)} (${pct}% completado)`;
+    }).join('\n');
+
+    // Recurrentes activos
     const recurrentesList = recurrentes
       .filter(r => r.activo !== false)
-      .map(r => `${r.nombre}: ${r.importe} ${r.moneda||'EUR'} / ${r.frecuencia||'month'} — ${r.categoria||''}`)
+      .map(r => `${r.nombre}: ${r.importe} ${r.moneda||'EUR'} / ${r.frecuencia||'mensual'} - categoria: ${r.categoria||''}`)
       .join('\n');
 
-    const todasPlats = plats.map(p=>`${p.name} (${p.type}/${p.moneda}): balance ${fmtPlat(p.saldo,p.moneda)}, return ${p.rendimiento>=0?'+':''}${fmtPlat(p.rendimiento,p.moneda)}`).join('\n');
+    // Historial de patrimonio (ultimos 90 dias + resumen)
+    const histSorted = [...(patrimonioHistory||[])].sort((a,b)=>a.date.localeCompare(b.date));
+    const hist90 = histSorted.slice(-90);
+    const histStr = hist90.map(s=>`${s.date}: $${Math.round(s.value).toLocaleString('es-MX')} MXN`).join('\n');
+    const hist30 = histSorted.slice(-30);
+    const varMes = hist30.length>=2 ? hist30[hist30.length-1].value - hist30[0].value : null;
+    const varAnio = histSorted.length>=2 ? histSorted[histSorted.length-1].value - histSorted[0].value : null;
+    const histResumen = [
+      varMes!=null?`Variacion ultimos 30 dias: ${varMes>=0?'+':''}$${Math.round(varMes).toLocaleString('es-MX')} MXN`:'',
+      varAnio!=null?`Variacion total registrada: ${varAnio>=0?'+':''}$${Math.round(varAnio).toLocaleString('es-MX')} MXN`:'',
+      `Puntos de datos registrados: ${histSorted.length}`,
+    ].filter(Boolean).join('\n');
 
-    return `${_lang === 'es' 
-      ? 'Eres un asistente financiero personal para la aplicación TrackFolio. Tienes acceso a los datos REALES del usuario. Responde en español, de forma concisa y amigable. NO des consejos de inversión formales. Puedes analizar los datos y dar observaciones útiles. Cuando te pregunten sobre movimientos específicos, búscalos en la lista proporcionada.'
-      : 'You are a personal financial assistant for the TrackFolio app. You have access to the user\'s REAL data. Respond in Spanish (if the user writes in Spanish) or English accordingly, concisely and friendly. DO NOT give formal investment advice. You CAN analyze the data and give useful observations. When asked about specific movements, look for them in the provided list.'}
+    // Todos los movimientos sin limite
+    const todosMovs = movements
+      .filter(m => m.fecha)
+      .sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''))
+      .map(m => `[${m.fecha}] ${m.seccion||''} | ${m.categoria||m.tipoPlat||''} | ${m.desc||m.notas||''} | ${m.monedaOrig||'MXN'} ${(m.importe||0).toFixed(2)}`)
+      .join('\n');
 
-FINANCIAL SUMMARY (${new Date().toLocaleDateString('es-ES')}):
-- Total net worth: ${fmt(patrimonio)} MXN (platforms: ${fmt(totalPlats)}, investments: ${fmt(totalInv)})
-- Exchange rate: USD/MXN = ${tc}
-- Estimated monthly income: EUR ${totalIng.toFixed(0)}
-- Expenses this month (${mesKey}): EUR ${totalGastos.toFixed(0)} — by category: ${Object.entries(bycat).map(([k,v])=>k+': EUR '+v.toFixed(0)).join(', ')}
-- Month balance: EUR ${balance.toFixed(0)} (${totalIng>0?((balance/totalIng)*100).toFixed(0):'—'}% ${t('ahorro')})
-- Goals: ${metasSummary||'no goals'}
+    return `${_lang === 'es'
+      ? 'Eres un asistente financiero personal para la aplicacion TrackFolio. Tienes acceso COMPLETO a los datos reales del usuario: plataformas, inversiones, gastos, presupuestos, metas, recurrentes e historial de patrimonio. Responde en espanol, de forma concisa y amigable. NO des consejos de inversion formales. Analiza los datos con detalle cuando te lo pidan.'
+      : 'You are a personal financial assistant for TrackFolio. You have FULL access to the user real data: platforms, investments, expenses, budgets, goals, recurring items and net worth history. Respond concisely and in the user language. Do NOT give formal investment advice. Analyze data in detail when asked.'}
 
-PLATFORMS:
-${todasPlats||'none'}
+=== RESUMEN FINANCIERO (${new Date().toLocaleDateString('es-ES')}) ===
+- Patrimonio total: ${fmt(patrimonio)} MXN (plataformas: ${fmt(totalPlats)} | inversiones: ${fmt(totalInv)})
+- Tipo de cambio: USD/MXN = ${tc} | EUR/MXN = ${settings.tipoEUR||'N/A'}
+- Ingreso mensual estimado: EUR ${totalIng.toFixed(0)} (sueldo: EUR ${sueldo.toFixed(0)}, extras: EUR ${(ing.extrasEUR||0).toFixed(0)}, otros: EUR ${(ing.otrosEUR||0).toFixed(0)})
+- Gastos mes ${mesKey}: EUR ${totalGastos.toFixed(0)}
+- Balance mes: EUR ${balance.toFixed(0)} (${totalIng>0?((balance/totalIng)*100).toFixed(0):'--'}% ahorro)
 
-OPEN INVESTMENTS:
-${topInv||'none'}
+=== PLATAFORMAS (${plats.length} total) ===
+${todasPlats||'ninguna'}
 
-ACTIVE RECURRENTS:
-${recurrentesList||'none'}
+=== INVERSIONES ABIERTAS (${tickers.filter(t=>t.cantActual>0).length} posiciones) ===
+${todasInv||'ninguna'}
 
-ALL MOVEMENTS (showing ${Math.min(movements.length,500)} of ${movements.length} total):
-${movRecientes||'no movements'}`;
+=== PRESUPUESTOS VS GASTO REAL (${mesKey}) ===
+${presupuestosStr||'sin presupuestos configurados'}
+
+=== METAS FINANCIERAS (${goals.length} total) ===
+${metasSummary||'sin metas'}
+
+=== RECURRENTES ACTIVOS (${recurrentes.filter(r=>r.activo!==false).length} total) ===
+${recurrentesList||'ninguno'}
+
+=== HISTORIAL PATRIMONIO (ultimos 90 dias) ===
+${histResumen}
+${histStr||'sin historial'}
+
+=== TODOS LOS MOVIMIENTOS (${movements.length} total) ===
+${todosMovs||'sin movimientos'}`;
   } catch(e) {
-    return _lang === 'es' 
-      ? 'Eres un asistente financiero personal. Responde en español, de forma concisa y amigable.'
+    return _lang === 'es'
+      ? 'Eres un asistente financiero personal. Responde en espanol, de forma concisa y amigable.'
       : 'You are a personal financial assistant. Respond concisely and friendly.';
   }
 }
-
 async function testAiKey(provider) {
   if (!provider) return;
   const key = (settings.aiKeys||{})[provider] || '';
