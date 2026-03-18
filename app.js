@@ -2010,7 +2010,7 @@ function renderDashboard(){
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center" id="chartEvoLegend">
           ${[
             {key:'patrimonio', label:t('patrimonioTotal2'), color:'rgba(245,166,35,0.95)', solid:true},
-            {key:'ganancia',   label:t('gananciaReal'),     color:'#30D158',               solid:false},
+            {key:'ganancia',   label:t('gananciaReal'),     color:'rgba(0,199,190,0.95)',   solid:true},
             {key:'rendPlat',   label:t('rendPlataformas')+' %', color:'rgba(10,132,255,0.85)', solid:false},
             {key:'gpInv',      label:t('gpNoRealizada')+' %',   color:'rgba(48,209,88,0.85)',  solid:false},
             ...((settings.alphaVantageKey||settings.finnhubKey)?[
@@ -2388,18 +2388,17 @@ function renderDashboard(){
           {
             label: t('gananciaReal'),
             data:(()=>{return realDates.map((d,i)=>({x:d,y:patrimonioVals[i]>0?Math.round(realVals[i]/patrimonioVals[i]*10000)/100:0}));})(),
-            borderColor:'#30D158',
+            borderColor:'rgba(0,199,190,0.95)',
             backgroundColor: 'transparent',
             borderWidth:1.5,
-            borderDash:[4,3],
             fill:false,
             tension:0.4,
             pointRadius: realDates.map((d,i) => i===realDates.length-1 ? dynLastRadius : (_evoEvt[d] ? 1.5 : 0)),
-            pointBackgroundColor: realDates.map((_,i) => i===realDates.length-1 ? (isDark?'#1C1C1E':'#fff') : '#30D158'),
-            pointBorderColor: realDates.map((_,i) => i===realDates.length-1 ? '#30D158' : 'transparent'),
+            pointBackgroundColor: realDates.map((_,i) => i===realDates.length-1 ? (isDark?'#1C1C1E':'#fff') : 'rgba(0,199,190,0.95)'),
+            pointBorderColor: realDates.map((_,i) => i===realDates.length-1 ? 'rgba(0,199,190,0.95)' : 'transparent'),
             pointBorderWidth: realDates.map((_,i) => i===realDates.length-1 ? 2 : 0),
             pointHoverRadius:6,
-            pointHoverBackgroundColor:'#30D158',
+            pointHoverBackgroundColor:'rgba(0,199,190,0.95)',
             pointHoverBorderColor:isDark?'#1C1C1E':'#fff',
             pointHoverBorderWidth:2,
             yAxisID:'yc',
