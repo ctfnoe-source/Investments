@@ -351,3 +351,108 @@ tr:hover td { background: var(--table-row-hover); }
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ==================== SKELETON LOADERS ==================== */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+.skeleton {
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--card2) 25%, var(--border2) 50%, var(--card2) 75%);
+  background-size: 600px 100%;
+  animation: shimmer 1.4s ease infinite;
+}
+.skeleton-page {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.skeleton-header {
+  height: 36px;
+  width: 220px;
+  border-radius: 10px;
+}
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.skeleton-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.skeleton-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  border: 0.5px solid var(--border);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.skeleton-line { height: 12px; border-radius: 6px; }
+.skeleton-line.w-40  { width: 40%; }
+.skeleton-line.w-60  { width: 60%; }
+.skeleton-line.w-80  { width: 80%; }
+.skeleton-line.w-100 { width: 100%; }
+.skeleton-line.h-32  { height: 32px; border-radius: 8px; }
+.skeleton-line.h-48  { height: 48px; border-radius: 8px; }
+.skeleton-line.h-120 { height: 120px; border-radius: 10px; }
+.skeleton-line.h-160 { height: 160px; border-radius: 10px; }
+@media(max-width:768px) {
+  .skeleton-grid { grid-template-columns: 1fr 1fr; }
+  .skeleton-grid-2 { grid-template-columns: 1fr; }
+}
+
+/* ==================== TOAST ==================== */
+#toastContainer {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 8000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(10px) scale(0.95);
+  transition: opacity 0.22s ease, transform 0.22s cubic-bezier(.34,1.56,.64,1);
+  pointer-events: none;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.toast.toast-success { background: var(--green); }
+.toast.toast-error   { background: var(--red); }
+.toast.toast-info    { background: var(--blue); }
+
+/* ==================== SWIPE — page slide transition ==================== */
+.page.active {
+  animation: none; /* override the old fadeIn */
+}
+@keyframes slideInRight {
+  from { transform: translateX(40px);  opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+@keyframes slideInLeft {
+  from { transform: translateX(-40px); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+.page.slide-in-right { animation: slideInRight 0.22s cubic-bezier(.4,0,.2,1) both; }
+.page.slide-in-left  { animation: slideInLeft  0.22s cubic-bezier(.4,0,.2,1) both; }

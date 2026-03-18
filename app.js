@@ -469,6 +469,26 @@ function toggleValues() {
 }
 window.toggleValues = toggleValues;
 
+// ==================== TOAST ====================
+function showToast(msg, type='success', duration=1800) {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = msg;
+  container.appendChild(el);
+  // trigger reflow then animate in
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => { el.classList.add('show'); });
+  });
+  setTimeout(() => {
+    el.classList.remove('show');
+    el.addEventListener('transitionend', () => el.remove(), { once: true });
+  }, duration);
+}
+window.showToast = showToast;
+// ==================== FIN TOAST ====================
+
 function _getAiSuggestions() {
   const tab = window.currentTab || 'dashboard';
   const map = { gastos:'sgGastos', inversiones:'sgInversiones', plataformas:'sgPlataformas', metas:'sgMetas' };
@@ -1562,7 +1582,21 @@ function saveAll(changedMovId, deletedMovId, changedSnapDate){
   else if(typeof window.saveToFirebase==='function') {
     window.saveToFirebase(false, changedMovId, deletedMovId, changedSnapDate);
   }
+  // ── Toast de confirmación ──────────────────────────────────────────────
+  // Solo mostrar en acciones del usuario (no en sincronizaciones automáticas
+  // ni en saves disparados por Firestore). Detectamos esto con un flag.
+  if (window._showSaveToast) {
+    window._showSaveToast = false;
+    showToast('✓ Guardado', 'success', 1600);
+  }
 }
+
+// ── saveAllUser: igual que saveAll pero activa el toast de confirmación ───
+function saveAllUser(changedMovId, deletedMovId, changedSnapDate) {
+  window._showSaveToast = true;
+  saveAll(changedMovId, deletedMovId, changedSnapDate);
+}
+window.saveAllUser = saveAllUser;
 
 // ==================== ANALYTICS ====================
 // Guarda eventos en Firestore: usuarios/{uid}/analytics/{fecha}
@@ -1630,6 +1664,151 @@ function switchTab(tab){
   renderPageInternal(tab);
 }
 document.querySelectorAll('.nav-tab').forEach(btn=>btn.addEventListener('click',()=>switchTab(btn.dataset.tab)));
+
+// ==================== SKELETON LOADERS ====================
+const _skeletonFor = (tab) => {
+  const statRow = (n=4) => `<div class="skeleton-grid">${Array(n).fill(0).map(()=>`
+    <div class="skeleton-card">
+      <div class="skeleton skeleton-line w-60"></div>
+      <div class="skeleton skeleton-line h-32 w-80"></div>
+      <div class="skeleton skeleton-line w-40"></div>
+    </div>`).join('')}</div>`;
+  const chartCard = (h=200) => `
+    <div class="skeleton-card" style="border-radius:16px">
+      <div class="skeleton skeleton-line w-40" style="margin-bottom:8px"></div>
+      <div class="skeleton skeleton-line" style="height:${h}px;border-radius:12px"></div>
+    </div>`;
+  const listCard = (rows=5) => `
+    <div class="skeleton-card" style="border-radius:16px">
+      <div class="skeleton skeleton-line w-40" style="margin-bottom:12px"></div>
+      ${Array(rows).fill(0).map(()=>`
+        <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--border)">
+          <div class="skeleton skeleton-line w-40" style="height:14px"></div>
+          <div class="skeleton skeleton-line w-60" style="height:14px"></div>
+        </div>`).join('')}
+    </div>`;
+
+  const skeletons = {
+    dashboard: `<div class="skeleton-page">
+      ${statRow(4)}
+      ${chartCard(200)}
+      <div class="skeleton-grid-2">${chartCard(160)}${chartCard(160)}</div>
+      <div class="skeleton-grid-2">${listCard(5)}${listCard(4)}</div>
+    </div>`,
+    plataformas: `<div class="skeleton-page">
+      ${statRow(3)}
+      ${listCard(6)}
+    </div>`,
+    inversiones: `<div class="skeleton-page">
+      ${statRow(4)}
+      <div class="skeleton-grid-2">${chartCard(160)}${chartCard(160)}</div>
+      ${listCard(5)}
+    </div>`,
+    gastos: `<div class="skeleton-page">
+      ${statRow(4)}
+      ${listCard(4)}
+      <div class="skeleton-card" style="border-radius:16px">
+        <div class="skeleton skeleton-line w-40" style="margin-bottom:12px"></div>
+        ${Array(6).fill(0).map(()=>`
+          <div style="padding:8px 0;border-bottom:0.5px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+              <div class="skeleton skeleton-line w-60" style="height:12px"></div>
+              <div class="skeleton skeleton-line w-40" style="height:12px"></div>
+            </div>
+            <div class="skeleton skeleton-line w-100" style="height:6px;border-radius:3px"></div>
+          </div>`).join('')}
+      </div>
+    </div>`,
+    metas: `<div class="skeleton-page">
+      ${statRow(2)}
+      <div class="skeleton-grid-2">
+        ${Array(4).fill(0).map(()=>`
+          <div class="skeleton-card" style="border-radius:16px">
+            <div class="skeleton skeleton-line w-60" style="margin-bottom:8px"></div>
+            <div class="skeleton skeleton-line w-40" style="height:24px;margin-bottom:10px"></div>
+            <div class="skeleton skeleton-line w-100" style="height:8px;border-radius:4px"></div>
+          </div>`).join('')}
+      </div>
+    </div>`,
+    movimientos: `<div class="skeleton-page">
+      ${listCard(8)}
+    </div>`,
+    ajustes: `<div class="skeleton-page">
+      ${listCard(4)}
+      ${listCard(3)}
+    </div>`,
+  };
+  return skeletons[tab] || '';
+};
+// ==================== FIN SKELETON LOADERS ====================
+
+// ==================== SWIPE ENTRE TABS (móvil) ====================
+(function(){
+  const TAB_ORDER = ['dashboard','movimientos','plataformas','inversiones','gastos','metas','ajustes'];
+  const container = document.getElementById('mainContainer');
+  if (!container) return;
+
+  let _touchStartX = 0;
+  let _touchStartY = 0;
+  let _lastSwipeDir = null;
+
+  container.addEventListener('touchstart', e => {
+    _touchStartX = e.touches[0].clientX;
+    _touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  container.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - _touchStartX;
+    const dy = e.changedTouches[0].clientY - _touchStartY;
+
+    // Solo swipe horizontal con suficiente distancia y no vertical
+    if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx) * 0.8) return;
+
+    // No swipear si hay un modal abierto
+    if (document.getElementById('modalOverlay')?.classList.contains('open')) return;
+
+    const idx = TAB_ORDER.indexOf(window.currentTab || 'dashboard');
+    if (idx === -1) return;
+
+    if (dx < 0 && idx < TAB_ORDER.length - 1) {
+      // swipe left → siguiente tab
+      _lastSwipeDir = 'left';
+      switchTab(TAB_ORDER[idx + 1]);
+    } else if (dx > 0 && idx > 0) {
+      // swipe right → tab anterior
+      _lastSwipeDir = 'right';
+      switchTab(TAB_ORDER[idx - 1]);
+    }
+  }, { passive: true });
+
+  // Hook en switchTab para aplicar la animación de slide
+  const _origSwitchTab = switchTab;
+  window.switchTab = function(tab) {
+    const prevIdx = TAB_ORDER.indexOf(window.currentTab || 'dashboard');
+    const nextIdx = TAB_ORDER.indexOf(tab);
+    const dir = nextIdx > prevIdx ? 'right' : 'left';
+
+    // Mostrar skeleton antes de renderizar
+    const pageEl = document.getElementById('page-' + tab);
+    if (pageEl) {
+      const skel = _skeletonFor(tab);
+      if (skel) pageEl.innerHTML = skel;
+    }
+
+    _origSwitchTab(tab);
+
+    // Aplicar animación de dirección
+    if (pageEl && prevIdx !== nextIdx) {
+      pageEl.classList.remove('slide-in-right', 'slide-in-left');
+      void pageEl.offsetWidth; // reflow
+      pageEl.classList.add(dir === 'right' ? 'slide-in-right' : 'slide-in-left');
+      pageEl.addEventListener('animationend', () => {
+        pageEl.classList.remove('slide-in-right', 'slide-in-left');
+      }, { once: true });
+    }
+  };
+})();
+// ==================== FIN SWIPE ====================
 function openModal(html){document.getElementById('modalContent').innerHTML=html;document.getElementById('modalOverlay').classList.add('open');}
 function closeModal(){document.getElementById('modalOverlay').classList.remove('open');}
 
@@ -2864,14 +3043,14 @@ function saveMovement(sec){
       const montoEUR=Number(d.montoSob);if(!montoEUR||montoEUR<=0){alert('⚠️ '+t('amountMustBePositive'));return;}
       const eurmxn=getEurMxn();const montoMXN=Math.round(montoEUR*eurmxn*100)/100;
       const mov={id:uid(),seccion:'plataformas',fecha:d.fechaSob||today(),platform:d.platDestinoSob,tipoPlat:'Aportación',monto:montoMXN,desc:(d.descSob||(t('surplus')+' '+d.mesSobrante))+` · €${montoEUR} → $${montoMXN} MXN (FX ${eurmxn.toFixed(2)})`};
-      movements=[mov,...movements];saveAll(mov.id);closeModal();return;
+      movements=[mov,...movements];saveAllUser(mov.id);closeModal();return;
     }
     if(!d.platOrigen||!d.platDestino||!d.monto)return;
     if(d.platOrigen===d.platDestino){alert('⚠️ '+t('origenDestinoDiferentes'));return;}
     const tid=uid();
     const salida={id:uid(),seccion:'plataformas',fecha:d.fecha||today(),platform:d.platOrigen,tipoPlat:'Transferencia salida',monto:Number(d.monto),desc:d.desc||t('transferencia'),transferId:tid};
     const entrada={id:uid(),seccion:'plataformas',fecha:d.fecha||today(),platform:d.platDestino,tipoPlat:'Transferencia entrada',monto:Number(d.monto),desc:d.desc||t('transferencia'),transferId:tid};
-    movements=[salida,entrada,...movements];saveAll(salida.id+'|'+entrada.id);closeModal();return;
+    movements=[salida,entrada,...movements];saveAllUser(salida.id+'|'+entrada.id);closeModal();return;
   }
   let mov={id:uid(),seccion:sec,fecha:d.fecha||today()};
   if(sec==='plataformas'){if(!d.platform||!d.monto)return;mov.platform=d.platform;mov.tipoPlat=d.tipoPlat;mov.monto=Number(d.monto);mov.desc=d.desc||'';}
@@ -2899,7 +3078,7 @@ function saveMovement(sec){
     else if(monedaGasto==='GBP'){mov.importe=Math.round(importeRaw*_gbpmxn*100)/100;mov.monedaOrig='GBP';mov.montoOriginal=importeRaw;mov.notas=d.notas||'';}
     else{mov.importe=importeRaw;mov.monedaOrig='MXN';mov.notas=d.notas||'';}}
   }
-  movements=[mov,...movements];saveAll(mov.id);closeModal();
+  movements=[mov,...movements];saveAllUser(mov.id);closeModal();
 }
 
 function deleteMovement(id){
@@ -2915,7 +3094,7 @@ function deleteMovement(id){
     deletedIds = [id];
     movements=movements.filter(m=>m.id!==id);
   }
-  saveAll(null, deletedIds.join('|'));
+  saveAllUser(null, deletedIds.join('|'));
 }
 
 function openEditMovModal(id){
@@ -2959,7 +3138,7 @@ function updateMovement(id){
     }
     return updated;
   });
-  saveAll(id);closeModal();
+  saveAllUser(id);closeModal();
 }
 
 // ============================================
@@ -3048,14 +3227,14 @@ function editPlatField(id,field,el,inputType){
   }
   else{input=document.createElement('input');input.type='number';input.step='any';input.value=p[field]||0;input.className='form-input';input.style.cssText='width:110px;padding:4px 8px;font-size:12px';}
   let _committed=false;
-  const finish=()=>{if(_committed)return;_committed=true;const raw=input.value;let val=inputType==='date'||inputType==='moneda'?raw:(Number(raw)||0);platforms=platforms.map(x=>x.id!==id?x:{...x,[field]:val});saveAll();};
+  const finish=()=>{if(_committed)return;_committed=true;const raw=input.value;let val=inputType==='date'||inputType==='moneda'?raw:(Number(raw)||0);platforms=platforms.map(x=>x.id!==id?x:{...x,[field]:val});saveAllUser();};
   const cancel=()=>{if(_committed)return;_committed=true;input.replaceWith(originalEl);};
   input.onblur=finish;
   input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();input.blur();}if(e.key==='Escape'){e.preventDefault();cancel();}};
   if(inputType==='moneda')input.onchange=finish;
   el.replaceWith(input);input.focus();
 }
-function deletePlatform(id){if(!confirm(t('deletePlatformConfirm')))return;platforms=platforms.filter(p=>p.id!==id);saveAll();}
+function deletePlatform(id){if(!confirm(t('deletePlatformConfirm')))return;platforms=platforms.filter(p=>p.id!==id);saveAllUser();}
 
 function openEditPlatModal(id){
   const p = platforms.find(x=>x.id===id); if(!p) return;
@@ -3082,7 +3261,7 @@ function saveEditPlat(id){
     tasaAnual: Number(document.getElementById('epTasa').value)||0,
     fechaInicio: document.getElementById('epFecha').value || p.fechaInicio,
   });
-  saveAll(); closeModal();
+  saveAllUser(); closeModal();
 }
 window.openEditPlatModal = openEditPlatModal;
 window.saveEditPlat = saveEditPlat;
@@ -3099,7 +3278,7 @@ function openAddPlatformModal(){
 function addPlatform(){
   const name=document.getElementById('npName').value;if(!name)return;
   platforms.push({id:uid(),name,type:document.getElementById('npType').value,group:document.getElementById('npGroup').value,moneda:document.getElementById('npMoneda').value||'MXN',saldoInicial:Number(document.getElementById('npSaldo').value)||0,tasaAnual:Number(document.getElementById('npTasa').value)||0,fechaInicio:document.getElementById('npFecha').value||today()});
-  saveAll();closeModal();
+  saveAllUser();closeModal();
 }
 
 // ============================================
@@ -3390,7 +3569,7 @@ function updateBudget(catId,value,moneda){
     else if(moneda==='GBP') valEUR=valEUR*gbpeur;
   }
   settings.budgets[catId]=Math.round(valEUR*100)/100;
-  saveAll();
+  saveAllUser();
   window._budgetEditInProgress = false;
 }
 function editBudgetField(catId, el, moneda, currentVal) {
@@ -3446,7 +3625,7 @@ function editBudgetField(catId, el, moneda, currentVal) {
   input.focus();
   input.select();
 }
-function updateIngreso(tipo,value){if(!settings.ingresos)settings.ingresos={};settings.ingresos[tipo]=Number(value)||0;saveAll();}
+function updateIngreso(tipo,value){if(!settings.ingresos)settings.ingresos={};settings.ingresos[tipo]=Number(value)||0;saveAllUser();}
 function updateIngresoConMoneda(tipo,value,moneda){
   if(!settings.ingresos)settings.ingresos={};
   const raw=Number(value)||0;
@@ -3462,7 +3641,7 @@ function updateIngresoConMoneda(tipo,value,moneda){
   else if(moneda==='MXN') asEUR=raw/eurmxn;
   else if(moneda==='GBP') asEUR=raw*gbpeur;
   settings.ingresos[tipo]=Math.round(asEUR*100)/100;
-  saveAll();
+  saveAllUser();
 }
 
 function openRecurrentesModal(){
@@ -3497,8 +3676,8 @@ function openRecurrentesModal(){
   `);
 }
 function syncRecurrenteName(){const cat=document.getElementById('rCat')?.value;const nombreEl=document.getElementById('rNombre');if(!cat||!nombreEl)return;const c=EXPENSE_CATS.find(x=>x.id===cat);if(c)nombreEl.value=c.name;}
-function addRecurrente(){const nombre=document.getElementById('rNombre').value,importe=Number(document.getElementById('rImporte').value);if(!nombre||!importe)return;recurrentes.push({id:uid(),nombre,importe,categoria:document.getElementById('rCat').value,frecuencia:document.getElementById('rFrec').value,dia:Number(document.getElementById('rDia').value)||1,icon:'📌',color:'#0A84FF',activo:true});saveAll();openRecurrentesModal();}
-function toggleRecurrente(id,val){recurrentes=recurrentes.map(r=>r.id!==id?r:{...r,activo:val});saveAll();}
+function addRecurrente(){const nombre=document.getElementById('rNombre').value,importe=Number(document.getElementById('rImporte').value);if(!nombre||!importe)return;recurrentes.push({id:uid(),nombre,importe,categoria:document.getElementById('rCat').value,frecuencia:document.getElementById('rFrec').value,dia:Number(document.getElementById('rDia').value)||1,icon:'📌',color:'#0A84FF',activo:true});saveAllUser();openRecurrentesModal();}
+function toggleRecurrente(id,val){recurrentes=recurrentes.map(r=>r.id!==id?r:{...r,activo:val});saveAllUser();}
 function openEditRecurrenteModal(id){
   const r=recurrentes.find(x=>x.id===id); if(!r) return;
   openModal(`<div class="modal-header"><div class="modal-title">✏️ ${t('editar')} ${t('recurrente')}</div><button class="modal-close" onclick="closeModal()">✕</button></div>
@@ -3517,9 +3696,9 @@ function saveRecurrente(id){
   const nombre=document.getElementById('erNombre').value, importe=Number(document.getElementById('erImporte').value);
   if(!nombre||!importe) return;
   recurrentes=recurrentes.map(r=>r.id!==id?r:{...r,nombre,importe,categoria:document.getElementById('erCat').value,frecuencia:document.getElementById('erFrec').value,dia:Number(document.getElementById('erDia').value)||1});
-  saveAll(); openRecurrentesModal();
+  saveAllUser(); openRecurrentesModal();
 }
-function deleteRecurrente(id){if(!confirm(t('deleteRecurrenteConfirm')))return;recurrentes=recurrentes.filter(r=>r.id!==id);saveAll();openRecurrentesModal();}
+function deleteRecurrente(id){if(!confirm(t('deleteRecurrenteConfirm')))return;recurrentes=recurrentes.filter(r=>r.id!==id);saveAllUser();openRecurrentesModal();}
 
 // ============================================
 // INVERSIONES
@@ -3835,10 +4014,10 @@ function saveGoal(id){
   const nombre=document.getElementById('egName').value, meta=Number(document.getElementById('egMeta').value);
   if(!nombre||!meta) return;
   goals=goals.map(g=>g.id!==id?g:{...g,nombre,clase:document.getElementById('egClase').value,meta,fechaLimite:document.getElementById('egFecha').value,descripcion:document.getElementById('egDesc').value});
-  saveAll(); closeModal();
+  saveAllUser(); closeModal();
 }
-function addGoal(){const nombre=document.getElementById('gName').value,meta=Number(document.getElementById('gMeta').value);if(!nombre||!meta)return;goals.push({id:uid(),nombre,clase:document.getElementById('gClase').value,meta,fechaLimite:document.getElementById('gFecha').value,descripcion:document.getElementById('gDesc').value});saveAll();closeModal();}
-function deleteGoal(id){if(!confirm(t('deleteGoalConfirm')))return;goals=goals.filter(g=>g.id!==id);saveAll();}
+function addGoal(){const nombre=document.getElementById('gName').value,meta=Number(document.getElementById('gMeta').value);if(!nombre||!meta)return;goals.push({id:uid(),nombre,clase:document.getElementById('gClase').value,meta,fechaLimite:document.getElementById('gFecha').value,descripcion:document.getElementById('gDesc').value});saveAllUser();closeModal();}
+function deleteGoal(id){if(!confirm(t('deleteGoalConfirm')))return;goals=goals.filter(g=>g.id!==id);saveAllUser();}
 
 // ============================================
 // AJUSTES
@@ -5669,7 +5848,7 @@ window.addEventListener('online',()=>setFbStatus('ok'));
 window.addEventListener('offline',()=>setFbStatus('offline'));
 
 window.toggleDark = toggleDark;
-window.switchTab = switchTab;
+// window.switchTab already set by the swipe IIFE above (enhanced version)
 window.openModal = openModal;
 window.closeModal = closeModal;
 window.setChartRange = setChartRange;
