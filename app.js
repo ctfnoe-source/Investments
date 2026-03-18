@@ -878,7 +878,19 @@ async function updateAllPrices(forceRefresh=false) {
   priceUpdateState.lastUpdate = new Date();
   const _nb=document.getElementById('btnUpdate');if(_nb){_nb.innerHTML='🔄';_nb.disabled=false;}
   _recalcAndSaveSnapshot();
-  renderPage(currentTab);
+  // Pre-fetch SP500+QQQ en paralelo ANTES del render final, para que el dashboard
+  // se pinte una sola vez con todos los datos disponibles y no parpadee 2-3 veces.
+  if (forceRefresh && (settings.alphaVantageKey || settings.finnhubKey)) {
+    const _spP  = fetchSP500History().catch(() => null);
+    const _qqqP = fetchQQQHistory().catch(() => null);
+    Promise.all([_spP, _qqqP]).then(([spData, qqqData]) => {
+      if (spData?.dates?.length > 0)  _sp500Data = spData;
+      if (qqqData?.dates?.length > 0) _qqqData   = qqqData;
+      renderPage(currentTab);
+    });
+  } else {
+    renderPage(currentTab);
+  }
 }
 
 // ── S&P 500 histórico ─────────────────────────────────────────────────────
@@ -2119,22 +2131,23 @@ function renderDashboard(){
   const _qqqcache=LS.get('qqq_history');
   if(_qqqcache?.data?.closes?.length && (_qqqcache.data.closes[_qqqcache.data.closes.length-1]===0 || _qqqcache.data.closes.length < 3)) LS.set('qqq_history',null);
 
-  // Fetch SP500 y QQQ de forma asíncrona — re-renderizar chart cuando lleguen
+  // Fetch SP500 y QQQ en paralelo — un único re-render cuando AMBOS terminen.
+  // Antes se hacían dos .then() separados que disparaban renderDashboard() dos veces,
+  // causando el doble parpadeo visible en la gráfica de evolución.
   const _needSP = !_sp500Data && (settings.alphaVantageKey || settings.finnhubKey);
   const _needQQQ = !_qqqData && (settings.alphaVantageKey || settings.finnhubKey);
   if (_needSP || _needQQQ) {
-    const _rerender = () => {
-      if (currentTab === 'dashboard') {
+    const _spPromise  = _needSP  ? fetchSP500History().catch(() => null) : Promise.resolve(null);
+    const _qqqPromise = _needQQQ ? fetchQQQHistory().catch(() => null)   : Promise.resolve(null);
+    Promise.all([_spPromise, _qqqPromise]).then(([spData, qqqData]) => {
+      let changed = false;
+      if (spData?.dates?.length > 0)  { _sp500Data = spData;  changed = true; }
+      if (qqqData?.dates?.length > 0) { _qqqData   = qqqData; changed = true; }
+      if (changed && currentTab === 'dashboard') {
         if (chartInstances.chartEvo) { chartInstances.chartEvo.destroy(); delete chartInstances.chartEvo; }
         renderDashboard();
       }
-    };
-    if (_needSP) fetchSP500History().then(data => {
-      if (data?.dates?.length > 0) { _sp500Data = data; _rerender(); }
-    }).catch(() => {});
-    if (_needQQQ) fetchQQQHistory().then(data => {
-      if (data?.dates?.length > 0) { _qqqData = data; _rerender(); }
-    }).catch(() => {});
+    });
   }
 
   // requestAnimationFrame garantiza que el navegador haya pintado el nuevo DOM
@@ -4852,7 +4865,23 @@ async function loadSubcollections(uid){
   LS.set('patrimonioHistory', patrimonioHistory);
   _recalcAndSaveSnapshot();
   buildHistoricalSnapshots();
-  renderPageInternal(currentTab);
+  // Pre-cargar SP500+QQQ en paralelo antes del primer render del dashboard,
+  // para que la gráfica de evolución aparezca completa desde el primer intento
+  // y no dispare un segundo renderDashboard() al llegar los datos del índice.
+  const _hasApiKey = settings.alphaVantageKey || settings.finnhubKey;
+  const _missingSP  = !_sp500Data && _hasApiKey;
+  const _missingQQQ = !_qqqData   && _hasApiKey;
+  if (currentTab === 'dashboard' && (_missingSP || _missingQQQ)) {
+    const _spP  = _missingSP  ? fetchSP500History().catch(() => null) : Promise.resolve(null);
+    const _qqqP = _missingQQQ ? fetchQQQHistory().catch(() => null)   : Promise.resolve(null);
+    Promise.all([_spP, _qqqP]).then(([spData, qqqData]) => {
+      if (spData?.dates?.length > 0)  _sp500Data = spData;
+      if (qqqData?.dates?.length > 0) _qqqData   = qqqData;
+      renderPageInternal(currentTab);
+    });
+  } else {
+    renderPageInternal(currentTab);
+  }
 }
 
 function setupFirestore(uid){
