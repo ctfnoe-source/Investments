@@ -2326,20 +2326,25 @@ function renderDashboard(){
           yc:{
             position:'left',
             grid:{color:isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)'},
-            ticks:{font:{size:11},color:tickColor,callback:v=>(v>=0?'+':'')+v.toFixed(1)+'%',maxTicksLimit:5},
+            ticks:{font:{size:10},color:isDark?'rgba(200,200,210,0.55)':'rgba(80,80,90,0.5)',callback:v=>(v>=0?'+':'')+v.toFixed(1)+'%',maxTicksLimit:8},
             border:{display:false},
             afterDataLimits(axis){
-              // Push % lines into bottom 55% of chart, leaving top for patrimonio
-              const range=axis.max-axis.min;
-              axis.max=axis.min+range/0.55;
+              // Compress % range — use only bottom 40% of chart height
+              // by extending max upward so data sits in lower portion
+              const range=axis.max-axis.min||1;
+              axis.max=axis.min+(range/0.40);
             }
           },
           y2:{
             position:'right',
             grid:{display:false},
-            ticks:{font:{size:10},color:isDark?'rgba(245,166,35,0.45)':'rgba(180,120,0,0.4)',callback:v=>fmt(v),maxTicksLimit:5},
+            ticks:{font:{size:10},color:isDark?'rgba(245,166,35,0.5)':'rgba(160,100,0,0.5)',callback:v=>fmt(v),maxTicksLimit:5},
             border:{display:false},
-            weight:1
+            afterDataLimits(axis){
+              // Give patrimonio breathing room at top — extend min downward
+              const range=axis.max-axis.min||1;
+              axis.min=axis.min-(range*0.15);
+            }
           }
         }
       }});
@@ -3296,7 +3301,7 @@ function renderInversiones(){
   const totalValor = abiertas.reduce((s,t) => s + (t.valorActual||t.costoPosicion||0) * (t.moneda==='MXN'?1:tc), 0);
   const totalGP = totalValor - totalCosto;
   const totalGPPct = totalCosto > 0 ? totalGP / totalCosto : 0;
-  const gpRealTotal = cerradas.reduce((s,t) => s + (t.gpRealizada||0) * (t.moneda==='MXN'?1:tc), 0);
+  const gpRealTotal = tickers.reduce((s,t) => s + (t.gpRealizada||0) * (t.moneda==='MXN'?1:tc), 0);
 
   const porTipo = {};
   abiertas.forEach(t => {
@@ -3338,7 +3343,7 @@ function renderInversiones(){
       <div class="card stat" style="border-top:3px solid ${pctCol(gpRealTotal)}">
         <div class="stat-label">${t('gpRealizada')}</div>
         <div class="stat-value" style="color:${pctCol(gpRealTotal)}">${gpRealTotal>=0?'+':''}${fmt(gpRealTotal)}</div>
-        <div class="stat-sub">${cerradas.length} ${t('posicionesCerradas')}</div>
+        <div class="stat-sub">${cerradas.length} ${t('posicionesCerradas')}${(()=>{const divTotal=tickers.reduce((s,t)=>(s+(t.dividendoTotal||0)*(t.moneda==='MXN'?1:tc)),0);return divTotal>0?` · 💰 ${fmt(Math.round(divTotal))} div.`:'';})()}</div>
       </div>
     </div>
 
