@@ -2241,6 +2241,7 @@ function renderDashboard(){
             borderColor:'#30D158',
             backgroundColor: 'transparent',
             borderWidth:1.5,
+            borderDash:[4,3],
             fill:false,
             tension:0.4,
             pointRadius: realDates.map((d,i) => i===realDates.length-1 ? dynLastRadius : (_evoEvt[d] ? 1.5 : 0)),
@@ -2325,14 +2326,20 @@ function renderDashboard(){
           yc:{
             position:'left',
             grid:{color:isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.04)'},
-            ticks:{font:{size:11},color:tickColor,callback:v=>(v>=0?'+':'')+v.toFixed(1)+'%',maxTicksLimit:6},
-            border:{display:false}
+            ticks:{font:{size:11},color:tickColor,callback:v=>(v>=0?'+':'')+v.toFixed(1)+'%',maxTicksLimit:5},
+            border:{display:false},
+            afterDataLimits(axis){
+              // Push % lines into bottom 55% of chart, leaving top for patrimonio
+              const range=axis.max-axis.min;
+              axis.max=axis.min+range/0.55;
+            }
           },
           y2:{
             position:'right',
             grid:{display:false},
             ticks:{font:{size:10},color:isDark?'rgba(245,166,35,0.45)':'rgba(180,120,0,0.4)',callback:v=>fmt(v),maxTicksLimit:5},
-            border:{display:false}
+            border:{display:false},
+            weight:1
           }
         }
       }});
@@ -2629,7 +2636,7 @@ function openMovModal(sec){
         </div>
         <div class="form-row form-row-3">
           <div class="form-group"><label class="form-label" id="invCantLabel">${t('cantidad')}</label><input type="number" step="any" class="form-input" name="cantidad" id="invCantidad" placeholder="0" required oninput="window._invUpdateTotal()"></div>
-          <div class="form-group"><label class="form-label">${t('precioUnitario')}</label><input type="number" step="any" class="form-input" name="precioUnit" id="invPrecioUnit" placeholder="0.00" required oninput="window._invUpdateTotal()"></div>
+          <div class="form-group"><label class="form-label">${t('precioUnitario')}</label><input type="number" step="any" class="form-input" name="precioUnit" id="invPrecioUnit" placeholder="0.00" oninput="window._invUpdateTotal()"></div>
           <div class="form-group"><label class="form-label">${t('comision')}</label><input type="number" step="any" class="form-input" name="comision" value="0"></div>
         </div>
         <div id="invTotalBox" style="display:none;margin:-4px 0 10px;padding:7px 14px;background:var(--card2);border-radius:10px;font-size:12px;color:var(--text2)">
@@ -4488,11 +4495,11 @@ window.showAportaciones = showAportaciones;
     var _cGrp=document.querySelector('[name="comision"]');
     if(_tm==='Dividendo'||_tm==='Comisión'){
       if(cLbl)cLbl.textContent=_tm==='Dividendo'?'Monto dividendo recibido':'Monto comisión';
-      if(_pGrp)_pGrp.closest('.form-group').style.display='none';
+      if(_pGrp){_pGrp.closest('.form-group').style.display='none';_pGrp.removeAttribute('required');}
       if(_cGrp)_cGrp.closest('.form-group').style.display='none';
     } else {
       if(cLbl)cLbl.textContent=typeof t==='function'?t('cantidad'):'Cantidad';
-      if(_pGrp)_pGrp.closest('.form-group').style.display='';
+      if(_pGrp){_pGrp.closest('.form-group').style.display='';_pGrp.setAttribute('required','');}
       if(_cGrp)_cGrp.closest('.form-group').style.display='';
     }
     var bLbl=document.getElementById('invBrokerLabel');
