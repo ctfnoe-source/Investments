@@ -1202,6 +1202,39 @@ let _aiMessages = LS.get('aiHistory') || [];
 let _valuesHidden = LS.get('valuesHidden') || false;
 let _aiLoading = false;
 let chartInstances = {};
+
+// ── Recuperación de canvas en móvil ─────────────────────────────────────
+// iOS/Android descartan el buffer del canvas al hacer scroll o al poner la app en segundo plano
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && currentTab === 'dashboard') {
+    setTimeout(() => {
+      ['chartDistro','chartInvTipo','chartGastosCat'].forEach(k => {
+        if (chartInstances[k]) { try { chartInstances[k].resize(); } catch(e) {} }
+      });
+      if (!chartInstances.chartDistro || !chartInstances.chartInvTipo) renderDashboard();
+    }, 150);
+  }
+});
+
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted && currentTab === 'dashboard') setTimeout(() => renderDashboard(), 150);
+});
+
+let _barObserver = null;
+function _observeBarCharts() {
+  if (_barObserver) { _barObserver.disconnect(); _barObserver = null; }
+  if (typeof IntersectionObserver === 'undefined') return;
+  const ids = ['chartDistro','chartInvTipo','chartGastosCat'];
+  _barObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const k = entry.target.id;
+      if (chartInstances[k]) { try { chartInstances[k].resize(); } catch(e) {} }
+      else if (currentTab === 'dashboard') renderDashboard();
+    });
+  }, { threshold: 0.1 });
+  ids.map(id => document.getElementById(id)).filter(Boolean).forEach(el => _barObserver.observe(el));
+}
 let _lastLocalSave = 0;
 let _chartRange = 'all';
 let _chartRange2 = 'all';
@@ -1568,26 +1601,9 @@ function switchTab(tab){
   if(pageEl) pageEl.classList.add('active');
   const nt=document.querySelector('[data-tab="'+tab+'"]');if(nt)nt.classList.add('active');
   document.querySelectorAll('.mobile-nav-item[data-tab="'+tab+'"]').forEach(t=>t.classList.add('active'));
-  // Only destroy non-dashboard charts when leaving — dashboard charts survive tab switches
-  // This prevents the blank chart bug on mobile when returning to dashboard
-  const _dashCharts = new Set(['chartDistro','chartInvTipo','chartGastosCat','chartEvo']);
-  const _leavingDashboard = (currentTab !== 'dashboard');
-  Object.keys(chartInstances).forEach(k=>{
-    if(chartInstances[k]){
-      // Keep dashboard charts alive unless we're re-rendering dashboard itself
-      if(_dashCharts.has(k) && tab !== 'dashboard') return;
-      chartInstances[k].destroy();
-      delete chartInstances[k];
-    }
-  });
+  Object.keys(chartInstances).forEach(k=>{if(chartInstances[k]){chartInstances[k].destroy();delete chartInstances[k];}});
   _analytics.tabView(tab);
   renderPageInternal(tab);
-  // When returning to dashboard, resize charts in case canvas dimensions changed on mobile
-  if(tab === 'dashboard') {
-    requestAnimationFrame(() => {
-      _dashCharts.forEach(k => { if(chartInstances[k]) chartInstances[k].resize(); });
-    });
-  }
 }
 document.querySelectorAll('.nav-tab').forEach(btn=>btn.addEventListener('click',()=>switchTab(btn.dataset.tab)));
 function openModal(html){document.getElementById('modalContent').innerHTML=html;document.getElementById('modalOverlay').classList.add('open');}
@@ -5478,6 +5494,7 @@ onAuthStateChanged(auth,async user=>{
       if(typeof updateFX==='function') updateFX();
       if(typeof flushOfflineQueue==='function') flushOfflineQueue();
     },1200);
+    requestAnimationFrame(() => { if(typeof _observeBarCharts==='function') _observeBarCharts(); });
   }else{
     window._currentUser=null;
     if(_unsub){_unsub();_unsub=null;}
