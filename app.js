@@ -4405,7 +4405,7 @@ function _renderAiChat() {
     : _aiMessages.map(m => {
         const isUser = m.role === 'user';
         return `<div style="display:flex;flex-direction:column;align-items:${isUser?'flex-end':'flex-start'};margin-bottom:12px">
-          <div style="max-width:85%;padding:${isUser?'6px 12px':'10px 14px'};border-radius:${isUser?'16px 16px 4px 16px':'16px 16px 16px 4px'};background:${isUser?'var(--blue)':'var(--card2)'};color:${isUser?'#fff':'var(--text)'};font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;border:${isUser?'none':'1px solid var(--border)'}">
+          <div style="max-width:85%;padding:${isUser?'4px 10px':'10px 14px'};border-radius:${isUser?'16px 16px 4px 16px':'16px 16px 16px 4px'};background:${isUser?'var(--blue)':'var(--card2)'};color:${isUser?'#fff':'var(--text)'};font-size:13px;line-height:${isUser?'1.3':'1.6'};white-space:pre-wrap;word-break:break-word;border:${isUser?'none':'1px solid var(--border)'}">
             ${isUser ? escHtml(m.content) : _renderMd(m.content)}
           </div>
         </div>`;
