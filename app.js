@@ -2075,10 +2075,7 @@ function renderDashboard(){
           <div class="card-title" style="margin:0">💳 ${t('gastosPorCat')} — ${MONTHS[cm-1]}</div>
           <button class="btn btn-sm" style="font-size:11px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="switchTab('gastos')">${t('verDetalle')} →</button>
         </div>
-        ${topCats.length>0?`
-          <div id="chartGastosCat" style="padding:4px 0"></div>
-          </div>`
-        :`<div style="text-align:center;color:var(--text2);padding:24px;font-size:13px">${t('sinGastosEsteMes')}</div>`}
+        ${topCats.length>0?'<div id="chartGastosCat" style="padding:4px 0"></div></div>':'<div style="text-align:center;color:var(--text2);padding:24px;font-size:13px">'+t('sinGastosEsteMes')+'</div>'}
       </div>
     </div>
 
