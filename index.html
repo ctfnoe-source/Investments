@@ -548,9 +548,9 @@ window._hideLandingLogin = function() {
       <button class="nav-tab" data-tab="metas">🎯 Metas</button>
       <button class="nav-tab" data-tab="ajustes">⚙️ Ajustes</button>
     </div>
-    <div style="display:flex;align-items:center;gap:5px;padding:0 8px;flex-shrink:0">
-      <span id="navPriceStatus" style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:3px"></span>
-      <button id="btnUpdate" onclick="updateAllPrices(true)" title="Actualizar precios" style="font-size:13px;padding:4px 8px;border-radius:20px;border:1px solid var(--border);background:var(--card2);cursor:pointer;line-height:1;transition:opacity 0.2s">🔄</button>
+    <div style="display:flex;align-items:center;gap:5px;padding:0 8px;flex-shrink:0;max-width:160px;min-width:0">
+      <span id="navPriceStatus" style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:3px;overflow:hidden;white-space:nowrap;min-width:0;flex-shrink:1"></span>
+      <button id="btnUpdate" onclick="updateAllPrices(true)" title="Actualizar precios" style="font-size:13px;padding:4px 8px;border-radius:20px;border:1px solid var(--border);background:var(--card2);cursor:pointer;line-height:1;transition:opacity 0.2s;flex-shrink:0">🔄</button>
     </div>
     <div class="nav-user" id="navUser">
       <div id="fbStatus" style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;white-space:nowrap;transition:all 0.3s;flex-shrink:0;display:none"></div>

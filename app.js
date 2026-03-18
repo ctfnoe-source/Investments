@@ -1008,14 +1008,16 @@ function normalizeSP500(sp500data, capitalInicial, fechaOrigen) {
 function sp500ReturnPct(sp500data, fechaOrigen) {
   if (!sp500data || !sp500data.dates.length || !fechaOrigen) return [];
   const origenStr = fechaOrigen.substring(0, 7);
+  // Find precio base: last close on or before fechaOrigen
   let precioOrigen = null;
   for (let i = 0; i < sp500data.dates.length; i++) {
     if (sp500data.dates[i].substring(0, 7) <= origenStr) precioOrigen = sp500data.closes[i];
   }
+  // If no price found before fechaOrigen (history too short), use first available
   if (!precioOrigen) precioOrigen = sp500data.closes[0];
   const result = [];
   for (let i = 0; i < sp500data.dates.length; i++) {
-    if (sp500data.dates[i] < fechaOrigen) continue;
+    // Include all dates — if history is shorter than user's start date, show what we have
     const pct = ((sp500data.closes[i] - precioOrigen) / precioOrigen) * 100;
     result.push({ date: sp500data.dates[i], pct: Math.round(pct * 100) / 100 });
   }
