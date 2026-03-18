@@ -926,26 +926,34 @@ async function fetchSP500History() {
     } catch(e) { /* silencioso */ }
   }
 
-  // 2) Precio de hoy via Finnhub
+  // 2) Precio de hoy via Finnhub (c=current, pc=previous close)
   if (fhKey) {
     try {
       const r = await fetchWithTimeout(`https://finnhub.io/api/v1/quote?symbol=SPY&token=${fhKey}`);
       if (r.ok) {
         const d = await r.json();
         const _price = (d.c && d.c > 0) ? d.c : (d.pc && d.pc > 0) ? d.pc : 0;
+        const _pc = (d.pc && d.pc > 0) ? d.pc : 0;
         if (_price > 0) {
           const todayStr = new Date().toISOString().split('T')[0];
+          const yest = new Date(); yest.setDate(yest.getDate()-1);
+          const yesterdayStr = yest.toISOString().split('T')[0];
           if (result.dates.length > 0) {
+            // Update or append today's price to existing AV history
             const lastMonth = result.dates[result.dates.length-1].substring(0,7);
             const todayMonth = todayStr.substring(0,7);
             if (lastMonth === todayMonth) {
               result.dates[result.dates.length-1] = todayStr;
               result.closes[result.closes.length-1] = _price;
             } else {
+              // Add prev close as last day of previous month anchor
+              if (_pc > 0) { result.dates.push(yesterdayStr); result.closes.push(_pc); }
               result.dates.push(todayStr);
               result.closes.push(_price);
             }
           } else {
+            // No AV history — build from Finnhub only using pc as anchor
+            if (_pc > 0) { result.dates.push(yesterdayStr); result.closes.push(_pc); }
             result.dates.push(todayStr);
             result.closes.push(_price);
           }
@@ -1032,14 +1040,23 @@ async function fetchQQQHistory() {
       if (r.ok) {
         const d = await r.json();
         const _qprice = (d.c && d.c > 0) ? d.c : (d.pc && d.pc > 0) ? d.pc : 0;
+        const _qpc = (d.pc && d.pc > 0) ? d.pc : 0;
         if (_qprice > 0) {
           const todayStr = new Date().toISOString().split('T')[0];
+          const yestQ = new Date(); yestQ.setDate(yestQ.getDate()-1);
+          const yesterdayStrQ = yestQ.toISOString().split('T')[0];
           if (result.dates.length > 0) {
             const lastMonth = result.dates[result.dates.length-1].substring(0,7);
             const todayMonth = todayStr.substring(0,7);
             if (lastMonth === todayMonth) { result.dates[result.dates.length-1] = todayStr; result.closes[result.closes.length-1] = _qprice; }
-            else { result.dates.push(todayStr); result.closes.push(_qprice); }
-          } else { result.dates.push(todayStr); result.closes.push(_qprice); }
+            else {
+              if (_qpc > 0) { result.dates.push(yesterdayStrQ); result.closes.push(_qpc); }
+              result.dates.push(todayStr); result.closes.push(_qprice);
+            }
+          } else {
+            if (_qpc > 0) { result.dates.push(yesterdayStrQ); result.closes.push(_qpc); }
+            result.dates.push(todayStr); result.closes.push(_qprice);
+          }
         }
       }
     } catch(e) { /* silencioso */ }
@@ -1639,6 +1656,36 @@ function platSaldoToMXN(p) {
 // ============================================
 // RENDER DASHBOARD
 // ============================================
+
+// Toggle series visibility in chartEvo
+if (!window._hiddenSeries) window._hiddenSeries = new Set();
+window._toggleEvoSeries = function(key) {
+  if (window._hiddenSeries.has(key)) window._hiddenSeries.delete(key);
+  else window._hiddenSeries.add(key);
+  // Update chart datasets visibility
+  const chart = chartInstances && chartInstances.chartEvo;
+  if (chart) {
+    const keyMap = ['patrimonio','ganancia','rendPlat','gpInv','sp500','nasdaq'];
+    chart.data.datasets.forEach((ds, i) => {
+      const k = keyMap[i];
+      if (k) ds.hidden = window._hiddenSeries.has(k);
+    });
+    chart.update('none');
+    // Re-render legend chips
+    const leg = document.getElementById('chartEvoLegend');
+    if (leg) {
+      leg.querySelectorAll('span[onclick]').forEach(el => {
+        const k = el.getAttribute('onclick').match(/'([^']+)'/)?.[1];
+        if (k) {
+          const hidden = window._hiddenSeries.has(k);
+          el.style.opacity = hidden ? '0.35' : '1';
+          el.style.borderColor = hidden ? 'var(--border)' : 'transparent';
+        }
+      });
+    }
+  }
+};
+
 function renderDashboard(){
   const tc=settings.tipoCambio,re=settings.rendimientoEsperado??0.06;
   const eurmxn=getEurMxn();
@@ -1887,13 +1934,20 @@ function renderDashboard(){
         </div>
       </div>
       <div style="padding:5px 16px 6px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;border-bottom:0.5px solid var(--border)">
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:3px;background:rgba(245,166,35,0.95);border-radius:2px"></span>${t('patrimonioTotal2')}</span>
-          <span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:3px;background:#30D158;border-radius:2px"></span>${t('gananciaReal')}</span>
-          
-          <span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:3px;background:rgba(10,132,255,0.85);border-radius:2px"></span>${t('rendPlataformas')} %</span>
-          <span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:3px;background:rgba(48,209,88,0.85);border-radius:2px"></span>${t('gpNoRealizada')} %</span>
-          ${(settings.alphaVantageKey||settings.finnhubKey)?`<span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:3px;background:rgba(220,50,80,0.9);border-radius:2px"></span>S&P 500 %</span><span style="font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:3px;background:rgba(50,130,240,0.9);border-radius:2px"></span>NASDAQ %</span>`:''}
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center" id="chartEvoLegend">
+          ${[
+            {key:'patrimonio', label:t('patrimonioTotal2'), color:'rgba(245,166,35,0.95)', solid:true},
+            {key:'ganancia',   label:t('gananciaReal'),     color:'#30D158',               solid:false},
+            {key:'rendPlat',   label:t('rendPlataformas')+' %', color:'rgba(10,132,255,0.85)', solid:false},
+            {key:'gpInv',      label:t('gpNoRealizada')+' %',   color:'rgba(48,209,88,0.85)',  solid:false},
+            ...((settings.alphaVantageKey||settings.finnhubKey)?[
+              {key:'sp500',  label:'S&P 500 %',   color:'rgba(220,50,80,0.9)',  solid:false},
+              {key:'nasdaq', label:'NASDAQ %',     color:'rgba(50,130,240,0.9)', solid:false},
+            ]:[])
+          ].map(s=>{
+            const hidden=window._hiddenSeries&&window._hiddenSeries.has(s.key);
+            return `<span onclick="window._toggleEvoSeries('${s.key}')" style="cursor:pointer;font-size:10px;display:flex;align-items:center;gap:3px;padding:2px 6px;border-radius:20px;border:1px solid ${hidden?'var(--border)':'transparent'};opacity:${hidden?0.35:1};transition:all 0.15s"><span style="display:inline-block;width:${s.solid?14:10}px;height:${s.solid?3:2}px;background:${s.color};border-radius:2px;${s.solid?'':'border-top:none'}"></span><span style="color:var(--text2)">${s.label}</span></span>`;
+          }).join('')}
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0">${rangeButtonsHTML}</div>
       </div>
