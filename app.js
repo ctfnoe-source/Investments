@@ -930,9 +930,7 @@ async function fetchSP500History() {
     try {
       const toTs = Math.floor(Date.now()/1000);
       const fromTs = toTs - 60*60*24*365*2; // 2 años atrás
-      const r = await fetchWithTimeout(
-        \`https://finnhub.io/api/v1/stock/candle?symbol=SPY&resolution=M&from=\${fromTs}&to=\${toTs}&token=\${fhKey}\`
-      );
+      const r = await fetchWithTimeout(`https://finnhub.io/api/v1/stock/candle?symbol=SPY&resolution=M&from=${fromTs}&to=${toTs}&token=${fhKey}`);
       if (r.ok) {
         const d = await r.json();
         if (d.s === 'ok' && d.t && d.c) {
