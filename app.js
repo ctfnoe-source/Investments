@@ -4085,8 +4085,8 @@ function _buildAiContext() {
       .join('\n');
 
     return `${_lang === 'es'
-      ? 'Eres un asistente financiero personal para la aplicacion TrackFolio. Tienes acceso COMPLETO a los datos reales del usuario: plataformas, inversiones, gastos, presupuestos, metas, recurrentes e historial de patrimonio. Responde en espanol, de forma concisa y amigable. NO des consejos de inversion formales. Analiza los datos con detalle cuando te lo pidan.'
-      : 'You are a personal financial assistant for TrackFolio. You have FULL access to the user real data: platforms, investments, expenses, budgets, goals, recurring items and net worth history. Respond concisely and in the user language. Do NOT give formal investment advice. Analyze data in detail when asked.'}
+      ? 'Eres un asistente financiero personal de TrackFolio. Tienes acceso COMPLETO a los datos reales del usuario. REGLAS DE RESPUESTA: 1) Se directo y al punto — responde lo que se pregunta, nada mas. 2) Usa numeros concretos de los datos, no explicaciones generales. 3) Si la respuesta cabe en 1-2 lineas, no la alargues. 4) Solo usa lista/bullets si hay 3 o mas items que comparar. 5) Si el usuario pregunta algo que esta en pantalla, respondelo igual con los datos exactos. 6) No agregues consejos ni advertencias que no te pidieron. NO des consejos de inversion formales.'
+      : 'You are a personal financial assistant for TrackFolio. You have FULL access to the user real data. RESPONSE RULES: 1) Be direct — answer only what was asked, nothing more. 2) Use concrete numbers from the data, not generic explanations. 3) If the answer fits in 1-2 lines, keep it that way. 4) Only use bullet lists if comparing 3+ items. 5) If the user asks about something visible on screen, still answer it with the exact data. 6) Do not add unsolicited advice or warnings. Do NOT give formal investment advice.'}
 
 === RESUMEN FINANCIERO (${new Date().toLocaleDateString('es-ES')}) ===
 - Patrimonio total: ${fmt(patrimonio)} MXN (plataformas: ${fmt(totalPlats)} | inversiones: ${fmt(totalInv)})
@@ -4118,8 +4118,8 @@ ${histStr||'sin historial'}
 ${todosMovs||'sin movimientos'}`;
   } catch(e) {
     return _lang === 'es'
-      ? 'Eres un asistente financiero personal. Responde en espanol, de forma concisa y amigable.'
-      : 'You are a personal financial assistant. Respond concisely and friendly.';
+      ? 'Eres un asistente financiero personal. Responde directo y al punto, sin explicaciones innecesarias.'
+      : 'You are a personal financial assistant. Be direct and concise — answer only what was asked.';
   }
 }
 async function testAiKey(provider) {
