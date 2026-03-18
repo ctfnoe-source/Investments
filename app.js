@@ -1202,39 +1202,6 @@ let _aiMessages = LS.get('aiHistory') || [];
 let _valuesHidden = LS.get('valuesHidden') || false;
 let _aiLoading = false;
 let chartInstances = {};
-
-// ── Recuperación de canvas en móvil ─────────────────────────────────────
-// iOS/Android descartan el buffer del canvas al hacer scroll o al poner la app en segundo plano
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && currentTab === 'dashboard') {
-    setTimeout(() => {
-      ['chartDistro','chartInvTipo','chartGastosCat'].forEach(k => {
-        if (chartInstances[k]) { try { chartInstances[k].resize(); } catch(e) {} }
-      });
-      if (!chartInstances.chartDistro || !chartInstances.chartInvTipo) renderDashboard();
-    }, 150);
-  }
-});
-
-window.addEventListener('pageshow', (e) => {
-  if (e.persisted && currentTab === 'dashboard') setTimeout(() => renderDashboard(), 150);
-});
-
-let _barObserver = null;
-function _observeBarCharts() {
-  if (_barObserver) { _barObserver.disconnect(); _barObserver = null; }
-  if (typeof IntersectionObserver === 'undefined') return;
-  const ids = ['chartDistro','chartInvTipo','chartGastosCat'];
-  _barObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (!entry.isIntersecting) return;
-      const k = entry.target.id;
-      if (chartInstances[k]) { try { chartInstances[k].resize(); } catch(e) {} }
-      else if (currentTab === 'dashboard') renderDashboard();
-    });
-  }, { threshold: 0.1 });
-  ids.map(id => document.getElementById(id)).filter(Boolean).forEach(el => _barObserver.observe(el));
-}
 let _lastLocalSave = 0;
 let _chartRange = 'all';
 let _chartRange2 = 'all';
@@ -1601,9 +1568,26 @@ function switchTab(tab){
   if(pageEl) pageEl.classList.add('active');
   const nt=document.querySelector('[data-tab="'+tab+'"]');if(nt)nt.classList.add('active');
   document.querySelectorAll('.mobile-nav-item[data-tab="'+tab+'"]').forEach(t=>t.classList.add('active'));
-  Object.keys(chartInstances).forEach(k=>{if(chartInstances[k]){chartInstances[k].destroy();delete chartInstances[k];}});
+  // Only destroy non-dashboard charts when leaving — dashboard charts survive tab switches
+  // This prevents the blank chart bug on mobile when returning to dashboard
+  const _dashCharts = new Set(['chartDistro','chartInvTipo','chartGastosCat','chartEvo']);
+  const _leavingDashboard = (currentTab !== 'dashboard');
+  Object.keys(chartInstances).forEach(k=>{
+    if(chartInstances[k]){
+      // Keep dashboard charts alive unless we're re-rendering dashboard itself
+      if(_dashCharts.has(k) && tab !== 'dashboard') return;
+      chartInstances[k].destroy();
+      delete chartInstances[k];
+    }
+  });
   _analytics.tabView(tab);
   renderPageInternal(tab);
+  // When returning to dashboard, resize charts in case canvas dimensions changed on mobile
+  if(tab === 'dashboard') {
+    requestAnimationFrame(() => {
+      _dashCharts.forEach(k => { if(chartInstances[k]) chartInstances[k].resize(); });
+    });
+  }
 }
 document.querySelectorAll('.nav-tab').forEach(btn=>btn.addEventListener('click',()=>switchTab(btn.dataset.tab)));
 function openModal(html){document.getElementById('modalContent').innerHTML=html;document.getElementById('modalOverlay').classList.add('open');}
@@ -2524,6 +2508,7 @@ function renderDashboard(){
         chartInstances.chartDistro.update('none');
       } else {
         chartInstances.chartDistro=new Chart(ctxD,{type:'bar',data:{labels:de.map(([k])=>k),datasets:[{data:de.map(([,v])=>v),backgroundColor:de.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]),borderRadius:8,borderSkipped:false,barThickness:14}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:{duration:600,easing:'easeOutQuart'},plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(28,28,30,0.96)':'rgba(29,29,31,0.92)',cornerRadius:10,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>' '+ctx.label+': '+((ctx.parsed.x/de.reduce((s,[,v])=>s+v,0)*100)).toFixed(1)+'%'}},pctLabels:{display:true}},scales:{x:{display:false,grid:{display:false},ticks:{display:false},max:de.reduce((s,[,v])=>s+v,0)*1.22},y:{grid:{display:false},border:{display:false},ticks:{color:isDark?'rgba(235,235,245,0.55)':'rgba(60,60,67,0.55)',font:{family:'DM Sans',size:11,weight:'500'},padding:6}}}}});
+
       }
     }
 
@@ -2540,6 +2525,7 @@ function renderDashboard(){
         chartInstances.chartInvTipo.update('none');
       } else {
         chartInstances.chartInvTipo=new Chart(ctxI,{type:'bar',data:{labels:invE.map(([k])=>k),datasets:[{data:invE.map(([,v])=>v),backgroundColor:invE.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]),borderRadius:8,borderSkipped:false,barThickness:14}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:{duration:600,easing:'easeOutQuart'},plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(28,28,30,0.96)':'rgba(29,29,31,0.92)',cornerRadius:10,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>{const total=invE.reduce((s,[,v])=>s+v,0);return ' '+ctx.label+': '+((ctx.parsed.x/total)*100).toFixed(1)+'% ('+fmt(ctx.parsed.x)+')';}}}},scales:{x:{display:false,grid:{display:false},ticks:{display:false},max:invE.reduce((s,[,v])=>s+v,0)*1.22},y:{grid:{display:false},border:{display:false},ticks:{color:isDark?'rgba(235,235,245,0.55)':'rgba(60,60,67,0.55)',font:{family:'DM Sans',size:11,weight:'500'},padding:6}}}}});
+
       }
     }
 
@@ -2558,7 +2544,9 @@ function renderDashboard(){
             datasets:[{
               data: topCats.map(([,v])=>v),
               backgroundColor: topCats.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]),
-              borderRadius:8,borderSkipped:false,barThickness:14
+              borderRadius:8,
+              borderSkipped:false,
+              barThickness:14
             }]
           },
           options:{
@@ -2567,25 +2555,194 @@ function renderDashboard(){
             animation:{duration:600,easing:'easeOutQuart'},
             plugins:{
               legend:{display:false},
-              tooltip:{backgroundColor:isDark?'rgba(28,28,30,0.96)':'rgba(29,29,31,0.92)',cornerRadius:10,padding:10,bodyFont:{family:'DM Sans',size:12},
-                callbacks:{label:ctx=>' '+ctx.label+': '+((ctx.parsed.x/topCats.reduce((s,[,v])=>s+v,0))*100).toFixed(1)+'%'}}
+              tooltip:{
+                backgroundColor:isDark?'rgba(28,28,30,0.96)':'rgba(29,29,31,0.92)',
+                cornerRadius:10, padding:10,
+                titleFont:{family:'DM Sans',size:12,weight:'700'},
+                bodyFont:{family:'DM Sans',size:12},
+                callbacks:{label:ctx=>{
+                  const total=topCats.reduce((s,[,v])=>s+v,0);
+                  return ' '+ctx.label+': '+((ctx.parsed.x/total)*100).toFixed(1)+'% ('+fmtD(ctx.parsed.x)+')';
+                }}
+              }
             },
             scales:{
               x:{display:false,grid:{display:false},ticks:{display:false},max:topCats.reduce((s,[,v])=>s+v,0)*1.22},
               y:{grid:{display:false},border:{display:false},ticks:{color:isDark?'rgba(235,235,245,0.55)':'rgba(60,60,67,0.55)',font:{family:'DM Sans',size:11,weight:'500'},padding:6}}
             }
-          }
+          },
+
         });
       }
     }
-
-    setTimeout(()=>{ _runProactiveAiAlert(); }, 4000);
-    setTimeout(()=>{
-      if(typeof updateFX==='function') updateFX();
-      if(typeof flushOfflineQueue==='function') flushOfflineQueue();
-    },1200);
-    requestAnimationFrame(() => { if(typeof _observeBarCharts==='function') _observeBarCharts(); });
+  },50);
 }
+
+// ============================================
+// MOVIMIENTOS
+// ============================================
+let _movPage = 1;
+const MOV_PAGE_SIZE = 30;
+let _movFiltered = [];
+
+function _buildMovRow(m, transferGroups) {
+  let det='',tipo='',monto='',extra='';
+  const notas=m.notas||m.desc||'';
+  let rowClass='';
+  if(m.seccion==='plataformas'){
+    if(m.tipoPlat==='Transferencia salida'&&m.transferId){
+      const grp=transferGroups[m.transferId]||[];
+      const entrada=grp.find(x=>x.tipoPlat==='Transferencia entrada');
+      det=`<strong>${m.platform}</strong> → <strong>${entrada?.platform||'?'}</strong>`;
+      tipo='↔ '+t('transferencia'); monto=fmt(m.monto); rowClass='transfer-row';
+    } else { det=m.platform; tipo=m.tipoPlat; monto=fmt(m.monto); }
+  } else if(m.seccion==='inversiones'){
+    det=`<strong>${escHtml(m.ticker)}</strong> · ${m.broker}`;
+    const _tipoColor=m.tipoMov==='Compra'?'var(--green)':m.tipoMov==='Venta'?'var(--red)':m.tipoMov==='Dividendo'?'var(--blue)':'var(--text2)';
+    const _tipoBadge=`<span style="display:inline-block;padding:1px 7px;border-radius:20px;font-size:10px;font-weight:800;background:${_tipoColor}18;color:${_tipoColor}">${m.tipoMov}</span>`;
+    tipo=_tipoBadge+' <span style="font-size:11px;color:var(--text2)">'+m.tipoActivo+' · '+(m.moneda||'USD')+'</span>';
+    monto=fmt(m.montoTotal,m.moneda);
+    extra=m.cantidad+'×'+fmtFull(m.precioUnit);
+  } else {
+    det=catName(m.categoria);
+    tipo=m.tipo+(m.esRecurrente?' 🔄':'');
+    monto=fmt(m.importe);
+  }
+  const secCell = m.tipoPlat==='Transferencia salida'&&m.transferId
+    ? `<span class="badge badge-teal">↔ TRANSFER</span>`
+    : secBadge(m.seccion);
+
+  if (isMobile()) {
+    return `<div class="mov-card ${rowClass}" style="background:var(--card2);border-radius:12px;padding:12px 14px;border:0.5px solid var(--border);margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          ${secCell}
+          <span style="font-size:12px;font-weight:700">${det}</span>
+        </div>
+        <div style="font-size:15px;font-weight:800;flex-shrink:0">${monto}</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <span style="font-size:11px;color:var(--text2)">${m.fecha} · ${tipo}</span>
+          ${extra?`<span style="font-size:11px;color:var(--text2)"> · ${extra}</span>`:''}
+          ${notas?`<div style="font-size:11px;color:var(--text3);margin-top:2px">${notas}</div>`:''}
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          <button class="edit-btn" onclick="openEditMovModal('${m.id}')" style="opacity:0.8">✏️</button>
+          <button class="del-btn" onclick="deleteMovement('${m.id}')" style="opacity:0.8">×</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  return `<tr class="${rowClass}">
+    <td style="color:var(--text2);font-size:12px">${m.fecha}</td>
+    <td>${secCell}</td>
+    <td>${det}</td>
+    <td style="color:var(--text2);font-size:12px">${tipo}</td>
+    <td style="font-weight:700">${monto}</td>
+    <td style="color:var(--text2);font-size:11px">${extra}</td>
+    <td style="color:var(--text2);font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${notas||'—'}</td>
+    <td style="white-space:nowrap">
+      <button class="edit-btn" onclick="openEditMovModal('${m.id}')" title="${t('editar')}">✏️</button>
+      <button class="del-btn" onclick="deleteMovement('${m.id}')" title="${t('eliminar')}">×</button>
+    </td>
+  </tr>`;
+}
+
+function _appendMovRows() {
+  const tbody = document.getElementById('movTbody');
+  const sentinel = document.getElementById('movSentinel');
+  if (!tbody) return;
+  const transferGroups = {};
+  movements.forEach(m => { if(m.transferId) transferGroups[m.transferId]=(transferGroups[m.transferId]||[]).concat(m); });
+  const start = (_movPage - 1) * MOV_PAGE_SIZE;
+  const chunk = _movFiltered.slice(start, start + MOV_PAGE_SIZE);
+  if (chunk.length === 0) { if (sentinel) sentinel.style.display='none'; return; }
+  chunk.forEach(m => { tbody.insertAdjacentHTML('beforeend', _buildMovRow(m, transferGroups)); });
+  _movPage++;
+  const loaded = Math.min((_movPage-1)*MOV_PAGE_SIZE, _movFiltered.length);
+  if (loaded >= _movFiltered.length) { if (sentinel) sentinel.style.display='none'; }
+}
+
+function _setupMovScroll() {
+  const sentinel = document.getElementById('movSentinel');
+  if (!sentinel) return;
+  if (window._movObserver) window._movObserver.disconnect();
+  window._movObserver = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) _appendMovRows();
+  }, { rootMargin: '200px' });
+  window._movObserver.observe(sentinel);
+}
+
+function renderMovimientos(){
+  const transferGroups={};
+  movements.forEach(m=>{ if(m.transferId) transferGroups[m.transferId]=(transferGroups[m.transferId]||[]).concat(m); });
+  _movFiltered=movements.filter(m=>{
+    if(movFilter.seccion!=='todas'&&m.seccion!==movFilter.seccion) return false;
+    if(m.tipoPlat==='Transferencia entrada'&&m.transferId&&movFilter.seccion==='todas') return false;
+    if(movFilter.search){const s=movFilter.search.toLowerCase();const text=[m.platform,m.ticker,m.broker,m.tipoPlat,m.tipoMov,m.tipo,m.notas,m.desc,m.categoria].filter(Boolean).join(' ').toLowerCase();if(!text.includes(s))return false;}
+    return true;
+  }).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  _movPage=1;
+
+  const prevFocused = document.activeElement?.id === 'movSearchInput';
+  const prevCursor = prevFocused ? document.getElementById('movSearchInput')?.selectionStart : null;
+
+  const isEmpty = _movFiltered.length===0;
+  const noMovsAtAll = movements.length===0;
+  const emptyContent = isEmpty ? `
+    <div style="text-align:center;padding:56px 24px">
+      <div style="font-size:44px;margin-bottom:14px">${noMovsAtAll?'📋':movFilter.search?'🔍':'📭'}</div>
+      <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">
+        ${movFilter.search?t('noResultados')+' "'+movFilter.search+'"':noMovsAtAll?t('sinMovimientos'):t('sinMovimientosSeccion')}
+      </div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:24px">
+        ${movFilter.search?t('intentaOtroTermino'):t('registraMovimientos')}
+      </div>
+      ${!movFilter.search?`<button class="btn btn-primary" onclick="openMovModal()">${t('agregar')} ${t('primerMovimiento')}</button>`:''}
+    </div>` : '';
+  const emptyHtml = isEmpty ? `<tr><td colspan="8">${emptyContent}</td></tr>` : '';
+
+  document.getElementById('page-movimientos').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+      <div>
+        <div class="section-title">${t('movimientosTitulo')}</div>
+        <div class="section-sub">${t('movimientosSubtitulo')} · ${movements.length} ${t('totalLabel')}</div>
+      </div>
+      <button class="btn btn-primary" onclick="openMovModal()">${t('nuevoMovimiento')}</button>
+    </div>
+    <div class="filter-pills">
+      ${['todas','plataformas','inversiones','gastos'].map(s=>`<button class="pill mov-pill ${movFilter.seccion===s?'active':''}" data-sec="${s}" onclick="movFilter.seccion='${s}';renderMovimientos()">${s==='todas'?t('todo'):s==='plataformas'?t('seccionPlataformas'):s==='inversiones'?t('seccionInversiones'):t('seccionGastos')}</button>`).join('')}
+      <input class="pill-search" id="movSearchInput" placeholder="${t('buscar')}" value="${movFilter.search}" oninput="movFilter.search=this.value;renderMovimientos()">
+      <span style="font-size:12px;color:var(--text2);margin-left:4px">${_movFiltered.length} ${t('movimientos')}</span>
+    </div>
+    <div class="card-flat">
+      ${isMobile() ? `
+        <div id="movTbody" style="padding:12px">${isEmpty ? emptyContent : ''}</div>
+        <div id="movSentinel" style="height:4px"></div>
+      ` : `
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>${t('fecha')}</th><th>${t('seccion')}</th><th>${t('detalle')}</th><th>${t('tipo')}</th><th>${t('monto')}</th><th>${t('extra')}</th><th>${t('notas')}</th><th style="width:70px"></th></tr></thead>
+          <tbody id="movTbody">${emptyHtml}</tbody>
+        </table>
+        <div id="movSentinel" style="height:4px"></div>
+      </div>`}
+    </div>
+  `;
+
+  if (!isEmpty) {
+    _appendMovRows();
+    setTimeout(_setupMovScroll, 60);
+  }
+
+  if (prevFocused) {
+    const inp = document.getElementById('movSearchInput');
+    if (inp) { inp.focus(); if (prevCursor !== null) inp.setSelectionRange(prevCursor, prevCursor); }
+  }
+}
+
 
 function openMovModal(sec){
   const s=sec||'plataformas';
@@ -5321,7 +5478,6 @@ onAuthStateChanged(auth,async user=>{
       if(typeof updateFX==='function') updateFX();
       if(typeof flushOfflineQueue==='function') flushOfflineQueue();
     },1200);
-    requestAnimationFrame(() => { if(typeof _observeBarCharts==='function') _observeBarCharts(); });
   }else{
     window._currentUser=null;
     if(_unsub){_unsub();_unsub=null;}
