@@ -456,3 +456,19 @@ tr:hover td { background: var(--table-row-hover); }
 }
 .page.slide-in-right { animation: slideInRight 0.22s cubic-bezier(.4,0,.2,1) both; }
 .page.slide-in-left  { animation: slideInLeft  0.22s cubic-bezier(.4,0,.2,1) both; }
+
+/* ── Nav tabs: evitar que Ajustes quede tapado por nav-user ── */
+@media(max-width:1100px){
+  .nav-tab { padding: 7px 6px; font-size: 11px; }
+}
+@media(max-width:900px){
+  .nav-tab { padding: 6px 5px; font-size: 11px; }
+  .nav-inner { gap: 4px; }
+  #navPatrimonio { display: none; }
+}
+
+/* Ocultar texto de tabs cuando no hay espacio, dejar solo emoji */
+@media(max-width:960px){
+  .nav-tab .tab-label { display: none; }
+  .nav-tab { padding: 7px 9px; font-size: 15px; }
+}
