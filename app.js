@@ -4178,9 +4178,9 @@ function renderAjustes(){
     '</div></div>'
   ) : '';
   document.getElementById('page-ajustes').innerHTML=`
-    <div style="margin-bottom:20px">
-      <div class="section-title" style="margin-bottom:12px">⚙️ ${t('ajustes')}</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+      <div class="section-title" style="margin-bottom:0">⚙️ ${t('ajustes')}</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
         <button onclick="window.showTutorial()" style="padding:9px 16px;border-radius:50px;border:none;background:linear-gradient(135deg,#0A84FF,#5856D6);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);box-shadow:0 3px 12px rgba(10,132,255,0.28);display:flex;align-items:center;gap:6px;transition:opacity 0.15s,transform 0.15s;white-space:nowrap" onmouseover="this.style.opacity='0.88';this.style.transform='translateY(-1px)'" onmouseout="this.style.opacity='1';this.style.transform='translateY(0)'">🎓 ${_lang==='es'?'Ver tutorial':'View tutorial'}</button>
         <a href="https://www.facebook.com/profile.php?id=61570831467046" target="_blank" rel="noopener" style="padding:9px 16px;border-radius:50px;background:linear-gradient(135deg,#1877F2,#0A5EC4);color:#fff;font-size:13px;font-weight:700;font-family:var(--font);box-shadow:0 3px 12px rgba(24,119,242,0.28);display:flex;align-items:center;gap:7px;transition:opacity 0.15s,transform 0.15s;text-decoration:none;white-space:nowrap" onmouseover="this.style.opacity='0.88';this.style.transform='translateY(-1px)'" onmouseout="this.style.opacity='1';this.style.transform='translateY(0)'"><svg width="15" height="15" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.269h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>${_lang==='es'?'Ayuda / Contacto':'Help / Contact'}</a>
       </div>
