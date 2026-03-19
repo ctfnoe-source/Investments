@@ -1986,16 +1986,22 @@ function renderDashboard(){
   const _usdmxn = (_fx?.usdmxn) || tc || 17.5;
   const _eurmxn = (_fx?.eurmxn) || settings.tipoEUR || 20;
   const _gbpmxn = (_fx?.gbpmxn) || settings.tipoGBP || 23;
+  const _cadmxn = (_fx?.cadmxn) || settings.tipoCAD || 12.8;
+  const _jpymxn = (_fx?.jpymxn) || settings.tipoJPY || 0.117;
+  const _chfmxn = (_fx?.chfmxn) || settings.tipoCHF || 19.8;
   // Convierte un valor en MXN a la moneda del dashboard
   const mxnTo = (v) => {
     if (_dashMon === 'MXN') return v;
     if (_dashMon === 'USD') return v / _usdmxn;
     if (_dashMon === 'EUR') return v / _eurmxn;
     if (_dashMon === 'GBP') return v / _gbpmxn;
+    if (_dashMon === 'CAD') return v / _cadmxn;
+    if (_dashMon === 'JPY') return v / _jpymxn;
+    if (_dashMon === 'CHF') return v / _chfmxn;
     return v;
   };
-  const _dashSym = {MXN:'$',USD:'US$',EUR:'€',GBP:'£'}[_dashMon] || '$';
-  const _dashDec = _dashMon === 'MXN' ? 0 : 2;
+  const _dashSym = {MXN:'$',USD:'US$',EUR:'€',GBP:'£',CAD:'CA$',JPY:'¥',CHF:'CHF '}[_dashMon] || '$';
+  const _dashDec = _dashMon === 'MXN' ? 0 : _dashMon === 'JPY' ? 0 : 2;
   const fmtDash = (mxnVal) => {
     const v = mxnTo(Number(mxnVal||0));
     const abs = Math.abs(v);
@@ -4202,30 +4208,41 @@ function renderAjustes(){
             const vUSD=isLive&&fx.usdmxn?fx.usdmxn.toFixed(2):(settings.tipoCambio);
             const vEUR=isLive&&fx.eurmxn?fx.eurmxn.toFixed(2):(settings.tipoEUR);
             const vGBP=isLive&&fx.gbpmxn?fx.gbpmxn.toFixed(2):(settings.tipoGBP);
+            const vCAD=isLive&&fx.cadmxn?fx.cadmxn.toFixed(2):(settings.tipoCAD||12.8);
+            const vJPY=isLive&&fx.jpymxn?fx.jpymxn.toFixed(4):(settings.tipoJPY||0.117);
+            const vCHF=isLive&&fx.chfmxn?fx.chfmxn.toFixed(2):(settings.tipoCHF||19.8);
             const statusBadge=isLive
               ? '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:var(--green)"><span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block"></span>'+t('liveECB')+' · '+ts+'</div>'
               : '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:var(--orange)"><span style="width:7px;height:7px;border-radius:50%;background:var(--orange);display:inline-block"></span>'+t('manual')+' · '+t('pressUpdate')+'</div>';
             return statusBadge
               + '<div style="display:flex;flex-direction:column;gap:10px">'
-              + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">\ud83c\uddfa\ud83c\uddf8 USD =</span><input type="number" step="0.01" id="inputTCUSD" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vUSD+'" onchange="window.settings.tipoCambio=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
-              + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">\ud83c\uddea\ud83c\uddfa EUR =</span><input type="number" step="0.01" id="inputTCEUR" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vEUR+'" onchange="window.settings.tipoEUR=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
-              + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">\ud83c\uddec\ud83c\udde7 GBP =</span><input type="number" step="0.01" id="inputTCGBP" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vGBP+'" onchange="window.settings.tipoGBP=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
+              + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">🇺🇸 USD =</span><input type="number" step="0.01" id="inputTCUSD" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vUSD+'" onchange="window.settings.tipoCambio=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
+              + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">🇪🇺 EUR =</span><input type="number" step="0.01" id="inputTCEUR" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vEUR+'" onchange="window.settings.tipoEUR=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
+              + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">🇬🇧 GBP =</span><input type="number" step="0.01" id="inputTCGBP" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vGBP+'" onchange="window.settings.tipoGBP=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
+              + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">🇨🇦 CAD =</span><input type="number" step="0.01" id="inputTCCAD" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vCAD+'" onchange="window.settings.tipoCAD=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
+              + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">🇯🇵 JPY =</span><input type="number" step="0.0001" id="inputTCJPY" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vJPY+'" onchange="window.settings.tipoJPY=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
+              + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">🇨🇭 CHF =</span><input type="number" step="0.01" id="inputTCCHF" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vCHF+'" onchange="window.settings.tipoCHF=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
               + '<button class="btn btn-secondary btn-sm" onclick="forceUpdateFX()">🔄 '+t('updateLive')+'</button>'
               + '</div>';
           })()}
         </div>
       </div>
-      
-    </div>
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-title">💱 ${_lang==='es'?'Moneda del Dashboard':'Dashboard Currency'}</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.5">${_lang==='es'?'Los 8 indicadores y el patrimonio total se mostrarán en esta moneda. Los datos internos no cambian.':'The 8 indicators and total net worth will display in this currency. Internal data is unchanged.'}</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        ${['MXN','USD','EUR','GBP'].map(m=>{
-          const sym={MXN:'🇲🇽',USD:'🇺🇸',EUR:'🇪🇺',GBP:'🇬🇧'}[m];
-          const active=(settings.dashMoneda||'MXN')===m;
-          return `<button onclick="window.settings.dashMoneda='${m}';saveAll();renderAjustes();renderDashboard()" style="padding:8px 18px;border-radius:22px;border:2px solid ${active?'var(--blue)':'var(--border)'};background:${active?'rgba(10,132,255,0.10)':'var(--card2)'};color:${active?'var(--blue)':'var(--text)'};font-weight:${active?'800':'600'};font-size:13px;cursor:pointer;font-family:var(--font)">${sym} ${m}</button>`;
-        }).join('')}
+      <div class="card">
+        <div class="card-title">💱 ${_lang==='es'?'Moneda del Dashboard':'Dashboard Currency'}</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.5">${_lang==='es'?'Los 8 indicadores y el patrimonio total se muestran en la moneda que elijas. Los datos no cambian.':'The 8 indicators and net worth display in your chosen currency. Data unchanged.'}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          ${[
+            {m:'MXN',flag:'🇲🇽',name:'Peso MX'},
+            {m:'USD',flag:'🇺🇸',name:'Dólar US'},
+            {m:'EUR',flag:'🇪🇺',name:'Euro'},
+            {m:'GBP',flag:'🇬🇧',name:'Libra'},
+            {m:'CAD',flag:'🇨🇦',name:'Dólar CA'},
+            {m:'JPY',flag:'🇯🇵',name:'Yen'},
+          ].map(({m,flag,name})=>{
+            const active=(settings.dashMoneda||'MXN')===m;
+            return `<button onclick="window.settings.dashMoneda='${m}';saveAll();renderAjustes();renderDashboard()" style="padding:10px 12px;border-radius:14px;border:2px solid ${active?'var(--blue)':'var(--border)'};background:${active?'rgba(10,132,255,0.08)':'var(--card2)'};cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:8px;transition:all 0.15s;width:100%"><span style="font-size:20px">${flag}</span><div style="text-align:left;flex:1"><div style="font-size:13px;font-weight:700;color:${active?'var(--blue)':'var(--text)'}">${m}</div><div style="font-size:10px;color:${active?'var(--blue)':'var(--text2)'}">${name}</div></div>${active?'<span style="color:var(--blue);font-size:16px;font-weight:800">✓</span>':''}</button>`;
+          }).join('')}
+        </div>
       </div>
     </div>
     <div class="grid-2" style="margin-bottom:16px">
@@ -4713,9 +4730,12 @@ function updateNav(patrimonio,totalMXN,totalUSD,tc,totalRend,deltaHoy,deltaHoyPc
   const _usdmxn=(_fx?.usdmxn)||tc||17.5;
   const _eurmxn2=(_fx?.eurmxn)||settings.tipoEUR||20;
   const _gbpmxn=(_fx?.gbpmxn)||settings.tipoGBP||23;
-  const _mxnTo=(v)=>{if(_dm==='USD')return v/_usdmxn;if(_dm==='EUR')return v/_eurmxn2;if(_dm==='GBP')return v/_gbpmxn;return v;};
-  const _dmSym={MXN:'$',USD:'US$',EUR:'€',GBP:'£'}[_dm]||'$';
-  const _dmDec=_dm==='MXN'?0:2;
+  const _cadmxn2=(_fx?.cadmxn)||settings.tipoCAD||12.8;
+  const _jpymxn2=(_fx?.jpymxn)||settings.tipoJPY||0.117;
+  const _chfmxn2=(_fx?.chfmxn)||settings.tipoCHF||19.8;
+  const _mxnTo=(v)=>{if(_dm==='USD')return v/_usdmxn;if(_dm==='EUR')return v/_eurmxn2;if(_dm==='GBP')return v/_gbpmxn;if(_dm==='CAD')return v/_cadmxn2;if(_dm==='JPY')return v/_jpymxn2;if(_dm==='CHF')return v/_chfmxn2;return v;};
+  const _dmSym={MXN:'$',USD:'US$',EUR:'€',GBP:'£',CAD:'CA$',JPY:'¥',CHF:'CHF '}[_dm]||'$';
+  const _dmDec=_dm==='MXN'?0:_dm==='JPY'?0:2;
   const _fmtNav=(v)=>{const abs=Math.abs(_mxnTo(v));const sign=_mxnTo(v)<0?'-':'';return sign+_dmSym+abs.toLocaleString('es-MX',{minimumFractionDigits:_dmDec,maximumFractionDigits:_dmDec});};
   if(el1)el1.textContent=_fmtNav(patrimonio);
   const fx=_fxCache||LS.get('fxCache');
