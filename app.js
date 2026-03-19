@@ -5200,48 +5200,369 @@ function getMetaRef(uid) {
 function setFbStatus(s){let el=document.getElementById('fbStatus');if(!el)return;el.style.display=s?'block':'none';const map={syncing:['⏳ '+t('sync'),'rgba(10,132,255,0.1)','#0A84FF'],ok:['☁️ '+t('synced'),'rgba(48,209,88,0.1)','#30D158'],error:['⚠️ '+t('noConnection'),'rgba(255,69,58,0.1)','#FF453A'],offline:['📴 '+t('offline'),'rgba(0,0,0,0.06)','#86868B']};const[text,bg,color]=map[s]||map.offline;el.textContent=text;el.style.background=bg;el.style.color=color;if(s==='ok'){setTimeout(()=>{if(el)el.style.display='none';},3000);}}
 // ==================== TUTORIAL ====================
 function showTutorial(){
+  const es=_lang==='es';
+
+  // ── Mockups HTML por sección ──────────────────────────────────────────────
+  const MOCKUPS={
+
+    // 0 — Dashboard
+    dashboard:`
+      <div style="background:#F2F2F7;border-radius:14px;padding:12px;font-family:inherit">
+        <!-- mini nav -->
+        <div style="background:#fff;border-radius:10px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,0.07)">
+          <div style="font-size:11px;font-weight:800;color:#1d1d1f">💰 TrackFolio</div>
+          <div style="display:flex;gap:4px">
+            ${['📊','📋','🏦','📈','💳','🎯','⚙️'].map((ic,i)=>`<div style="width:22px;height:22px;border-radius:6px;background:${i===0?'rgba(10,132,255,0.12)':'transparent'};display:flex;align-items:center;justify-content:center;font-size:10px">${ic}</div>`).join('')}
+          </div>
+        </div>
+        <!-- cards -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+          <div style="background:#fff;border-radius:10px;padding:10px 12px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">
+            <div style="font-size:8px;font-weight:700;color:#86868b;text-transform:uppercase;margin-bottom:3px">${es?'Patrimonio Total':'Net Worth'}</div>
+            <div style="font-size:18px;font-weight:800;color:#1d1d1f;letter-spacing:-0.03em">€42,850</div>
+            <div style="font-size:9px;color:#30D158;font-weight:600;margin-top:2px">▲ +3.2% ${es?'este mes':'this month'}</div>
+          </div>
+          <div style="background:#fff;border-radius:10px;padding:10px 12px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">
+            <div style="font-size:8px;font-weight:700;color:#86868b;text-transform:uppercase;margin-bottom:3px">${es?'Inversiones':'Investments'}</div>
+            <div style="font-size:18px;font-weight:800;color:#1d1d1f;letter-spacing:-0.03em">€18,200</div>
+            <div style="font-size:9px;color:#30D158;font-weight:600;margin-top:2px">▲ +12.4% G/P</div>
+          </div>
+          <div style="background:#fff;border-radius:10px;padding:10px 12px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">
+            <div style="font-size:8px;font-weight:700;color:#86868b;text-transform:uppercase;margin-bottom:3px">${es?'Gastos Mes':'Monthly Exp.'}</div>
+            <div style="font-size:18px;font-weight:800;color:#1d1d1f;letter-spacing:-0.03em">€1,340</div>
+            <div style="font-size:9px;color:#FF9F0A;font-weight:600;margin-top:2px">67% ${es?'del presupuesto':'of budget'}</div>
+          </div>
+          <div style="background:#fff;border-radius:10px;padding:10px 12px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">
+            <div style="font-size:8px;font-weight:700;color:#86868b;text-transform:uppercase;margin-bottom:3px">${es?'Sobrante Mes':'Monthly Left'}</div>
+            <div style="font-size:18px;font-weight:800;color:#30D158;letter-spacing:-0.03em">€660</div>
+            <div style="font-size:9px;color:#86868b;font-weight:600;margin-top:2px">${es?'para ahorrar/invertir':'to save/invest'}</div>
+          </div>
+        </div>
+        <!-- barra progreso meta -->
+        <div style="background:#fff;border-radius:10px;padding:10px 12px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">
+          <div style="display:flex;justify-content:space-between;font-size:9px;font-weight:700;margin-bottom:6px"><span>🎯 ${es?'Fondo Emergencia':'Emergency Fund'}</span><span style="color:#0A84FF">68%</span></div>
+          <div style="background:#F2F2F7;border-radius:4px;height:6px"><div style="background:linear-gradient(90deg,#0A84FF,#5856D6);width:68%;height:6px;border-radius:4px"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:8px;color:#86868b;margin-top:4px"><span>€6,800</span><span>€10,000</span></div>
+        </div>
+      </div>`,
+
+    // 1 — Plataformas
+    plataformas:`
+      <div style="background:#F2F2F7;border-radius:14px;padding:12px;font-family:inherit">
+        <div style="font-size:10px;font-weight:800;color:#1d1d1f;margin-bottom:8px">🏦 ${es?'Mis Plataformas':'My Platforms'}</div>
+        <!-- lista plataformas -->
+        ${[
+          {name:'Cuenta Nómina',type:es?'Cuenta corriente':'Checking',saldo:'€2,400',rend:'€0',color:'#0A84FF',tasa:''},
+          {name:'Trade Republic',type:es?'Fondo monetario':'Money market',saldo:'€8,200',rend:'+€246',color:'#30D158',tasa:'3.0% anual'},
+          {name:'MyInvestor',type:'HYSA',saldo:'€5,100',rend:'+€153',color:'#5856D6',tasa:'2.7% anual'},
+        ].map(p=>`
+          <div style="background:#fff;border-radius:10px;padding:10px 12px;margin-bottom:6px;box-shadow:0 1px 3px rgba(0,0,0,0.05);display:flex;align-items:center;gap:10px">
+            <div style="width:34px;height:34px;border-radius:10px;background:${p.color}20;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🏦</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:11px;font-weight:700;color:#1d1d1f">${p.name}</div>
+              <div style="font-size:9px;color:#86868b">${p.type}${p.tasa?' · '+p.tasa:''}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:12px;font-weight:800;color:#1d1d1f">${p.saldo}</div>
+              <div style="font-size:9px;font-weight:600;color:#30D158">${p.rend}</div>
+            </div>
+          </div>`).join('')}
+        <!-- botón agregar con flecha señalando -->
+        <div style="position:relative;margin-top:4px">
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:2px dashed #0A84FF;border-radius:10px;cursor:pointer;justify-content:center">
+            <span style="font-size:16px;color:#0A84FF;font-weight:800">+</span>
+            <span style="font-size:11px;font-weight:700;color:#0A84FF">${es?'Agregar plataforma':'Add platform'}</span>
+          </div>
+          <div style="position:absolute;right:-8px;top:-30px;font-size:10px;color:#0A84FF;font-weight:700;white-space:nowrap">👆 ${es?'pulsa aquí':'tap here'}</div>
+        </div>
+      </div>`,
+
+    // 2 — Cómo agregar plataforma (formulario)
+    plataformasForm:`
+      <div style="background:#F2F2F7;border-radius:14px;padding:12px;font-family:inherit">
+        <div style="font-size:10px;font-weight:800;color:#1d1d1f;margin-bottom:8px">➕ ${es?'Nueva Plataforma':'New Platform'}</div>
+        <div style="background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.07)">
+          ${[
+            {label:es?'Nombre':'Name', val:es?'Trade Republic':'Trade Republic', hint:''},
+            {label:es?'Tipo':'Type', val:es?'Fondo monetario':'Money market', hint:''},
+            {label:es?'Saldo inicial':'Opening balance', val:'€ 8,200', hint:es?'← Tu saldo actual hoy':'← Your current balance today'},
+            {label:es?'Rendimiento acumulado':'Accumulated return', val:'€ 246', hint:es?'← Lo que ya ganaste':'← Already earned'},
+            {label:es?'Tasa anual (%)':'Annual rate (%)', val:'3.00', hint:es?'← Opcional: calcula auto':'← Optional: auto calc'},
+          ].map(f=>`
+            <div style="margin-bottom:10px">
+              <div style="font-size:9px;font-weight:700;color:#86868b;margin-bottom:3px;text-transform:uppercase">${f.label}</div>
+              <div style="background:#F2F2F7;border-radius:8px;padding:7px 10px;font-size:11px;font-weight:600;color:#1d1d1f;display:flex;justify-content:space-between;align-items:center">
+                <span>${f.val}</span>
+                ${f.hint?`<span style="font-size:8px;color:#0A84FF;font-weight:700">${f.hint}</span>`:''}
+              </div>
+            </div>`).join('')}
+          <div style="background:linear-gradient(135deg,#0A84FF,#5856D6);border-radius:10px;padding:10px;text-align:center;font-size:12px;font-weight:700;color:#fff;margin-top:4px">
+            ✓ ${es?'Guardar plataforma':'Save platform'}
+          </div>
+        </div>
+      </div>`,
+
+    // 3 — Inversiones
+    inversiones:`
+      <div style="background:#F2F2F7;border-radius:14px;padding:12px;font-family:inherit">
+        <div style="font-size:10px;font-weight:800;color:#1d1d1f;margin-bottom:8px">📈 ${es?'Mis Inversiones':'My Investments'}</div>
+        ${[
+          {ticker:'AAPL',name:'Apple Inc.',cant:'10',pc:'$142.50',pa:'$189.40',gp:'+$469',pct:'+32.9%',c:'#30D158'},
+          {ticker:'VUAA',name:'Vanguard S&P500 ETF',cant:'5',pc:'£80.20',pa:'£94.60',gp:'+£72',pct:'+17.9%',c:'#30D158'},
+          {ticker:'BTC',name:'Bitcoin',cant:'0.05',pc:'$38,200',pa:'$42,800',gp:'+$230',pct:'+12.0%',c:'#30D158'},
+        ].map(inv=>`
+          <div style="background:#fff;border-radius:10px;padding:10px 12px;margin-bottom:6px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <div>
+                <span style="font-size:12px;font-weight:800;color:#1d1d1f">${inv.ticker}</span>
+                <span style="font-size:9px;color:#86868b;margin-left:4px">${inv.name}</span>
+              </div>
+              <div style="font-size:11px;font-weight:800;color:${inv.c}">${inv.gp} <span style="font-size:9px">(${inv.pct})</span></div>
+            </div>
+            <div style="display:flex;gap:10px;font-size:8px;color:#86868b">
+              <span>${inv.cant} ${es?'uds':'units'}</span>
+              <span>${es?'P. costo':'Cost'}: ${inv.pc}</span>
+              <span>${es?'Precio actual':'Price'}: ${inv.pa}</span>
+            </div>
+          </div>`).join('')}
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:2px dashed #5856D6;border-radius:10px;justify-content:center;margin-top:2px">
+          <span style="font-size:16px;color:#5856D6;font-weight:800">+</span>
+          <span style="font-size:11px;font-weight:700;color:#5856D6">${es?'Registrar compra/venta':'Register buy/sell'}</span>
+        </div>
+      </div>`,
+
+    // 4 — Movimientos
+    movimientos:`
+      <div style="background:#F2F2F7;border-radius:14px;padding:12px;font-family:inherit">
+        <div style="font-size:10px;font-weight:800;color:#1d1d1f;margin-bottom:6px">📋 ${es?'Movimientos — Marzo 2025':'Movements — March 2025'}</div>
+        <!-- 3 botones de tipo -->
+        <div style="display:flex;gap:4px;margin-bottom:8px">
+          ${[
+            {label:es?'💸 Gasto':'💸 Expense',color:'#FF453A'},
+            {label:es?'💰 Ingreso':'💰 Income',color:'#30D158'},
+            {label:es?'↔ Transferencia':'↔ Transfer',color:'#0A84FF'},
+          ].map((b,i)=>`<div style="flex:1;padding:6px 4px;border-radius:8px;background:${i===0?b.color+'18':'#fff'};border:1.5px solid ${i===0?b.color:'#e5e5ea'};text-align:center;font-size:9px;font-weight:700;color:${i===0?b.color:'#86868b'}">${b.label}</div>`).join('')}
+        </div>
+        <!-- lista movs -->
+        ${[
+          {ico:'🛒',cat:es?'Supermercado':'Grocery',fecha:'15 mar',imp:'-€87.40',c:'#FF453A'},
+          {ico:'💊',cat:'Farmacia',fecha:'14 mar',imp:'-€23.00',c:'#FF453A'},
+          {ico:'💰',cat:es?'Nómina':'Salary',fecha:'01 mar',imp:'+€2,000',c:'#30D158'},
+          {ico:'↔',cat:es?'A Trade Republic':'To Trade Republic',fecha:'01 mar',imp:'€500',c:'#0A84FF'},
+        ].map(m=>`
+          <div style="background:#fff;border-radius:9px;padding:8px 10px;margin-bottom:5px;display:flex;align-items:center;gap:8px;box-shadow:0 1px 2px rgba(0,0,0,0.04)">
+            <div style="width:28px;height:28px;border-radius:8px;background:${m.c}18;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">${m.ico}</div>
+            <div style="flex:1"><div style="font-size:10px;font-weight:700;color:#1d1d1f">${m.cat}</div><div style="font-size:8px;color:#86868b">${m.fecha}</div></div>
+            <div style="font-size:11px;font-weight:800;color:${m.c}">${m.imp}</div>
+          </div>`).join('')}
+        <div style="font-size:9px;color:#0A84FF;font-weight:700;text-align:center;margin-top:4px">👆 ${es?'Pulsa + para agregar un movimiento':'Tap + to add a movement'}</div>
+      </div>`,
+
+    // 5 — Gastos / Presupuesto
+    gastos:`
+      <div style="background:#F2F2F7;border-radius:14px;padding:12px;font-family:inherit">
+        <div style="font-size:10px;font-weight:800;color:#1d1d1f;margin-bottom:8px">💳 ${es?'Gastos — Marzo':'Expenses — March'}</div>
+        <!-- resumen ingreso/sobrante -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+          <div style="background:#fff;border-radius:10px;padding:9px 11px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">
+            <div style="font-size:8px;color:#86868b;font-weight:600">${es?'Ingreso mes':'Monthly income'}</div>
+            <div style="font-size:14px;font-weight:800;color:#1d1d1f">€2,000</div>
+          </div>
+          <div style="background:#fff;border-radius:10px;padding:9px 11px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">
+            <div style="font-size:8px;color:#86868b;font-weight:600">${es?'Sobrante':'Remaining'}</div>
+            <div style="font-size:14px;font-weight:800;color:#30D158">€660</div>
+          </div>
+        </div>
+        <!-- categorías con barras -->
+        ${[
+          {ico:'🏠',cat:es?'Vivienda':'Housing',gasto:650,pres:700,c:'#30D158'},
+          {ico:'🛒',cat:es?'Supermercado':'Grocery',gasto:290,pres:300,c:'#30D158'},
+          {ico:'🚗',cat:es?'Transporte':'Transport',gasto:180,pres:150,c:'#FF453A'},
+          {ico:'🍽️',cat:es?'Restaurantes':'Dining',gasto:130,pres:100,c:'#FF9F0A'},
+        ].map(g=>{
+          const pct=Math.min(g.gasto/g.pres,1);
+          return`<div style="background:#fff;border-radius:9px;padding:8px 10px;margin-bottom:5px;box-shadow:0 1px 2px rgba(0,0,0,0.04)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <div style="font-size:10px;font-weight:700;color:#1d1d1f">${g.ico} ${g.cat}</div>
+              <div style="font-size:9px;font-weight:700;color:${g.c}">€${g.gasto} / €${g.pres}</div>
+            </div>
+            <div style="background:#F2F2F7;border-radius:3px;height:5px">
+              <div style="background:${g.c};width:${(pct*100).toFixed(0)}%;height:5px;border-radius:3px"></div>
+            </div>
+          </div>`;
+        }).join('')}
+        <div style="font-size:9px;color:#86868b;text-align:center;margin-top:4px">${es?'Los gastos se toman de tus Movimientos':'Expenses come from your Movements'}</div>
+      </div>`,
+
+    // 6 — Metas
+    metas:`
+      <div style="background:#F2F2F7;border-radius:14px;padding:12px;font-family:inherit">
+        <div style="font-size:10px;font-weight:800;color:#1d1d1f;margin-bottom:8px">🎯 ${es?'Mis Metas':'My Goals'}</div>
+        ${[
+          {name:es?'Fondo Emergencia':'Emergency Fund',actual:6800,meta:10000,icon:'🛡️',color:'#0A84FF',status:es?'En proceso':'In progress'},
+          {name:es?'Viaje a Japón':'Trip to Japan',actual:2100,meta:3000,icon:'✈️',color:'#5856D6',status:es?'Casi':'Almost'},
+          {name:es?'Jubilación':'Retirement',actual:18200,meta:200000,icon:'🏖️',color:'#30D158',status:es?'Inicio':'Starting'},
+        ].map(m=>{
+          const pct=(m.actual/m.meta*100).toFixed(0);
+          return`<div style="background:#fff;border-radius:10px;padding:10px 12px;margin-bottom:6px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="font-size:16px">${m.icon}</span>
+                <span style="font-size:11px;font-weight:700;color:#1d1d1f">${m.name}</span>
+              </div>
+              <span style="font-size:9px;font-weight:700;color:${m.color}">${m.status}</span>
+            </div>
+            <div style="background:#F2F2F7;border-radius:4px;height:6px;margin-bottom:4px">
+              <div style="background:${m.color};width:${Math.min(Number(pct),100)}%;height:6px;border-radius:4px"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:8px;color:#86868b">
+              <span>€${m.actual.toLocaleString()}</span>
+              <span style="font-weight:700;color:${m.color}">${pct}%</span>
+              <span>€${m.meta.toLocaleString()}</span>
+            </div>
+          </div>`;
+        }).join('')}
+        <div style="display:flex;align-items:center;gap:8px;padding:7px 12px;border:2px dashed #BF5AF2;border-radius:10px;justify-content:center;margin-top:2px">
+          <span style="font-size:14px;color:#BF5AF2;font-weight:800">+</span>
+          <span style="font-size:10px;font-weight:700;color:#BF5AF2">${es?'Nueva meta financiera':'New financial goal'}</span>
+        </div>
+      </div>`,
+
+    // 7 — IA
+    ia:`
+      <div style="background:#F2F2F7;border-radius:14px;padding:12px;font-family:inherit">
+        <div style="font-size:10px;font-weight:800;color:#1d1d1f;margin-bottom:8px">🤖 ${es?'Asistente IA':'AI Assistant'}</div>
+        <!-- chat simulado -->
+        <div style="background:#fff;border-radius:12px;padding:10px;box-shadow:0 1px 4px rgba(0,0,0,0.07)">
+          <!-- burbuja usuario -->
+          <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+            <div style="background:linear-gradient(135deg,#0A84FF,#5856D6);border-radius:14px 14px 2px 14px;padding:8px 12px;max-width:80%">
+              <div style="font-size:10px;color:#fff;font-weight:500">${es?'¿Cómo van mis finanzas este mes?':'How are my finances this month?'}</div>
+            </div>
+          </div>
+          <!-- burbuja IA -->
+          <div style="display:flex;gap:6px;margin-bottom:8px">
+            <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#0A84FF,#BF5AF2);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0">🤖</div>
+            <div style="background:#F2F2F7;border-radius:2px 14px 14px 14px;padding:8px 10px;max-width:85%">
+              <div style="font-size:9px;color:#1d1d1f;line-height:1.5">${es?'Tu patrimonio subió un <strong>3.2%</strong> este mes (€42,850). Gastas €1,340 de €2,000 de ingreso — te sobran <strong>€660</strong>. Tus inversiones llevan +12.4% 🔥':'Your net worth grew <strong>3.2%</strong> this month (€42,850). You\'re spending €1,340 of €2,000 income — <strong>€660</strong> left. Your investments are up +12.4% 🔥'}</div>
+            </div>
+          </div>
+          <!-- input -->
+          <div style="background:#F2F2F7;border-radius:10px;padding:7px 10px;display:flex;align-items:center;gap:8px">
+            <div style="flex:1;font-size:9px;color:#aeaeb2">${es?'Pregunta algo sobre tus finanzas…':'Ask something about your finances…'}</div>
+            <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#0A84FF,#BF5AF2);display:flex;align-items:center;justify-content:center;font-size:11px">↑</div>
+          </div>
+        </div>
+        <!-- fab indicator -->
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 10px;background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">
+          <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#0A84FF,#BF5AF2);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">🤖</div>
+          <div style="font-size:9px;color:#86868b;line-height:1.4">${es?'Pulsa el botón flotante 🤖 desde cualquier pantalla para chatear con tu asesor IA personal.':'Tap the floating 🤖 button from any screen to chat with your personal AI advisor.'}</div>
+        </div>
+      </div>`,
+
+    // 8 — Ajustes
+    ajustes:`
+      <div style="background:#F2F2F7;border-radius:14px;padding:12px;font-family:inherit">
+        <div style="font-size:10px;font-weight:800;color:#1d1d1f;margin-bottom:8px">⚙️ ${es?'Ajustes — Lo que necesitas configurar':'Settings — What you need to set up'}</div>
+        <div style="background:rgba(10,132,255,0.07);border:1px solid rgba(10,132,255,0.18);border-radius:10px;padding:10px 12px;margin-bottom:8px">
+          <div style="font-size:10px;font-weight:800;color:#0A84FF;margin-bottom:4px">💡 ${es?'¿Por qué tu propia API key?':'Why your own API key?'}</div>
+          <div style="font-size:9px;color:#1d1d1f;line-height:1.6">${es?'Si yo pusiera una sola clave para todos, el coste sería enorme y tendría que cobrar suscripción mensual. <strong>Cada uno crea la suya gratis</strong> — el plan gratuito es más que suficiente para uso personal.':'If I used one shared key for everyone, the cost would be huge and I\'d have to charge monthly. <strong>Everyone creates their own for free</strong> — the free plan is more than enough for personal use.'}</div>
+        </div>
+        ${[
+          {ico:'💱',label:es?'Tipo de Cambio':'Exchange Rate',desc:es?'Se actualiza en vivo automáticamente':'Updates live automatically',color:'#0A84FF',badge:''},
+          {ico:'🔑',label:'Finnhub',desc:es?'Precios acciones US · gratis en finnhub.io':'US stock prices · free at finnhub.io',color:'#30D158',badge:es?'Gratis':'Free'},
+          {ico:'🔑',label:'AlphaVantage',desc:es?'ETFs Londres/Xetra · gratis en alphavantage.co':'London/Xetra ETFs · free at alphavantage.co',color:'#5856D6',badge:es?'Gratis':'Free'},
+          {ico:'🤖',label:'Groq / Gemini / DeepSeek',desc:es?'IA para el asistente · todos gratuitos':'AI for the assistant · all free',color:'#BF5AF2',badge:es?'Gratis':'Free'},
+        ].map(a=>`
+          <div style="background:#fff;border-radius:9px;padding:8px 10px;margin-bottom:5px;display:flex;align-items:center;gap:8px;box-shadow:0 1px 2px rgba(0,0,0,0.04)">
+            <div style="width:28px;height:28px;border-radius:8px;background:${a.color}18;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${a.ico}</div>
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;gap:5px">
+                <span style="font-size:10px;font-weight:700;color:#1d1d1f">${a.label}</span>
+                ${a.badge?'<span style="font-size:8px;font-weight:700;color:#30D158;background:rgba(48,209,88,0.1);padding:1px 5px;border-radius:4px">'+a.badge+'</span>':''}
+              </div>
+              <div style="font-size:8px;color:#86868b">${a.desc}</div>
+            </div>
+          </div>`).join('')}
+        <div style="background:linear-gradient(135deg,rgba(10,132,255,0.06),rgba(91,86,214,0.08));border:1px solid rgba(10,132,255,0.15);border-radius:10px;padding:10px 12px;margin-top:2px;display:flex;align-items:center;gap:10px">
+          <div style="font-size:22px;flex-shrink:0">🙋</div>
+          <div style="font-size:9px;color:#1d1d1f;line-height:1.6"><strong>${es?'¿No sabes cómo crearla?':'Don\'t know how to create it?'}</strong><br>${es?'Contáctame y te ayudo personalmente paso a paso. Está incluido en tu acceso.':'Contact me and I\'ll personally help you step by step. It\'s included with your access.'}</div>
+        </div>
+      </div>`,
+  };
+
   const steps=[
     {
-      icon:'👋',
-      title:_lang==='es'?'¡Bienvenido a TrackFolio!':'Welcome to TrackFolio!',
-      desc:_lang==='es'
-        ?'Tu dashboard financiero personal. En 6 pasos te enseñamos todo lo que puedes hacer aquí.'
-        :'Your personal finance dashboard. In 6 steps we\'ll show you everything you can do here.',
+      key:'dashboard',
+      title:es?'📊 Tu Dashboard':'📊 Your Dashboard',
+      desc:es
+        ?'Aquí ves todo de un vistazo: tu patrimonio total, el valor de tus inversiones, cuánto gastaste este mes y cuánto te sobra. Se actualiza solo cada vez que añades datos.'
+        :'Here you see everything at a glance: your net worth, investment value, monthly spending and what\'s left. It updates automatically whenever you add data.',
+      mockup:'dashboard',
     },
     {
-      icon:'🏦',
-      title:_lang==='es'?'Plataformas':'Platforms',
-      desc:_lang==='es'
-        ?'Registra tus cuentas bancarias, fondos, criptos y cualquier lugar donde tengas dinero. Puedes añadir saldo, rendimiento y tasa de interés anual.'
-        :'Register your bank accounts, funds, crypto and any place where you have money. You can add balance, returns and annual interest rate.',
+      key:'plataformas',
+      title:es?'🏦 Plataformas — ¿Qué son?':'🏦 Platforms — What are they?',
+      desc:es
+        ?'Son los lugares donde tienes dinero <strong>líquido o en fondos</strong>: cuenta corriente, cuenta de ahorro, fondo monetario, robo-advisor... <em>No es para acciones ni crypto</em> — eso va en Inversiones.'
+        :'These are places where you hold <strong>liquid money or funds</strong>: checking account, savings, money market, robo-advisor... <em>Not for stocks or crypto</em> — those go in Investments.',
+      mockup:'plataformas',
     },
     {
-      icon:'📈',
-      title:_lang==='es'?'Inversiones':'Investments',
-      desc:_lang==='es'
-        ?'Rastrea acciones, ETFs y criptos por ticker. Calcula tu precio promedio, ganancias realizadas y no realizadas en tiempo real con precios de APIs gratuitas.'
-        :'Track stocks, ETFs and crypto by ticker. Calculate your average cost, realized and unrealized gains in real time using free price APIs.',
+      key:'plataformasForm',
+      title:es?'🏦 Cómo agregar una plataforma':'🏦 How to add a platform',
+      desc:es
+        ?'Pulsa <strong>+</strong> y rellena: nombre, tipo, <strong>saldo actual hoy</strong> (lo que ves en tu cuenta), el rendimiento que ya llevas acumulado, y opcionalmente la tasa anual para que la app calcule el interés automáticamente.'
+        :'Tap <strong>+</strong> and fill in: name, type, <strong>current balance today</strong> (what you see in your account), accumulated return so far, and optionally the annual rate so the app auto-calculates interest.',
+      mockup:'plataformasForm',
     },
     {
-      icon:'💳',
-      title:_lang==='es'?'Gastos':'Expenses',
-      desc:_lang==='es'
-        ?'Controla tus gastos del mes por categoría, asigna presupuestos y ve exactamente cuánto te sobra. También puedes configurar gastos recurrentes.'
-        :'Control your monthly expenses by category, set budgets and see exactly how much you have left. You can also set up recurring expenses.',
+      key:'inversiones',
+      title:es?'📈 Inversiones':'📈 Investments',
+      desc:es
+        ?'Aquí van tus <strong>acciones, ETFs y criptomonedas</strong>. Registra cada compra con el ticker, cantidad y precio. La app calcula tu precio promedio, ganancias no realizadas y — con las API keys de Ajustes — actualiza los precios en tiempo real.'
+        :'This is for your <strong>stocks, ETFs and crypto</strong>. Log each buy with ticker, quantity and price. The app calculates your average cost, unrealized gains and — with API keys from Settings — updates prices in real time.',
+      mockup:'inversiones',
     },
     {
-      icon:'🎯',
-      title:_lang==='es'?'Metas':'Goals',
-      desc:_lang==='es'
-        ?'Define objetivos financieros — fondo de emergencia, un viaje, la jubilación — y sigue tu progreso automáticamente según tu patrimonio real.'
-        :'Set financial goals — emergency fund, a trip, retirement — and track your progress automatically based on your real net worth.',
+      key:'movimientos',
+      title:es?'📋 Movimientos — El corazón de la app':'📋 Movements — The heart of the app',
+      desc:es
+        ?'<strong>Aquí registras todo</strong>: gastos del día a día, tu sueldo, bonos, y transferencias entre plataformas. Los datos de Gastos y el sobrante del mes se calculan a partir de lo que pongas aquí.'
+        :'<strong>This is where you log everything</strong>: daily expenses, salary, bonuses, and transfers between platforms. The Expenses section and monthly surplus are calculated from what you enter here.',
+      mockup:'movimientos',
     },
     {
-      icon:'⚙️',
-      title:_lang==='es'?'¡Ya estás listo!':'You\'re all set!',
-      desc:_lang==='es'
-        ?'En Ajustes configura tu tipo de cambio, moneda del dashboard, claves de API para precios en tiempo real y el asistente IA. Puedes volver a este tutorial cuando quieras desde esa sección.'
-        :'In Settings, configure your exchange rate, dashboard currency, API keys for real-time prices and the AI assistant. You can reopen this tutorial anytime from that section.',
+      key:'gastos',
+      title:es?'💳 Control de Gastos':'💳 Expense Control',
+      desc:es
+        ?'Ve tus gastos por categoría con barras de progreso y presupuestos. Puedes asignar cuánto quieres gastar en cada categoría y la app te avisa cuando te pasas. También puedes configurar <strong>gastos recurrentes</strong> (alquiler, suscripciones...) para que se añadan solos cada mes.'
+        :'See your expenses by category with progress bars and budgets. Assign a budget per category and the app warns you when you exceed it. You can also set up <strong>recurring expenses</strong> (rent, subscriptions...) that auto-add each month.',
+      mockup:'gastos',
+    },
+    {
+      key:'metas',
+      title:es?'🎯 Metas Financieras':'🎯 Financial Goals',
+      desc:es
+        ?'Crea objetivos — fondo de emergencia, viaje, jubilación — y elige qué parte de tu patrimonio cuenta para cada meta. La app sigue el progreso automáticamente y te muestra cuánto te falta.'
+        :'Create goals — emergency fund, trip, retirement — and choose which part of your net worth counts toward each. The app tracks progress automatically and shows how much is left.',
+      mockup:'metas',
+    },
+    {
+      key:'ia',
+      title:es?'🤖 Asistente IA':'🤖 AI Assistant',
+      desc:es
+        ?'Pulsa el botón <strong>🤖</strong> flotante desde cualquier pantalla. Puedes preguntarle cómo van tus finanzas, si estás gastando bien, qué hacer con el sobrante del mes... Usa Groq, Gemini o DeepSeek — todos gratuitos. Configura tu clave en Ajustes.'
+        :'Tap the floating <strong>🤖</strong> button from any screen. Ask how your finances are doing, if you\'re spending well, what to do with your monthly surplus... Uses Groq, Gemini or DeepSeek — all free. Set your key in Settings.',
+      mockup:'ia',
+    },
+    {
+      key:'ajustes',
+      title:es?'⚙️ Ajustes — Tu configuración personal':'⚙️ Settings — Your personal setup',
+      desc:es
+        ?'Cada usuario usa <strong>sus propias API keys gratuitas</strong>. ¿Por qué? Si yo pusiera una sola para todos tendría que pagar cientos de euros al mes y cobrarte suscripción. Con tu cuenta gratuita propia tienes de sobra. <strong>Si no sabes cómo crearla, contáctame — te ayudo personalmente.</strong>'
+        :'Each user uses <strong>their own free API keys</strong>. Why? If I used one shared key I\'d pay hundreds per month and charge you a subscription. Your own free account is more than enough. <strong>If you don\'t know how to create one, contact me — I\'ll help you personally.</strong>',
+      mockup:'ajustes',
     },
   ];
 
@@ -5249,22 +5570,19 @@ function showTutorial(){
 
   const overlay=document.createElement('div');
   overlay.id='tutorialOverlay';
-  overlay.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px;font-family:var(--font,\'DM Sans\',sans-serif);animation:tutFadeIn 0.25s ease';
+  overlay.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.65);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:16px;font-family:var(--font,\'DM Sans\',sans-serif);animation:tutFadeIn 0.25s ease;overflow-y:auto';
 
-  // Inject keyframes once
   if(!document.getElementById('tutorialStyles')){
     const st=document.createElement('style');
     st.id='tutorialStyles';
     st.textContent=`
       @keyframes tutFadeIn{from{opacity:0}to{opacity:1}}
-      @keyframes tutSlideUp{from{opacity:0;transform:translateY(18px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-      #tutorialCard{animation:tutSlideUp 0.3s cubic-bezier(0.34,1.26,0.64,1)}
-      #tutorialCard .tut-icon{transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1)}
-      #tutorialOverlay .tut-close:hover{color:var(--text,#1d1d1f)!important}
-      #tutorialOverlay .tut-prev:hover{border-color:var(--blue,#0A84FF)!important;color:var(--blue,#0A84FF)!important}
-      #tutorialOverlay .tut-next:hover{opacity:0.88;transform:translateY(-1px)}
-      #tutorialOverlay .tut-next:active{transform:translateY(0)}
-      @keyframes tutIconPop{0%{transform:scale(0.5);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+      @keyframes tutSlideUp{from{opacity:0;transform:translateY(16px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+      #tutCard{animation:tutSlideUp 0.28s cubic-bezier(0.34,1.2,0.64,1)}
+      .tut-close:hover{background:rgba(0,0,0,0.1)!important}
+      .tut-prev:hover{border-color:#0A84FF!important;color:#0A84FF!important}
+      .tut-next:hover{opacity:0.88!important;transform:translateY(-1px)!important}
+      .tut-next:active{transform:translateY(0)!important}
     `;
     document.head.appendChild(st);
   }
@@ -5272,79 +5590,72 @@ function showTutorial(){
   function render(){
     const s=steps[current];
     const isLast=current===steps.length-1;
-    const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+    const mockupHTML=MOCKUPS[s.mockup]||'';
 
     const dots=steps.map((_,i)=>{
-      const active=i===current;
-      const past=i<current;
-      return `<div style="height:6px;border-radius:3px;transition:all 0.35s cubic-bezier(0.34,1.26,0.64,1);width:${active?'28px':'6px'};background:${active?'#0A84FF':past?'rgba(10,132,255,0.35)':'rgba(128,128,128,0.2)'}"></div>`;
+      const act=i===current, past=i<current;
+      return `<div style="height:5px;border-radius:3px;transition:all 0.3s cubic-bezier(0.34,1.2,0.64,1);width:${act?'24px':'5px'};background:${act?'#0A84FF':past?'rgba(10,132,255,0.4)':'rgba(150,150,150,0.2)'}"></div>`;
     }).join('');
 
     overlay.innerHTML=`
-      <div id="tutorialCard" style="
-        background:var(--card,#fff);border-radius:28px;
-        max-width:420px;width:100%;
-        box-shadow:0 40px 100px rgba(0,0,0,0.28),0 2px 8px rgba(0,0,0,0.08);
-        overflow:hidden;position:relative;
+      <div id="tutCard" style="
+        background:var(--card,#fff);border-radius:26px;
+        width:100%;max-width:480px;
+        box-shadow:0 40px 100px rgba(0,0,0,0.3),0 2px 8px rgba(0,0,0,0.1);
+        overflow:hidden;position:relative;margin:auto;
       ">
-        <!-- Header gradient strip -->
         <div style="height:4px;background:linear-gradient(90deg,#0A84FF,#5856D6,#BF5AF2)"></div>
 
-        <!-- Close button -->
         <button class="tut-close" onclick="document.getElementById('tutorialOverlay').remove();LS.set('tutorialDone',true)" style="
-          position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;
-          background:var(--card2,rgba(0,0,0,0.06));border:none;
-          font-size:14px;color:var(--text2,#86868b);cursor:pointer;
-          display:flex;align-items:center;justify-content:center;
-          transition:color 0.15s,background 0.15s;line-height:1
+          position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:50%;
+          background:rgba(0,0,0,0.06);border:none;font-size:13px;color:#86868b;
+          cursor:pointer;display:flex;align-items:center;justify-content:center;
+          transition:background 0.15s;z-index:2
         ">✕</button>
 
-        <!-- Body -->
-        <div style="padding:36px 32px 28px;text-align:center">
-          <div style="font-size:60px;line-height:1;margin-bottom:18px;animation:tutIconPop 0.4s cubic-bezier(0.34,1.56,0.64,1)">${s.icon}</div>
-          <div style="font-size:21px;font-weight:800;letter-spacing:-0.03em;margin-bottom:12px;color:var(--text,#1d1d1f)">${s.title}</div>
-          <div style="font-size:14px;color:var(--text2,#86868b);line-height:1.7;margin-bottom:28px;max-width:340px;margin-left:auto;margin-right:auto">${s.desc}</div>
+        <!-- header -->
+        <div style="padding:20px 20px 0">
+          <div style="font-size:16px;font-weight:800;letter-spacing:-0.03em;color:var(--text,#1d1d1f);padding-right:32px;margin-bottom:6px">${s.title}</div>
+          <div style="font-size:12px;color:var(--text2,#86868b);line-height:1.65;margin-bottom:14px">${s.desc}</div>
+        </div>
 
-          <!-- Dots -->
-          <div style="display:flex;align-items:center;justify-content:center;gap:5px;margin-bottom:24px">${dots}</div>
+        <!-- mockup -->
+        <div style="padding:0 16px 12px">${mockupHTML}</div>
 
-          <!-- Buttons -->
-          <div style="display:flex;gap:10px;justify-content:center;align-items:center">
-            ${current>0?`<button class="tut-prev" style="
-              padding:11px 22px;border-radius:50px;
-              border:1.5px solid var(--border,#e5e5ea);
-              background:none;color:var(--text2,#86868b);
-              font-size:13px;font-weight:600;cursor:pointer;
-              font-family:inherit;transition:all 0.18s
-            ">← ${_lang==='es'?'Anterior':'Back'}</button>`:''}
-            <button class="tut-next" style="
-              padding:13px ${isLast?'30px':'24px'};border-radius:50px;border:none;
-              background:linear-gradient(135deg,#0A84FF 0%,#5856D6 100%);
-              color:#fff;font-size:14px;font-weight:700;cursor:pointer;
-              font-family:inherit;transition:all 0.2s;
-              box-shadow:0 6px 20px rgba(10,132,255,0.35)
-            ">${isLast?(_lang==='es'?'¡Empezar! 🚀':'Let\'s go! 🚀'):(_lang==='es'?'Siguiente →':'Next →')}</button>
+        <!-- footer -->
+        <div style="padding:12px 20px 18px;border-top:1px solid rgba(0,0,0,0.05)">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;gap:4px;align-items:center">${dots}</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              ${current>0?`<button class="tut-prev" style="
+                padding:9px 16px;border-radius:50px;
+                border:1.5px solid rgba(0,0,0,0.1);
+                background:none;color:var(--text2,#86868b);
+                font-size:12px;font-weight:600;cursor:pointer;
+                font-family:inherit;transition:all 0.15s
+              ">← ${es?'Anterior':'Back'}</button>`:''}
+              <button class="tut-next" style="
+                padding:10px ${isLast?'22px':'18px'};border-radius:50px;border:none;
+                background:linear-gradient(135deg,#0A84FF,#5856D6);
+                color:#fff;font-size:13px;font-weight:700;cursor:pointer;
+                font-family:inherit;transition:all 0.2s;
+                box-shadow:0 4px 16px rgba(10,132,255,0.35)
+              ">${isLast?(es?'¡Empezar! 🚀':'Let\'s go! 🚀'):(es?'Siguiente →':'Next →')}</button>
+            </div>
           </div>
-
-          <!-- Step counter -->
-          <div style="margin-top:18px;font-size:11px;font-weight:600;color:var(--text3,#aeaeb2);letter-spacing:0.05em;text-transform:uppercase">
+          <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3,#aeaeb2);font-weight:600;letter-spacing:0.04em">
             ${current+1} / ${steps.length}
           </div>
         </div>
       </div>
     `;
 
-    document.getElementById('tutorialCard').querySelector('.tut-next').onclick=()=>{
-      if(isLast){
-        overlay.remove();
-        LS.set('tutorialDone',true);
-      } else {
-        current++;
-        render();
-      }
+    document.getElementById('tutCard').querySelector('.tut-next').onclick=()=>{
+      if(isLast){ overlay.remove(); LS.set('tutorialDone',true); }
+      else { current++; render(); }
     };
-    const prevBtn=document.getElementById('tutorialCard').querySelector('.tut-prev');
-    if(prevBtn) prevBtn.onclick=()=>{ current--; render(); };
+    const pb=document.getElementById('tutCard').querySelector('.tut-prev');
+    if(pb) pb.onclick=()=>{ current--; render(); };
   }
 
   render();
