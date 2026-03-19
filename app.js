@@ -2289,17 +2289,17 @@ function renderDashboard(){
     </div>
 
     <div class="grid-1-1-1" style="margin-bottom:16px">
-      <div class="card">
-        <div class="card-title">📊 ${t('distribucionPorTipo')}</div>
+      <div class="card card-accent-blue">
+        <div class="card-title card-title-blue">📊 ${t('distribucionPorTipo')}</div>
         <div class="chart-container" style="height:160px;width:100%"><canvas id="chartDistro"></canvas></div>
       </div>
-      <div class="card">
-        <div class="card-title">💼 ${t('inversionesPorTipo')}</div>
+      <div class="card card-accent-green">
+        <div class="card-title card-title-green">💼 ${t('inversionesPorTipo')}</div>
         <div class="chart-container" style="height:160px;width:100%"><canvas id="chartInvTipo"></canvas></div>
       </div>
-      <div class="card">
+      <div class="card card-accent-orange">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div class="card-title" style="margin:0">💳 ${t('gastosPorCat')} — ${MONTHS[cm-1]}</div>
+          <div class="card-title card-title-orange" style="margin:0">💳 ${t('gastosPorCat')} — ${MONTHS[cm-1]}</div>
           <button class="btn btn-sm" style="font-size:11px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="switchTab('gastos')">${t('verDetalle')} →</button>
         </div>
         ${topCats.length>0?`
@@ -2310,8 +2310,8 @@ function renderDashboard(){
     </div>
 
     <div class="grid-2" style="margin-bottom:16px;align-items:stretch">
-      <div class="card" style="display:flex;flex-direction:column">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div class="card-title" style="margin:0">🏆 ${t('topPlataformas')}</div></div>
+      <div class="card card-accent-blue" style="display:flex;flex-direction:column">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div class="card-title card-title-blue" style="margin:0">🏆 ${t('topPlataformas')}</div></div>
         <div style="max-height:380px;overflow-y:auto;margin:0 -4px;padding:0 4px">
         ${[...plats].sort((a,b)=>platSaldoToMXN(b)-platSaldoToMXN(a)).slice(0,10).map((p,i)=>`
           <div class="list-item">
@@ -2323,9 +2323,9 @@ function renderDashboard(){
           </div>`).join('')}
         </div>
       </div>
-      <div class="card" style="display:flex;flex-direction:column">
+      <div class="card card-accent-green" style="display:flex;flex-direction:column">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <div class="card-title" style="margin:0">📊 ${t('posiciones')}</div>
+          <div class="card-title card-title-green" style="margin:0">📊 ${t('posiciones')}</div>
           <button class="btn btn-sm" style="font-size:11px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="switchTab('inversiones')">${t('verDetalle')} →</button>
         </div>
         ${tickerList.filter(tk=>tk.cantActual>0).length>0?`
@@ -2369,12 +2369,12 @@ function renderDashboard(){
       </div>
     </div>
 
-    <div class="card" style="margin-bottom:16px">
+    <div class="card card-accent-purple" style="margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <div class="card-title" style="margin:0">🎯 ${t('progresoDeMetas')}</div>
+        <div class="card-title card-title-purple" style="margin:0">🎯 ${t('progresoDeMetas')}</div>
         <button class="btn btn-secondary btn-sm" onclick="switchTab('metas')">${t('verTodo')}</button>
       </div>
-      ${goals.length>0?`<div class="grid-2">${goals.slice(0,4).map(g=>{let actual=0;const patrimonioTotal=totalMXN+totalInvMXN;if(g.clase==='Patrimonio Total'||g.clase==='Todos')actual=patrimonioTotal;else if(g.clase==='Plataformas')actual=totalMXN;else if(g.clase==='Inversiones')actual=totalInvMXN;else if(g.clase==='Ingreso Mensual')actual=ingresoMensualEUR;else actual=patrimonioTotal;const pct=g.meta>0?actual/g.meta:0;const sc=pct>=1?'var(--green)':pct>=0.8?'var(--orange)':pct>=0.3?'var(--blue)':'var(--text2)';const st=pct>=1?t('lograda'):pct>=0.8?t('casi'):pct>=0.3?t('enProceso'):t('inicio');return`<div style="padding:12px;background:var(--card2);border-radius:12px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:13px;font-weight:700">${g.nombre}</div><span style="font-size:11px;font-weight:700;color:${sc}">${st}</span></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:6px"><span style="font-weight:700;color:var(--text)">${fmt(actual)}</span><span>${t('goalLabel')}: ${fmt(g.meta)}</span></div><div class="progress-bg"><div class="progress-fill" style="background:${sc};width:${Math.min(pct*100,100).toFixed(1)}%"></div></div><div style="text-align:right;font-size:11px;font-weight:800;color:${sc};margin-top:4px">${(pct*100).toFixed(1)}%</div></div>`;}).join('')}</div>`:`<div style="text-align:center;padding:24px;color:var(--text2);font-size:13px">${t('sinMetas')} — <button class="btn btn-primary btn-sm" onclick="switchTab('metas')">${t('crear')} →</button></div>`}
+      ${goals.length>0?`<div class="grid-2">${goals.slice(0,4).map(g=>{let actual=0;const patrimonioTotal=totalMXN+totalInvMXN;if(g.clase==='Patrimonio Total'||g.clase==='Todos')actual=patrimonioTotal;else if(g.clase==='Plataformas')actual=totalMXN;else if(g.clase==='Inversiones')actual=totalInvMXN;else if(g.clase==='Ingreso Mensual')actual=ingresoMensualEUR;else actual=patrimonioTotal;const pct=g.meta>0?actual/g.meta:0;const sc=pct>=1?'var(--green)':pct>=0.8?'var(--orange)':pct>=0.3?'var(--blue)':'var(--text2)';const st=pct>=1?t('lograda'):pct>=0.8?t('casi'):pct>=0.3?t('enProceso'):t('inicio');return`<div style="padding:12px;background:var(--card2);border-radius:12px;border-top:2px solid ${sc}44"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:13px;font-weight:700">${g.nombre}</div><span style="font-size:11px;font-weight:700;color:${sc}">${st}</span></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:6px"><span style="font-weight:700;color:var(--text)">${fmt(actual)}</span><span>${t('goalLabel')}: ${fmt(g.meta)}</span></div><div class="progress-bg"><div class="progress-fill" style="background:${sc};width:${Math.min(pct*100,100).toFixed(1)}%"></div></div><div style="text-align:right;font-size:11px;font-weight:800;color:${sc};margin-top:4px">${(pct*100).toFixed(1)}%</div></div>`;}).join('')}</div>`:`<div style="text-align:center;padding:24px;color:var(--text2);font-size:13px">${t('sinMetas')} — <button class="btn btn-primary btn-sm" onclick="switchTab('metas')">${t('crear')} →</button></div>`}
     </div>
 
   `;
@@ -3438,9 +3438,9 @@ function renderGastos(){
         <button class="btn btn-sm" style="background:rgba(191,90,242,0.10);color:var(--purple);border:1px solid rgba(191,90,242,0.25);font-weight:700;display:flex;align-items:center;gap:5px" onclick="openRecurrentesModal()">🔄 ${t('recurrentesTitulo')}${totalRecurrente>0?` — ${fmtEUR(totalRecurrente)}/${t('mes')}`:''}</button>
       </div>
     </div>
-    <div class="card" style="margin-bottom:16px;border-top:3px solid var(--green)">
+    <div class="card card-accent-green" style="margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px">
-        <div class="card-title" style="margin:0">${t('ingresosMes')}</div>
+        <div class="card-title card-title-green" style="margin:0">${t('ingresosMes')}</div>
         <div style="display:flex;align-items:center;gap:8px">
           <label style="font-size:11px;font-weight:600;color:var(--text2)">${t('monedaSueldo')}:</label>
           <select class="form-select" style="padding:4px 10px;font-size:13px;font-weight:700;border-radius:10px;width:auto" id="selMonedaSueldo" onchange="updateIngresoConMoneda('sueldo',document.getElementById('inputSueldo').value,this.value);renderGastos()">
@@ -3479,22 +3479,22 @@ function renderGastos(){
 
 
     <div class="grid-4" style="margin-bottom:16px">
-      <div class="card stat" style="border-top:3px solid var(--teal)">
+      <div class="card stat stat-teal">
         <div class="stat-label">${t('capitalSobrantePorMes')}</div>
         <div class="stat-value" style="color:${acumTotal>=0?'var(--teal)':'var(--red)'}">${fmtEUR(acumTotal)}</div>
         <div class="stat-sub">${t('desde')} ${MONTHS[startDate.getMonth()]} ${startDate.getFullYear()} · ${mesConDatos} ${mesConDatos===1?t('mes'):t('meses')}</div>
       </div>
-      <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">${t('presupuestoLabel')}</div><div class="stat-value">${fmtEUR(totalPresupuestoEUR)}</div><div class="stat-sub">${sinAsignarEUR>=0?`<span style="color:var(--green);font-weight:700">+${fmtEUR(sinAsignarEUR)} ${t('libre')}</span>`:`<span style="color:var(--red);font-weight:700">${fmtEUR(sinAsignarEUR)} ${t('excedido')}</span>`}</div></div>
-      <div class="card stat" style="border-top:3px solid var(--red)"><div class="stat-label">${t('gastoReal')}</div><div class="stat-value" style="color:var(--red)">${fmtEUR(totGastoEUR)}</div><div class="stat-sub">${t('registradoEsteMes')}</div></div>
-      <div class="card stat" style="border-top:3px solid ${disponibleEUR>=0?'var(--green)':'var(--red)'}"><div class="stat-label">${t('disponible')}</div><div class="stat-value" style="color:${disponibleEUR>=0?'var(--green)':'var(--red)'}">${fmtEUR(disponibleEUR)}</div><div class="stat-sub">${totIngEUR>0?t('actual')+': '+fmtEUR(totIngEUR):t('segunPlaneado')}</div></div>
+      <div class="card stat stat-blue"><div class="stat-label">${t('presupuestoLabel')}</div><div class="stat-value">${fmtEUR(totalPresupuestoEUR)}</div><div class="stat-sub">${sinAsignarEUR>=0?`<span style="color:var(--green);font-weight:700">+${fmtEUR(sinAsignarEUR)} ${t('libre')}</span>`:`<span style="color:var(--red);font-weight:700">${fmtEUR(sinAsignarEUR)} ${t('excedido')}</span>`}</div></div>
+      <div class="card stat stat-red"><div class="stat-label">${t('gastoReal')}</div><div class="stat-value" style="color:var(--red)">${fmtEUR(totGastoEUR)}</div><div class="stat-sub">${t('registradoEsteMes')}</div></div>
+      <div class="card stat ${disponibleEUR>=0?'stat-green':'stat-red'}"><div class="stat-label">${t('disponible')}</div><div class="stat-value" style="color:${disponibleEUR>=0?'var(--green)':'var(--red)'}">${fmtEUR(disponibleEUR)}</div><div class="stat-sub">${totIngEUR>0?t('actual')+': '+fmtEUR(totIngEUR):t('segunPlaneado')}</div></div>
     </div>
 
-    ${totalIngPlaneadoEUR>0?`<div class="card" style="margin-bottom:16px;padding:16px 24px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-size:13px;font-weight:700">${t('usoPresupuesto')}</div><div style="font-size:13px;font-weight:800;color:${barColor}">${barLabel}</div></div><div class="progress-bg" style="height:14px;border-radius:8px"><div class="progress-fill" style="height:14px;border-radius:8px;background:${barColor};width:${barPct}%"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-top:6px"><span>${t('gastado')}: ${fmtEUR(totGastoEUR)}</span><span>${t('presupuesto')}: ${fmtEUR(totalPresupuestoEUR)}</span><span>${t('ingreso')}: ${fmtEUR(totalIngPlaneadoEUR)}</span></div></div>`:''}
+    ${totalIngPlaneadoEUR>0?`<div class="card card-accent-orange" style="margin-bottom:16px;padding:16px 24px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-size:13px;font-weight:700">${t('usoPresupuesto')}</div><div style="font-size:13px;font-weight:800;color:${barColor}">${barLabel}</div></div><div class="progress-bg" style="height:14px;border-radius:8px"><div class="progress-fill" style="height:14px;border-radius:8px;background:${barColor};width:${barPct}%"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-top:6px"><span>${t('gastado')}: ${fmtEUR(totGastoEUR)}</span><span>${t('presupuesto')}: ${fmtEUR(totalPresupuestoEUR)}</span><span>${t('ingreso')}: ${fmtEUR(totalIngPlaneadoEUR)}</span></div></div>`:''}
 
-    <div class="card" style="margin-bottom:16px;border-top:3px solid var(--teal)">
+    <div class="card card-accent-teal" style="margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
         <div>
-          <div class="card-title" style="margin:0">💰 ${t('capitalSobrantePorMes')}</div>
+          <div class="card-title card-title-teal" style="margin:0">💰 ${t('capitalSobrantePorMes')}</div>
           <div style="font-size:11px;color:var(--text2);margin-top:3px">${t('sobranteExplicacion')} · ${t('enEUR')} · ${t('desde')} ${MONTHS[startDate.getMonth()]} ${startDate.getFullYear()}</div>
         </div>
         <button class="btn btn-sm" style="background:rgba(0,199,190,0.1);color:var(--teal);border:none;font-weight:700" onclick="switchTab('movimientos');openMovModal('transferencia')">💸 ${t('transferirSobrante')}</button>
@@ -3511,9 +3511,9 @@ function renderGastos(){
       </table></div>
     </div>
 
-    <div class="card-flat" style="margin-bottom:16px">
+    <div class="card-flat card-accent-orange" style="margin-bottom:16px">
       <div style="padding:16px 20px 0;display:flex;justify-content:space-between;align-items:center">
-        <div class="card-title" style="margin:0">${t('presupuestoTitulo')} (${monSymbol})</div>
+        <div class="card-title card-title-orange" style="margin:0">${t('presupuestoTitulo')} (${monSymbol})</div>
       </div>
       ${isMobile() ? `
         <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">
@@ -3554,8 +3554,8 @@ function renderGastos(){
       ` : `<div class="table-wrap"><table><thead><tr><th>${t('catHeader')[0]}</th><th>${t('catHeader')[1]}</th><th>${t('catHeader')[2]}</th><th>${t('catHeader')[3]}</th><th>${t('catHeader')[4]}</th><th>${t('catHeader')[5]}</th></tr></thead><tbody>${catRows||`<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--text2);font-size:13px">${t('asignarPresupuestos')}</td></tr>`}${hiddenHint}<tr style="font-weight:800;background:var(--card2);border-top:2px solid var(--border2)"><td>TOTAL</td><td>${fmtEUR(totalPresupuestoEUR)}</td><td>${totalIngPlaneadoEUR>0?((totalPresupuestoEUR/totalIngPlaneadoEUR)*100).toFixed(1)+'%':'—'}</td><td style="color:${totGastoEUR>totalPresupuestoEUR?'var(--red)':'var(--text)'}">${fmtEUR(totGastoEUR)}</td><td style="color:${totalPresupuestoEUR-totGastoEUR>=0?'var(--green)':'var(--red)'}">${totalPresupuestoEUR>0?(totalPresupuestoEUR-totGastoEUR>=0?'+':'')+fmtEUR(totalPresupuestoEUR-totGastoEUR):'—'}</td><td>${totalPresupuestoEUR>0?`<span style="font-size:12px;font-weight:800">${(totGastoEUR/totalPresupuestoEUR*100).toFixed(0)}%</span>`:''}</td></tr></tbody></table></div>`}
     </div>
 
-    <div class="card-flat">
-      <div style="padding:16px 20px 0"><div class="card-title">${t('movsTitulo')} — ${t('months')[cm-1]} ${cy}</div></div>
+    <div class="card-flat card-accent-blue">
+      <div style="padding:16px 20px 0"><div class="card-title card-title-blue">${t('movsTitulo')} — ${t('months')[cm-1]} ${cy}</div></div>
       ${isMobile() ? `
         <div style="padding:8px 12px;display:flex;flex-direction:column;gap:6px">
           ${mesMovs.length>0 ? mesMovs.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).map(m=>`
@@ -3765,22 +3765,22 @@ function renderInversiones(){
     </div>
 
     <div class="grid-4" style="margin-bottom:16px">
-      <div class="card stat" style="border-top:3px solid var(--blue)">
+      <div class="card stat stat-blue">
         <div class="stat-label">${t('costoTotal')}</div>
         <div class="stat-value">${fmt(totalCosto)}</div>
         <div class="stat-sub">${abiertas.length} ${t('posiciones')}</div>
       </div>
-      <div class="card stat" style="border-top:3px solid var(--green)">
+      <div class="card stat stat-green">
         <div class="stat-label">${t('valorActual')}</div>
         <div class="stat-value">${fmt(totalValor)}</div>
         <div class="stat-sub">${abiertas.some(pos=>pos.gpNoRealizada!==null)?t('preciosHoy'):t('costoCompra')}</div>
       </div>
-      <div class="card stat" style="border-top:3px solid ${pctCol(totalGP)}">
+      <div class="card stat ${totalGP>=0?'stat-green':'stat-red'}">
         <div class="stat-label">${t('gpNoRealizada')}</div>
         <div class="stat-value" style="color:${pctCol(totalGP)}">${totalGP>=0?'+':''}${fmt(totalGP)}</div>
         <div class="stat-sub" style="color:${pctCol(totalGPPct)}">${fmtPct(totalGPPct)}</div>
       </div>
-      <div class="card stat" style="border-top:3px solid ${pctCol(gpRealTotal)}">
+      <div class="card stat ${gpRealTotal>=0?'stat-green':'stat-red'}">
         <div class="stat-label">${t('gpRealizada')}</div>
         <div class="stat-value" style="color:${pctCol(gpRealTotal)}">${gpRealTotal>=0?'+':''}${fmt(gpRealTotal)}</div>
         <div class="stat-sub">${cerradas.length} ${t('posicionesCerradas')}${(()=>{const divTotal=tickers.reduce((s,t)=>(s+(t.dividendoTotal||0)*(t.moneda==='MXN'?1:tc)),0);return divTotal>0?` · 💰 ${fmt(Math.round(divTotal))} div.`:'';})()}</div>
@@ -3788,8 +3788,8 @@ function renderInversiones(){
     </div>
 
     <div class="grid-2" style="margin-bottom:16px">
-      <div class="card">
-        <div class="card-title">🥧 ${t('porTipoActivo')}</div>
+      <div class="card card-accent-blue">
+        <div class="card-title card-title-blue">🥧 ${t('porTipoActivo')}</div>
         ${tipoEntries.map(([tipo, val]) => {
           const pct = totalValor > 0 ? val/totalValor : 0;
           const color = TIPO_COLORS[tipo] || 'var(--text2)';
@@ -3802,8 +3802,8 @@ function renderInversiones(){
           </div>`;
         }).join('')}
       </div>
-      <div class="card">
-        <div class="card-title">🌍 ${t('porMoneda')}</div>
+      <div class="card card-accent-green">
+        <div class="card-title card-title-green">🌍 ${t('porMoneda')}</div>
         ${Object.entries(porMoneda).sort((a,b)=>b[1]-a[1]).map(([mon, val]) => {
           const pct = totalValor > 0 ? val/totalValor : 0;
           const color = mon==='MXN'?'var(--green)':mon==='USD'?'var(--blue)':'var(--purple)';
@@ -3821,9 +3821,9 @@ function renderInversiones(){
     <div style="display:grid;grid-template-columns:minmax(0,58%) minmax(0,42%);gap:16px;margin-bottom:16px;align-items:start">
 
       <!-- POSICIONES ABIERTAS -->
-      <div class="card">
+      <div class="card card-accent-blue">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-          <div class="card-title" style="margin:0">📂 ${t('posicionesAbiertas')} <span style="font-size:11px;font-weight:600;color:var(--text2);margin-left:4px">${abiertas.length}</span></div>
+          <div class="card-title card-title-blue" style="margin:0">📂 ${t('posicionesAbiertas')} <span style="font-size:11px;font-weight:600;color:var(--text2);margin-left:4px">${abiertas.length}</span></div>
         </div>
         <div style="max-height:480px;overflow-y:auto;margin:0 -4px;padding:0 4px">
         ${abiertas.length > 0 ? abiertas.sort((a,b) => {
@@ -3867,9 +3867,9 @@ function renderInversiones(){
       </div>
 
       <!-- POSICIONES CERRADAS -->
-      <div class="card" style="${cerradas.length===0?'opacity:0.5':''};padding:${cerradas.length<=3?'14px 20px':'20px 24px'}">
+      <div class="card card-accent-purple" style="${cerradas.length===0?'opacity:0.5':''};padding:${cerradas.length<=3?'14px 20px':'20px 24px'}">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <div class="card-title" style="margin:0">🔒 ${t('posicionesCerradas')} <span style="font-size:11px;font-weight:600;color:var(--text2);margin-left:4px">${cerradas.length}</span></div>
+          <div class="card-title card-title-purple" style="margin:0">🔒 ${t('posicionesCerradas')} <span style="font-size:11px;font-weight:600;color:var(--text2);margin-left:4px">${cerradas.length}</span></div>
         </div>
         <div style="max-height:${cerradas.length > 0 ? Math.min(cerradas.length * 58 + 16, 320) : 60}px;overflow-y:auto;margin:0 -4px;padding:0 4px">
         ${cerradas.length > 0 ? cerradas.map(cp => {
@@ -3967,8 +3967,8 @@ function renderMetas(){
       <button class="btn btn-primary" onclick="openGoalModal()">${t('crearPrimeraMeta')}</button>
     </div>` : `
 
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-title">📅 ${t('lineaDeTiempo')}</div>
+    <div class="card card-accent-purple" style="margin-bottom:16px">
+      <div class="card-title card-title-purple">📅 ${t('lineaDeTiempo')}</div>
       <div style="position:relative;padding:8px 0 4px">
         <div style="position:absolute;left:20px;top:0;bottom:0;width:2px;background:var(--border);border-radius:2px"></div>
         ${metasOrdenadas.map((g,i)=>`
@@ -3999,7 +3999,7 @@ function renderMetas(){
 
     <div class="grid-2">
       ${metasData.map(g=>`
-        <div class="card">
+        <div class="card" style="border-top:2px solid ${g.sc}55">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
             <div>
               <div style="font-size:16px;font-weight:700">${g.nombre}</div>
