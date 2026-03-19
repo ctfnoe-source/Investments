@@ -1253,7 +1253,7 @@ function fmtMovGasto(m) {
 const DEFAULT_PLATFORMS=[];
 const DEFAULT_MOVS=[];
 const DEFAULT_GOALS=[];
-const DEFAULT_SETTINGS={tipoCambio:17.84,tipoEUR:20.52,tipoGBP:23.66,rendimientoEsperado:0.06,finnhubKey:''};
+const DEFAULT_SETTINGS={tipoCambio:17.84,tipoEUR:20.52,tipoGBP:23.66,rendimientoEsperado:0.06,finnhubKey:'',dashMoneda:'MXN'};
 const DEFAULT_RECURRENTES=[];
 
 let platforms = LS.get('platforms') || DEFAULT_PLATFORMS;
@@ -1979,6 +1979,35 @@ window._toggleEvoSeries = function(key) {
 function renderDashboard(){
   const tc=settings.tipoCambio,re=settings.rendimientoEsperado??0.06;
   const eurmxn=getEurMxn();
+
+  // ── Moneda preferida del dashboard ──────────────────────────────────────
+  const _dashMon = settings.dashMoneda || 'MXN';
+  const _fx = _fxCache || LS.get('fxCache');
+  const _usdmxn = (_fx?.usdmxn) || tc || 17.5;
+  const _eurmxn = (_fx?.eurmxn) || settings.tipoEUR || 20;
+  const _gbpmxn = (_fx?.gbpmxn) || settings.tipoGBP || 23;
+  // Convierte un valor en MXN a la moneda del dashboard
+  const mxnTo = (v) => {
+    if (_dashMon === 'MXN') return v;
+    if (_dashMon === 'USD') return v / _usdmxn;
+    if (_dashMon === 'EUR') return v / _eurmxn;
+    if (_dashMon === 'GBP') return v / _gbpmxn;
+    return v;
+  };
+  const _dashSym = {MXN:'$',USD:'US$',EUR:'€',GBP:'£'}[_dashMon] || '$';
+  const _dashDec = _dashMon === 'MXN' ? 0 : 2;
+  const fmtDash = (mxnVal) => {
+    const v = mxnTo(Number(mxnVal||0));
+    const abs = Math.abs(v);
+    const sign = v < 0 ? '-' : '';
+    const num = abs.toLocaleString('es-MX', {minimumFractionDigits:_dashDec, maximumFractionDigits:_dashDec});
+    return sign + _dashSym + num;
+  };
+  const fmtDashSign = (mxnVal) => {
+    const v = mxnTo(Number(mxnVal||0));
+    return (v >= 0 ? '+' : '') + fmtDash(mxnVal);
+  };
+  // ────────────────────────────────────────────────────────────────────────
   const cm=new Date().getMonth()+1,cy=new Date().getFullYear();
   const plats=calcPlatforms();
 
@@ -2203,10 +2232,10 @@ function renderDashboard(){
     ${platsSinActualizarHtml}
 
     <div class="grid-8" style="margin-bottom:16px">
-      <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">${t('valorPlataformas')}</div><div class="stat-value">${fmt(totalMXN)}</div><div class="stat-sub"><span style="color:${pctCol(totalRend)};font-weight:700">${fmtPct(invInicial?totalRend/invInicial:0)}</span> ${t('return')}</div></div>
-      <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">${t('rendPlataformas')}</div><div class="stat-value" style="color:${pctCol(totalRend)}">${fmt(totalRend)}</div><div class="stat-sub">${platsConTasa>0?`<span style="color:var(--teal)">⚡${fmt(totalRendAuto)} ${t('auto')}</span>`:t('rendimientoSobre')}</div></div>
-      <div class="card stat" style="border-top:3px solid var(--green)"><div class="stat-label">${t('valorInversiones')}</div><div class="stat-value">${fmt(totalInvMXN)}</div><div class="stat-sub">${tickerList.length} ${t('posiciones2')} · ${priceSummary.live>0?t('preciosHoy'):t('costoPosicion')}</div></div>
-      <div class="card stat" style="border-top:3px solid var(--green)"><div class="stat-label">${t('gpTotal')}</div><div class="stat-value" style="color:${pctCol(gpNoRealizadaTotal+gpRealizadaTotal)}">${(gpNoRealizadaTotal+gpRealizadaTotal)>=0?'+':''}${fmt(gpNoRealizadaTotal+gpRealizadaTotal)}</div><div class="stat-sub" style="display:flex;flex-direction:column;gap:1px"><span style="color:var(--text2)">No real.: <span style="color:${pctCol(gpNoRealizadaTotal)};font-weight:600">${gpNoRealizadaTotal>=0?'+':''}${fmt(gpNoRealizadaTotal)}</span></span><span style="color:var(--text2)">Realiz.: <span style="color:${pctCol(gpRealizadaTotal)};font-weight:600">${gpRealizadaTotal>=0?'+':''}${fmt(gpRealizadaTotal)}</span></span></div></div>
+      <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">${t('valorPlataformas')}</div><div class="stat-value">${fmtDash(totalMXN)}</div><div class="stat-sub"><span style="color:${pctCol(totalRend)};font-weight:700">${fmtPct(invInicial?totalRend/invInicial:0)}</span> ${t('return')}</div></div>
+      <div class="card stat" style="border-top:3px solid var(--blue)"><div class="stat-label">${t('rendPlataformas')}</div><div class="stat-value" style="color:${pctCol(totalRend)}">${fmtDash(totalRend)}</div><div class="stat-sub">${platsConTasa>0?`<span style="color:var(--teal)">⚡${fmtDash(totalRendAuto)} ${t('auto')}</span>`:t('rendimientoSobre')}</div></div>
+      <div class="card stat" style="border-top:3px solid var(--green)"><div class="stat-label">${t('valorInversiones')}</div><div class="stat-value">${fmtDash(totalInvMXN)}</div><div class="stat-sub">${tickerList.length} ${t('posiciones2')} · ${priceSummary.live>0?t('preciosHoy'):t('costoPosicion')}</div></div>
+      <div class="card stat" style="border-top:3px solid var(--green)"><div class="stat-label">${t('gpTotal')}</div><div class="stat-value" style="color:${pctCol(gpNoRealizadaTotal+gpRealizadaTotal)}">${fmtDashSign(gpNoRealizadaTotal+gpRealizadaTotal)}</div><div class="stat-sub" style="display:flex;flex-direction:column;gap:1px"><span style="color:var(--text2)">No real.: <span style="color:${pctCol(gpNoRealizadaTotal)};font-weight:600">${fmtDashSign(gpNoRealizadaTotal)}</span></span><span style="color:var(--text2)">Realiz.: <span style="color:${pctCol(gpRealizadaTotal)};font-weight:600">${fmtDashSign(gpRealizadaTotal)}</span></span></div></div>
       <div class="card stat" style="border-top:3px solid var(--purple)"><div class="stat-label">${t('rentabilidadTotal')}</div><div class="stat-value" style="color:${rentabilidadTotal!==null?pctCol(rentabilidadTotal):'var(--text2)'}">${rentabilidadTotal!==null?(rentabilidadTotal>=0?'+':'')+(rentabilidadTotal*100).toFixed(2)+'%':'—'}</div><div class="stat-sub">${rentabilidadTotal!==null?t('sobreCapital'):t('sinHistorial')}</div></div>
       <div class="card stat" style="border-top:3px solid var(--purple)"><div class="stat-label">${t('concentracion')}</div><div class="stat-value" style="font-size:14px">${topPlat?.name||'—'}</div><div class="stat-sub"><span style="color:var(--orange);font-weight:700">${(maxConc*100).toFixed(1)}%</span> · ${riskLvl}</div></div>
       <div class="card stat" style="border-top:3px solid var(--orange)"><div class="stat-label">${t('gastosMes')} ${curLabel}</div><div class="stat-value" style="color:${totGastoMes>0?'var(--red)':'var(--text)'}">${fmtD(totGastoMes)}</div><div class="stat-sub">${totalPresupuesto>0?(pctPresUsado*100).toFixed(0)+'% '+t('budget'):totIngMes>0||ingresoMensualEUR>0?fmtD(totIngMes>0?totIngMes:ingresoMensualEUR)+' '+t('income'):''}</div></div>
@@ -2217,11 +2246,11 @@ function renderDashboard(){
       <div style="padding:8px 20px 8px;display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;border-bottom:0.5px solid var(--border)">
         <div style="display:flex;align-items:baseline;gap:7px">
           <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgba(245,166,35,0.85)">📈 ${t('patrimonioTotal')}</span>
-          <span style="font-size:14px;font-weight:800;letter-spacing:-0.02em;color:rgba(245,166,35,0.95)">${fmt(patrimonio)}</span>
+          <span style="font-size:14px;font-weight:800;letter-spacing:-0.02em;color:rgba(245,166,35,0.95)">${fmtDash(patrimonio)}</span>
         </div>
         <div style="display:flex;align-items:baseline;gap:6px;justify-content:center">
           <span style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:600;letter-spacing:0.04em">${t('gananciaNetaTotal')}</span>
-          <span style="font-size:13px;font-weight:800;color:${pctCol(patrimonioRendPuro)}">${patrimonioRendPuro>=0?'+':''}${fmt(patrimonioRendPuro)}</span>
+          <span style="font-size:13px;font-weight:800;color:${pctCol(patrimonioRendPuro)}">${fmtDashSign(patrimonioRendPuro)}</span>
         </div>
         <div style="display:flex;align-items:baseline;gap:6px;justify-content:flex-end">
           ${rendAnualReal !== null ? `
@@ -4188,6 +4217,17 @@ function renderAjustes(){
       </div>
       
     </div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">💱 ${_lang==='es'?'Moneda del Dashboard':'Dashboard Currency'}</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.5">${_lang==='es'?'Los 8 indicadores y el patrimonio total se mostrarán en esta moneda. Los datos internos no cambian.':'The 8 indicators and total net worth will display in this currency. Internal data is unchanged.'}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${['MXN','USD','EUR','GBP'].map(m=>{
+          const sym={MXN:'🇲🇽',USD:'🇺🇸',EUR:'🇪🇺',GBP:'🇬🇧'}[m];
+          const active=(settings.dashMoneda||'MXN')===m;
+          return `<button onclick="window.settings.dashMoneda='${m}';saveAll();renderAjustes();renderDashboard()" style="padding:8px 18px;border-radius:22px;border:2px solid ${active?'var(--blue)':'var(--border)'};background:${active?'rgba(10,132,255,0.10)':'var(--card2)'};color:${active?'var(--blue)':'var(--text)'};font-weight:${active?'800':'600'};font-size:13px;cursor:pointer;font-family:var(--font)">${sym} ${m}</button>`;
+        }).join('')}
+      </div>
+    </div>
     <div class="grid-2" style="margin-bottom:16px">
       <div class="card">
         <div class="card-title">🔑 ${t('apiKeyFinnhub')} <span style="font-weight:400;color:var(--text3)">(US stocks)</span></div>
@@ -4667,10 +4707,20 @@ window._aiClear = function() {
 
 function updateNav(patrimonio,totalMXN,totalUSD,tc,totalRend,deltaHoy,deltaHoyPct){
   const el1=document.getElementById('navTotal'),el2=document.getElementById('navSub');
-  if(el1)el1.textContent=fmt(patrimonio);
+  // Convertir patrimonio a moneda preferida del dashboard
+  const _dm=settings.dashMoneda||'MXN';
+  const _fx=_fxCache||LS.get('fxCache');
+  const _usdmxn=(_fx?.usdmxn)||tc||17.5;
+  const _eurmxn2=(_fx?.eurmxn)||settings.tipoEUR||20;
+  const _gbpmxn=(_fx?.gbpmxn)||settings.tipoGBP||23;
+  const _mxnTo=(v)=>{if(_dm==='USD')return v/_usdmxn;if(_dm==='EUR')return v/_eurmxn2;if(_dm==='GBP')return v/_gbpmxn;return v;};
+  const _dmSym={MXN:'$',USD:'US$',EUR:'€',GBP:'£'}[_dm]||'$';
+  const _dmDec=_dm==='MXN'?0:2;
+  const _fmtNav=(v)=>{const abs=Math.abs(_mxnTo(v));const sign=_mxnTo(v)<0?'-':'';return sign+_dmSym+abs.toLocaleString('es-MX',{minimumFractionDigits:_dmDec,maximumFractionDigits:_dmDec});};
+  if(el1)el1.textContent=_fmtNav(patrimonio);
   const fx=_fxCache||LS.get('fxCache');
   const eurStr=fx?.eurmxn?`<span>EUR $${fx.eurmxn.toFixed(2)}</span>`:'';
-  const deltaStr=deltaHoy!==0&&deltaHoy!=null?`<span style="color:${pctCol(deltaHoy)};font-weight:700;background:${deltaHoy>=0?'rgba(48,209,88,0.12)':'rgba(255,69,58,0.10)'};padding:1px 6px;border-radius:6px">${deltaHoy>=0?'▲':'▼'} ${fmt(Math.abs(deltaHoy))} ${t('today')}</span>`:'';
+  const deltaStr=deltaHoy!==0&&deltaHoy!=null?`<span style="color:${pctCol(deltaHoy)};font-weight:700;background:${deltaHoy>=0?'rgba(48,209,88,0.12)':'rgba(255,69,58,0.10)'};padding:1px 6px;border-radius:6px">${deltaHoy>=0?'▲':'▼'} ${_fmtNav(Math.abs(deltaHoy))} ${t('today')}</span>`:'';
   if(el2)el2.innerHTML=`<span>🇲🇽 ${fmt(totalMXN)}</span><span>🇺🇸 ${fmt(totalUSD,'USD')}</span><span>💱 $${tc}</span>${eurStr}${deltaStr}`;
   const _ps=getPriceSummary();
   const _nps=document.getElementById('navPriceStatus');
