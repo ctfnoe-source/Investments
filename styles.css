@@ -80,10 +80,10 @@ body {
 }
 .nav-inner { max-width: 1360px; margin: 0 auto; display: flex; align-items: center; height: 54px; padding: 0 28px; gap: 6px; }
 .nav-logo { font-size: 18px; font-weight: 800; letter-spacing: -0.03em; color: var(--text); margin-right: 24px; cursor: pointer; white-space: nowrap; user-select: none; }
-.nav-tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; flex: 1 1 0; min-width: 0; }
+.nav-tabs { display: flex; gap: 3px; overflow-x: auto; scrollbar-width: none; flex: 1 1 0; min-width: 0; }
 .nav-tabs::-webkit-scrollbar { display: none; }
 .nav-tab {
-  padding: 6px 11px; font-size: 12px; font-weight: 600; color: var(--text2);
+  padding: 5px 10px; font-size: 12px; font-weight: 600; color: var(--text2);
   cursor: pointer; border-radius: 22px;
   background: var(--card2);
   border: 1px solid var(--border2);
@@ -92,10 +92,10 @@ body {
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 .nav-tab:hover {
-  background: rgba(10,132,255,0.1);
-  border-color: rgba(10,132,255,0.3);
+  background: rgba(10,132,255,0.10);
+  border-color: rgba(10,132,255,0.30);
   color: var(--blue);
-  transform: translateY(-2px) scale(1.06);
+  transform: translateY(-2px) scale(1.05);
   box-shadow: 0 4px 12px rgba(10,132,255,0.18);
 }
 .nav-tab.active {
@@ -104,6 +104,8 @@ body {
   border-color: var(--blue);
   box-shadow: 0 3px 10px rgba(10,132,255,0.35);
 }
+/* Ocultar sub-monedas (MXN/USD/EUR/tc) de la nav — liberan espacio para los 7 tabs */
+#navSub { display: none !important; }
 .dark-toggle {
   width: 44px; height: 26px; border-radius: 13px;
   background: var(--text3); border: none; cursor: pointer;
@@ -485,10 +487,11 @@ tr:hover td { background: var(--table-row-hover); }
 .page.slide-in-left  { animation: slideInLeft  0.22s cubic-bezier(.4,0,.2,1) both; }
 
 /* ── Nav tabs: evitar que Ajustes quede tapado por nav-user ── */
-@media(max-width:1100px){
-  .nav-tab { padding: 6px 8px; font-size: 11px; }
+@media(max-width:1200px){
+  .nav-tab { padding: 5px 8px; font-size: 11px; }
+  #navPatrimonio .nav-big { font-size: 16px !important; }
 }
-@media(max-width:900px){
+@media(max-width:1000px){
   .nav-tab { padding: 5px 6px; font-size: 11px; }
   .nav-inner { gap: 4px; }
   #navPatrimonio { display: none; }

@@ -4788,11 +4788,10 @@ function updateNav(patrimonio,totalMXN,totalUSD,tc,totalRend,deltaHoy,deltaHoyPc
   const _dmSym={MXN:'$',USD:'US$',EUR:'€',GBP:'£',CAD:'CA$',JPY:'¥',CHF:'CHF '}[_dm]||'$';
   const _dmDec=_dm==='MXN'?0:_dm==='JPY'?0:2;
   const _fmtNav=(v)=>{const abs=Math.abs(_mxnTo(v));const sign=_mxnTo(v)<0?'-':'';return sign+_dmSym+abs.toLocaleString('es-MX',{minimumFractionDigits:_dmDec,maximumFractionDigits:_dmDec});};
-  if(el1)el1.textContent=_fmtNav(patrimonio);
-  const fx=_fxCache||LS.get('fxCache');
-  const eurStr=fx?.eurmxn?`<span>EUR $${fx.eurmxn.toFixed(2)}</span>`:'';
-  const deltaStr=deltaHoy!==0&&deltaHoy!=null?`<span style="color:${pctCol(deltaHoy)};font-weight:700;background:${deltaHoy>=0?'rgba(48,209,88,0.12)':'rgba(255,69,58,0.10)'};padding:1px 6px;border-radius:6px">${deltaHoy>=0?'▲':'▼'} ${_fmtNav(Math.abs(deltaHoy))} ${t('today')}</span>`:'';
-  if(el2)el2.innerHTML=`<span>🇲🇽 ${fmt(totalMXN)}</span><span>🇺🇸 ${fmt(totalUSD,'USD')}</span><span>💱 $${tc}</span>${eurStr}${deltaStr}`;
+  // Mostrar total + delta hoy inline; las sub-monedas se ocultan por CSS (#navSub display:none)
+  const deltaStr=deltaHoy!==0&&deltaHoy!=null?`<span style="font-size:11px;font-weight:700;color:${pctCol(deltaHoy)};background:${deltaHoy>=0?'rgba(48,209,88,0.12)':'rgba(255,69,58,0.10)'};padding:1px 7px;border-radius:8px;margin-left:6px;vertical-align:middle">${deltaHoy>=0?'▲':'▼'} ${_fmtNav(Math.abs(deltaHoy))}</span>`:'';
+  if(el1)el1.innerHTML=_fmtNav(patrimonio)+deltaStr;
+  if(el2)el2.innerHTML='';
   const _ps=getPriceSummary();
   const _nps=document.getElementById('navPriceStatus');
   if(_nps){
