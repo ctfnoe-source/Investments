@@ -115,34 +115,66 @@ body {
 .nav-tab[data-tab="gastos"]      { color: var(--orange); border-color: rgba(255,159,10,0.22);  background: rgba(255,159,10,0.07); }
 .nav-tab[data-tab="metas"]       { color: #FF375F;       border-color: rgba(255,55,95,0.22);   background: rgba(255,55,95,0.07); }
 .nav-tab[data-tab="ajustes"]     { color: var(--text2);  border-color: rgba(128,128,128,0.22); background: rgba(128,128,128,0.07); }
-.nav-tab[data-tab="dashboard"]:hover   { background: rgba(10,132,255,0.12);  border-color: rgba(10,132,255,0.35);  box-shadow: 0 3px 10px rgba(10,132,255,0.10); }
-.nav-tab[data-tab="movimientos"]:hover { background: rgba(0,199,190,0.12);   border-color: rgba(0,199,190,0.35);   box-shadow: 0 3px 10px rgba(0,199,190,0.10); }
-.nav-tab[data-tab="plataformas"]:hover { background: rgba(191,90,242,0.12);  border-color: rgba(191,90,242,0.35);  box-shadow: 0 3px 10px rgba(191,90,242,0.10); }
-.nav-tab[data-tab="inversiones"]:hover { background: rgba(48,209,88,0.12);   border-color: rgba(48,209,88,0.35);   box-shadow: 0 3px 10px rgba(48,209,88,0.10); }
-.nav-tab[data-tab="gastos"]:hover      { background: rgba(255,159,10,0.12);  border-color: rgba(255,159,10,0.35);  box-shadow: 0 3px 10px rgba(255,159,10,0.10); }
-.nav-tab[data-tab="metas"]:hover       { background: rgba(255,55,95,0.12);   border-color: rgba(255,55,95,0.35);   color: #FF375F; box-shadow: 0 3px 10px rgba(255,55,95,0.10); }
-.nav-tab[data-tab="ajustes"]:hover     { background: rgba(128,128,128,0.10); border-color: rgba(128,128,128,0.35); color: var(--text); box-shadow: 0 3px 8px rgba(128,128,128,0.08); }
-.nav-tab[data-tab="dashboard"].active   { background: var(--blue);   border-color: var(--blue);   color: #fff; box-shadow: 0 2px 8px rgba(10,132,255,0.10); }
-.nav-tab[data-tab="movimientos"].active { background: var(--teal);   border-color: var(--teal);   color: #fff; box-shadow: 0 2px 8px rgba(0,199,190,0.10); }
-.nav-tab[data-tab="plataformas"].active { background: var(--purple); border-color: var(--purple); color: #fff; box-shadow: 0 2px 8px rgba(191,90,242,0.10); }
-.nav-tab[data-tab="inversiones"].active { background: var(--green);  border-color: var(--green);  color: #fff; box-shadow: 0 2px 8px rgba(48,209,88,0.10); }
-.nav-tab[data-tab="gastos"].active      { background: var(--orange); border-color: var(--orange); color: #fff; box-shadow: 0 2px 8px rgba(255,159,10,0.10); }
-.nav-tab[data-tab="metas"].active       { background: #FF375F;       border-color: #FF375F;       color: #fff; box-shadow: 0 2px 8px rgba(255,55,95,0.10); }
-.nav-tab[data-tab="ajustes"].active     { background: var(--text2);  border-color: var(--text2);  color: #fff; box-shadow: 0 2px 8px rgba(128,128,128,0.08); }
+
+/* hover — un poco más intenso que reposo, sombra muy suave */
+.nav-tab[data-tab="dashboard"]:hover   { background: rgba(10,132,255,0.14);  border-color: rgba(10,132,255,0.38);  box-shadow: 0 2px 8px rgba(10,132,255,0.10); }
+.nav-tab[data-tab="movimientos"]:hover { background: rgba(0,199,190,0.14);   border-color: rgba(0,199,190,0.38);   box-shadow: 0 2px 8px rgba(0,199,190,0.10); }
+.nav-tab[data-tab="plataformas"]:hover { background: rgba(191,90,242,0.14);  border-color: rgba(191,90,242,0.38);  box-shadow: 0 2px 8px rgba(191,90,242,0.10); }
+.nav-tab[data-tab="inversiones"]:hover { background: rgba(48,209,88,0.14);   border-color: rgba(48,209,88,0.38);   box-shadow: 0 2px 8px rgba(48,209,88,0.10); }
+.nav-tab[data-tab="gastos"]:hover      { background: rgba(255,159,10,0.14);  border-color: rgba(255,159,10,0.38);  box-shadow: 0 2px 8px rgba(255,159,10,0.10); }
+.nav-tab[data-tab="metas"]:hover       { background: rgba(255,55,95,0.14);   border-color: rgba(255,55,95,0.38);   color: #FF375F; box-shadow: 0 2px 8px rgba(255,55,95,0.10); }
+.nav-tab[data-tab="ajustes"]:hover     { background: rgba(128,128,128,0.12); border-color: rgba(128,128,128,0.38); color: var(--text); box-shadow: 0 2px 6px rgba(128,128,128,0.08); }
+
+/* active — fondo semitransparente (no sólido al 100%), texto del color, sin sombra fuerte */
+.nav-tab[data-tab="dashboard"].active   { background: rgba(10,132,255,0.18); border-color: rgba(10,132,255,0.50); color: var(--blue);   font-weight: 700; box-shadow: none; }
+.nav-tab[data-tab="movimientos"].active { background: rgba(0,199,190,0.18);  border-color: rgba(0,199,190,0.50);  color: var(--teal);   font-weight: 700; box-shadow: none; }
+.nav-tab[data-tab="plataformas"].active { background: rgba(191,90,242,0.18); border-color: rgba(191,90,242,0.50); color: var(--purple); font-weight: 700; box-shadow: none; }
+.nav-tab[data-tab="inversiones"].active { background: rgba(48,209,88,0.18);  border-color: rgba(48,209,88,0.50);  color: var(--green);  font-weight: 700; box-shadow: none; }
+.nav-tab[data-tab="gastos"].active      { background: rgba(255,159,10,0.18); border-color: rgba(255,159,10,0.50); color: var(--orange); font-weight: 700; box-shadow: none; }
+.nav-tab[data-tab="metas"].active       { background: rgba(255,55,95,0.18);  border-color: rgba(255,55,95,0.50);  color: #FF375F;       font-weight: 700; box-shadow: none; }
+.nav-tab[data-tab="ajustes"].active     { background: rgba(128,128,128,0.18);border-color: rgba(128,128,128,0.50);color: var(--text2);  font-weight: 700; box-shadow: none; }
 
 /* ── Encabezados de tabla: fondo sutil de color + texto más oscuro ── */
+/* Colores únicos para tablas simples */
 .th-blue   th { background: rgba(10,132,255,0.07);  color: #0060CC;  border-bottom: 1.5px solid rgba(10,132,255,0.20); }
 .th-teal   th { background: rgba(0,199,190,0.07);   color: #008C85;  border-bottom: 1.5px solid rgba(0,199,190,0.20); }
-.th-purple th { background: rgba(191,90,242,0.07);  color: #8B3DB8;  border-bottom: 1.5px solid rgba(191,90,242,0.20); }
 .th-green  th { background: rgba(48,209,88,0.07);   color: #1A8A3A;  border-bottom: 1.5px solid rgba(48,209,88,0.20); }
 .th-orange th { background: rgba(255,159,10,0.07);  color: #B86A00;  border-bottom: 1.5px solid rgba(255,159,10,0.20); }
 .th-red    th { background: rgba(255,69,58,0.07);   color: #C0271A;  border-bottom: 1.5px solid rgba(255,69,58,0.20); }
-[data-theme="dark"] .th-blue   th { background: rgba(10,132,255,0.12);  color: #5EB0FF; }
-[data-theme="dark"] .th-teal   th { background: rgba(0,199,190,0.12);   color: #3DDDD5; }
-[data-theme="dark"] .th-purple th { background: rgba(191,90,242,0.12);  color: #D08EF5; }
-[data-theme="dark"] .th-green  th { background: rgba(48,209,88,0.12);   color: #5FE88A; }
-[data-theme="dark"] .th-orange th { background: rgba(255,159,10,0.12);  color: #FFB733; }
-[data-theme="dark"] .th-red    th { background: rgba(255,69,58,0.12);   color: #FF7A72; }
+[data-theme="dark"] .th-blue   th { background: rgba(10,132,255,0.10);  color: #5EB0FF; }
+[data-theme="dark"] .th-teal   th { background: rgba(0,199,190,0.10);   color: #3DDDD5; }
+[data-theme="dark"] .th-green  th { background: rgba(48,209,88,0.10);   color: #5FE88A; }
+[data-theme="dark"] .th-orange th { background: rgba(255,159,10,0.10);  color: #FFB733; }
+[data-theme="dark"] .th-red    th { background: rgba(255,69,58,0.10);   color: #FF7A72; }
+
+/* MOVIMIENTOS — cada columna su color: Fecha=azul, Sección=teal, Detalle=neutro, Tipo=verde, Monto=naranja, Extra=dorado, Notas=neutro, Acciones=neutro */
+.th-movimientos th:nth-child(1) { background: rgba(10,132,255,0.07);  color: #0060CC;  border-bottom: 1.5px solid rgba(10,132,255,0.18); }
+.th-movimientos th:nth-child(2) { background: rgba(0,199,190,0.07);   color: #008C85;  border-bottom: 1.5px solid rgba(0,199,190,0.18); }
+.th-movimientos th:nth-child(3) { background: var(--table-head-bg);   color: var(--text2); border-bottom: 1px solid var(--bg); }
+.th-movimientos th:nth-child(4) { background: rgba(48,209,88,0.07);   color: #1A8A3A;  border-bottom: 1.5px solid rgba(48,209,88,0.18); }
+.th-movimientos th:nth-child(5) { background: rgba(255,159,10,0.07);  color: #B86A00;  border-bottom: 1.5px solid rgba(255,159,10,0.18); }
+.th-movimientos th:nth-child(6) { background: rgba(198,138,0,0.07);   color: #8B6400;  border-bottom: 1.5px solid rgba(198,138,0,0.18); }
+.th-movimientos th:nth-child(7) { background: var(--table-head-bg);   color: var(--text2); border-bottom: 1px solid var(--bg); }
+.th-movimientos th:nth-child(8) { background: var(--table-head-bg);   color: var(--text2); border-bottom: 1px solid var(--bg); }
+
+/* PLATAFORMAS — cada columna su color */
+.th-plataformas th:nth-child(1)  { background: var(--table-head-bg);  color: var(--text2); border-bottom: 1px solid var(--bg); }
+.th-plataformas th:nth-child(2)  { background: rgba(198,138,0,0.07);  color: #8B6400;  border-bottom: 1.5px solid rgba(198,138,0,0.18); }
+.th-plataformas th:nth-child(3)  { background: rgba(0,199,190,0.07);  color: #008C85;  border-bottom: 1.5px solid rgba(0,199,190,0.18); }
+.th-plataformas th:nth-child(4)  { background: rgba(10,132,255,0.07); color: #0060CC;  border-bottom: 1.5px solid rgba(10,132,255,0.18); }
+.th-plataformas th:nth-child(5)  { background: rgba(48,209,88,0.07);  color: #1A8A3A;  border-bottom: 1.5px solid rgba(48,209,88,0.18); }
+.th-plataformas th:nth-child(6)  { background: rgba(255,159,10,0.07); color: #B86A00;  border-bottom: 1.5px solid rgba(255,159,10,0.18); }
+.th-plataformas th:nth-child(7)  { background: var(--table-head-bg);  color: var(--text2); border-bottom: 1px solid var(--bg); }
+.th-plataformas th:nth-child(8)  { background: var(--table-head-bg);  color: var(--text2); border-bottom: 1px solid var(--bg); }
+.th-plataformas th:nth-child(9)  { background: rgba(48,209,88,0.07);  color: #1A8A3A;  border-bottom: 1.5px solid rgba(48,209,88,0.18); }
+.th-plataformas th:nth-child(10) { background: rgba(255,69,58,0.07);  color: #C0271A;  border-bottom: 1.5px solid rgba(255,69,58,0.18); }
+.th-plataformas th:nth-child(11) { background: rgba(255,159,10,0.07); color: #B86A00;  border-bottom: 1.5px solid rgba(255,159,10,0.18); }
+.th-plataformas th:nth-child(12) { background: rgba(0,199,190,0.07);  color: #008C85;  border-bottom: 1.5px solid rgba(0,199,190,0.18); }
+.th-plataformas th:nth-child(13) { background: rgba(48,209,88,0.07);  color: #1A8A3A;  border-bottom: 1.5px solid rgba(48,209,88,0.18); }
+.th-plataformas th:nth-child(14) { background: rgba(48,209,88,0.07);  color: #1A8A3A;  border-bottom: 1.5px solid rgba(48,209,88,0.18); }
+.th-plataformas th:nth-child(15) { background: rgba(48,209,88,0.07);  color: #1A8A3A;  border-bottom: 1.5px solid rgba(48,209,88,0.18); }
+.th-plataformas th:nth-child(16) { background: rgba(10,132,255,0.07); color: #0060CC;  border-bottom: 1.5px solid rgba(10,132,255,0.18); }
+.th-plataformas th:nth-child(17) { background: var(--table-head-bg);  color: var(--text2); border-bottom: 1px solid var(--bg); }
 .dark-toggle {
   width: 44px; height: 26px; border-radius: 13px;
   background: var(--text3); border: none; cursor: pointer;
