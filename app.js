@@ -5658,8 +5658,8 @@ function showTutorial(){
     if(pb) pb.onclick=()=>{ current--; render(); };
   }
 
-  render();
   document.body.appendChild(overlay);
+  render();
 }
 window.showTutorial=showTutorial;
 
