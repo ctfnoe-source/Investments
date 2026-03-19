@@ -89,20 +89,20 @@ body {
   border: 1px solid var(--border2);
   font-family: var(--font); white-space: nowrap;
   transition: all 0.22s cubic-bezier(.34,1.56,.64,1); flex-shrink: 0;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: none;
 }
 .nav-tab:hover {
   background: rgba(10,132,255,0.10);
   border-color: rgba(10,132,255,0.30);
   color: var(--blue);
   transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 4px 12px rgba(10,132,255,0.18);
+  box-shadow: none;
 }
 .nav-tab.active {
   font-weight: 700; color: #fff;
   background: var(--blue);
   border-color: var(--blue);
-  box-shadow: 0 3px 10px rgba(10,132,255,0.35);
+  box-shadow: none;
 }
 /* Ocultar sub-monedas (MXN/USD/EUR/tc) de la nav — liberan espacio para los 7 tabs */
 #navSub { display: none !important; }
@@ -212,16 +212,16 @@ body {
 .stat {
   padding: 20px 20px 16px; position: relative; overflow: hidden;
   background: var(--stat-bg); border-radius: 18px !important; border: none !important;
-  box-shadow: var(--shadow) !important;
-  transition: transform 0.18s cubic-bezier(.34,1.56,.64,1), box-shadow 0.18s ease, background 0.3s !important;
+  box-shadow: none !important;
+  transition: transform 0.18s cubic-bezier(.34,1.56,.64,1), background 0.3s !important;
   cursor: default;
 }
 [data-theme="dark"] .stat {
-  box-shadow: var(--shadow) !important;
+  box-shadow: none !important;
 }
 .stat:hover {
   transform: translateY(-2px) scale(1.01) !important;
-  box-shadow: var(--shadow-hover) !important;
+  box-shadow: none !important;
 }
 .stat::before { content:''; position:absolute; top:0; left:10%; right:10%; height:1px; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.8),transparent); }
 .stat::after { content:''; position:absolute; top:-40px; right:-20px; width:100px; height:100px; border-radius:50%; background:radial-gradient(circle,rgba(255,255,255,0.3) 0%,transparent 70%); pointer-events:none; }
