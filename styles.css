@@ -115,20 +115,20 @@ body {
 .nav-tab[data-tab="gastos"]      { color: var(--orange); border-color: rgba(255,159,10,0.22);  background: rgba(255,159,10,0.07); }
 .nav-tab[data-tab="metas"]       { color: #FF375F;       border-color: rgba(255,55,95,0.22);   background: rgba(255,55,95,0.07); }
 .nav-tab[data-tab="ajustes"]     { color: var(--text2);  border-color: rgba(128,128,128,0.22); background: rgba(128,128,128,0.07); }
-.nav-tab[data-tab="dashboard"]:hover   { background: rgba(10,132,255,0.15);  border-color: rgba(10,132,255,0.4);  box-shadow: 0 4px 14px rgba(10,132,255,0.20); }
-.nav-tab[data-tab="movimientos"]:hover { background: rgba(0,199,190,0.15);   border-color: rgba(0,199,190,0.4);   box-shadow: 0 4px 14px rgba(0,199,190,0.20); }
-.nav-tab[data-tab="plataformas"]:hover { background: rgba(191,90,242,0.15);  border-color: rgba(191,90,242,0.4);  box-shadow: 0 4px 14px rgba(191,90,242,0.20); }
-.nav-tab[data-tab="inversiones"]:hover { background: rgba(48,209,88,0.15);   border-color: rgba(48,209,88,0.4);   box-shadow: 0 4px 14px rgba(48,209,88,0.20); }
-.nav-tab[data-tab="gastos"]:hover      { background: rgba(255,159,10,0.15);  border-color: rgba(255,159,10,0.4);  box-shadow: 0 4px 14px rgba(255,159,10,0.20); }
-.nav-tab[data-tab="metas"]:hover       { background: rgba(255,55,95,0.15);   border-color: rgba(255,55,95,0.4);   color: #FF375F; box-shadow: 0 4px 14px rgba(255,55,95,0.20); }
-.nav-tab[data-tab="ajustes"]:hover     { background: rgba(128,128,128,0.14); border-color: rgba(128,128,128,0.4); color: var(--text); box-shadow: 0 4px 14px rgba(128,128,128,0.15); }
-.nav-tab[data-tab="dashboard"].active   { background: var(--blue);   border-color: var(--blue);   color: #fff; box-shadow: 0 3px 10px rgba(10,132,255,0.18); }
-.nav-tab[data-tab="movimientos"].active { background: var(--teal);   border-color: var(--teal);   color: #fff; box-shadow: 0 3px 10px rgba(0,199,190,0.18); }
-.nav-tab[data-tab="plataformas"].active { background: var(--purple); border-color: var(--purple); color: #fff; box-shadow: 0 3px 10px rgba(191,90,242,0.18); }
-.nav-tab[data-tab="inversiones"].active { background: var(--green);  border-color: var(--green);  color: #fff; box-shadow: 0 3px 10px rgba(48,209,88,0.18); }
-.nav-tab[data-tab="gastos"].active      { background: var(--orange); border-color: var(--orange); color: #fff; box-shadow: 0 3px 10px rgba(255,159,10,0.18); }
-.nav-tab[data-tab="metas"].active       { background: #FF375F;       border-color: #FF375F;       color: #fff; box-shadow: 0 3px 10px rgba(255,55,95,0.18); }
-.nav-tab[data-tab="ajustes"].active     { background: var(--text2);  border-color: var(--text2);  color: #fff; box-shadow: 0 3px 10px rgba(128,128,128,0.15); }
+.nav-tab[data-tab="dashboard"]:hover   { background: rgba(10,132,255,0.12);  border-color: rgba(10,132,255,0.35);  box-shadow: 0 3px 10px rgba(10,132,255,0.10); }
+.nav-tab[data-tab="movimientos"]:hover { background: rgba(0,199,190,0.12);   border-color: rgba(0,199,190,0.35);   box-shadow: 0 3px 10px rgba(0,199,190,0.10); }
+.nav-tab[data-tab="plataformas"]:hover { background: rgba(191,90,242,0.12);  border-color: rgba(191,90,242,0.35);  box-shadow: 0 3px 10px rgba(191,90,242,0.10); }
+.nav-tab[data-tab="inversiones"]:hover { background: rgba(48,209,88,0.12);   border-color: rgba(48,209,88,0.35);   box-shadow: 0 3px 10px rgba(48,209,88,0.10); }
+.nav-tab[data-tab="gastos"]:hover      { background: rgba(255,159,10,0.12);  border-color: rgba(255,159,10,0.35);  box-shadow: 0 3px 10px rgba(255,159,10,0.10); }
+.nav-tab[data-tab="metas"]:hover       { background: rgba(255,55,95,0.12);   border-color: rgba(255,55,95,0.35);   color: #FF375F; box-shadow: 0 3px 10px rgba(255,55,95,0.10); }
+.nav-tab[data-tab="ajustes"]:hover     { background: rgba(128,128,128,0.10); border-color: rgba(128,128,128,0.35); color: var(--text); box-shadow: 0 3px 8px rgba(128,128,128,0.08); }
+.nav-tab[data-tab="dashboard"].active   { background: var(--blue);   border-color: var(--blue);   color: #fff; box-shadow: 0 2px 8px rgba(10,132,255,0.10); }
+.nav-tab[data-tab="movimientos"].active { background: var(--teal);   border-color: var(--teal);   color: #fff; box-shadow: 0 2px 8px rgba(0,199,190,0.10); }
+.nav-tab[data-tab="plataformas"].active { background: var(--purple); border-color: var(--purple); color: #fff; box-shadow: 0 2px 8px rgba(191,90,242,0.10); }
+.nav-tab[data-tab="inversiones"].active { background: var(--green);  border-color: var(--green);  color: #fff; box-shadow: 0 2px 8px rgba(48,209,88,0.10); }
+.nav-tab[data-tab="gastos"].active      { background: var(--orange); border-color: var(--orange); color: #fff; box-shadow: 0 2px 8px rgba(255,159,10,0.10); }
+.nav-tab[data-tab="metas"].active       { background: #FF375F;       border-color: #FF375F;       color: #fff; box-shadow: 0 2px 8px rgba(255,55,95,0.10); }
+.nav-tab[data-tab="ajustes"].active     { background: var(--text2);  border-color: var(--text2);  color: #fff; box-shadow: 0 2px 8px rgba(128,128,128,0.08); }
 
 /* ── Encabezados de tabla: fondo sutil de color + texto más oscuro ── */
 .th-blue   th { background: rgba(10,132,255,0.07);  color: #0060CC;  border-bottom: 1.5px solid rgba(10,132,255,0.20); }
@@ -379,13 +379,13 @@ tr:hover td { background: var(--table-row-hover); }
 }
 .chart-toggle-btn:hover { border-color: var(--blue); color: var(--blue); }
 .chart-toggle-btn.open-state { color: var(--blue); border-color: var(--blue); background: rgba(10,132,255,0.06); }
-/* ── Stat card color variants — fondos sutiles, bajados un poquito ── */
-.stat-blue   { border-top: 3px solid var(--blue)   !important; background: linear-gradient(155deg, #ffffff 0%, #e4eeff 100%) !important; }
-.stat-green  { border-top: 3px solid var(--green)  !important; background: linear-gradient(155deg, #ffffff 0%, #e2fdf0 100%) !important; }
-.stat-purple { border-top: 3px solid var(--purple) !important; background: linear-gradient(155deg, #ffffff 0%, #efe5ff 100%) !important; }
-.stat-orange { border-top: 3px solid var(--orange) !important; background: linear-gradient(155deg, #ffffff 0%, #fef0d8 100%) !important; }
-.stat-teal   { border-top: 3px solid var(--teal)   !important; background: linear-gradient(155deg, #ffffff 0%, #d9faf9 100%) !important; }
-.stat-red    { border-top: 3px solid var(--red)    !important; background: linear-gradient(155deg, #ffffff 0%, #ffe9e8 100%) !important; }
+/* ── Stat card color variants — fondos muy sutiles ── */
+.stat-blue   { border-top: 3px solid var(--blue)   !important; background: linear-gradient(155deg, #ffffff 0%, #eef3ff 100%) !important; }
+.stat-green  { border-top: 3px solid var(--green)  !important; background: linear-gradient(155deg, #ffffff 0%, #edfff6 100%) !important; }
+.stat-purple { border-top: 3px solid var(--purple) !important; background: linear-gradient(155deg, #ffffff 0%, #f6f0ff 100%) !important; }
+.stat-orange { border-top: 3px solid var(--orange) !important; background: linear-gradient(155deg, #ffffff 0%, #fff8ee 100%) !important; }
+.stat-teal   { border-top: 3px solid var(--teal)   !important; background: linear-gradient(155deg, #ffffff 0%, #edfcfc 100%) !important; }
+.stat-red    { border-top: 3px solid var(--red)    !important; background: linear-gradient(155deg, #ffffff 0%, #fff4f4 100%) !important; }
 
 /* Label tintado con el color de su sección */
 .stat-blue   .stat-label { color: #0060CC; }
@@ -395,13 +395,13 @@ tr:hover td { background: var(--table-row-hover); }
 .stat-teal   .stat-label { color: #007A73; }
 .stat-red    .stat-label { color: #C0271A; }
 
-/* Hover shadow adaptado al color de la tarjeta */
-.stat-blue:hover   { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -4px 0 rgba(0,0,0,0.10) inset, 0 16px 36px rgba(10,132,255,0.10) !important; }
-.stat-green:hover  { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -4px 0 rgba(0,0,0,0.10) inset, 0 16px 36px rgba(48,209,88,0.10) !important; }
-.stat-purple:hover { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -4px 0 rgba(0,0,0,0.10) inset, 0 16px 36px rgba(191,90,242,0.10) !important; }
-.stat-orange:hover { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -4px 0 rgba(0,0,0,0.10) inset, 0 16px 36px rgba(255,159,10,0.10) !important; }
-.stat-teal:hover   { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -4px 0 rgba(0,0,0,0.10) inset, 0 16px 36px rgba(0,199,190,0.10) !important; }
-.stat-red:hover    { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -4px 0 rgba(0,0,0,0.10) inset, 0 16px 36px rgba(255,69,58,0.10) !important; }
+/* Hover shadow — bajado al 50% */
+.stat-blue:hover   { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -4px 0 rgba(0,0,0,0.08) inset, 0 16px 36px rgba(10,132,255,0.05) !important; }
+.stat-green:hover  { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -4px 0 rgba(0,0,0,0.08) inset, 0 16px 36px rgba(48,209,88,0.05) !important; }
+.stat-purple:hover { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -4px 0 rgba(0,0,0,0.08) inset, 0 16px 36px rgba(191,90,242,0.05) !important; }
+.stat-orange:hover { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -4px 0 rgba(0,0,0,0.08) inset, 0 16px 36px rgba(255,159,10,0.05) !important; }
+.stat-teal:hover   { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -4px 0 rgba(0,0,0,0.08) inset, 0 16px 36px rgba(0,199,190,0.05) !important; }
+.stat-red:hover    { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -4px 0 rgba(0,0,0,0.08) inset, 0 16px 36px rgba(255,69,58,0.05) !important; }
 
 [data-theme="dark"] .stat-blue   { background: linear-gradient(155deg, #1C1C1E 0%, #131e30 100%) !important; }
 [data-theme="dark"] .stat-green  { background: linear-gradient(155deg, #1C1C1E 0%, #0e2016 100%) !important; }
