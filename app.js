@@ -1817,10 +1817,17 @@ function monedaBadge(moneda){return`<span class="moneda-flag moneda-${moneda||'M
 function secBadge(sec){const labES={plataformas:'PLATAFORMA',inversiones:'INVERSIÓN',gastos:'GASTO',transferencia:'TRANSFERENCIA'};const labEN={plataformas:'PLATFORM',inversiones:'INVESTMENT',gastos:'EXPENSE',transferencia:'TRANSFER'};const lab=_lang==='es'?labES:labEN;const cls={plataformas:'badge-blue',inversiones:'badge-green',gastos:'badge-orange',transferencia:'badge-teal'};return`<span class="badge ${cls[sec]||''}">  ${lab[sec]||sec||'—'}</span>`;}
 function catName(id){const c=EXPENSE_CATS.find(x=>x.id===id);return c?c.icon+' '+c.name:id;}
 function statCard(label,value,sub,color,borderColor){
-  let tint='';
-  if(borderColor){if(borderColor.includes('green'))tint='background:linear-gradient(160deg,var(--card) 0%,rgba(48,209,88,0.04) 100%);';else if(borderColor.includes('red'))tint='background:linear-gradient(160deg,var(--card) 0%,rgba(255,69,58,0.04) 100%);';else if(borderColor.includes('blue'))tint='background:linear-gradient(160deg,var(--card) 0%,rgba(10,132,255,0.04) 100%);';else if(borderColor.includes('orange'))tint='background:linear-gradient(160deg,var(--card) 0%,rgba(255,159,10,0.04) 100%);';else if(borderColor.includes('purple')||borderColor.includes('BF5AF2'))tint='background:linear-gradient(160deg,var(--card) 0%,rgba(191,90,242,0.04) 100%);';else if(borderColor.includes('C7BE')||borderColor.includes('teal'))tint='background:linear-gradient(160deg,var(--card) 0%,rgba(0,199,190,0.04) 100%);';}
-  const accent=borderColor?'border-top:3px solid '+borderColor+';':'';
-  return '<div class="card stat" style="'+accent+tint+'">'+'<div class="stat-label">'+label+'</div>'+'<div class="stat-value" style="'+(color?'color:'+color:'')+' ">'+value+'</div>'+(sub?'<div class="stat-sub">'+sub+'</div>':'')+'</div>';
+  let cls='card stat ';
+  if(borderColor){
+    if(borderColor.includes('green'))cls+='stat-green';
+    else if(borderColor.includes('red'))cls+='stat-red';
+    else if(borderColor.includes('blue'))cls+='stat-blue';
+    else if(borderColor.includes('orange'))cls+='stat-orange';
+    else if(borderColor.includes('purple')||borderColor.includes('BF5AF2'))cls+='stat-purple';
+    else if(borderColor.includes('C7BE')||borderColor.includes('teal'))cls+='stat-teal';
+    else cls+='stat-blue';
+  }
+  return '<div class="'+cls+'">'+'<div class="stat-label">'+label+'</div>'+'<div class="stat-value" style="'+(color?'color:'+color:'')+' ">'+value+'</div>'+(sub?'<div class="stat-sub">'+sub+'</div>':'')+'</div>';
 }
 
 function getTickerPositions(){
@@ -2962,7 +2969,7 @@ function renderMovimientos(){
         <div id="movTbody" style="padding:12px">${isEmpty ? emptyContent : ''}</div>
         <div id="movSentinel" style="height:4px"></div>
       ` : `
-      <div class="table-wrap">
+      <div class="table-wrap th-teal">
         <table>
           <thead><tr><th>${t('fecha')}</th><th>${t('seccion')}</th><th>${t('detalle')}</th><th>${t('tipo')}</th><th>${t('monto')}</th><th>${t('extra')}</th><th>${t('notas')}</th><th style="width:70px"></th></tr></thead>
           <tbody id="movTbody">${emptyHtml}</tbody>
@@ -3224,7 +3231,7 @@ function renderPlataformas(){
           }).join('')}
         </div>
       ` : `
-      <div class="table-wrap">
+      <div class="table-wrap th-purple">
         <table>
           <thead><tr><th>#</th><th>${t('plataforma')}</th><th>${t('moneda')} ✏️</th><th>${t('tipo')}</th><th>${t('saldoInicial')} ✏️</th><th>⚡ ${t('tasa')} % ✏️</th><th>${t('desde')} ✏️</th><th>${t('dias')}</th><th>+ ${t('aportaciones')} 🔍</th><th>${t('retiros')}</th><th>${t('gastos')}</th><th style="color:var(--teal)">⚡ ${t('auto')}</th><th>${t('rendReal')}</th><th>${t('saldoActualTh')}</th><th>${t('rend')}</th><th>${t('pctPort')}</th><th></th></tr></thead>
           <tbody>
@@ -3499,7 +3506,7 @@ function renderGastos(){
         </div>
         <button class="btn btn-sm" style="background:rgba(0,199,190,0.1);color:var(--teal);border:none;font-weight:700" onclick="switchTab('movimientos');openMovModal('transferencia')">💸 ${t('transferirSobrante')}</button>
       </div>
-      <div class="table-wrap"><table>
+      <div class="table-wrap th-teal"><table>
         <thead><tr><th>${t('mes')}</th><th>${t('ingresoRef')}</th><th>${t('gastos')}</th><th>${t('sobrante')}</th></tr></thead>
         <tbody>
           ${sobranteRows.join('')}
@@ -3551,7 +3558,7 @@ function renderGastos(){
             return rows.join('') + ((!window._showAllCats && hiddenCount>0) ? `<div style="text-align:center;font-size:11px;color:var(--text3);padding:6px 0">${hiddenCount} ${t('catOcultas')} · <button class="btn btn-sm" style="font-size:11px;padding:2px 8px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="window._showAllCats=true;renderGastos()">${t('mostrarTodas')}</button></div>` : '');
           })()}
         </div>
-      ` : `<div class="table-wrap"><table><thead><tr><th>${t('catHeader')[0]}</th><th>${t('catHeader')[1]}</th><th>${t('catHeader')[2]}</th><th>${t('catHeader')[3]}</th><th>${t('catHeader')[4]}</th><th>${t('catHeader')[5]}</th></tr></thead><tbody>${catRows||`<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--text2);font-size:13px">${t('asignarPresupuestos')}</td></tr>`}${hiddenHint}<tr style="font-weight:800;background:var(--card2);border-top:2px solid var(--border2)"><td>TOTAL</td><td>${fmtEUR(totalPresupuestoEUR)}</td><td>${totalIngPlaneadoEUR>0?((totalPresupuestoEUR/totalIngPlaneadoEUR)*100).toFixed(1)+'%':'—'}</td><td style="color:${totGastoEUR>totalPresupuestoEUR?'var(--red)':'var(--text)'}">${fmtEUR(totGastoEUR)}</td><td style="color:${totalPresupuestoEUR-totGastoEUR>=0?'var(--green)':'var(--red)'}">${totalPresupuestoEUR>0?(totalPresupuestoEUR-totGastoEUR>=0?'+':'')+fmtEUR(totalPresupuestoEUR-totGastoEUR):'—'}</td><td>${totalPresupuestoEUR>0?`<span style="font-size:12px;font-weight:800">${(totGastoEUR/totalPresupuestoEUR*100).toFixed(0)}%</span>`:''}</td></tr></tbody></table></div>`}
+      ` : `<div class="table-wrap th-orange"><table><thead><tr><th>${t('catHeader')[0]}</th><th>${t('catHeader')[1]}</th><th>${t('catHeader')[2]}</th><th>${t('catHeader')[3]}</th><th>${t('catHeader')[4]}</th><th>${t('catHeader')[5]}</th></tr></thead><tbody>${catRows||`<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--text2);font-size:13px">${t('asignarPresupuestos')}</td></tr>`}${hiddenHint}<tr style="font-weight:800;background:var(--card2);border-top:2px solid var(--border2)"><td>TOTAL</td><td>${fmtEUR(totalPresupuestoEUR)}</td><td>${totalIngPlaneadoEUR>0?((totalPresupuestoEUR/totalIngPlaneadoEUR)*100).toFixed(1)+'%':'—'}</td><td style="color:${totGastoEUR>totalPresupuestoEUR?'var(--red)':'var(--text)'}">${fmtEUR(totGastoEUR)}</td><td style="color:${totalPresupuestoEUR-totGastoEUR>=0?'var(--green)':'var(--red)'}">${totalPresupuestoEUR>0?(totalPresupuestoEUR-totGastoEUR>=0?'+':'')+fmtEUR(totalPresupuestoEUR-totGastoEUR):'—'}</td><td>${totalPresupuestoEUR>0?`<span style="font-size:12px;font-weight:800">${(totGastoEUR/totalPresupuestoEUR*100).toFixed(0)}%</span>`:''}</td></tr></tbody></table></div>`}
     </div>
 
     <div class="card-flat card-accent-blue">
@@ -3577,7 +3584,7 @@ function renderGastos(){
             </div>`).join('')
           : '<div style="text-align:center;color:var(--text2);padding:24px;font-size:13px">'+t('sinMovs')+'</div>'}
         </div>
-      ` : `<div class="table-wrap"><table><thead><tr><th>${t('fecha')}</th><th>${t('categoria')}</th><th>${t('tipo')}</th><th>${t('importe')}</th><th>${t('notas')}</th><th></th></tr></thead><tbody>${movRows}</tbody></table></div>`}
+      ` : `<div class="table-wrap th-blue"><table><thead><tr><th>${t('fecha')}</th><th>${t('categoria')}</th><th>${t('tipo')}</th><th>${t('importe')}</th><th>${t('notas')}</th><th></th></tr></thead><tbody>${movRows}</tbody></table></div>`}
     </div>
   `;
 }
