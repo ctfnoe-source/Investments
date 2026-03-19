@@ -5235,38 +5235,38 @@ function showTutorial(){
       position:'below',
       title:es?'📊 Tu Dashboard':'📊 Your Dashboard',
       desc:es
-        ?'Aquí ves todo de un vistazo: <strong>patrimonio total, inversiones, gastos del mes y capital sobrante</strong>. Cada tarjeta se actualiza sola cuando añades datos — es tu centro de control financiero.'
-        :'Here you see everything at a glance: <strong>net worth, investments, monthly spending and surplus</strong>. Each card updates automatically as you add data.',
+        ?'Tu centro de control financiero. De un vistazo tienes: <strong>patrimonio total, rendimiento de plataformas, valor de inversiones, gastos del mes y capital sobrante</strong>. Todo se recalcula automáticamente cada vez que añades un dato — sin hojas de cálculo ni fórmulas manuales.'
+        :'Your financial control center. At a glance: <strong>net worth, platform returns, investment value, monthly expenses and surplus capital</strong>. Everything recalculates automatically whenever you add data — no spreadsheets or manual formulas.',
     },
     {
       tab:'plataformas',
       selector:'button[onclick="openAddPlatformModal()"]',
       selectorFallback:'#page-plataformas',
       position:'below',
-      title:es?'🏦 Plataformas — Agregar':'🏦 Platforms — Add',
+      title:es?'🏦 Plataformas — Tu dinero centralizado':'🏦 Platforms — Your money centralized',
       desc:es
-        ?'Pulsa este botón <strong>+ Plataforma</strong> para agregar una cuenta, fondo o bróker. Tienes dos formas de llevar el rendimiento:<br><br>① <strong>Tasa anual:</strong> introduce el % y la app calcula el interés automáticamente cada día.<br>② <strong>Saldo real mensual:</strong> una vez al mes actualizas el saldo actual y la app calcula el rendimiento real que has obtenido.'
-        :'Tap this <strong>+ Platform</strong> button to add an account, fund or broker. Two ways to track returns:<br><br>① <strong>Annual rate:</strong> enter the % and the app auto-calculates daily interest.<br>② <strong>Monthly real balance:</strong> once a month update the current balance and the app calculates your actual return.',
+        ?'Pulsa <strong>+ Plataforma</strong> para añadir cualquier cuenta, fondo monetario o bróker. Dos formas de llevar el rendimiento:<br>① <strong>Tasa anual %</strong> → la app calcula el interés automáticamente cada día.<br>② <strong>Saldo real mensual</strong> → actualiza el saldo una vez al mes y la app calcula tu rendimiento real.<br><br>Además puedes registrar <strong>transferencias entre plataformas</strong> (mover dinero de una cuenta a otra), <strong>gastos o retiros</strong> directamente desde ellas, y ver el total de tu capital de un solo vistazo.'
+        :'Tap <strong>+ Platform</strong> to add any account, money market fund or broker. Two ways to track returns:<br>① <strong>Annual rate %</strong> → the app auto-calculates daily interest.<br>② <strong>Monthly real balance</strong> → update the balance once a month and the app calculates your actual return.<br><br>You can also log <strong>transfers between platforms</strong>, <strong>expenses or withdrawals</strong> directly from them, and see your total capital at a glance.',
     },
     {
       tab:'inversiones',
       selector:'button[onclick*="openMovModal(\'inversiones\')"]',
       selectorFallback:'#page-inversiones',
       position:'below',
-      title:es?'📈 Inversiones — Agregar':'📈 Investments — Add',
+      title:es?'📈 Inversiones — Acciones, ETFs y Crypto':'📈 Investments — Stocks, ETFs & Crypto',
       desc:es
-        ?'Pulsa <strong>+ Nuevo</strong> para registrar una compra. Introduce el ticker (AAPL, BTC…), cantidad y precio de compra. La app calcula tu precio promedio y ganancias no realizadas. Con las API keys de Ajustes, los precios se actualizan en tiempo real.'
-        :'Tap <strong>+ New</strong> to log a buy. Enter the ticker (AAPL, BTC…), quantity and purchase price. The app calculates your average cost and unrealized gains. With API keys from Settings, prices update in real time.',
+        ?'Pulsa <strong>+ Nuevo</strong> para registrar una compra o venta. Puedes operar con <strong>acciones, ETFs, criptomonedas o fondos</strong> — en la moneda que prefieras (USD, EUR, GBP, MXN…). La app calcula automáticamente tu precio promedio, ganancias no realizadas y rendimiento total. Con tus API keys en Ajustes, los precios se actualizan en tiempo real.'
+        :'Tap <strong>+ New</strong> to log a buy or sell. You can trade <strong>stocks, ETFs, crypto or funds</strong> — in your preferred currency (USD, EUR, GBP, MXN…). The app automatically calculates your average cost, unrealized gains and total return. With your API keys in Settings, prices update in real time.',
     },
     {
       tab:'movimientos',
       selector:'button[onclick="openMovModal()"].btn-primary',
       selectorFallback:'#page-movimientos',
       position:'below',
-      title:es?'📋 Movimientos — El corazón de la app':'📋 Movements — The heart of the app',
+      title:es?'📋 Movimientos — El registro completo':'📋 Movements — The complete log',
       desc:es
-        ?'Pulsa <strong>+ Nuevo</strong> para registrar gastos, ingresos (sueldo, bonos) o transferencias entre plataformas. <strong>Todo lo que ves en Gastos y el sobrante del mes</strong> se calcula a partir de lo que pongas aquí.'
-        :'Tap <strong>+ New</strong> to log expenses, income (salary, bonuses) or transfers between platforms. <strong>Everything in Expenses and the monthly surplus</strong> is calculated from what you enter here.',
+        ?'Aquí entra <strong>absolutamente todo</strong>. Pulsa <strong>+ Nuevo</strong> para registrar:<br>• <strong>Gastos</strong> del día a día — en la moneda que uses.<br>• <strong>Ingresos</strong>: sueldo, bonos, dividendos, extras.<br>• <strong>Transferencias</strong> entre plataformas o el sobrante del mes.<br>• <strong>Compras / ventas</strong> de inversiones.<br>• <strong>Saldo actual</strong> de una plataforma para actualizar su rendimiento real.<br><br>Todo lo que ves en Gastos, Dashboard y el sobrante mensual se calcula a partir de estos movimientos.'
+        :'<strong>Absolutely everything</strong> goes here. Tap <strong>+ New</strong> to log:<br>• <strong>Expenses</strong> — in whatever currency you use.<br>• <strong>Income</strong>: salary, bonuses, dividends, extras.<br>• <strong>Transfers</strong> between platforms or your monthly surplus.<br>• <strong>Buy / sell</strong> investment trades.<br>• <strong>Current balance</strong> of a platform to update its real return.<br><br>Everything in Expenses, Dashboard and monthly surplus is calculated from these entries.',
     },
     {
       tab:'gastos',
@@ -5275,8 +5275,8 @@ function showTutorial(){
       position:'below',
       title:es?'💳 Control de Gastos':'💳 Expense Control',
       desc:es
-        ?'Ve tus gastos por categoría con barras de progreso. Asigna un presupuesto por categoría y la app te avisa cuando te pasas. Configura <strong>gastos recurrentes</strong> (alquiler, suscripciones) para que se añadan solos cada mes.'
-        :'See your expenses by category with progress bars. Assign a budget per category and get warned when you exceed it. Set up <strong>recurring expenses</strong> (rent, subscriptions) that auto-add each month.',
+        ?'Visualiza tus gastos por categoría con <strong>barras de progreso y presupuestos</strong>. Asigna un límite a cada categoría y la app te avisa en cuanto te pasas. Puedes registrar gastos <strong>en cualquier moneda</strong> (EUR, USD, GBP, MXN…) y la app convierte todo automáticamente. Activa <strong>gastos recurrentes</strong> (alquiler, suscripciones, seguros) para que se añadan solos cada mes sin que tengas que recordarlo.'
+        :'Visualize your spending by category with <strong>progress bars and budgets</strong>. Set a limit per category and get alerted when you exceed it. Log expenses <strong>in any currency</strong> (EUR, USD, GBP, MXN…) and the app converts everything automatically. Enable <strong>recurring expenses</strong> (rent, subscriptions, insurance) to auto-add each month without you having to remember.',
     },
     {
       tab:'metas',
@@ -5285,17 +5285,17 @@ function showTutorial(){
       position:'below',
       title:es?'🎯 Metas Financieras':'🎯 Financial Goals',
       desc:es
-        ?'Pulsa <strong>+ Meta</strong> para crear un objetivo: fondo de emergencia, viaje, jubilación... Elige qué parte de tu patrimonio cuenta para cada meta (plataformas, inversiones o todo). La app muestra el progreso automáticamente.'
-        :'Tap <strong>+ Goal</strong> to create an objective: emergency fund, trip, retirement... Choose which part of your net worth counts (platforms, investments or all). The app tracks progress automatically.',
+        ?'Pulsa <strong>+ Meta</strong> para crear un objetivo: fondo de emergencia, viaje, entrada de un piso, jubilación... Elige qué parte de tu patrimonio cuenta para cada meta — solo plataformas, solo inversiones, o el total. La app calcula el progreso en tiempo real y te muestra exactamente cuánto te falta para llegar.'
+        :'Tap <strong>+ Goal</strong> to create an objective: emergency fund, trip, house down payment, retirement... Choose which part of your net worth counts — platforms only, investments only, or the total. The app calculates progress in real time and shows exactly how much you have left to reach it.',
     },
     {
       tab:'ajustes',
       selector:'#aiFab',
-      position:'above',
-      title:es?'🤖 Asistente IA':'🤖 AI Assistant',
+      position:'above-left',
+      title:es?'🤖 Asistente IA — Esquina inferior derecha':'🤖 AI Assistant — Bottom right corner',
       desc:es
-        ?'Este botón flotante está disponible desde <strong>cualquier pantalla</strong>. Pregúntale cómo van tus finanzas, si estás gastando bien, qué hacer con el sobrante... Usa Groq, Gemini o DeepSeek — todos gratuitos. Configura tu clave en Ajustes.'
-        :'This floating button is available from <strong>any screen</strong>. Ask how your finances are doing, if you\'re spending wisely, what to do with your surplus... Uses Groq, Gemini or DeepSeek — all free. Set your key in Settings.',
+        ?'Este botón está fijo en la <strong>esquina inferior derecha</strong> de cualquier pantalla. Pregúntale lo que quieras: cómo van tus finanzas, si estás gastando bien, qué hacer con el sobrante del mes, cómo diversificar mejor... Conecta con <strong>Groq, Gemini o DeepSeek</strong> — todos gratuitos. Configura tu clave en Ajustes antes de usarlo.'
+        :'This button is fixed in the <strong>bottom-right corner</strong> of any screen. Ask it anything: how your finances are doing, whether you\'re spending wisely, what to do with your monthly surplus, how to diversify better... Connects with <strong>Groq, Gemini or DeepSeek</strong> — all free. Set your key in Settings before using it.',
     },
     {
       tab:'ajustes',
@@ -5303,8 +5303,8 @@ function showTutorial(){
       position:'below',
       title:es?'⚙️ Ajustes — Configuración personal':'⚙️ Settings — Your personal setup',
       desc:es
-        ?'Cada usuario usa <strong>sus propias API keys gratuitas</strong> para precios en tiempo real e IA. ¿No sabes cómo crearlas? Escríbeme en Facebook y te ayudo paso a paso — es parte del servicio.'
-        :'Each user uses <strong>their own free API keys</strong> for real-time prices and AI. Don\'t know how to create one? Message me on Facebook — I\'ll guide you step by step, it\'s part of the service.',
+        ?'Aquí personalizas la app a tu medida: configura tus <strong>API keys gratuitas</strong> para precios en tiempo real e IA, elige la <strong>moneda principal</strong> que usarás en el dashboard (EUR, USD, MXN…), ajusta los tipos de cambio y gestiona tus datos. Cada usuario tiene sus propias claves — así la app siempre es tuya y nunca necesitas suscripción mensual.'
+        :'Personalize the app your way: set up your <strong>free API keys</strong> for real-time prices and AI, choose your <strong>main currency</strong> for the dashboard (EUR, USD, MXN…), adjust exchange rates and manage your data. Each user has their own keys — so the app is always yours and you never need a monthly subscription.',
     },
   ];
 
@@ -5370,7 +5370,7 @@ function showTutorial(){
   card.style.cssText=`
     position:fixed;z-index:100004;
     background:var(--card,#fff);border-radius:22px;
-    width:calc(100% - 32px);max-width:390px;
+    width:calc(100% - 32px);max-width:420px;
     box-shadow:0 28px 70px rgba(0,0,0,0.30),0 2px 8px rgba(0,0,0,0.10);
     pointer-events:auto;
     font-family:var(--font,'DM Sans',sans-serif);
@@ -5441,7 +5441,7 @@ function showTutorial(){
 
       let cardTop, arrowTop, arrowBorderDir;
 
-      if(step.position==='above' || (spaceBelow<ch+40 && spaceAbove>ch+40)){
+      if(step.position==='above' || step.position==='above-left' || (spaceBelow<ch+40 && spaceAbove>ch+40)){
         // Tarjeta ARRIBA del elemento → flecha apunta hacia abajo
         cardTop=holeTop-ch-18;
         cardTop=Math.max(MARGIN,cardTop);
@@ -5456,7 +5456,13 @@ function showTutorial(){
       }
 
       // Centrar horizontalmente sobre el elemento, clampeado
-      let cardLeft=holeCX-cw/2;
+      let cardLeft;
+      if(step.position==='above-left'){
+        // Para elementos en la esquina derecha, alinear tarjeta a la derecha del viewport
+        cardLeft=vw-cw-MARGIN;
+      } else {
+        cardLeft=holeCX-cw/2;
+      }
       cardLeft=Math.max(MARGIN,Math.min(cardLeft,vw-cw-MARGIN));
 
       card.style.top=cardTop+'px';
@@ -5520,36 +5526,36 @@ function showTutorial(){
     card.innerHTML=`
       <div style="height:3px;background:linear-gradient(90deg,#0A84FF,#5856D6,#BF5AF2);border-radius:22px 22px 0 0"></div>
       <button class="tut-close" style="
-        position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:50%;
-        background:rgba(0,0,0,0.06);border:none;font-size:12px;color:#86868b;
+        position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:50%;
+        background:rgba(0,0,0,0.06);border:none;font-size:13px;color:#86868b;
         cursor:pointer;display:flex;align-items:center;justify-content:center;
         transition:background 0.15s;z-index:2
       ">✕</button>
-      <div style="padding:16px 16px 0">
-        <div style="font-size:14px;font-weight:800;letter-spacing:-0.03em;color:var(--text,#1d1d1f);padding-right:28px;margin-bottom:5px">${s.title}</div>
-        <div style="font-size:11.5px;color:var(--text2,#86868b);line-height:1.7">${s.desc}</div>
+      <div style="padding:18px 18px 0">
+        <div style="font-size:16px;font-weight:800;letter-spacing:-0.03em;color:var(--text,#1d1d1f);padding-right:32px;margin-bottom:8px">${s.title}</div>
+        <div style="font-size:13px;color:var(--text2,#86868b);line-height:1.75">${s.desc}</div>
       </div>
-      <div style="padding:12px 16px 14px;border-top:1px solid rgba(0,0,0,0.05);margin-top:12px">
+      <div style="padding:14px 18px 16px;border-top:1px solid rgba(0,0,0,0.05);margin-top:14px">
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div style="display:flex;align-items:center">${dots}</div>
-          <div style="display:flex;gap:7px;align-items:center">
+          <div style="display:flex;gap:8px;align-items:center">
             ${current>0?`<button class="tut-prev" style="
-              padding:7px 13px;border-radius:50px;
+              padding:8px 15px;border-radius:50px;
               border:1.5px solid rgba(0,0,0,0.10);
               background:none;color:var(--text2,#86868b);
-              font-size:12px;font-weight:600;cursor:pointer;
+              font-size:13px;font-weight:600;cursor:pointer;
               font-family:inherit;transition:all 0.15s
             ">← ${es?'Anterior':'Back'}</button>`:''}
             <button class="tut-next" style="
-              padding:8px ${isLast?'20px':'15px'};border-radius:50px;border:none;
+              padding:9px ${isLast?'22px':'17px'};border-radius:50px;border:none;
               background:linear-gradient(135deg,#0A84FF,#5856D6);
-              color:#fff;font-size:12px;font-weight:700;cursor:pointer;
+              color:#fff;font-size:13px;font-weight:700;cursor:pointer;
               font-family:inherit;transition:all 0.2s;
               box-shadow:0 4px 12px rgba(10,132,255,0.38)
             ">${isLast?(es?'¡Empezar! 🚀':'Let\'s go! 🚀'):(es?'Siguiente →':'Next →')}</button>
           </div>
         </div>
-        <div style="text-align:center;margin-top:7px;font-size:10px;color:var(--text3,#aeaeb2);font-weight:600;letter-spacing:0.04em">
+        <div style="text-align:center;margin-top:8px;font-size:11px;color:var(--text3,#aeaeb2);font-weight:600;letter-spacing:0.04em">
           ${current+1} / ${steps.length}
         </div>
       </div>
@@ -5557,7 +5563,7 @@ function showTutorial(){
 
     // Posición inicial centrada mientras carga el tab
     const vw=window.innerWidth, vh=window.innerHeight;
-    const cw=390, ch=210;
+    const cw=420, ch=220;
     card.style.left=Math.max(12,(vw-cw)/2)+'px';
     card.style.top=Math.max(12,(vh-ch)/2)+'px';
     arrow.style.display='none';
