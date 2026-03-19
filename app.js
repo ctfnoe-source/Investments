@@ -5218,7 +5218,7 @@ function getMetaRef(uid) {
 }
 
 function setFbStatus(s){let el=document.getElementById('fbStatus');if(!el)return;el.style.display=s?'block':'none';const map={syncing:['⏳ '+t('sync'),'rgba(10,132,255,0.1)','#0A84FF'],ok:['☁️ '+t('synced'),'rgba(48,209,88,0.1)','#30D158'],error:['⚠️ '+t('noConnection'),'rgba(255,69,58,0.1)','#FF453A'],offline:['📴 '+t('offline'),'rgba(0,0,0,0.06)','#86868B']};const[text,bg,color]=map[s]||map.offline;el.textContent=text;el.style.background=bg;el.style.color=color;if(s==='ok'){setTimeout(()=>{if(el)el.style.display='none';},3000);}}
-// ==================== TUTORIAL (Spotlight) ====================
+// ==================== TUTORIAL (Spotlight Real) ====================
 function showTutorial(){
   const es=_lang==='es';
 
@@ -5226,89 +5226,85 @@ function showTutorial(){
   const old=document.getElementById('tutorialOverlay');
   if(old) old.remove();
 
-  // ── Definición de pasos: tab + selector del elemento a resaltar + tooltip ──
+  // ── Pasos: tab + selector real + posición de la tarjeta ──────────
   const steps=[
     {
       tab:'dashboard',
-      selector:'#page-dashboard',          // resalta la página entera
-      position:'center',
+      selector:'.stat-grid, .card.stat, #page-dashboard .card',
+      selectorFallback:'#page-dashboard',
+      position:'below',
       title:es?'📊 Tu Dashboard':'📊 Your Dashboard',
       desc:es
-        ?'Aquí ves todo de un vistazo: patrimonio total, inversiones, gastos del mes y capital sobrante. Se actualiza solo cada vez que añades datos.'
-        :'Here you see everything at a glance: net worth, investments, monthly spending and surplus. Updates automatically whenever you add data.',
+        ?'Aquí ves todo de un vistazo: <strong>patrimonio total, inversiones, gastos del mes y capital sobrante</strong>. Cada tarjeta se actualiza sola cuando añades datos — es tu centro de control financiero.'
+        :'Here you see everything at a glance: <strong>net worth, investments, monthly spending and surplus</strong>. Each card updates automatically as you add data.',
     },
     {
       tab:'plataformas',
-      selector:'[data-tab="plataformas"]',  // resalta el tab en nav
-      position:'bottom',
-      title:es?'🏦 Plataformas':'🏦 Platforms',
-      desc:es
-        ?'¿Dinero repartido en varias cuentas o fondos? Centralízalos aquí. Ve tu capital total de un vistazo y registra transferencias entre plataformas.'
-        :'Money spread across accounts or funds? Centralize them here. See your total capital at a glance and log transfers between platforms.',
-    },
-    {
-      tab:'plataformas',
-      selector:'.btn-primary[onclick*="openMovModal(\'plataformas\')"], .btn-primary, #page-plataformas .btn-primary',
+      selector:'button[onclick="openAddPlatformModal()"]',
       selectorFallback:'#page-plataformas',
-      position:'top',
-      title:es?'🏦 Agregar plataforma':'🏦 Add a platform',
+      position:'below',
+      title:es?'🏦 Plataformas — Agregar':'🏦 Platforms — Add',
       desc:es
-        ?'Pulsa <strong>+</strong> para agregar una plataforma. Rellena el nombre, tipo, saldo actual y rendimiento acumulado. Opcionalmente la tasa anual para calcular intereses automáticamente.'
-        :'Tap <strong>+</strong> to add a platform. Fill in the name, type, current balance and accumulated return. Optionally the annual rate to auto-calculate interest.',
+        ?'Pulsa este botón <strong>+ Plataforma</strong> para agregar una cuenta, fondo o bróker. Tienes dos formas de llevar el rendimiento:<br><br>① <strong>Tasa anual:</strong> introduce el % y la app calcula el interés automáticamente cada día.<br>② <strong>Saldo real mensual:</strong> una vez al mes actualizas el saldo actual y la app calcula el rendimiento real que has obtenido.'
+        :'Tap this <strong>+ Platform</strong> button to add an account, fund or broker. Two ways to track returns:<br><br>① <strong>Annual rate:</strong> enter the % and the app auto-calculates daily interest.<br>② <strong>Monthly real balance:</strong> once a month update the current balance and the app calculates your actual return.',
     },
     {
       tab:'inversiones',
-      selector:'[data-tab="inversiones"]',
-      position:'bottom',
-      title:es?'📈 Inversiones':'📈 Investments',
+      selector:'button[onclick*="openMovModal(\'inversiones\')"]',
+      selectorFallback:'#page-inversiones',
+      position:'below',
+      title:es?'📈 Inversiones — Agregar':'📈 Investments — Add',
       desc:es
-        ?'Registra tus acciones, ETFs y criptomonedas. La app calcula precio promedio y ganancias no realizadas. Con las API keys de Ajustes, los precios se actualizan en tiempo real.'
-        :'Log your stocks, ETFs and crypto. The app calculates your average cost and unrealized gains. With API keys from Settings, prices update in real time.',
+        ?'Pulsa <strong>+ Nuevo</strong> para registrar una compra. Introduce el ticker (AAPL, BTC…), cantidad y precio de compra. La app calcula tu precio promedio y ganancias no realizadas. Con las API keys de Ajustes, los precios se actualizan en tiempo real.'
+        :'Tap <strong>+ New</strong> to log a buy. Enter the ticker (AAPL, BTC…), quantity and purchase price. The app calculates your average cost and unrealized gains. With API keys from Settings, prices update in real time.',
     },
     {
       tab:'movimientos',
-      selector:'[data-tab="movimientos"]',
-      position:'bottom',
+      selector:'button[onclick="openMovModal()"].btn-primary',
+      selectorFallback:'#page-movimientos',
+      position:'below',
       title:es?'📋 Movimientos — El corazón de la app':'📋 Movements — The heart of the app',
       desc:es
-        ?'<strong>Aquí registras todo</strong>: gastos del día a día, sueldo, bonos y transferencias. Los datos de Gastos y el sobrante del mes se calculan a partir de lo que pongas aquí.'
-        :'<strong>Log everything here</strong>: daily expenses, salary, bonuses and transfers. The Expenses section and monthly surplus are calculated from what you enter here.',
+        ?'Pulsa <strong>+ Nuevo</strong> para registrar gastos, ingresos (sueldo, bonos) o transferencias entre plataformas. <strong>Todo lo que ves en Gastos y el sobrante del mes</strong> se calcula a partir de lo que pongas aquí.'
+        :'Tap <strong>+ New</strong> to log expenses, income (salary, bonuses) or transfers between platforms. <strong>Everything in Expenses and the monthly surplus</strong> is calculated from what you enter here.',
     },
     {
       tab:'gastos',
-      selector:'[data-tab="gastos"]',
-      position:'bottom',
+      selector:'button[onclick*="openMovModal(\'gastos\')"]',
+      selectorFallback:'#page-gastos',
+      position:'below',
       title:es?'💳 Control de Gastos':'💳 Expense Control',
       desc:es
-        ?'Gastos por categoría con barras de progreso y presupuestos. Asigna cuánto quieres gastar en cada categoría y la app te avisa cuando te pasas. Configura <strong>gastos recurrentes</strong> para que se añadan solos cada mes.'
-        :'Expenses by category with progress bars and budgets. Assign a budget per category and get warned when you exceed it. Set up <strong>recurring expenses</strong> that auto-add each month.',
+        ?'Ve tus gastos por categoría con barras de progreso. Asigna un presupuesto por categoría y la app te avisa cuando te pasas. Configura <strong>gastos recurrentes</strong> (alquiler, suscripciones) para que se añadan solos cada mes.'
+        :'See your expenses by category with progress bars. Assign a budget per category and get warned when you exceed it. Set up <strong>recurring expenses</strong> (rent, subscriptions) that auto-add each month.',
     },
     {
       tab:'metas',
-      selector:'[data-tab="metas"]',
-      position:'bottom',
+      selector:'button[onclick="openGoalModal()"].btn-primary',
+      selectorFallback:'#page-metas',
+      position:'below',
       title:es?'🎯 Metas Financieras':'🎯 Financial Goals',
       desc:es
-        ?'Crea objetivos — fondo de emergencia, viaje, jubilación — y elige qué parte de tu patrimonio cuenta para cada meta. La app sigue el progreso automáticamente.'
-        :'Create goals — emergency fund, trip, retirement — and choose which part of your net worth counts toward each. The app tracks progress automatically.',
+        ?'Pulsa <strong>+ Meta</strong> para crear un objetivo: fondo de emergencia, viaje, jubilación... Elige qué parte de tu patrimonio cuenta para cada meta (plataformas, inversiones o todo). La app muestra el progreso automáticamente.'
+        :'Tap <strong>+ Goal</strong> to create an objective: emergency fund, trip, retirement... Choose which part of your net worth counts (platforms, investments or all). The app tracks progress automatically.',
     },
     {
       tab:'ajustes',
       selector:'#aiFab',
-      position:'top',
+      position:'above',
       title:es?'🤖 Asistente IA':'🤖 AI Assistant',
       desc:es
-        ?'Pulsa el botón <strong>🤖</strong> flotante desde cualquier pantalla. Pregúntale cómo van tus finanzas, si estás gastando bien... Usa Groq, Gemini o DeepSeek — todos gratuitos.'
-        :'Tap the floating <strong>🤖</strong> button from any screen. Ask how your finances are doing, if you\'re spending well... Uses Groq, Gemini or DeepSeek — all free.',
+        ?'Este botón flotante está disponible desde <strong>cualquier pantalla</strong>. Pregúntale cómo van tus finanzas, si estás gastando bien, qué hacer con el sobrante... Usa Groq, Gemini o DeepSeek — todos gratuitos. Configura tu clave en Ajustes.'
+        :'This floating button is available from <strong>any screen</strong>. Ask how your finances are doing, if you\'re spending wisely, what to do with your surplus... Uses Groq, Gemini or DeepSeek — all free. Set your key in Settings.',
     },
     {
       tab:'ajustes',
       selector:'[data-tab="ajustes"]',
-      position:'bottom',
-      title:es?'⚙️ Ajustes — Tu configuración personal':'⚙️ Settings — Your personal setup',
+      position:'below',
+      title:es?'⚙️ Ajustes — Configuración personal':'⚙️ Settings — Your personal setup',
       desc:es
-        ?'Cada usuario usa <strong>sus propias API keys gratuitas</strong>. ¿No sabes cómo crearlas? Escríbeme en Facebook y te ayudo paso a paso — es parte del servicio.'
-        :'Each user uses <strong>their own free API keys</strong>. Don\'t know how to create one? Message me on Facebook and I\'ll guide you step by step — it\'s part of the service.',
+        ?'Cada usuario usa <strong>sus propias API keys gratuitas</strong> para precios en tiempo real e IA. ¿No sabes cómo crearlas? Escríbeme en Facebook y te ayudo paso a paso — es parte del servicio.'
+        :'Each user uses <strong>their own free API keys</strong> for real-time prices and AI. Don\'t know how to create one? Message me on Facebook — I\'ll guide you step by step, it\'s part of the service.',
     },
   ];
 
@@ -5320,194 +5316,273 @@ function showTutorial(){
     st.id='tutorialStyles';
     st.textContent=`
       @keyframes tutFadeIn{from{opacity:0}to{opacity:1}}
-      @keyframes tutCardIn{from{opacity:0;transform:translateY(12px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-      @keyframes tutPulse{0%,100%{box-shadow:0 0 0 0 rgba(10,132,255,0.5)}50%{box-shadow:0 0 0 8px rgba(10,132,255,0)}}
-      #tutorialOverlay{animation:tutFadeIn 0.2s ease}
+      @keyframes tutCardIn{from{opacity:0;transform:translateY(10px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+      @keyframes tutGlow{0%,100%{box-shadow:0 0 0 0 rgba(10,132,255,0.6),0 0 0 4px rgba(10,132,255,0.15)}60%{box-shadow:0 0 0 6px rgba(10,132,255,0),0 0 0 10px rgba(10,132,255,0)}}
+      #tutSvgOverlay{animation:tutFadeIn 0.22s ease;pointer-events:none}
       #tutCard{animation:tutCardIn 0.3s cubic-bezier(0.34,1.2,0.64,1)}
-      .tut-highlighted{outline:3px solid #0A84FF!important;outline-offset:4px!important;border-radius:12px!important;animation:tutPulse 1.6s ease infinite!important;position:relative!important;z-index:100001!important}
-      .tut-close:hover{background:rgba(0,0,0,0.1)!important}
+      .tut-ring{outline:3px solid #0A84FF!important;outline-offset:3px!important;border-radius:10px!important;animation:tutGlow 1.8s ease infinite!important;position:relative!important;z-index:100003!important}
+      .tut-close:hover{background:rgba(0,0,0,0.12)!important}
       .tut-prev:hover{border-color:#0A84FF!important;color:#0A84FF!important}
       .tut-next:hover{opacity:0.88!important;transform:translateY(-1px)!important}
       .tut-next:active{transform:translateY(0)!important}
-      .tut-dot{height:5px;border-radius:3px;transition:all 0.3s cubic-bezier(0.34,1.2,0.64,1);background:rgba(150,150,150,0.25)}
-      .tut-dot.active{background:#0A84FF;width:24px!important}
-      .tut-dot.done{background:rgba(10,132,255,0.4)}
     `;
     document.head.appendChild(st);
   }
 
-  // ── Overlay oscuro ─────────────────────────────────────────────
-  const overlay=document.createElement('div');
-  overlay.id='tutorialOverlay';
-  overlay.style.cssText='position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,0.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);pointer-events:none';
-  document.body.appendChild(overlay);
+  // ── SVG overlay con agujero (spotlight) ───────────────────────
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.id='tutSvgOverlay';
+  svg.style.cssText='position:fixed;inset:0;width:100%;height:100%;z-index:99998;pointer-events:none';
+  svg.setAttribute('width','100%'); svg.setAttribute('height','100%');
+
+  // defs para clip-path
+  const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
+  const clipPath=document.createElementNS('http://www.w3.org/2000/svg','clipPath');
+  clipPath.id='tutHoleClip';
+  const clipOuter=document.createElementNS('http://www.w3.org/2000/svg','rect');
+  clipOuter.setAttribute('x','0');clipOuter.setAttribute('y','0');
+  clipOuter.setAttribute('width','100%');clipOuter.setAttribute('height','100%');
+  const clipHole=document.createElementNS('http://www.w3.org/2000/svg','rect');
+  clipHole.id='tutHole';
+  clipPath.appendChild(clipOuter); clipPath.appendChild(clipHole);
+  defs.appendChild(clipPath); svg.appendChild(defs);
+
+  // fondo oscuro recortado
+  const bgRect=document.createElementNS('http://www.w3.org/2000/svg','rect');
+  bgRect.setAttribute('x','0');bgRect.setAttribute('y','0');
+  bgRect.setAttribute('width','100%');bgRect.setAttribute('height','100%');
+  bgRect.setAttribute('fill','rgba(0,0,0,0.62)');
+  bgRect.setAttribute('clip-path','url(#tutHoleClip)');
+  svg.appendChild(bgRect);
+  document.body.appendChild(svg);
+
+  // Área clickeable de fondo para cerrar
+  const clickBlocker=document.createElement('div');
+  clickBlocker.style.cssText='position:fixed;inset:0;z-index:99999;cursor:default';
+  clickBlocker.addEventListener('click',(e)=>{
+    if(e.target===clickBlocker) closeTutorial();
+  });
+  document.body.appendChild(clickBlocker);
 
   // ── Tarjeta flotante ───────────────────────────────────────────
   const card=document.createElement('div');
   card.id='tutCard';
   card.style.cssText=`
-    position:fixed;z-index:100002;
-    background:var(--card,#fff);border-radius:24px;
-    width:calc(100% - 32px);max-width:400px;
-    box-shadow:0 32px 80px rgba(0,0,0,0.28),0 2px 8px rgba(0,0,0,0.08);
-    overflow:hidden;pointer-events:auto;
+    position:fixed;z-index:100004;
+    background:var(--card,#fff);border-radius:22px;
+    width:calc(100% - 32px);max-width:390px;
+    box-shadow:0 28px 70px rgba(0,0,0,0.30),0 2px 8px rgba(0,0,0,0.10);
+    pointer-events:auto;
     font-family:var(--font,'DM Sans',sans-serif);
+    transition:top 0.25s cubic-bezier(0.34,1.1,0.64,1),left 0.25s cubic-bezier(0.34,1.1,0.64,1);
   `;
   document.body.appendChild(card);
 
-  let _prevHighlighted=null;
+  // Flecha triangular que apunta al elemento
+  const arrow=document.createElement('div');
+  arrow.id='tutArrow';
+  arrow.style.cssText=`
+    position:fixed;z-index:100005;width:0;height:0;
+    border-left:10px solid transparent;border-right:10px solid transparent;
+    pointer-events:none;
+    transition:top 0.25s cubic-bezier(0.34,1.1,0.64,1),left 0.25s cubic-bezier(0.34,1.1,0.64,1);
+  `;
+  document.body.appendChild(arrow);
+
+  let _prevEl=null;
 
   function clearHighlight(){
-    if(_prevHighlighted){
-      _prevHighlighted.classList.remove('tut-highlighted');
-      _prevHighlighted=null;
-    }
+    if(_prevEl){ _prevEl.classList.remove('tut-ring'); _prevEl=null; }
   }
 
-  function positionCard(targetEl){
-    const margin=12;
-    const cw=card.offsetWidth||380;
-    const ch=card.offsetHeight||220;
-    const vw=window.innerWidth;
-    const vh=window.innerHeight;
-
-    if(!targetEl){
-      // centro de pantalla
-      card.style.left=Math.max(margin,(vw-cw)/2)+'px';
-      card.style.top=Math.max(margin,(vh-ch)/2)+'px';
-      card.style.bottom='';
-      return;
+  // Actualiza el agujero del SVG según el elemento
+  function updateHole(el){
+    const PAD=8;
+    const R=12;
+    if(!el){
+      clipHole.setAttribute('x','-1'); clipHole.setAttribute('y','-1');
+      clipHole.setAttribute('width','1'); clipHole.setAttribute('height','1');
+      clipHole.setAttribute('rx','0');
+      return null;
     }
+    const r=el.getBoundingClientRect();
+    const x=r.left-PAD, y=r.top-PAD;
+    const w=r.width+PAD*2, h=r.height+PAD*2;
+    clipHole.setAttribute('x',x); clipHole.setAttribute('y',y);
+    clipHole.setAttribute('width',w); clipHole.setAttribute('height',h);
+    clipHole.setAttribute('rx',R); clipHole.setAttribute('ry',R);
+    return {x,y,w,h};
+  }
 
-    const r=targetEl.getBoundingClientRect();
-    const step=steps[current];
-    let top,left;
+  // Posiciona la tarjeta y la flecha respecto al elemento resaltado
+  function positionCard(el){
+    const MARGIN=12;
+    const vw=window.innerWidth, vh=window.innerHeight;
 
-    // Horizontal: centrar sobre el elemento, clampeado a viewport
-    left=r.left+r.width/2-cw/2;
-    left=Math.max(margin,Math.min(left,vw-cw-margin));
+    requestAnimationFrame(()=>{
+      const cw=card.offsetWidth||370, ch=card.offsetHeight||200;
 
-    if(step.position==='bottom'){
-      top=r.bottom+16;
-      if(top+ch>vh-margin) top=r.top-ch-16;
-    } else if(step.position==='top'){
-      top=r.top-ch-16;
-      if(top<margin) top=r.bottom+16;
-    } else {
-      // center: posicionar en la mitad inferior de la pantalla
-      top=vh*0.55;
-    }
-    top=Math.max(margin,Math.min(top,vh-ch-margin));
-    card.style.left=left+'px';
-    card.style.top=top+'px';
-    card.style.bottom='';
+      if(!el){
+        card.style.left=Math.max(MARGIN,(vw-cw)/2)+'px';
+        card.style.top=Math.max(MARGIN,(vh-ch)/2)+'px';
+        arrow.style.display='none';
+        return;
+      }
+
+      const r=el.getBoundingClientRect();
+      const PAD=8;
+      const holeTop=r.top-PAD, holeBottom=r.bottom+PAD;
+      const holeCX=r.left+r.width/2;
+
+      // Decidir si la tarjeta va arriba o abajo del agujero
+      const spaceBelow=vh-holeBottom-MARGIN;
+      const spaceAbove=holeTop-MARGIN;
+      const step=steps[current];
+
+      let cardTop, arrowTop, arrowBorderDir;
+
+      if(step.position==='above' || (spaceBelow<ch+40 && spaceAbove>ch+40)){
+        // Tarjeta ARRIBA del elemento → flecha apunta hacia abajo
+        cardTop=holeTop-ch-18;
+        cardTop=Math.max(MARGIN,cardTop);
+        arrowTop=cardTop+ch; // flecha justo debajo de la tarjeta
+        arrowBorderDir='down'; // flecha apunta hacia el elemento (abajo)
+      } else {
+        // Tarjeta ABAJO del elemento → flecha apunta hacia arriba
+        cardTop=holeBottom+18;
+        cardTop=Math.min(cardTop, vh-ch-MARGIN);
+        arrowTop=cardTop-12;
+        arrowBorderDir='up';
+      }
+
+      // Centrar horizontalmente sobre el elemento, clampeado
+      let cardLeft=holeCX-cw/2;
+      cardLeft=Math.max(MARGIN,Math.min(cardLeft,vw-cw-MARGIN));
+
+      card.style.top=cardTop+'px';
+      card.style.left=cardLeft+'px';
+
+      // Flecha: centrada sobre el elemento, pegada a la tarjeta
+      const arrowLeft=Math.max(cardLeft+16, Math.min(holeCX-10, cardLeft+cw-36));
+      arrow.style.left=arrowLeft+'px';
+      arrow.style.display='block';
+
+      if(arrowBorderDir==='up'){
+        arrow.style.top=arrowTop+'px';
+        arrow.style.borderBottom='12px solid var(--card,#fff)';
+        arrow.style.borderTop='none';
+        // Sombra hacia arriba
+        arrow.style.filter='drop-shadow(0 -3px 4px rgba(0,0,0,0.12))';
+      } else {
+        arrow.style.top=(arrowTop-2)+'px';
+        arrow.style.borderTop='12px solid var(--card,#fff)';
+        arrow.style.borderBottom='none';
+        arrow.style.filter='drop-shadow(0 3px 4px rgba(0,0,0,0.12))';
+      }
+    });
   }
 
   function render(){
     const s=steps[current];
     const isLast=current===steps.length-1;
-
     clearHighlight();
 
-    // 1. Navegar al tab si hace falta
-    if(s.tab && window.switchTab){
-      window.switchTab(s.tab);
-    }
+    // 1. Navegar al tab
+    if(s.tab && window.switchTab) window.switchTab(s.tab);
 
-    // 2. Después de que la página se renderice, buscar y resaltar el elemento
+    // 2. Esperar render de la página, luego localizar elemento
     setTimeout(()=>{
       let el=null;
-      if(s.selector){
-        try{ el=document.querySelector(s.selector); }catch(e){}
-      }
-      if(!el && s.selectorFallback){
-        try{ el=document.querySelector(s.selectorFallback); }catch(e){}
-      }
-      if(el){
-        el.classList.add('tut-highlighted');
-        _prevHighlighted=el;
-        el.scrollIntoView({behavior:'smooth',block:'nearest',inline:'nearest'});
-      }
-      // Re-posicionar la tarjeta con el elemento ya localizado
-      positionCard(el);
-    },320);
+      if(s.selector){ try{ el=document.querySelector(s.selector); }catch(e){} }
+      if(!el && s.selectorFallback){ try{ el=document.querySelector(s.selectorFallback); }catch(e){} }
 
-    // 3. Dots de progreso
+      updateHole(el);
+
+      if(el){
+        el.classList.add('tut-ring');
+        _prevEl=el;
+        el.scrollIntoView({behavior:'smooth',block:'nearest',inline:'nearest'});
+        // Dar tiempo al scroll para luego posicionar
+        setTimeout(()=>positionCard(el), 120);
+      } else {
+        positionCard(null);
+      }
+    }, 340);
+
+    // Dots de progreso
     const dots=steps.map((_,i)=>{
-      const cls=i===current?'tut-dot active':i<current?'tut-dot done':'tut-dot';
-      const w=i===current?'24px':'5px';
-      return `<div class="${cls}" style="display:inline-block;width:${w};height:5px;border-radius:3px;margin:0 2px"></div>`;
+      const isAct=i===current, isDone=i<current;
+      const bg=isAct?'#0A84FF':isDone?'rgba(10,132,255,0.38)':'rgba(150,150,150,0.22)';
+      const w=isAct?'22px':'5px';
+      return `<div style="display:inline-block;width:${w};height:5px;border-radius:3px;background:${bg};transition:all 0.3s cubic-bezier(0.34,1.2,0.64,1);margin:0 2px"></div>`;
     }).join('');
 
     card.innerHTML=`
-      <div style="height:3px;background:linear-gradient(90deg,#0A84FF,#5856D6,#BF5AF2)"></div>
+      <div style="height:3px;background:linear-gradient(90deg,#0A84FF,#5856D6,#BF5AF2);border-radius:22px 22px 0 0"></div>
       <button class="tut-close" style="
         position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:50%;
         background:rgba(0,0,0,0.06);border:none;font-size:12px;color:#86868b;
         cursor:pointer;display:flex;align-items:center;justify-content:center;
-        transition:background 0.15s;z-index:2;pointer-events:auto
+        transition:background 0.15s;z-index:2
       ">✕</button>
-      <div style="padding:18px 18px 0">
-        <div style="font-size:15px;font-weight:800;letter-spacing:-0.03em;color:var(--text,#1d1d1f);padding-right:28px;margin-bottom:6px">${s.title}</div>
-        <div style="font-size:12px;color:var(--text2,#86868b);line-height:1.65">${s.desc}</div>
+      <div style="padding:16px 16px 0">
+        <div style="font-size:14px;font-weight:800;letter-spacing:-0.03em;color:var(--text,#1d1d1f);padding-right:28px;margin-bottom:5px">${s.title}</div>
+        <div style="font-size:11.5px;color:var(--text2,#86868b);line-height:1.7">${s.desc}</div>
       </div>
-      <div style="padding:14px 18px 16px;border-top:1px solid rgba(0,0,0,0.05);margin-top:14px">
+      <div style="padding:12px 16px 14px;border-top:1px solid rgba(0,0,0,0.05);margin-top:12px">
         <div style="display:flex;align-items:center;justify-content:space-between">
-          <div style="display:flex;align-items:center;gap:0">${dots}</div>
-          <div style="display:flex;gap:8px;align-items:center">
+          <div style="display:flex;align-items:center">${dots}</div>
+          <div style="display:flex;gap:7px;align-items:center">
             ${current>0?`<button class="tut-prev" style="
-              padding:8px 14px;border-radius:50px;
-              border:1.5px solid rgba(0,0,0,0.1);
+              padding:7px 13px;border-radius:50px;
+              border:1.5px solid rgba(0,0,0,0.10);
               background:none;color:var(--text2,#86868b);
               font-size:12px;font-weight:600;cursor:pointer;
-              font-family:inherit;transition:all 0.15s;pointer-events:auto
+              font-family:inherit;transition:all 0.15s
             ">← ${es?'Anterior':'Back'}</button>`:''}
             <button class="tut-next" style="
-              padding:9px ${isLast?'20px':'16px'};border-radius:50px;border:none;
+              padding:8px ${isLast?'20px':'15px'};border-radius:50px;border:none;
               background:linear-gradient(135deg,#0A84FF,#5856D6);
-              color:#fff;font-size:13px;font-weight:700;cursor:pointer;
-              font-family:inherit;transition:all 0.2s;pointer-events:auto;
-              box-shadow:0 4px 14px rgba(10,132,255,0.35)
+              color:#fff;font-size:12px;font-weight:700;cursor:pointer;
+              font-family:inherit;transition:all 0.2s;
+              box-shadow:0 4px 12px rgba(10,132,255,0.38)
             ">${isLast?(es?'¡Empezar! 🚀':'Let\'s go! 🚀'):(es?'Siguiente →':'Next →')}</button>
           </div>
         </div>
-        <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--text3,#aeaeb2);font-weight:600;letter-spacing:0.03em">
+        <div style="text-align:center;margin-top:7px;font-size:10px;color:var(--text3,#aeaeb2);font-weight:600;letter-spacing:0.04em">
           ${current+1} / ${steps.length}
         </div>
       </div>
     `;
 
-    // Posición inicial (antes de que aparezca el elemento)
-    positionCard(null);
+    // Posición inicial centrada mientras carga el tab
+    const vw=window.innerWidth, vh=window.innerHeight;
+    const cw=390, ch=210;
+    card.style.left=Math.max(12,(vw-cw)/2)+'px';
+    card.style.top=Math.max(12,(vh-ch)/2)+'px';
+    arrow.style.display='none';
 
-    // Eventos
-    card.querySelector('.tut-close').onclick=()=>closeTutorial();
-    card.querySelector('.tut-next').onclick=()=>{
-      if(isLast){ closeTutorial(); }
-      else { current++; render(); }
-    };
+    card.querySelector('.tut-close').onclick=closeTutorial;
+    card.querySelector('.tut-next').onclick=()=>{ isLast?closeTutorial():(current++,render()); };
     const pb=card.querySelector('.tut-prev');
     if(pb) pb.onclick=()=>{ current--; render(); };
   }
 
   function closeTutorial(){
     clearHighlight();
-    overlay.remove();
-    card.remove();
+    updateHole(null);
+    svg.remove(); card.remove(); arrow.remove(); clickBlocker.remove();
     LS.set('tutorialDone',true);
   }
 
-  // Cerrar al hacer clic en el overlay (fuera de la tarjeta)
-  overlay.addEventListener('click', closeTutorial);
-  overlay.style.pointerEvents='auto';
+  // Recalcular posición en resize / scroll
+  function recalc(){
+    if(_prevEl){ updateHole(_prevEl); positionCard(_prevEl); }
+  }
+  window.addEventListener('resize',recalc);
+  window.addEventListener('scroll',recalc,true);
 
   render();
-
-  // Reposicionar en resize
-  window.addEventListener('resize',()=>{
-    const el=_prevHighlighted;
-    positionCard(el||null);
-  },{once:false});
 }
 window.showTutorial=showTutorial;
 
