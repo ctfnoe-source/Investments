@@ -4205,27 +4205,47 @@ function renderAjustes(){
             const fx=_fxCache||LS.get('fxCache');
             const isLive=fx&&isCacheFresh(fx.ts);
             const ts=isLive?new Date(fx.ts).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}):'';
-            const vUSD=isLive&&fx.usdmxn?fx.usdmxn.toFixed(2):(settings.tipoCambio);
-            const vEUR=isLive&&fx.eurmxn?fx.eurmxn.toFixed(2):(settings.tipoEUR);
-            const vGBP=isLive&&fx.gbpmxn?fx.gbpmxn.toFixed(2):(settings.tipoGBP);
-            const vCAD=isLive&&fx.cadmxn?fx.cadmxn.toFixed(2):(settings.tipoCAD||12.8);
-            const vJPY=isLive&&fx.jpymxn?fx.jpymxn.toFixed(4):(settings.tipoJPY||0.117);
-            const vCHF=isLive&&fx.chfmxn?fx.chfmxn.toFixed(2):(settings.tipoCHF||19.8);
+            const dm=settings.dashMoneda||'MXN';
+            // All rates stored as X per MXN. To show "X = Y {dm}", convert:
+            // If dm=MXN: show "USD = 17.73 MXN" (normal)
+            // If dm=USD: show "EUR = 1.15 USD", "MXN = 0.056 USD", etc.
+            const rates={
+              MXN:{v:1,          step:'0.01',   label:'MXN', flag:'🇲🇽', id:'',      save:''},
+              USD:{v:isLive&&fx.usdmxn?fx.usdmxn:(settings.tipoCambio||17.5), step:'0.01',   label:'MXN', flag:'🇺🇸', id:'inputTCUSD', save:'window.settings.tipoCambio=Number(this.value);saveAll()'},
+              EUR:{v:isLive&&fx.eurmxn?fx.eurmxn:(settings.tipoEUR||20),     step:'0.01',   label:'MXN', flag:'🇪🇺', id:'inputTCEUR', save:'window.settings.tipoEUR=Number(this.value);saveAll()'},
+              GBP:{v:isLive&&fx.gbpmxn?fx.gbpmxn:(settings.tipoGBP||23),     step:'0.01',   label:'MXN', flag:'🇬🇧', id:'inputTCGBP', save:'window.settings.tipoGBP=Number(this.value);saveAll()'},
+              CAD:{v:isLive&&fx.cadmxn?fx.cadmxn:(settings.tipoCAD||12.8),   step:'0.01',   label:'MXN', flag:'🇨🇦', id:'inputTCCAD', save:'window.settings.tipoCAD=Number(this.value);saveAll()'},
+              JPY:{v:isLive&&fx.jpymxn?fx.jpymxn:(settings.tipoJPY||0.117),  step:'0.0001', label:'MXN', flag:'🇯🇵', id:'inputTCJPY', save:'window.settings.tipoJPY=Number(this.value);saveAll()'},
+              CHF:{v:isLive&&fx.chfmxn?fx.chfmxn:(settings.tipoCHF||19.8),   step:'0.01',   label:'MXN', flag:'🇨🇭', id:'inputTCCHF', save:'window.settings.tipoCHF=Number(this.value);saveAll()'},
+            };
+            // Convert all rates to be relative to dashMoneda
+            const baseMxn = rates[dm]?.v || 1; // how many MXN = 1 {dm}
+            const convert = (mxnPer1unit) => dm==='MXN' ? mxnPer1unit : (mxnPer1unit/baseMxn);
+            const outLabel = dm;
+            const outStep = dm==='JPY'?'1':dm==='MXN'?'0.01':'0.0001';
+            const currencies = ['USD','EUR','GBP','CAD','JPY','CHF'].filter(k=>k!==dm);
             const statusBadge=isLive
               ? '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:var(--green)"><span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block"></span>'+t('liveECB')+' · '+ts+'</div>'
               : '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:var(--orange)"><span style="width:7px;height:7px;border-radius:50%;background:var(--orange);display:inline-block"></span>'+t('manual')+' · '+t('pressUpdate')+'</div>';
+            // Always show MXN row first if dm!=MXN, then others
+            const showMXN = dm!=='MXN';
+            const rows = (showMXN?['MXN']:[]).concat(currencies);
+            const inputs = rows.map(k=>{
+              const r=rates[k];
+              const val=Number(convert(r.v)).toFixed(k==='JPY'?(dm==='MXN'?4:2):2);
+              const editable=!!r.save && dm==='MXN'; // only editable in MXN base mode
+              const inp=editable
+                ? `<input type="number" step="${r.step}" id="${r.id}" class="form-input" style="width:100px;font-size:16px;font-weight:700;text-align:center" value="${val}" onchange="${r.save}">`
+                : `<span style="width:100px;font-size:16px;font-weight:700;text-align:center;display:inline-block;padding:8px;background:var(--card2);border-radius:10px">${val}</span>`;
+              return `<div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--text2);width:54px">${r.flag} ${k} =</span>${inp}<span style="font-size:12px;color:var(--text2)">${outLabel}</span></div>`;
+            }).join('');
             return statusBadge
-              + '<div style="display:flex;flex-direction:column;gap:10px">'
-              + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">🇺🇸 USD =</span><input type="number" step="0.01" id="inputTCUSD" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vUSD+'" onchange="window.settings.tipoCambio=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
-              + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">🇪🇺 EUR =</span><input type="number" step="0.01" id="inputTCEUR" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vEUR+'" onchange="window.settings.tipoEUR=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
-              + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">🇬🇧 GBP =</span><input type="number" step="0.01" id="inputTCGBP" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vGBP+'" onchange="window.settings.tipoGBP=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
-              + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">🇨🇦 CAD =</span><input type="number" step="0.01" id="inputTCCAD" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vCAD+'" onchange="window.settings.tipoCAD=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
-              + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">🇯🇵 JPY =</span><input type="number" step="0.0001" id="inputTCJPY" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vJPY+'" onchange="window.settings.tipoJPY=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
-              + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;color:var(--text2);width:60px">🇨🇭 CHF =</span><input type="number" step="0.01" id="inputTCCHF" class="form-input" style="width:110px;font-size:18px;font-weight:700;text-align:center" value="'+vCHF+'" onchange="window.settings.tipoCHF=Number(this.value);saveAll()"><span style="font-size:12px;color:var(--text2)">MXN</span></div>'
-              + '<button class="btn btn-secondary btn-sm" onclick="forceUpdateFX()">🔄 '+t('updateLive')+'</button>'
+              + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+              + inputs
               + '</div>';
           })()}
         </div>
+        <div style="margin-top:10px"><button class="btn btn-secondary btn-sm" style="width:100%" onclick="forceUpdateFX()">🔄 updateLive</button></div>
       </div>
       <div class="card">
         <div class="card-title">💱 ${_lang==='es'?'Moneda del Dashboard':'Dashboard Currency'}</div>
