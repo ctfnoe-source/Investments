@@ -4337,6 +4337,21 @@ function renderAjustes(){
       </div>
 
     </div>
+        <!-- Tarjeta de contacto -->
+    <div class="card" style="margin-top:16px;background:linear-gradient(135deg,rgba(10,132,255,0.04),rgba(91,86,214,0.06));border:1px solid rgba(10,132,255,0.15)">
+      <div class="card-title" style="margin-bottom:10px">💬 ${_lang==='es'?'¿Necesitas ayuda?':'Need help?'}</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:14px">
+        ${_lang==='es'
+          ?'Si tienes dudas sobre cómo configurar tu API key, cómo usar alguna función o cualquier otra pregunta, escríbeme directamente. Te respondo personalmente.'
+          :"If you have questions about setting up your API key, how to use any feature, or anything else, message me directly. I'll reply personally."
+        }
+      </div>
+      <a href="https://www.facebook.com/profile.php?id=61570831467046" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:13px 20px;border-radius:14px;background:linear-gradient(135deg,#1877F2,#0A5EC4);color:#fff;font-size:14px;font-weight:700;text-decoration:none;box-shadow:0 4px 14px rgba(24,119,242,0.3);transition:opacity 0.15s,transform 0.15s" onmouseover="this.style.opacity='0.88';this.style.transform='translateY(-1px)'" onmouseout="this.style.opacity='1';this.style.transform='translateY(0)'">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.269h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
+        ${_lang==='es'?'Escríbeme en Facebook':'Message me on Facebook'}
+      </a>
+    </div>
+
     <div class="card" style="margin-top:16px"><div class="card-title">${t('zonaPeligro')}</div><button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="resetAll()">🗑 ${t('resetAll')}</button></div>
     ${isAdmin ? adminFirebaseRulesHTML : ''}
   `;
@@ -5494,10 +5509,13 @@ function showTutorial(){
               <div style="font-size:8px;color:#86868b">${a.desc}</div>
             </div>
           </div>`).join('')}
-        <div style="background:linear-gradient(135deg,rgba(10,132,255,0.06),rgba(91,86,214,0.08));border:1px solid rgba(10,132,255,0.15);border-radius:10px;padding:10px 12px;margin-top:2px;display:flex;align-items:center;gap:10px">
-          <div style="font-size:22px;flex-shrink:0">🙋</div>
-          <div style="font-size:9px;color:#1d1d1f;line-height:1.6"><strong>${es?'¿No sabes cómo crearla?':'Don\'t know how to create it?'}</strong><br>${es?'Contáctame y te ayudo personalmente paso a paso. Está incluido en tu acceso.':'Contact me and I\'ll personally help you step by step. It\'s included with your access.'}</div>
-        </div>
+        <a href="https://www.facebook.com/profile.php?id=61570831467046" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;background:linear-gradient(135deg,#1877F2,#0A5EC4);color:#fff;text-decoration:none;margin-top:6px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.269h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
+          <div>
+            <div style="font-size:10px;font-weight:800">${es?'¿No sabes cómo crearla?':'Don\'t know how to create it?'}</div>
+            <div style="font-size:8px;opacity:0.85">${es?'Escríbeme en Facebook — te ayudo paso a paso':'Message me on Facebook — I\'ll guide you step by step'}</div>
+          </div>
+        </a>
       </div>`,
   };
 
@@ -5570,8 +5588,8 @@ function showTutorial(){
       key:'ajustes',
       title:es?'⚙️ Ajustes — Tu configuración personal':'⚙️ Settings — Your personal setup',
       desc:es
-        ?'Cada usuario usa <strong>sus propias API keys gratuitas</strong>. ¿Por qué? Si yo pusiera una sola para todos tendría que pagar cientos de euros al mes y cobrarte suscripción. Con tu cuenta gratuita propia tienes de sobra. <strong>Si no sabes cómo crearla, contáctame — te ayudo personalmente.</strong>'
-        :'Each user uses <strong>their own free API keys</strong>. Why? If I used one shared key I\'d pay hundreds per month and charge you a subscription. Your own free account is more than enough. <strong>If you don\'t know how to create one, contact me — I\'ll help you personally.</strong>',
+        ?'Cada usuario usa <strong>sus propias API keys gratuitas</strong>. ¿Por qué? Si yo pusiera una clave compartida para todos, el coste sería enorme y tendría que cobrarte suscripción mensual. Con tu propia cuenta gratuita tienes de sobra para uso personal. <strong>¿No sabes cómo crearla? Escríbeme en Facebook y te ayudo paso a paso — es parte del servicio.</strong>'
+        :'Each user uses <strong>their own free API keys</strong>. Why? If I used one shared key the cost would be huge and I\'d have to charge you monthly. Your own free account is more than enough for personal use. <strong>Don\'t know how to create one? Message me on Facebook and I\'ll guide you step by step — it\'s part of the service.</strong>',
       mockup:'ajustes',
     },
   ];
