@@ -249,8 +249,8 @@ body {
   box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 -3px 0 rgba(0,0,0,0.3) inset, 0 6px 20px rgba(0,0,0,0.3) !important;
 }
 .stat:hover {
-  transform: translateY(-5px) scale(1.02) !important;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -4px 0 rgba(0,0,0,0.12) inset, 0 16px 40px rgba(0,0,0,0.12) !important;
+  transform: translateY(-3px) scale(1.01) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -2px 0 rgba(0,0,0,0.05) inset, 0 8px 20px rgba(0,0,0,0.05) !important;
 }
 .stat::before { content:''; position:absolute; top:0; left:10%; right:10%; height:1px; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.8),transparent); }
 .stat::after { content:''; position:absolute; top:-40px; right:-20px; width:100px; height:100px; border-radius:50%; background:radial-gradient(circle,rgba(255,255,255,0.3) 0%,transparent 70%); pointer-events:none; }
@@ -427,13 +427,13 @@ tr:hover td { background: var(--table-row-hover); }
 .stat-teal   .stat-label { color: #007A73; }
 .stat-red    .stat-label { color: #C0271A; }
 
-/* Hover shadow — bajado al 50% */
-.stat-blue:hover   { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -4px 0 rgba(0,0,0,0.08) inset, 0 16px 36px rgba(10,132,255,0.05) !important; }
-.stat-green:hover  { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -4px 0 rgba(0,0,0,0.08) inset, 0 16px 36px rgba(48,209,88,0.05) !important; }
-.stat-purple:hover { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -4px 0 rgba(0,0,0,0.08) inset, 0 16px 36px rgba(191,90,242,0.05) !important; }
-.stat-orange:hover { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -4px 0 rgba(0,0,0,0.08) inset, 0 16px 36px rgba(255,159,10,0.05) !important; }
-.stat-teal:hover   { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -4px 0 rgba(0,0,0,0.08) inset, 0 16px 36px rgba(0,199,190,0.05) !important; }
-.stat-red:hover    { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -4px 0 rgba(0,0,0,0.08) inset, 0 16px 36px rgba(255,69,58,0.05) !important; }
+/* Hover shadow — apenas visible */
+.stat-blue:hover   { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -2px 0 rgba(0,0,0,0.05) inset, 0 8px 20px rgba(10,132,255,0.04) !important; }
+.stat-green:hover  { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -2px 0 rgba(0,0,0,0.05) inset, 0 8px 20px rgba(48,209,88,0.04) !important; }
+.stat-purple:hover { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -2px 0 rgba(0,0,0,0.05) inset, 0 8px 20px rgba(191,90,242,0.04) !important; }
+.stat-orange:hover { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -2px 0 rgba(0,0,0,0.05) inset, 0 8px 20px rgba(255,159,10,0.04) !important; }
+.stat-teal:hover   { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -2px 0 rgba(0,0,0,0.05) inset, 0 8px 20px rgba(0,199,190,0.04) !important; }
+.stat-red:hover    { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -2px 0 rgba(0,0,0,0.05) inset, 0 8px 20px rgba(255,69,58,0.04) !important; }
 
 [data-theme="dark"] .stat-blue   { background: linear-gradient(155deg, #1C1C1E 0%, #131e30 100%) !important; }
 [data-theme="dark"] .stat-green  { background: linear-gradient(155deg, #1C1C1E 0%, #0e2016 100%) !important; }
