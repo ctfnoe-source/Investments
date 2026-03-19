@@ -3198,6 +3198,10 @@ function renderPlataformas(){
     </div>
     ${platsConTasa.length>0?`<div class="yield-info" style="margin-bottom:16px">⚡ <strong>${platsConTasa.length} ${t('plataformasConTasa')}</strong> · ${t('rendimientoAutoTotal')}: <strong>${fmtFull(totalRendAuto)}</strong></div>`:''}
     <div class="card-flat card-accent-gold">
+      ${isMobile() ? `
+        <div style="display:flex;flex-direction:column;gap:10px;padding:12px">
+          ${plats.map((p,i)=>{
+            const cur=p.moneda||'MXN';
             const tasaBadge=p.tasaAnual>0?`<span class="tasa-badge${p.tasaAnual>=10?' alta':p.tasaAnual>=5?' media':''}">${p.tasaAnual}%</span>`:'';
             const rendAutoStr=p.rendimientoAuto>0?`<span style="color:var(--teal);font-weight:700">⚡+${fmtFull(p.rendimientoAuto,cur)}</span>`:'';
             const pctPort=total>0?((platSaldoToMXN(p)/total)*100).toFixed(1)+'%':'0%';
