@@ -4659,7 +4659,7 @@ function _renderAiChat() {
         <div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:6px">${t('financialAssistant')}</div>
         <div style="font-size:12px;line-height:1.6">${t('iaAskMe')}</div>
         <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
-          ${(_getAiSuggestions()||[]).map(s=>`<button onclick="window._aiSendSuggestion(${JSON.stringify(s)})" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:12px;cursor:pointer;color:var(--text);text-align:left;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--border)'">${s}</button>`).join('')}
+          ${(_getAiSuggestions()||[]).map((s,i)=>`<button data-sug-idx="${i}" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:12px;cursor:pointer;color:var(--text);text-align:left;transition:all 0.15s" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--border)'">${escHtml(s)}</button>`).join('')}
         </div>
       </div>`
     : _aiMessages.map(m => {
@@ -4703,7 +4703,17 @@ function _renderAiChat() {
 
   setTimeout(() => {
     const c = document.getElementById('aiMsgsContainer');
-    if (c) c.scrollTop = c.scrollHeight;
+    if (c) {
+      c.scrollTop = c.scrollHeight;
+      // Manejar clicks en sugerencias predeterminadas de forma segura
+      c.querySelectorAll('[data-sug-idx]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.getAttribute('data-sug-idx'), 10);
+          const sugs = _getAiSuggestions() || [];
+          if (sugs[idx]) window._aiSendSuggestion(sugs[idx]);
+        });
+      });
+    }
   }, 30);
 }
 
@@ -5502,10 +5512,10 @@ function showTutorial(){
     },
     {
       key:'plataformas',
-      title:es?'🏦 Plataformas — ¿Qué son?':'🏦 Platforms — What are they?',
+      title:es?'🏦 Plataformas — Tu dinero en un solo lugar':'🏦 Platforms — All your money in one place',
       desc:es
-        ?'Son los lugares donde tienes dinero <strong>líquido o en fondos</strong>: cuenta corriente, cuenta de ahorro, fondo monetario, robo-advisor... <em>No es para acciones ni crypto</em> — eso va en Inversiones.'
-        :'These are places where you hold <strong>liquid money or funds</strong>: checking account, savings, money market, robo-advisor... <em>Not for stocks or crypto</em> — those go in Investments.',
+        ?'¿Tienes dinero repartido en varias cuentas, fondos monetarios o brókers que te pagan intereses? Aquí los centralizas todos y ves tu capital total de un vistazo. También puedes registrar <strong>transferencias entre plataformas</strong> — por ejemplo, mover el sobrante del sueldo a la que más rentabilidad te dé. Si tienes acciones en un bróker pero quieres llevar solo el saldo global sin detallar ticker por ticker, también puedes hacerlo aquí.'
+        :'Got money spread across accounts, money market funds or brokers that pay you interest? Centralize them all here and see your total capital at a glance. You can also log <strong>transfers between platforms</strong> — for example, moving your monthly surplus to the one with the best return. If you hold stocks in a broker but just want to track the overall balance without detailing each ticker, you can do that here too.',
       mockup:'plataformas',
     },
     {
