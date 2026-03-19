@@ -107,32 +107,32 @@ body {
 /* Ocultar sub-monedas (MXN/USD/EUR/tc) de la nav — liberan espacio para los 7 tabs */
 #navSub { display: none !important; }
 
-/* ── Color único por tab ── */
-.nav-tab[data-tab="dashboard"]   { color: var(--blue);   border-color: rgba(10,132,255,0.22);  background: rgba(10,132,255,0.07); }
-.nav-tab[data-tab="movimientos"] { color: var(--teal);   border-color: rgba(0,199,190,0.22);   background: rgba(0,199,190,0.07); }
-.nav-tab[data-tab="plataformas"] { color: var(--purple); border-color: rgba(191,90,242,0.22);  background: rgba(191,90,242,0.07); }
-.nav-tab[data-tab="inversiones"] { color: var(--green);  border-color: rgba(48,209,88,0.22);   background: rgba(48,209,88,0.07); }
-.nav-tab[data-tab="gastos"]      { color: var(--orange); border-color: rgba(255,159,10,0.22);  background: rgba(255,159,10,0.07); }
-.nav-tab[data-tab="metas"]       { color: #FF375F;       border-color: rgba(255,55,95,0.22);   background: rgba(255,55,95,0.07); }
-.nav-tab[data-tab="ajustes"]     { color: var(--text2);  border-color: rgba(128,128,128,0.22); background: rgba(128,128,128,0.07); }
+/* ── Color único por tab — burbuja sutil, texto negro ── */
+.nav-tab[data-tab="dashboard"]   { color: var(--text); border-color: rgba(10,132,255,0.20);  background: rgba(10,132,255,0.07); }
+.nav-tab[data-tab="movimientos"] { color: var(--text); border-color: rgba(0,199,190,0.20);   background: rgba(0,199,190,0.07); }
+.nav-tab[data-tab="plataformas"] { color: var(--text); border-color: rgba(191,90,242,0.20);  background: rgba(191,90,242,0.07); }
+.nav-tab[data-tab="inversiones"] { color: var(--text); border-color: rgba(48,209,88,0.20);   background: rgba(48,209,88,0.07); }
+.nav-tab[data-tab="gastos"]      { color: var(--text); border-color: rgba(255,159,10,0.20);  background: rgba(255,159,10,0.07); }
+.nav-tab[data-tab="metas"]       { color: var(--text); border-color: rgba(255,55,95,0.20);   background: rgba(255,55,95,0.07); }
+.nav-tab[data-tab="ajustes"]     { color: var(--text); border-color: rgba(128,128,128,0.20); background: rgba(128,128,128,0.07); }
 
-/* hover — un poco más intenso que reposo, sombra muy suave */
-.nav-tab[data-tab="dashboard"]:hover   { background: rgba(10,132,255,0.14);  border-color: rgba(10,132,255,0.38);  box-shadow: 0 2px 8px rgba(10,132,255,0.10); }
-.nav-tab[data-tab="movimientos"]:hover { background: rgba(0,199,190,0.14);   border-color: rgba(0,199,190,0.38);   box-shadow: 0 2px 8px rgba(0,199,190,0.10); }
-.nav-tab[data-tab="plataformas"]:hover { background: rgba(191,90,242,0.14);  border-color: rgba(191,90,242,0.38);  box-shadow: 0 2px 8px rgba(191,90,242,0.10); }
-.nav-tab[data-tab="inversiones"]:hover { background: rgba(48,209,88,0.14);   border-color: rgba(48,209,88,0.38);   box-shadow: 0 2px 8px rgba(48,209,88,0.10); }
-.nav-tab[data-tab="gastos"]:hover      { background: rgba(255,159,10,0.14);  border-color: rgba(255,159,10,0.38);  box-shadow: 0 2px 8px rgba(255,159,10,0.10); }
-.nav-tab[data-tab="metas"]:hover       { background: rgba(255,55,95,0.14);   border-color: rgba(255,55,95,0.38);   color: #FF375F; box-shadow: 0 2px 8px rgba(255,55,95,0.10); }
-.nav-tab[data-tab="ajustes"]:hover     { background: rgba(128,128,128,0.12); border-color: rgba(128,128,128,0.38); color: var(--text); box-shadow: 0 2px 6px rgba(128,128,128,0.08); }
+/* hover — mismo color un poco más intenso, texto negro */
+.nav-tab[data-tab="dashboard"]:hover   { background: rgba(10,132,255,0.13);  border-color: rgba(10,132,255,0.32);  color: var(--text); box-shadow: none; }
+.nav-tab[data-tab="movimientos"]:hover { background: rgba(0,199,190,0.13);   border-color: rgba(0,199,190,0.32);   color: var(--text); box-shadow: none; }
+.nav-tab[data-tab="plataformas"]:hover { background: rgba(191,90,242,0.13);  border-color: rgba(191,90,242,0.32);  color: var(--text); box-shadow: none; }
+.nav-tab[data-tab="inversiones"]:hover { background: rgba(48,209,88,0.13);   border-color: rgba(48,209,88,0.32);   color: var(--text); box-shadow: none; }
+.nav-tab[data-tab="gastos"]:hover      { background: rgba(255,159,10,0.13);  border-color: rgba(255,159,10,0.32);  color: var(--text); box-shadow: none; }
+.nav-tab[data-tab="metas"]:hover       { background: rgba(255,55,95,0.13);   border-color: rgba(255,55,95,0.32);   color: var(--text); box-shadow: none; }
+.nav-tab[data-tab="ajustes"]:hover     { background: rgba(128,128,128,0.13); border-color: rgba(128,128,128,0.32); color: var(--text); box-shadow: none; }
 
-/* active — fondo semitransparente (no sólido al 100%), texto del color, sin sombra fuerte */
-.nav-tab[data-tab="dashboard"].active   { background: rgba(10,132,255,0.18); border-color: rgba(10,132,255,0.50); color: var(--blue);   font-weight: 700; box-shadow: none; }
-.nav-tab[data-tab="movimientos"].active { background: rgba(0,199,190,0.18);  border-color: rgba(0,199,190,0.50);  color: var(--teal);   font-weight: 700; box-shadow: none; }
-.nav-tab[data-tab="plataformas"].active { background: rgba(191,90,242,0.18); border-color: rgba(191,90,242,0.50); color: var(--purple); font-weight: 700; box-shadow: none; }
-.nav-tab[data-tab="inversiones"].active { background: rgba(48,209,88,0.18);  border-color: rgba(48,209,88,0.50);  color: var(--green);  font-weight: 700; box-shadow: none; }
-.nav-tab[data-tab="gastos"].active      { background: rgba(255,159,10,0.18); border-color: rgba(255,159,10,0.50); color: var(--orange); font-weight: 700; box-shadow: none; }
-.nav-tab[data-tab="metas"].active       { background: rgba(255,55,95,0.18);  border-color: rgba(255,55,95,0.50);  color: #FF375F;       font-weight: 700; box-shadow: none; }
-.nav-tab[data-tab="ajustes"].active     { background: rgba(128,128,128,0.18);border-color: rgba(128,128,128,0.50);color: var(--text2);  font-weight: 700; box-shadow: none; }
+/* active — burbuja más opaca del mismo color, texto negro, sin sombra */
+.nav-tab[data-tab="dashboard"].active   { background: rgba(10,132,255,0.20); border-color: rgba(10,132,255,0.42); color: var(--text); font-weight: 700; box-shadow: none; }
+.nav-tab[data-tab="movimientos"].active { background: rgba(0,199,190,0.20);  border-color: rgba(0,199,190,0.42);  color: var(--text); font-weight: 700; box-shadow: none; }
+.nav-tab[data-tab="plataformas"].active { background: rgba(191,90,242,0.20); border-color: rgba(191,90,242,0.42); color: var(--text); font-weight: 700; box-shadow: none; }
+.nav-tab[data-tab="inversiones"].active { background: rgba(48,209,88,0.20);  border-color: rgba(48,209,88,0.42);  color: var(--text); font-weight: 700; box-shadow: none; }
+.nav-tab[data-tab="gastos"].active      { background: rgba(255,159,10,0.20); border-color: rgba(255,159,10,0.42); color: var(--text); font-weight: 700; box-shadow: none; }
+.nav-tab[data-tab="metas"].active       { background: rgba(255,55,95,0.20);  border-color: rgba(255,55,95,0.42);  color: var(--text); font-weight: 700; box-shadow: none; }
+.nav-tab[data-tab="ajustes"].active     { background: rgba(128,128,128,0.20);border-color: rgba(128,128,128,0.42);color: var(--text); font-weight: 700; box-shadow: none; }
 
 /* ── Encabezados de tabla: fondo sutil de color + texto más oscuro ── */
 /* Colores únicos para tablas simples */
@@ -146,35 +146,6 @@ body {
 [data-theme="dark"] .th-green  th { background: rgba(48,209,88,0.10);   color: #5FE88A; }
 [data-theme="dark"] .th-orange th { background: rgba(255,159,10,0.10);  color: #FFB733; }
 [data-theme="dark"] .th-red    th { background: rgba(255,69,58,0.10);   color: #FF7A72; }
-
-/* MOVIMIENTOS — cada columna su color: Fecha=azul, Sección=teal, Detalle=neutro, Tipo=verde, Monto=naranja, Extra=dorado, Notas=neutro, Acciones=neutro */
-.th-movimientos th:nth-child(1) { background: rgba(10,132,255,0.07);  color: #0060CC;  border-bottom: 1.5px solid rgba(10,132,255,0.18); }
-.th-movimientos th:nth-child(2) { background: rgba(0,199,190,0.07);   color: #008C85;  border-bottom: 1.5px solid rgba(0,199,190,0.18); }
-.th-movimientos th:nth-child(3) { background: var(--table-head-bg);   color: var(--text2); border-bottom: 1px solid var(--bg); }
-.th-movimientos th:nth-child(4) { background: rgba(48,209,88,0.07);   color: #1A8A3A;  border-bottom: 1.5px solid rgba(48,209,88,0.18); }
-.th-movimientos th:nth-child(5) { background: rgba(255,159,10,0.07);  color: #B86A00;  border-bottom: 1.5px solid rgba(255,159,10,0.18); }
-.th-movimientos th:nth-child(6) { background: rgba(198,138,0,0.07);   color: #8B6400;  border-bottom: 1.5px solid rgba(198,138,0,0.18); }
-.th-movimientos th:nth-child(7) { background: var(--table-head-bg);   color: var(--text2); border-bottom: 1px solid var(--bg); }
-.th-movimientos th:nth-child(8) { background: var(--table-head-bg);   color: var(--text2); border-bottom: 1px solid var(--bg); }
-
-/* PLATAFORMAS — cada columna su color */
-.th-plataformas th:nth-child(1)  { background: var(--table-head-bg);  color: var(--text2); border-bottom: 1px solid var(--bg); }
-.th-plataformas th:nth-child(2)  { background: rgba(198,138,0,0.07);  color: #8B6400;  border-bottom: 1.5px solid rgba(198,138,0,0.18); }
-.th-plataformas th:nth-child(3)  { background: rgba(0,199,190,0.07);  color: #008C85;  border-bottom: 1.5px solid rgba(0,199,190,0.18); }
-.th-plataformas th:nth-child(4)  { background: rgba(10,132,255,0.07); color: #0060CC;  border-bottom: 1.5px solid rgba(10,132,255,0.18); }
-.th-plataformas th:nth-child(5)  { background: rgba(48,209,88,0.07);  color: #1A8A3A;  border-bottom: 1.5px solid rgba(48,209,88,0.18); }
-.th-plataformas th:nth-child(6)  { background: rgba(255,159,10,0.07); color: #B86A00;  border-bottom: 1.5px solid rgba(255,159,10,0.18); }
-.th-plataformas th:nth-child(7)  { background: var(--table-head-bg);  color: var(--text2); border-bottom: 1px solid var(--bg); }
-.th-plataformas th:nth-child(8)  { background: var(--table-head-bg);  color: var(--text2); border-bottom: 1px solid var(--bg); }
-.th-plataformas th:nth-child(9)  { background: rgba(48,209,88,0.07);  color: #1A8A3A;  border-bottom: 1.5px solid rgba(48,209,88,0.18); }
-.th-plataformas th:nth-child(10) { background: rgba(255,69,58,0.07);  color: #C0271A;  border-bottom: 1.5px solid rgba(255,69,58,0.18); }
-.th-plataformas th:nth-child(11) { background: rgba(255,159,10,0.07); color: #B86A00;  border-bottom: 1.5px solid rgba(255,159,10,0.18); }
-.th-plataformas th:nth-child(12) { background: rgba(0,199,190,0.07);  color: #008C85;  border-bottom: 1.5px solid rgba(0,199,190,0.18); }
-.th-plataformas th:nth-child(13) { background: rgba(48,209,88,0.07);  color: #1A8A3A;  border-bottom: 1.5px solid rgba(48,209,88,0.18); }
-.th-plataformas th:nth-child(14) { background: rgba(48,209,88,0.07);  color: #1A8A3A;  border-bottom: 1.5px solid rgba(48,209,88,0.18); }
-.th-plataformas th:nth-child(15) { background: rgba(48,209,88,0.07);  color: #1A8A3A;  border-bottom: 1.5px solid rgba(48,209,88,0.18); }
-.th-plataformas th:nth-child(16) { background: rgba(10,132,255,0.07); color: #0060CC;  border-bottom: 1.5px solid rgba(10,132,255,0.18); }
-.th-plataformas th:nth-child(17) { background: var(--table-head-bg);  color: var(--text2); border-bottom: 1px solid var(--bg); }
 .dark-toggle {
   width: 44px; height: 26px; border-radius: 13px;
   background: var(--text3); border: none; cursor: pointer;
@@ -241,16 +212,16 @@ body {
 .stat {
   padding: 20px 20px 16px; position: relative; overflow: hidden;
   background: var(--stat-bg); border-radius: 18px !important; border: none !important;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -3px 0 rgba(0,0,0,0.10) inset, 0 6px 20px rgba(0,0,0,0.08) !important;
+  box-shadow: var(--shadow) !important;
   transition: transform 0.18s cubic-bezier(.34,1.56,.64,1), box-shadow 0.18s ease, background 0.3s !important;
   cursor: default;
 }
 [data-theme="dark"] .stat {
-  box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 -3px 0 rgba(0,0,0,0.3) inset, 0 6px 20px rgba(0,0,0,0.3) !important;
+  box-shadow: var(--shadow) !important;
 }
 .stat:hover {
-  transform: translateY(-3px) scale(1.01) !important;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -2px 0 rgba(0,0,0,0.05) inset, 0 8px 20px rgba(0,0,0,0.05) !important;
+  transform: translateY(-2px) scale(1.01) !important;
+  box-shadow: var(--shadow-hover) !important;
 }
 .stat::before { content:''; position:absolute; top:0; left:10%; right:10%; height:1px; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.8),transparent); }
 .stat::after { content:''; position:absolute; top:-40px; right:-20px; width:100px; height:100px; border-radius:50%; background:radial-gradient(circle,rgba(255,255,255,0.3) 0%,transparent 70%); pointer-events:none; }
@@ -427,13 +398,7 @@ tr:hover td { background: var(--table-row-hover); }
 .stat-teal   .stat-label { color: #007A73; }
 .stat-red    .stat-label { color: #C0271A; }
 
-/* Hover shadow — apenas visible */
-.stat-blue:hover   { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -2px 0 rgba(0,0,0,0.05) inset, 0 8px 20px rgba(10,132,255,0.04) !important; }
-.stat-green:hover  { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -2px 0 rgba(0,0,0,0.05) inset, 0 8px 20px rgba(48,209,88,0.04) !important; }
-.stat-purple:hover { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -2px 0 rgba(0,0,0,0.05) inset, 0 8px 20px rgba(191,90,242,0.04) !important; }
-.stat-orange:hover { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -2px 0 rgba(0,0,0,0.05) inset, 0 8px 20px rgba(255,159,10,0.04) !important; }
-.stat-teal:hover   { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -2px 0 rgba(0,0,0,0.05) inset, 0 8px 20px rgba(0,199,190,0.04) !important; }
-.stat-red:hover    { box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 -2px 0 rgba(0,0,0,0.05) inset, 0 8px 20px rgba(255,69,58,0.04) !important; }
+/* Sin sombras de color en hover — usa la sombra base de .stat:hover */
 
 [data-theme="dark"] .stat-blue   { background: linear-gradient(155deg, #1C1C1E 0%, #131e30 100%) !important; }
 [data-theme="dark"] .stat-green  { background: linear-gradient(155deg, #1C1C1E 0%, #0e2016 100%) !important; }
