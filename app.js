@@ -2913,10 +2913,9 @@ function renderMovimientos(){
   const emptyHtml = isEmpty ? `<tr><td colspan="8">${emptyContent}</td></tr>` : '';
 
   document.getElementById('page-movimientos').innerHTML=`
-    <div style="display:flex;justify-content:center;align-items:center;margin-bottom:12px;gap:16px;flex-wrap:wrap;text-align:center">
-      <div class="section-title" style="margin:0">${t('movimientosTitulo')}</div>
-      <div class="section-sub" style="margin:0">${t('movimientosSubtitulo')} · ${movements.length} ${t('totalLabel')}</div>
-      <button class="btn btn-primary" onclick="openMovModal()">${t('nuevoMovimiento')}</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text2);margin:0">${t('movimientosTitulo').toUpperCase()}</div>
+      <button class="btn btn-primary btn-sm" onclick="openMovModal()">${t('nuevoMovimiento')}</button>
     </div>
     <div class="filter-pills">
       ${['todas','plataformas','inversiones','gastos'].map(s=>`<button class="pill mov-pill ${movFilter.seccion===s?'active':''}" data-sec="${s}" onclick="movFilter.seccion='${s}';renderMovimientos()">${s==='todas'?t('todo'):s==='plataformas'?t('seccionPlataformas'):s==='inversiones'?t('seccionInversiones'):t('seccionGastos')}</button>`).join('')}
@@ -3148,11 +3147,12 @@ function renderPlataformas(){
   const totalRendAuto=plats.reduce((s,p)=>s+(p.rendimientoAuto||0),0);
   const platsConTasa=plats.filter(p=>(p.tasaAnual||0)>0);
   document.getElementById('page-plataformas').innerHTML=`
-    <div style="display:flex;justify-content:center;align-items:center;margin-bottom:12px;gap:16px;flex-wrap:wrap;text-align:center">
-      <div class="section-title" style="margin:0">${t('plataformasTitulo')}</div>
-      <div class="section-sub" style="margin:0">${t('plataformasSubtitulo')}</div>
-      <button class="btn btn-secondary btn-sm" onclick="openMovModal('transferencia')">↔ ${t('transferencia')}</button>
-      <button class="btn btn-secondary btn-sm" onclick="openAddPlatformModal()">${t('nuevaPlataforma')}</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text2);margin:0">${t('plataformasTitulo').toUpperCase()}</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary btn-sm" onclick="openMovModal('transferencia')">↔ ${t('transferencia')}</button>
+        <button class="btn btn-secondary btn-sm" onclick="openAddPlatformModal()">${t('nuevaPlataforma')}</button>
+      </div>
     </div>
     ${platsConTasa.length>0?`<div class="yield-info" style="margin-bottom:16px">⚡ <strong>${platsConTasa.length} ${t('plataformasConTasa')}</strong> · ${t('rendimientoAutoTotal')}: <strong>${fmtFull(totalRendAuto)}</strong></div>`:''}
     <div class="card-flat">
@@ -3388,18 +3388,20 @@ function renderGastos(){
   const movRows=mesMovs.length>0?mesMovs.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).map(m=>`<tr><td style="color:var(--text2);font-size:12px">${m.fecha}</td><td style="font-weight:500">${m.tipo==='Ingreso'?'💰 '+t('ingreso'):catName(m.categoria)} ${m.esRecurrente?'<span class="badge badge-purple">🔄 '+t('auto')+'</span>':''}</td><td><span class="badge ${m.tipo==='Ingreso'?'badge-green':'badge-red'}">${m.tipo}</span></td><td style="font-weight:700">${fmtMovGasto(m)}</td><td style="color:var(--text2);font-size:11px">${m.notas||'—'}</td><td><button class="edit-btn" onclick="openEditMovModal('${m.id}')">✏️</button><button class="del-btn" onclick="deleteMovement('${m.id}')">×</button></td></tr>`).join(''):`<tr><td colspan="6" style="text-align:center;color:var(--text2);padding:24px">${t('sinMovs')}</td></tr>`;
 
   document.getElementById('page-gastos').innerHTML=`
-    <div style="display:flex;justify-content:center;align-items:center;margin-bottom:12px;gap:16px;flex-wrap:wrap;text-align:center">
-      <div class="section-title" style="margin:0">${t('gastosTitulo')}</div>
-      <div style="display:flex;align-items:center;gap:4px">
-        <button onclick="window.gastosNavMonth(-1)" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:3px 10px;font-size:16px;cursor:pointer;line-height:1;color:var(--text2)">‹</button>
-        <span style="font-size:14px;font-weight:700;min-width:100px;text-align:center">${t('months')[cm-1]} ${cy}</span>
-        <button onclick="window.gastosNavMonth(1)" ${isCurrentMonth?'disabled style="opacity:0.3;cursor:default;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:3px 10px;font-size:16px;line-height:1"':'style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:3px 10px;font-size:16px;cursor:pointer;line-height:1;color:var(--text2)"'}>›</button>
-        ${!isCurrentMonth?`<button onclick="window.gastosNavToday()" style="background:none;border:1px solid var(--blue);color:var(--blue);border-radius:10px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer">${t('hoy')}</button>`:''}
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text2);margin:0">${t('gastosTitulo').toUpperCase()}</div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <button onclick="window.gastosNavMonth(-1)" style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:3px 8px;font-size:15px;cursor:pointer;line-height:1;color:var(--text2)">‹</button>
+          <span style="font-size:13px;font-weight:700;min-width:90px;text-align:center">${t('months')[cm-1]} ${cy}</span>
+          <button onclick="window.gastosNavMonth(1)" ${isCurrentMonth?'disabled style="opacity:0.3;cursor:default;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:3px 8px;font-size:15px;line-height:1"':'style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:3px 8px;font-size:15px;cursor:pointer;line-height:1;color:var(--text2)"'}>›</button>
+          ${!isCurrentMonth?`<button onclick="window.gastosNavToday()" style="background:none;border:1px solid var(--blue);color:var(--blue);border-radius:8px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer">${t('hoy')}</button>`:''}
+        </div>
       </div>
-      <button class="btn btn-secondary btn-sm" onclick="switchTab('movimientos');openMovModal('gastos')">+ ${t('gasto')}</button>
-      <button class="btn btn-sm" style="background:rgba(191,90,242,0.10);color:var(--purple);border:1px solid rgba(191,90,242,0.25);font-weight:700;display:flex;align-items:center;gap:5px" onclick="openRecurrentesModal()">🔄 ${t('recurrentesTitulo')}${totalRecurrente>0?` — ${fmtEUR(totalRecurrente)}/${t('mes')}`:''}</button>
-      ${recurrentes.filter(r=>r.activo).slice(0,3).map(r=>`<span style="font-size:11px;color:var(--text2);background:var(--card2);border:0.5px solid var(--border);border-radius:20px;padding:3px 10px;white-space:nowrap">${r.icon||'📌'} ${r.nombre} <span style="color:var(--red);font-weight:700">-${fmtEUR(r.importe)}</span></span>`).join('')}
-      ${recurrentes.filter(r=>r.activo).length>3?`<span style="font-size:11px;color:var(--text3)">+${recurrentes.filter(r=>r.activo).length-3} ${_lang==='es'?'más':'more'}</span>`:''}
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn btn-secondary btn-sm" onclick="switchTab('movimientos');openMovModal('gastos')">+ ${t('gasto')}</button>
+        <button class="btn btn-sm" style="background:rgba(191,90,242,0.10);color:var(--purple);border:1px solid rgba(191,90,242,0.25);font-weight:700;display:flex;align-items:center;gap:5px" onclick="openRecurrentesModal()">🔄 ${t('recurrentesTitulo')}${totalRecurrente>0?` — ${fmtEUR(totalRecurrente)}/${t('mes')}`:''}</button>
+      </div>
     </div>
     <div class="card" style="margin-bottom:16px;border-top:3px solid var(--green)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px">
@@ -3722,9 +3724,8 @@ function renderInversiones(){
   });
 
   document.getElementById('page-inversiones').innerHTML = `
-    <div style="display:flex;justify-content:center;align-items:center;margin-bottom:12px;gap:16px;flex-wrap:wrap;text-align:center">
-      <div class="section-title" style="margin:0">📈 ${t('seccionInversiones')}</div>
-      <div class="section-sub" style="margin:0">${abiertas.length} ${t('posicionesAbiertas')} · ${cerradas.length} ${t('posicionesCerradas')}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text2);margin:0">📈 ${t('seccionInversiones').toUpperCase()}</div>
       <button class="btn btn-primary btn-sm" onclick="openMovModal('inversiones')">${t('nuevoMovimiento')}</button>
     </div>
 
@@ -3912,9 +3913,8 @@ function renderMetas(){
   });
 
   document.getElementById('page-metas').innerHTML=`
-    <div style="display:flex;justify-content:center;align-items:center;margin-bottom:12px;gap:16px;flex-wrap:wrap;text-align:center">
-      <div class="section-title" style="margin:0">🎯 ${t('agregarMeta')}</div>
-      <div class="section-sub" style="margin:0">${goals.length} ${t('metas')} · ${t('rendimientoEsperado')} ${(re*100).toFixed(0)}% ${t('anual')}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text2);margin:0">🎯 ${t('tabMetas').replace(/^.*? /,'').toUpperCase()}</div>
       <button class="btn btn-primary btn-sm" onclick="openGoalModal()">+ ${t('agregarMeta')}</button>
     </div>
 
