@@ -4178,7 +4178,18 @@ function renderAjustes(){
     '</div></div>'
   ) : '';
   document.getElementById('page-ajustes').innerHTML=`
-    <div class="section-title" style="margin-bottom:24px">⚙️ ${t('ajustes')}</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+      <div class="section-title" style="margin-bottom:0">⚙️ ${t('ajustes')}</div>
+      <button onclick="window.showTutorial()" style="
+        padding:9px 18px;border-radius:50px;border:none;
+        background:linear-gradient(135deg,#0A84FF,#5856D6);color:#fff;
+        font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);
+        box-shadow:0 3px 12px rgba(10,132,255,0.28);
+        display:flex;align-items:center;gap:6px;transition:opacity 0.15s,transform 0.15s
+        " onmouseover="this.style.opacity='0.88';this.style.transform='translateY(-1px)'"
+           onmouseout="this.style.opacity='1';this.style.transform='translateY(0)'"
+      >🎓 ${_lang==='es'?'Ver tutorial':'View tutorial'}</button>
+    </div>
 
     ${isAdmin ? `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:rgba(191,90,242,0.06);border:1px solid rgba(191,90,242,0.2);border-radius:14px;margin-bottom:16px">
@@ -5187,6 +5198,160 @@ function getMetaRef(uid) {
 }
 
 function setFbStatus(s){let el=document.getElementById('fbStatus');if(!el)return;el.style.display=s?'block':'none';const map={syncing:['⏳ '+t('sync'),'rgba(10,132,255,0.1)','#0A84FF'],ok:['☁️ '+t('synced'),'rgba(48,209,88,0.1)','#30D158'],error:['⚠️ '+t('noConnection'),'rgba(255,69,58,0.1)','#FF453A'],offline:['📴 '+t('offline'),'rgba(0,0,0,0.06)','#86868B']};const[text,bg,color]=map[s]||map.offline;el.textContent=text;el.style.background=bg;el.style.color=color;if(s==='ok'){setTimeout(()=>{if(el)el.style.display='none';},3000);}}
+// ==================== TUTORIAL ====================
+function showTutorial(){
+  const steps=[
+    {
+      icon:'👋',
+      title:_lang==='es'?'¡Bienvenido a TrackFolio!':'Welcome to TrackFolio!',
+      desc:_lang==='es'
+        ?'Tu dashboard financiero personal. En 6 pasos te enseñamos todo lo que puedes hacer aquí.'
+        :'Your personal finance dashboard. In 6 steps we\'ll show you everything you can do here.',
+    },
+    {
+      icon:'🏦',
+      title:_lang==='es'?'Plataformas':'Platforms',
+      desc:_lang==='es'
+        ?'Registra tus cuentas bancarias, fondos, criptos y cualquier lugar donde tengas dinero. Puedes añadir saldo, rendimiento y tasa de interés anual.'
+        :'Register your bank accounts, funds, crypto and any place where you have money. You can add balance, returns and annual interest rate.',
+    },
+    {
+      icon:'📈',
+      title:_lang==='es'?'Inversiones':'Investments',
+      desc:_lang==='es'
+        ?'Rastrea acciones, ETFs y criptos por ticker. Calcula tu precio promedio, ganancias realizadas y no realizadas en tiempo real con precios de APIs gratuitas.'
+        :'Track stocks, ETFs and crypto by ticker. Calculate your average cost, realized and unrealized gains in real time using free price APIs.',
+    },
+    {
+      icon:'💳',
+      title:_lang==='es'?'Gastos':'Expenses',
+      desc:_lang==='es'
+        ?'Controla tus gastos del mes por categoría, asigna presupuestos y ve exactamente cuánto te sobra. También puedes configurar gastos recurrentes.'
+        :'Control your monthly expenses by category, set budgets and see exactly how much you have left. You can also set up recurring expenses.',
+    },
+    {
+      icon:'🎯',
+      title:_lang==='es'?'Metas':'Goals',
+      desc:_lang==='es'
+        ?'Define objetivos financieros — fondo de emergencia, un viaje, la jubilación — y sigue tu progreso automáticamente según tu patrimonio real.'
+        :'Set financial goals — emergency fund, a trip, retirement — and track your progress automatically based on your real net worth.',
+    },
+    {
+      icon:'⚙️',
+      title:_lang==='es'?'¡Ya estás listo!':'You\'re all set!',
+      desc:_lang==='es'
+        ?'En Ajustes configura tu tipo de cambio, moneda del dashboard, claves de API para precios en tiempo real y el asistente IA. Puedes volver a este tutorial cuando quieras desde esa sección.'
+        :'In Settings, configure your exchange rate, dashboard currency, API keys for real-time prices and the AI assistant. You can reopen this tutorial anytime from that section.',
+    },
+  ];
+
+  let current=0;
+
+  const overlay=document.createElement('div');
+  overlay.id='tutorialOverlay';
+  overlay.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px;font-family:var(--font,\'DM Sans\',sans-serif);animation:tutFadeIn 0.25s ease';
+
+  // Inject keyframes once
+  if(!document.getElementById('tutorialStyles')){
+    const st=document.createElement('style');
+    st.id='tutorialStyles';
+    st.textContent=`
+      @keyframes tutFadeIn{from{opacity:0}to{opacity:1}}
+      @keyframes tutSlideUp{from{opacity:0;transform:translateY(18px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+      #tutorialCard{animation:tutSlideUp 0.3s cubic-bezier(0.34,1.26,0.64,1)}
+      #tutorialCard .tut-icon{transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1)}
+      #tutorialOverlay .tut-close:hover{color:var(--text,#1d1d1f)!important}
+      #tutorialOverlay .tut-prev:hover{border-color:var(--blue,#0A84FF)!important;color:var(--blue,#0A84FF)!important}
+      #tutorialOverlay .tut-next:hover{opacity:0.88;transform:translateY(-1px)}
+      #tutorialOverlay .tut-next:active{transform:translateY(0)}
+      @keyframes tutIconPop{0%{transform:scale(0.5);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+    `;
+    document.head.appendChild(st);
+  }
+
+  function render(){
+    const s=steps[current];
+    const isLast=current===steps.length-1;
+    const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+
+    const dots=steps.map((_,i)=>{
+      const active=i===current;
+      const past=i<current;
+      return `<div style="height:6px;border-radius:3px;transition:all 0.35s cubic-bezier(0.34,1.26,0.64,1);width:${active?'28px':'6px'};background:${active?'#0A84FF':past?'rgba(10,132,255,0.35)':'rgba(128,128,128,0.2)'}"></div>`;
+    }).join('');
+
+    overlay.innerHTML=`
+      <div id="tutorialCard" style="
+        background:var(--card,#fff);border-radius:28px;
+        max-width:420px;width:100%;
+        box-shadow:0 40px 100px rgba(0,0,0,0.28),0 2px 8px rgba(0,0,0,0.08);
+        overflow:hidden;position:relative;
+      ">
+        <!-- Header gradient strip -->
+        <div style="height:4px;background:linear-gradient(90deg,#0A84FF,#5856D6,#BF5AF2)"></div>
+
+        <!-- Close button -->
+        <button class="tut-close" onclick="document.getElementById('tutorialOverlay').remove();LS.set('tutorialDone',true)" style="
+          position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;
+          background:var(--card2,rgba(0,0,0,0.06));border:none;
+          font-size:14px;color:var(--text2,#86868b);cursor:pointer;
+          display:flex;align-items:center;justify-content:center;
+          transition:color 0.15s,background 0.15s;line-height:1
+        ">✕</button>
+
+        <!-- Body -->
+        <div style="padding:36px 32px 28px;text-align:center">
+          <div style="font-size:60px;line-height:1;margin-bottom:18px;animation:tutIconPop 0.4s cubic-bezier(0.34,1.56,0.64,1)">${s.icon}</div>
+          <div style="font-size:21px;font-weight:800;letter-spacing:-0.03em;margin-bottom:12px;color:var(--text,#1d1d1f)">${s.title}</div>
+          <div style="font-size:14px;color:var(--text2,#86868b);line-height:1.7;margin-bottom:28px;max-width:340px;margin-left:auto;margin-right:auto">${s.desc}</div>
+
+          <!-- Dots -->
+          <div style="display:flex;align-items:center;justify-content:center;gap:5px;margin-bottom:24px">${dots}</div>
+
+          <!-- Buttons -->
+          <div style="display:flex;gap:10px;justify-content:center;align-items:center">
+            ${current>0?`<button class="tut-prev" style="
+              padding:11px 22px;border-radius:50px;
+              border:1.5px solid var(--border,#e5e5ea);
+              background:none;color:var(--text2,#86868b);
+              font-size:13px;font-weight:600;cursor:pointer;
+              font-family:inherit;transition:all 0.18s
+            ">← ${_lang==='es'?'Anterior':'Back'}</button>`:''}
+            <button class="tut-next" style="
+              padding:13px ${isLast?'30px':'24px'};border-radius:50px;border:none;
+              background:linear-gradient(135deg,#0A84FF 0%,#5856D6 100%);
+              color:#fff;font-size:14px;font-weight:700;cursor:pointer;
+              font-family:inherit;transition:all 0.2s;
+              box-shadow:0 6px 20px rgba(10,132,255,0.35)
+            ">${isLast?(_lang==='es'?'¡Empezar! 🚀':'Let\'s go! 🚀'):(_lang==='es'?'Siguiente →':'Next →')}</button>
+          </div>
+
+          <!-- Step counter -->
+          <div style="margin-top:18px;font-size:11px;font-weight:600;color:var(--text3,#aeaeb2);letter-spacing:0.05em;text-transform:uppercase">
+            ${current+1} / ${steps.length}
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('tutorialCard').querySelector('.tut-next').onclick=()=>{
+      if(isLast){
+        overlay.remove();
+        LS.set('tutorialDone',true);
+      } else {
+        current++;
+        render();
+      }
+    };
+    const prevBtn=document.getElementById('tutorialCard').querySelector('.tut-prev');
+    if(prevBtn) prevBtn.onclick=()=>{ current--; render(); };
+  }
+
+  render();
+  document.body.appendChild(overlay);
+}
+window.showTutorial=showTutorial;
+
 function showApp(){
   document.getElementById('loginOverlay').classList.add('hidden');
   const lp=document.getElementById('landingPage'); if(lp) lp.style.display='none';
@@ -5194,6 +5359,10 @@ function showApp(){
   document.getElementById('mainContainer').style.display='';
   document.getElementById('mobileNav').style.display='';
   document.getElementById('accessDenied').classList.remove('show');
+  // ── Tutorial primera vez ──────────────────────────────────────
+  if(!LS.get('tutorialDone')){
+    setTimeout(()=>showTutorial(),700);
+  }
 }
 function showLogin(msg){
   const lp=document.getElementById('landingPage');
