@@ -9,7 +9,7 @@
   --input-bg: #fff; --input-border: #E5E5EA;
   --shadow: none;
   --shadow-hover: none;
-  --shadow-modal: 0 24px 80px rgba(0,0,0,0.18);
+  --shadow-modal: none;
   --radius: 16px; --radius-sm: 10px;
   --font: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --table-head-bg: #FAFAFA; --table-row-hover: #FAFBFC;
@@ -26,7 +26,7 @@
   --input-bg: #2C2C2E; --input-border: #3A3A3C;
   --shadow: none;
   --shadow-hover: none;
-  --shadow-modal: 0 24px 80px rgba(0,0,0,0.6);
+  --shadow-modal: none;
   --table-head-bg: #1C1C1E; --table-row-hover: #2C2C2E;
   --progress-bg: #2C2C2E;
   --stat-bg: linear-gradient(160deg,#1C1C1E 0%,#1a1e2e 100%);
@@ -174,12 +174,12 @@ body {
 .page.active { display: block; }
 .card {
   background: var(--card); border-radius: var(--radius); padding: 20px 24px;
-  box-shadow: var(--shadow); border: 0.5px solid var(--border);
+  box-shadow: none; border: 0.5px solid var(--border);
   transition: transform 0.2s, box-shadow 0.2s, background 0.3s;
 }
-.card:hover { transform: translateY(-1px); box-shadow: var(--shadow-hover); }
+.card:hover { transform: translateY(-1px); box-shadow: none; }
 .card-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text2); margin-bottom: 8px; }
-.card-flat { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); border: 0.5px solid var(--border); overflow: hidden; transition: background 0.3s; }
+.card-flat { background: var(--card); border-radius: var(--radius); box-shadow: none; border: 0.5px solid var(--border); overflow: hidden; transition: background 0.3s; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
 .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
@@ -265,7 +265,7 @@ tr:hover td { background: var(--table-row-hover); }
 .form-row-3 { grid-template-columns: 1fr 1fr 1fr; }
 .modal-overlay { position: fixed; inset: 0; z-index: 300; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.35); backdrop-filter: blur(8px); }
 .modal-overlay.open { display: flex; }
-.modal { background: var(--card); border-radius: 24px; padding: 32px; max-width: 580px; width: 92%; max-height: 88vh; overflow-y: auto; box-shadow: var(--shadow-modal); animation: slideUp 0.3s ease; border: 0.5px solid var(--border); }
+.modal { background: var(--card); border-radius: 24px; padding: 32px; max-width: 580px; width: 92%; max-height: 88vh; overflow-y: auto; box-shadow: none; animation: slideUp 0.3s ease; border: 0.5px solid var(--border); }
 .modal.wide { max-width: 720px; }
 .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
 .modal-title { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
@@ -289,13 +289,13 @@ tr:hover td { background: var(--table-row-hover); }
 @keyframes fadeIn { from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)} }
 @keyframes slideUp { from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)} }
 @keyframes spin { from{transform:rotate(0deg)}to{transform:rotate(360deg)} }
-@keyframes pulse { 0%,100%{box-shadow:0 0 0 3px rgba(48,209,88,0.2)}50%{box-shadow:0 0 0 6px rgba(48,209,88,0.05)} }
+@keyframes pulse { 0%,100%{box-shadow:none}50%{box-shadow:none} }
 .price-live { color: var(--green); font-weight: 700; }
 .price-fallback { color: var(--text3); font-style: italic; }
 .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(10,132,255,0.2); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
 .price-banner { display: flex; align-items: center; justify-content: space-between; background: rgba(10,132,255,0.05); border: 1px solid rgba(10,132,255,0.12); border-radius: 12px; padding: 6px 14px; margin-bottom: 0; flex-wrap: wrap; gap: 8px; font-size: 12px; }
 .price-banner-dot { width: 8px; height: 8px; border-radius: 4px; display: inline-block; margin-right: 6px; }
-.dot-live { background: var(--green); box-shadow: 0 0 0 3px rgba(48,209,88,0.2); animation: pulse 2s infinite; }
+.dot-live { background: var(--green); box-shadow: none; animation: pulse 2s infinite; }
 .dot-none { background: var(--text3); }
 .tasa-badge { display:inline-flex;align-items:center;gap:4px;background:rgba(0,199,190,0.12);color:var(--teal);border-radius:8px;padding:2px 8px;font-size:10px;font-weight:800; }
 .tasa-badge.alta { background:rgba(48,209,88,0.12);color:var(--green); }
@@ -305,7 +305,7 @@ tr:hover td { background: var(--table-row-hover); }
 /* Chart period delta badge */
 #chartPeriodChange { font-size:13px; padding:3px 10px; border-radius:20px; background:var(--card2); border:1px solid var(--border); gap:5px; }
 /* Chart card no-hover on chart area */
-.chart-card-no-hover:hover { transform:none!important; box-shadow:var(--shadow)!important; }
+.chart-card-no-hover:hover { transform:none!important; box-shadow:none!important; }
 ::-webkit-scrollbar { width:5px;height:5px }
 ::-webkit-scrollbar-thumb { background:#C7C7CC;border-radius:3px }
 [data-theme="dark"] ::-webkit-scrollbar-thumb { background:#3A3A3C }
@@ -327,7 +327,7 @@ tr:hover td { background: var(--table-row-hover); }
   background: var(--card); border: 1px solid var(--border); border-radius: 14px;
   padding: 14px 16px; display: flex; align-items: center; gap: 12px; transition: all 0.2s;
 }
-.recurrente-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-1px); }
+.recurrente-card:hover { box-shadow: none; transform: translateY(-1px); }
 .recurrente-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
 .recurrente-info { flex: 1; min-width: 0; }
 .recurrente-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -493,7 +493,7 @@ tr:hover td { background: var(--table-row-hover); }
   border-radius: var(--radius);
   padding: 20px 24px;
   border: 0.5px solid var(--border);
-  box-shadow: var(--shadow);
+  box-shadow: none;
   display: flex;
   flex-direction: column;
   gap: 10px;

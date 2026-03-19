@@ -530,7 +530,7 @@ async function _runProactiveAiAlert() {
     const reply = await _aiCall([{role:'user', content:prompt}]);
     if (!reply) return;
     const notif = document.createElement('div');
-    notif.style.cssText = 'position:fixed;top:70px;right:20px;z-index:9999;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 18px;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,0.15);font-size:13px;line-height:1.6;color:var(--text);transition:opacity 0.5s';
+    notif.style.cssText = 'position:fixed;top:70px;right:20px;z-index:9999;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 18px;max-width:320px;font-size:13px;line-height:1.6;color:var(--text);transition:opacity 0.5s';
     notif.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span>✦</span><strong style="font-size:12px">' + t('resumenDia') + '</strong><button onclick="this.parentElement.parentElement.remove()" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:16px;color:var(--text3)">✕</button></div>' + _renderMd(reply);
     document.body.appendChild(notif);
     setTimeout(() => { notif.style.opacity='0'; setTimeout(()=>notif.remove(),500); }, 9000);
@@ -3980,7 +3980,7 @@ function renderMetas(){
         <div style="position:absolute;left:20px;top:0;bottom:0;width:2px;background:var(--border);border-radius:2px"></div>
         ${metasOrdenadas.map((g,i)=>`
           <div style="position:relative;padding-left:52px;margin-bottom:${i<metasOrdenadas.length-1?'24':'8'}px">
-            <div style="position:absolute;left:10px;top:4px;width:22px;height:22px;border-radius:50%;background:${g.sc};display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:800;z-index:1;box-shadow:0 0 0 3px var(--card)">${g.pct>=1?'✓':Math.round(g.pct*100)+'%'}</div>
+            <div style="position:absolute;left:10px;top:4px;width:22px;height:22px;border-radius:50%;background:${g.sc};display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:800;z-index:1;">${g.pct>=1?'✓':Math.round(g.pct*100)+'%'}</div>
             <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:4px">
               <div>
                 <div style="font-size:14px;font-weight:700">${g.nombre}</div>
@@ -4188,8 +4188,8 @@ function renderAjustes(){
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
       <div class="section-title" style="margin-bottom:0">⚙️ ${t('ajustes')}</div>
       <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
-        <button onclick="window.showTutorial()" style="padding:9px 16px;border-radius:50px;border:none;background:linear-gradient(135deg,#0A84FF,#5856D6);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);box-shadow:0 3px 12px rgba(10,132,255,0.28);display:flex;align-items:center;gap:6px;transition:opacity 0.15s,transform 0.15s;white-space:nowrap" onmouseover="this.style.opacity='0.88';this.style.transform='translateY(-1px)'" onmouseout="this.style.opacity='1';this.style.transform='translateY(0)'">🎓 ${_lang==='es'?'Ver tutorial':'View tutorial'}</button>
-        <a href="https://www.facebook.com/profile.php?id=61570831467046" target="_blank" rel="noopener" style="padding:9px 16px;border-radius:50px;background:linear-gradient(135deg,#1877F2,#0A5EC4);color:#fff;font-size:13px;font-weight:700;font-family:var(--font);box-shadow:0 3px 12px rgba(24,119,242,0.28);display:flex;align-items:center;gap:7px;transition:opacity 0.15s,transform 0.15s;text-decoration:none;white-space:nowrap" onmouseover="this.style.opacity='0.88';this.style.transform='translateY(-1px)'" onmouseout="this.style.opacity='1';this.style.transform='translateY(0)'"><svg width="15" height="15" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.269h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>${_lang==='es'?'Ayuda / Contacto':'Help / Contact'}</a>
+        <button onclick="window.showTutorial()" style="padding:9px 16px;border-radius:50px;border:none;background:linear-gradient(135deg,#0A84FF,#5856D6);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:6px;transition:opacity 0.15s,transform 0.15s;white-space:nowrap" onmouseover="this.style.opacity='0.88';this.style.transform='translateY(-1px)'" onmouseout="this.style.opacity='1';this.style.transform='translateY(0)'">🎓 ${_lang==='es'?'Ver tutorial':'View tutorial'}</button>
+        <a href="https://www.facebook.com/profile.php?id=61570831467046" target="_blank" rel="noopener" style="padding:9px 16px;border-radius:50px;background:linear-gradient(135deg,#1877F2,#0A5EC4);color:#fff;font-size:13px;font-weight:700;font-family:var(--font);display:flex;align-items:center;gap:7px;transition:opacity 0.15s,transform 0.15s;text-decoration:none;white-space:nowrap" onmouseover="this.style.opacity='0.88';this.style.transform='translateY(-1px)'" onmouseout="this.style.opacity='1';this.style.transform='translateY(0)'"><svg width="15" height="15" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.269h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>${_lang==='es'?'Ayuda / Contacto':'Help / Contact'}</a>
       </div>
     </div>
 
@@ -4348,7 +4348,7 @@ function renderAjustes(){
           :"If you have questions about setting up your API key, how to use any feature, or anything else, message me directly. I'll reply personally."
         }
       </div>
-      <a href="https://www.facebook.com/profile.php?id=61570831467046" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:13px 20px;border-radius:14px;background:linear-gradient(135deg,#1877F2,#0A5EC4);color:#fff;font-size:14px;font-weight:700;text-decoration:none;box-shadow:0 4px 14px rgba(24,119,242,0.3);transition:opacity 0.15s,transform 0.15s" onmouseover="this.style.opacity='0.88';this.style.transform='translateY(-1px)'" onmouseout="this.style.opacity='1';this.style.transform='translateY(0)'">
+      <a href="https://www.facebook.com/profile.php?id=61570831467046" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:13px 20px;border-radius:14px;background:linear-gradient(135deg,#1877F2,#0A5EC4);color:#fff;font-size:14px;font-weight:700;text-decoration:none;transition:opacity 0.15s,transform 0.15s" onmouseover="this.style.opacity='0.88';this.style.transform='translateY(-1px)'" onmouseout="this.style.opacity='1';this.style.transform='translateY(0)'">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.269h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
         ${_lang==='es'?'Escríbeme en Facebook':'Message me on Facebook'}
       </a>
@@ -5323,7 +5323,7 @@ function showTutorial(){
     st.textContent=`
       @keyframes tutFadeIn{from{opacity:0}to{opacity:1}}
       @keyframes tutCardIn{from{opacity:0;transform:translateY(10px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-      @keyframes tutGlow{0%,100%{box-shadow:0 0 0 0 rgba(10,132,255,0.6),0 0 0 4px rgba(10,132,255,0.15)}60%{box-shadow:0 0 0 6px rgba(10,132,255,0),0 0 0 10px rgba(10,132,255,0)}}
+      @keyframes tutGlow{0%,100%{box-shadow:none}60%{box-shadow:none}}
       #tutSvgOverlay{animation:tutFadeIn 0.22s ease;pointer-events:none}
       #tutCard{animation:tutCardIn 0.3s cubic-bezier(0.34,1.2,0.64,1)}
       .tut-ring{outline:3px solid #0A84FF!important;outline-offset:3px!important;border-radius:10px!important;animation:tutGlow 1.8s ease infinite!important;position:relative!important;z-index:100003!important}
@@ -5377,7 +5377,7 @@ function showTutorial(){
     position:fixed;z-index:100004;
     background:var(--card,#fff);border-radius:22px;
     width:calc(100% - 32px);max-width:420px;
-    box-shadow:0 28px 70px rgba(0,0,0,0.30),0 2px 8px rgba(0,0,0,0.10);
+    
     pointer-events:auto;
     font-family:var(--font,'DM Sans',sans-serif);
     transition:top 0.25s cubic-bezier(0.34,1.1,0.64,1),left 0.25s cubic-bezier(0.34,1.1,0.64,1);
@@ -5557,7 +5557,7 @@ function showTutorial(){
               background:linear-gradient(135deg,#0A84FF,#5856D6);
               color:#fff;font-size:13px;font-weight:700;cursor:pointer;
               font-family:inherit;transition:all 0.2s;
-              box-shadow:0 4px 12px rgba(10,132,255,0.38)
+              
             ">${isLast?(es?'¡Empezar! 🚀':'Let\'s go! 🚀'):(es?'Siguiente →':'Next →')}</button>
           </div>
         </div>
@@ -5871,7 +5871,7 @@ function showWelcomeGate(user, trialExpirado){
 
   const adminEmail = 'ctfnoe@gmail.com';
 
-  el.innerHTML = `<div style="background:var(--card,#fff);border-radius:24px;padding:40px 32px;max-width:400px;width:90%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.12)">
+  el.innerHTML = `<div style="background:var(--card,#fff);border-radius:24px;padding:40px 32px;max-width:400px;width:90%;text-align:center;">
     <div style="font-size:48px;margin-bottom:12px">📊</div>
     <div style="font-size:22px;font-weight:800;letter-spacing:-0.03em;margin-bottom:6px">TrackFolio</div>
     <div style="font-size:13px;color:#888;margin-bottom:24px;line-height:1.5">${t('welcomeDesc')}</div>
@@ -5973,7 +5973,7 @@ function startTrialBanner(){
   if(!banner){
     banner = document.createElement('div');
     banner.id = 'trialCounterBanner';
-    banner.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:9997;background:linear-gradient(135deg,#FF9F0A,#FF6B00);color:#fff;border-radius:20px;padding:6px 16px;font-size:12px;font-weight:700;font-family:var(--font,"DM Sans",sans-serif);box-shadow:0 4px 16px rgba(255,159,10,0.4);display:flex;align-items:center;gap:8px;white-space:nowrap';
+    banner.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:9997;background:linear-gradient(135deg,#FF9F0A,#FF6B00);color:#fff;border-radius:20px;padding:6px 16px;font-size:12px;font-weight:700;font-family:var(--font,"DM Sans",sans-serif);display:flex;align-items:center;gap:8px;white-space:nowrap';
     document.body.appendChild(banner);
   }
   function update(){
@@ -6013,7 +6013,7 @@ function showPending(user){
     el = document.createElement('div');
     el.id = 'pendingOverlay';
     el.style.cssText = 'position:fixed;inset:0;background:var(--bg,#f2f2f7);display:flex;align-items:center;justify-content:center;z-index:10000;font-family:var(--font,"DM Sans",sans-serif)';
-    el.innerHTML = `<div style="background:var(--card,#fff);border-radius:24px;padding:40px 32px;max-width:380px;width:90%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.12)">
+    el.innerHTML = `<div style="background:var(--card,#fff);border-radius:24px;padding:40px 32px;max-width:380px;width:90%;text-align:center;">
       <div style="font-size:48px;margin-bottom:16px">⏳</div>
       <div style="font-size:20px;font-weight:800;letter-spacing:-0.02em;margin-bottom:8px">${t('accessPending')}</div>
       <div style="font-size:14px;color:#666;line-height:1.6;margin-bottom:24px">${t('pendingExplanation')}</div>
