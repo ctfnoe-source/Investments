@@ -5484,12 +5484,12 @@ function showTutorial(){
         arrow.style.borderBottom='12px solid var(--card,#fff)';
         arrow.style.borderTop='none';
         // Sombra hacia arriba
-        arrow.style.filter='drop-shadow(0 -3px 4px rgba(0,0,0,0.12))';
+        arrow.style.filter='none';
       } else {
         arrow.style.top=(arrowTop-2)+'px';
         arrow.style.borderTop='12px solid var(--card,#fff)';
         arrow.style.borderBottom='none';
-        arrow.style.filter='drop-shadow(0 3px 4px rgba(0,0,0,0.12))';
+        arrow.style.filter='none';
       }
     });
   }
@@ -5877,7 +5877,7 @@ function showWelcomeGate(user, trialExpirado){
     <div style="font-size:13px;color:#888;margin-bottom:24px;line-height:1.5">${t('welcomeDesc')}</div>
 
     <!-- Botón de pago principal -->
-    <button id="btnPagar" style="width:100%;padding:15px;border-radius:16px;border:none;background:linear-gradient(135deg,#00b1ea,#009ee3);color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:6px;letter-spacing:-0.02em;box-shadow:0 4px 16px rgba(0,158,227,0.3)">
+    <button id="btnPagar" style="width:100%;padding:15px;border-radius:16px;border:none;background:linear-gradient(135deg,#00b1ea,#009ee3);color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:6px;letter-spacing:-0.02em;box-shadow:none">
       💳 ${t('payBtn')}
     </button>
     <div style="font-size:11px;color:#aaa;margin-bottom:16px">${t('payDesc')}</div>
