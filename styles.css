@@ -82,9 +82,28 @@ body {
 .nav-logo { font-size: 18px; font-weight: 800; letter-spacing: -0.03em; color: var(--text); margin-right: 24px; cursor: pointer; white-space: nowrap; user-select: none; }
 .nav-tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; flex: 1 1 0; min-width: 0; }
 .nav-tabs::-webkit-scrollbar { display: none; }
-.nav-tab { padding: 7px 7px; font-size: 12px; font-weight: 400; color: var(--text2); cursor: pointer; border-radius: 22px; background: transparent; border: none; font-family: var(--font); white-space: nowrap; transition: all 0.2s; flex-shrink: 0; }
-.nav-tab:hover { background: rgba(128,128,128,0.08); }
-.nav-tab.active { font-weight: 600; color: var(--blue); background: rgba(10,132,255,0.08); }
+.nav-tab {
+  padding: 6px 11px; font-size: 12px; font-weight: 600; color: var(--text2);
+  cursor: pointer; border-radius: 22px;
+  background: var(--card2);
+  border: 1px solid var(--border2);
+  font-family: var(--font); white-space: nowrap;
+  transition: all 0.22s cubic-bezier(.34,1.56,.64,1); flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.nav-tab:hover {
+  background: rgba(10,132,255,0.1);
+  border-color: rgba(10,132,255,0.3);
+  color: var(--blue);
+  transform: translateY(-2px) scale(1.06);
+  box-shadow: 0 4px 12px rgba(10,132,255,0.18);
+}
+.nav-tab.active {
+  font-weight: 700; color: #fff;
+  background: var(--blue);
+  border-color: var(--blue);
+  box-shadow: 0 3px 10px rgba(10,132,255,0.35);
+}
 .dark-toggle {
   width: 44px; height: 26px; border-radius: 13px;
   background: var(--text3); border: none; cursor: pointer;
@@ -321,7 +340,15 @@ tr:hover td { background: var(--table-row-hover); }
 }
 .chart-toggle-btn:hover { border-color: var(--blue); color: var(--blue); }
 .chart-toggle-btn.open-state { color: var(--blue); border-color: var(--blue); background: rgba(10,132,255,0.06); }
-/* MONEDA FLAG */
+/* ── Stat card color variants ── */
+.stat-blue  { border-top: 3px solid var(--blue) !important; background: linear-gradient(160deg, #ffffff 0%, #eef5ff 100%) !important; }
+.stat-green { border-top: 3px solid var(--green) !important; background: linear-gradient(160deg, #ffffff 0%, #edfff3 100%) !important; }
+.stat-purple{ border-top: 3px solid var(--purple) !important; background: linear-gradient(160deg, #ffffff 0%, #f6eeff 100%) !important; }
+.stat-orange{ border-top: 3px solid var(--orange) !important; background: linear-gradient(160deg, #ffffff 0%, #fff5e6 100%) !important; }
+[data-theme="dark"] .stat-blue   { background: linear-gradient(160deg, #1C1C1E 0%, #141e30 100%) !important; }
+[data-theme="dark"] .stat-green  { background: linear-gradient(160deg, #1C1C1E 0%, #0f2018 100%) !important; }
+[data-theme="dark"] .stat-purple { background: linear-gradient(160deg, #1C1C1E 0%, #1e1028 100%) !important; }
+[data-theme="dark"] .stat-orange { background: linear-gradient(160deg, #1C1C1E 0%, #221a0e 100%) !important; }
 .moneda-flag { font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 6px; }
 .moneda-MXN { background: rgba(48,209,88,0.12); color: var(--green); }
 .moneda-USD { background: rgba(10,132,255,0.12); color: var(--blue); }
@@ -459,10 +486,10 @@ tr:hover td { background: var(--table-row-hover); }
 
 /* ── Nav tabs: evitar que Ajustes quede tapado por nav-user ── */
 @media(max-width:1100px){
-  .nav-tab { padding: 7px 6px; font-size: 11px; }
+  .nav-tab { padding: 6px 8px; font-size: 11px; }
 }
 @media(max-width:900px){
-  .nav-tab { padding: 6px 5px; font-size: 11px; }
+  .nav-tab { padding: 5px 6px; font-size: 11px; }
   .nav-inner { gap: 4px; }
   #navPatrimonio { display: none; }
 }
@@ -470,5 +497,5 @@ tr:hover td { background: var(--table-row-hover); }
 /* Ocultar texto de tabs cuando no hay espacio, dejar solo emoji */
 @media(max-width:960px){
   .nav-tab .tab-label { display: none; }
-  .nav-tab { padding: 7px 9px; font-size: 15px; }
+  .nav-tab { padding: 7px 10px; font-size: 15px; }
 }
