@@ -1823,7 +1823,7 @@ function statCard(label,value,sub,color,borderColor){
     else if(borderColor.includes('red'))cls+='stat-red';
     else if(borderColor.includes('blue'))cls+='stat-blue';
     else if(borderColor.includes('orange'))cls+='stat-orange';
-    else if(borderColor.includes('purple')||borderColor.includes('BF5AF2'))cls+='stat-purple';
+    else if(borderColor.includes('purple')||borderColor.includes('BF5AF2'))cls+='stat-indigo';
     else if(borderColor.includes('C7BE')||borderColor.includes('teal'))cls+='stat-teal';
     else cls+='stat-blue';
   }
@@ -2249,13 +2249,13 @@ function renderDashboard(){
       <div class="card stat stat-blue"><div class="stat-label">${t('rendPlataformas')}</div><div class="stat-value" style="color:${pctCol(totalRend)}">${fmtDash(totalRend)}</div><div class="stat-sub">${platsConTasa>0?`<span style="color:var(--teal)">⚡${fmtDash(totalRendAuto)} ${t('auto')}</span>`:t('rendimientoSobre')}</div></div>
       <div class="card stat stat-green"><div class="stat-label">${t('valorInversiones')}</div><div class="stat-value">${fmtDash(totalInvMXN)}</div><div class="stat-sub">${tickerList.length} ${t('posiciones2')} · ${priceSummary.live>0?t('preciosHoy'):t('costoPosicion')}</div></div>
       <div class="card stat stat-green"><div class="stat-label">${t('gpTotal')}</div><div class="stat-value" style="color:${pctCol(gpNoRealizadaTotal+gpRealizadaTotal)}">${fmtDashSign(gpNoRealizadaTotal+gpRealizadaTotal)}</div><div class="stat-sub" style="display:flex;flex-direction:column;gap:1px"><span style="color:var(--text2)">No real.: <span style="color:${pctCol(gpNoRealizadaTotal)};font-weight:600">${fmtDashSign(gpNoRealizadaTotal)}</span></span><span style="color:var(--text2)">Realiz.: <span style="color:${pctCol(gpRealizadaTotal)};font-weight:600">${fmtDashSign(gpRealizadaTotal)}</span></span></div></div>
-      <div class="card stat stat-purple"><div class="stat-label">${t('rentabilidadTotal')}</div><div class="stat-value" style="color:${rentabilidadTotal!==null?pctCol(rentabilidadTotal):'var(--text2)'}">${rentabilidadTotal!==null?(rentabilidadTotal>=0?'+':'')+(rentabilidadTotal*100).toFixed(2)+'%':'—'}</div><div class="stat-sub">${rentabilidadTotal!==null?t('sobreCapital'):t('sinHistorial')}</div></div>
-      <div class="card stat stat-purple"><div class="stat-label">${t('concentracion')}</div><div class="stat-value" style="font-size:14px">${topPlat?.name||'—'}</div><div class="stat-sub"><span style="color:var(--orange);font-weight:700">${(maxConc*100).toFixed(1)}%</span> · ${riskLvl}</div></div>
+      <div class="card stat stat-teal"><div class="stat-label">${t('rentabilidadTotal')}</div><div class="stat-value" style="color:${rentabilidadTotal!==null?pctCol(rentabilidadTotal):'var(--text2)'}">${rentabilidadTotal!==null?(rentabilidadTotal>=0?'+':'')+(rentabilidadTotal*100).toFixed(2)+'%':'—'}</div><div class="stat-sub">${rentabilidadTotal!==null?t('sobreCapital'):t('sinHistorial')}</div></div>
+      <div class="card stat stat-teal"><div class="stat-label">${t('concentracion')}</div><div class="stat-value" style="font-size:14px">${topPlat?.name||'—'}</div><div class="stat-sub"><span style="color:var(--orange);font-weight:700">${(maxConc*100).toFixed(1)}%</span> · ${riskLvl}</div></div>
       <div class="card stat stat-orange"><div class="stat-label">${t('gastosMes')} ${curLabel}</div><div class="stat-value" style="color:${totGastoMes>0?'var(--red)':'var(--text)'}">${fmtD(totGastoMes)}</div><div class="stat-sub">${totalPresupuesto>0?(pctPresUsado*100).toFixed(0)+'% '+t('budget'):totIngMes>0||ingresoMensualEUR>0?fmtD(totIngMes>0?totIngMes:ingresoMensualEUR)+' '+t('income'):''}</div></div>
       <div class="card stat stat-orange"><div class="stat-label">${t('balanceMes')} ${curLabel}</div><div class="stat-value" style="color:${pctCol(balMes)}">${fmtD(balMes)}</div><div class="stat-sub">${(pctAhorro*100).toFixed(0)}% ${t('ahorro')}${totIngMes===0&&ingresoMensualEUR>0?` (${t('est')})`:''}</div></div>
     </div>
 
-    <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden">
+    <div class="card card-accent-blue" style="margin-bottom:16px;padding:0;overflow:hidden">
       <div style="padding:8px 20px 8px;display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;border-bottom:0.5px solid var(--border)">
         <div style="display:flex;align-items:baseline;gap:7px">
           <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgba(245,166,35,0.85)">📈 ${t('patrimonioTotal')}</span>
@@ -2969,7 +2969,7 @@ function renderMovimientos(){
         <div id="movTbody" style="padding:12px">${isEmpty ? emptyContent : ''}</div>
         <div id="movSentinel" style="height:4px"></div>
       ` : `
-      <div class="table-wrap th-teal">
+      <div class="table-wrap th-movimientos">
         <table>
           <thead><tr><th>${t('fecha')}</th><th>${t('seccion')}</th><th>${t('detalle')}</th><th>${t('tipo')}</th><th>${t('monto')}</th><th>${t('extra')}</th><th>${t('notas')}</th><th style="width:70px"></th></tr></thead>
           <tbody id="movTbody">${emptyHtml}</tbody>
@@ -3197,11 +3197,7 @@ function renderPlataformas(){
       </div>
     </div>
     ${platsConTasa.length>0?`<div class="yield-info" style="margin-bottom:16px">⚡ <strong>${platsConTasa.length} ${t('plataformasConTasa')}</strong> · ${t('rendimientoAutoTotal')}: <strong>${fmtFull(totalRendAuto)}</strong></div>`:''}
-    <div class="card-flat">
-      ${isMobile() ? `
-        <div style="display:flex;flex-direction:column;gap:10px;padding:12px">
-          ${plats.map((p,i)=>{
-            const cur=p.moneda||'MXN';
+    <div class="card-flat card-accent-gold">
             const tasaBadge=p.tasaAnual>0?`<span class="tasa-badge${p.tasaAnual>=10?' alta':p.tasaAnual>=5?' media':''}">${p.tasaAnual}%</span>`:'';
             const rendAutoStr=p.rendimientoAuto>0?`<span style="color:var(--teal);font-weight:700">⚡+${fmtFull(p.rendimientoAuto,cur)}</span>`:'';
             const pctPort=total>0?((platSaldoToMXN(p)/total)*100).toFixed(1)+'%':'0%';
@@ -3231,7 +3227,7 @@ function renderPlataformas(){
           }).join('')}
         </div>
       ` : `
-      <div class="table-wrap th-purple">
+      <div class="table-wrap th-plataformas">
         <table>
           <thead><tr><th>#</th><th>${t('plataforma')}</th><th>${t('moneda')} ✏️</th><th>${t('tipo')}</th><th>${t('saldoInicial')} ✏️</th><th>⚡ ${t('tasa')} % ✏️</th><th>${t('desde')} ✏️</th><th>${t('dias')}</th><th>+ ${t('aportaciones')} 🔍</th><th>${t('retiros')}</th><th>${t('gastos')}</th><th style="color:var(--teal)">⚡ ${t('auto')}</th><th>${t('rendReal')}</th><th>${t('saldoActualTh')}</th><th>${t('rend')}</th><th>${t('pctPort')}</th><th></th></tr></thead>
           <tbody>
@@ -4202,8 +4198,8 @@ function renderAjustes(){
       <button class="btn btn-primary btn-sm" onclick="window.openAdminPanel()">${t('manageUsers')}</button>
     </div>` : ''}
 
-    <div class="card" style="margin-bottom:16px;border-top:3px solid var(--blue)">
-      <div class="card-title">${t('cuenta')}</div>
+    <div class="card card-accent-blue" style="margin-bottom:16px">
+      <div class="card-title card-title-blue">${t('cuenta')}</div>
       <div style="display:flex;align-items:center;gap:16px;margin-top:8px;flex-wrap:wrap">
         ${currentUser?.photoURL?`<img src="${currentUser.photoURL}" style="width:48px;height:48px;border-radius:24px">`:`<div style="width:48px;height:48px;border-radius:24px;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff">👤</div>`}
         <div style="flex:1"><div style="font-size:16px;font-weight:700">${currentUser?.displayName||t('usuario')}</div><div style="font-size:13px;color:var(--text2)">${currentUser?.email||''}</div></div>
@@ -4211,8 +4207,8 @@ function renderAjustes(){
       </div>
     </div>
     <div class="grid-2" style="margin-bottom:16px">
-      <div class="card">
-        <div class="card-title">${t('tipoCambio')}</div>
+      <div class="card card-accent-teal">
+        <div class="card-title card-title-teal">${t('tipoCambio')}</div>
         <div id="tcCardContent">
           ${(()=>{
             const fx=_fxCache||LS.get('fxCache');
@@ -4260,8 +4256,8 @@ function renderAjustes(){
         </div>
         <div style="margin-top:10px"><button class="btn btn-secondary btn-sm" style="width:100%" onclick="forceUpdateFX()">🔄 updateLive</button></div>
       </div>
-      <div class="card">
-        <div class="card-title">💱 ${_lang==='es'?'Moneda del Dashboard':'Dashboard Currency'}</div>
+      <div class="card card-accent-orange">
+        <div class="card-title card-title-orange">💱 ${_lang==='es'?'Moneda del Dashboard':'Dashboard Currency'}</div>
         <div style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.5">${_lang==='es'?'Los 8 indicadores y el patrimonio total se muestran en la moneda que elijas. Los datos no cambian.':'The 8 indicators and net worth display in your chosen currency. Data unchanged.'}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           ${[
@@ -4279,15 +4275,15 @@ function renderAjustes(){
       </div>
     </div>
     <div class="grid-2" style="margin-bottom:16px">
-      <div class="card">
-        <div class="card-title">🔑 ${t('apiKeyFinnhub')} <span style="font-weight:400;color:var(--text3)">(US stocks)</span></div>
+      <div class="card card-accent-green">
+        <div class="card-title card-title-green">🔑 ${t('apiKeyFinnhub')} <span style="font-weight:400;color:var(--text3)">(US stocks)</span></div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px"><input type="text" class="form-input" style="flex:1;min-width:200px;font-family:monospace;font-size:13px" id="finnhubKeyInput" placeholder="${t('pasteApiKey')}" value="${settings.finnhubKey||''}" oninput="window.settings.finnhubKey=this.value.trim();saveAll()"><button class="btn btn-primary" onclick="testFinnhub()">${t('probar')}</button>${hasFinnhub?`<span style="font-size:12px;color:var(--green)">✅</span>`:''}</div>
         <div id="finnhubTestResult" style="margin-top:8px;font-size:12px"></div>
         <div style="margin-top:8px;font-size:11px;color:var(--text3)">${t('freeAt')} <a href="https://finnhub.io" target="_blank" style="color:var(--blue)">finnhub.io</a></div>
       </div>
 
-      <div class="card">
-        <div class="card-title">🔑 ${t('apiKeyAlpha')} <span style="font-weight:400;color:var(--text3)">(VUAA.LON, London/Xetra ETFs)</span></div>
+      <div class="card card-accent-teal">
+        <div class="card-title card-title-teal">🔑 ${t('apiKeyAlpha')} <span style="font-weight:400;color:var(--text3)">(VUAA.LON, London/Xetra ETFs)</span></div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px"><input type="text" class="form-input" style="flex:1;min-width:200px;font-family:monospace;font-size:13px" id="alphaVantageKeyInput" placeholder="${t('pasteApiKey')}" value="${settings.alphaVantageKey||''}" oninput="window.settings.alphaVantageKey=this.value.trim();saveAll()"><button class="btn btn-primary" onclick="testAlphaVantage()">${t('probar')}</button>${settings.alphaVantageKey?`<span style="font-size:12px;color:var(--green)">✅</span>`:''}</div>
         <div id="alphaVantageTestResult" style="margin-top:8px;font-size:12px"></div>
         <div style="margin-top:8px;font-size:11px;color:var(--text3)">${t('freeAt')} <a href="https://alphavantage.co" target="_blank" style="color:var(--blue)">alphavantage.co</a> · 25 req/day</div>
