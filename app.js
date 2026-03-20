@@ -4682,7 +4682,7 @@ function _renderAiChat() {
     : _aiMessages.map(m => {
         const isUser = m.role === 'user';
         return `<div style="display:flex;flex-direction:column;align-items:${isUser?'flex-end':'flex-start'};margin-bottom:12px">
-          <div style="max-width:85%;padding:${isUser?'4px 10px':'10px 14px'};border-radius:${isUser?'16px 16px 4px 16px':'16px 16px 16px 4px'};background:${isUser?'var(--blue)':'var(--card2)'};color:${isUser?'#fff':'var(--text)'};font-size:13px;line-height:${isUser?'1.3':'1.6'};white-space:pre-wrap;word-break:break-word;border:${isUser?'none':'1px solid var(--border)'}">
+          <div style="max-width:85%;padding:10px 14px;border-radius:${isUser?'16px 16px 4px 16px':'16px 16px 16px 4px'};background:${isUser?'var(--blue)':'var(--card2)'};color:${isUser?'#fff':'var(--text)'};font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;border:${isUser?'none':'1px solid var(--border)'}">
             ${isUser ? escHtml(m.content) : _renderMd(m.content)}
           </div>
         </div>`;
@@ -5649,7 +5649,7 @@ if(localStorage.getItem('_authRedirect') === '1'){
   const lo = document.getElementById('loginOverlay');
   const card = lo && lo.querySelector('.login-card');
   if(lo){ lo.classList.remove('hidden'); }
-  if(card) card.innerHTML = '<div style="font-size:40px;margin-bottom:16px">💼</div><div style="font-size:18px;font-weight:700;margin-bottom:8px;color:var(--text)">TrackFolio</div><div style="display:flex;align-items:center;gap:8px;justify-content:center;font-size:14px;color:var(--text2)"><span style="width:18px;height:18px;border:2px solid rgba(10,132,255,0.2);border-top-color:#0A84FF;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block"></span> Iniciando sesión...</div>';
+  if(card) card.innerHTML = '<div style="margin-bottom:16px"><img src="icon-192.png" style="width:56px;height:56px;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,0.15)"></div><div style="font-size:18px;font-weight:700;margin-bottom:8px;color:var(--text)">TrackFolio</div><div style="display:flex;align-items:center;gap:8px;justify-content:center;font-size:14px;color:var(--text2)"><span style="width:18px;height:18px;border:2px solid rgba(10,132,255,0.2);border-top-color:#0A84FF;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block"></span> Iniciando sesión...</div>';
 }
 
 getRedirectResult(auth).then(result => {
@@ -5872,12 +5872,12 @@ function showWelcomeGate(user, trialExpirado){
   const adminEmail = 'ctfnoe@gmail.com';
 
   el.innerHTML = `<div style="background:var(--card,#fff);border-radius:24px;padding:40px 32px;max-width:400px;width:90%;text-align:center;">
-    <div style="font-size:48px;margin-bottom:12px">📊</div>
+    <div style="margin-bottom:12px"><img src="icon-192.png" style="width:64px;height:64px;border-radius:18px;box-shadow:0 8px 24px rgba(0,0,0,0.15)"></div>
     <div style="font-size:22px;font-weight:800;letter-spacing:-0.03em;margin-bottom:6px">TrackFolio</div>
     <div style="font-size:13px;color:#888;margin-bottom:24px;line-height:1.5">${t('welcomeDesc')}</div>
 
     <!-- Botón de pago principal -->
-    <button id="btnPagar" style="width:100%;padding:15px;border-radius:16px;border:none;background:linear-gradient(135deg,#00b1ea,#009ee3);color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:6px;letter-spacing:-0.02em;box-shadow:none">
+    <button id="btnPagar" style="width:100%;padding:15px;border-radius:16px;border:none;background:linear-gradient(135deg,#0A84FF,#5856D6);color:#fff;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:6px;letter-spacing:-0.02em;box-shadow:0 8px 28px rgba(10,132,255,0.35)">
       💳 ${t('payBtn')}
     </button>
     <div style="font-size:11px;color:#aaa;margin-bottom:16px">${t('payDesc')}</div>
