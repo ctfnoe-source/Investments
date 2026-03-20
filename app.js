@@ -2863,7 +2863,7 @@ function _buildMovRow(m, transferGroups) {
     : secBadge(m.seccion);
 
   if (isMobile()) {
-    return `<div class="mov-card ${rowClass}" style="background:var(--card2);border-radius:12px;padding:12px 14px;border:0.5px solid var(--border);margin-bottom:8px">
+    return `<div class="mov-card ${rowClass}" style="background:var(--card2);border-radius:12px;padding:12px 14px;margin-bottom:8px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
           ${secCell}
@@ -3205,7 +3205,7 @@ function renderPlataformas(){
             const tasaBadge=p.tasaAnual>0?`<span class="tasa-badge${p.tasaAnual>=10?' alta':p.tasaAnual>=5?' media':''}">${p.tasaAnual}%</span>`:'';
             const rendAutoStr=p.rendimientoAuto>0?`<span style="color:var(--teal);font-weight:700">⚡+${fmtFull(p.rendimientoAuto,cur)}</span>`:'';
             const pctPort=total>0?((platSaldoToMXN(p)/total)*100).toFixed(1)+'%':'0%';
-            return`<div style="background:var(--card2);border-radius:14px;padding:14px 16px;border:0.5px solid var(--border)">
+            return`<div style="background:var(--card2);border-radius:14px;padding:14px 16px">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
                 <div style="display:flex;align-items:center;gap:8px">
                   <div style="font-size:15px;font-weight:800">${escHtml(p.name)}</div>
@@ -4340,7 +4340,7 @@ function renderAjustes(){
 
     </div>
         <!-- Tarjeta de contacto -->
-    <div class="card" style="margin-top:16px;background:linear-gradient(135deg,rgba(10,132,255,0.04),rgba(91,86,214,0.06));border:1px solid rgba(10,132,255,0.15)">
+    <div class="card" style="margin-top:16px;background:linear-gradient(135deg,rgba(10,132,255,0.04),rgba(91,86,214,0.06))">
       <div class="card-title" style="margin-bottom:10px">💬 ${_lang==='es'?'¿Necesitas ayuda?':'Need help?'}</div>
       <div style="font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:14px">
         ${_lang==='es'
