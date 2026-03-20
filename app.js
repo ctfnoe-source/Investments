@@ -1295,8 +1295,29 @@ async function updateAllPrices(forceRefresh=false) {
 // Precio de hoy via Finnhub (ya configurado)
 const SP500_CACHE_KEY = 'sp500_history';
 
+// Merge two {dates, closes} objects keeping all unique dates sorted,
+// preferring newer data for duplicates. Caps at 500 points to avoid LS overflow.
+function _mergeIndexHistory(existing, incoming) {
+  const map = new Map();
+  (existing.dates || []).forEach((d, i) => map.set(d, existing.closes[i]));
+  (incoming.dates || []).forEach((d, i) => { if (incoming.closes[i] > 0) map.set(d, incoming.closes[i]); });
+  const sorted = [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  // Keep last 500 points max
+  const trimmed = sorted.slice(-500);
+  return { dates: trimmed.map(e => e[0]), closes: trimmed.map(e => e[1]) };
+}
+
 function getSP500Cache() { return LS.get(SP500_CACHE_KEY) || null; }
-function setSP500Cache(data) { LS.set(SP500_CACHE_KEY, { data, ts: Date.now() }); }
+function setSP500Cache(data) {
+  // Merge with existing historical cache instead of replacing it
+  const existing = LS.get(SP500_CACHE_KEY);
+  if (existing?.data?.dates?.length >= 3) {
+    const merged = _mergeIndexHistory(existing.data, data);
+    LS.set(SP500_CACHE_KEY, { data: merged, ts: Date.now() });
+  } else {
+    LS.set(SP500_CACHE_KEY, { data, ts: Date.now() });
+  }
+}
 function isSP500CacheFresh(cached) {
   if (!cached || !cached.ts) return false;
   const c = new Date(cached.ts), n = new Date();
@@ -1306,14 +1327,17 @@ function isSP500CacheFresh(cached) {
 async function fetchSP500History() {
   const cached = getSP500Cache();
   const _lastClose = cached?.data?.closes?.[cached.data.closes.length-1];
-  const _cacheHasHistory = cached?.data?.closes?.length >= 3;
+  const _cacheHasHistory = cached?.data?.closes?.length >= 2;
   if (isSP500CacheFresh(cached) && _lastClose && _lastClose > 0 && _cacheHasHistory) return cached.data;
 
   const avKey = settings.alphaVantageKey || '';
   const fhKey = settings.finnhubKey || '';
   if (!avKey && !fhKey) return null;
 
-  let result = { dates: [], closes: [] };
+  // Seed result from existing cache so accumulated history is preserved
+  let result = (cached?.data?.dates?.length >= 2)
+    ? { dates: [...cached.data.dates], closes: [...cached.data.closes] }
+    : { dates: [], closes: [] };
 
   // 1a) Histórico mensual via Alpha Vantage
   if (avKey) {
@@ -1441,7 +1465,16 @@ function sp500ReturnPct(sp500data, fechaOrigen) {
 let _sp500Data = null; // cache en memoria durante la sesión
 const QQQ_CACHE_KEY = 'qqq_history';
 function getQQQCache() { return LS.get(QQQ_CACHE_KEY) || null; }
-function setQQQCache(data) { LS.set(QQQ_CACHE_KEY, { data, ts: Date.now() }); }
+function setQQQCache(data) {
+  // Merge with existing historical cache instead of replacing it
+  const existing = LS.get(QQQ_CACHE_KEY);
+  if (existing?.data?.dates?.length >= 3) {
+    const merged = _mergeIndexHistory(existing.data, data);
+    LS.set(QQQ_CACHE_KEY, { data: merged, ts: Date.now() });
+  } else {
+    LS.set(QQQ_CACHE_KEY, { data, ts: Date.now() });
+  }
+}
 function isQQQCacheFresh(cached) {
   if (!cached || !cached.ts) return false;
   const c = new Date(cached.ts), n = new Date();
@@ -1450,12 +1483,15 @@ function isQQQCacheFresh(cached) {
 async function fetchQQQHistory() {
   const cached = getQQQCache();
   const _qlastClose = cached?.data?.closes?.[cached.data.closes.length-1];
-  const _qcacheHasHistory = cached?.data?.closes?.length >= 3;
+  const _qcacheHasHistory = cached?.data?.closes?.length >= 2;
   if (isQQQCacheFresh(cached) && _qlastClose && _qlastClose > 0 && _qcacheHasHistory) return cached.data;
   const avKey = settings.alphaVantageKey || '';
   const fhKey = settings.finnhubKey || '';
   if (!avKey && !fhKey) return null;
-  let result = { dates: [], closes: [] };
+  // Seed result from existing cache so accumulated history is preserved
+  let result = (cached?.data?.dates?.length >= 2)
+    ? { dates: [...cached.data.dates], closes: [...cached.data.closes] }
+    : { dates: [], closes: [] };
   if (avKey) {
     try {
       const r = await fetchWithTimeout(`https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY&symbol=QQQ&apikey=${avKey}`);
@@ -2706,7 +2742,7 @@ function renderDashboard(){
           <div class="stat-value">${fmtDash(totalInvMXN)}</div>
           ${deltaHoy!==0?`<span style="font-size:11px;font-weight:700;color:${pctCol(deltaHoy)};background:${deltaHoy>=0?'rgba(48,209,88,0.10)':'rgba(255,69,58,0.10)'};padding:2px 7px;border-radius:20px;white-space:nowrap">${deltaHoy>=0?'▲':'▼'} ${fmtPct(Math.abs(deltaHoyPct))} hoy</span>`:''}
         </div>
-        <div class="stat-sub">${tickerList.filter(tk=>tk.cantActual>0).length} ${t('posiciones2')}${priceSummary.live>0?` · <span style="color:var(--green);font-weight:600">●</span>`:''}</div>
+        <div class="stat-sub">${priceSummary.live>0?`<span style="color:var(--green);font-weight:600;font-size:10px">● ${t('preciosHoy')}</span>`:t('costoPosicion')}</div>
         <div class="stat-tooltip">${tickerList.filter(tk=>tk.cantActual>0).sort((a,b)=>((b.valorActual||b.costoPosicion)*( b.moneda==='MXN'?1:tc))-(( a.valorActual||a.costoPosicion)*(a.moneda==='MXN'?1:tc))).slice(0,5).map(tk=>{const v=(tk.valorActual||tk.costoPosicion)*(tk.moneda==='MXN'?1:tc);return`<div style="display:flex;justify-content:space-between;gap:12px"><span style="color:var(--text2)">${tk.ticker}</span><span style="font-weight:700">${fmtDash(v)}</span></div>`}).join('')}</div>
       </div>
       <div class="card stat stat-green stat-tooltip-wrap">
@@ -2902,9 +2938,9 @@ function renderDashboard(){
   if (_qqqData?.closes?.[_qqqData.closes.length-1] === 0) { _qqqData = null; }
   // Limpiar cache en LS si el último valor guardado es 0
   const _sp5cache=LS.get('sp500_history');
-  if(_sp5cache?.data?.closes?.length && (_sp5cache.data.closes[_sp5cache.data.closes.length-1]===0 || _sp5cache.data.closes.length < 3)) LS.set('sp500_history',null);
+  if(_sp5cache?.data?.closes?.length && _sp5cache.data.closes[_sp5cache.data.closes.length-1]===0) LS.set('sp500_history',null);
   const _qqqcache=LS.get('qqq_history');
-  if(_qqqcache?.data?.closes?.length && (_qqqcache.data.closes[_qqqcache.data.closes.length-1]===0 || _qqqcache.data.closes.length < 3)) LS.set('qqq_history',null);
+  if(_qqqcache?.data?.closes?.length && _qqqcache.data.closes[_qqqcache.data.closes.length-1]===0) LS.set('qqq_history',null);
 
   // Fetch SP500 y QQQ en paralelo — un único re-render cuando AMBOS terminen.
   // Antes se hacían dos .then() separados que disparaban renderDashboard() dos veces,
