@@ -2954,10 +2954,6 @@ function renderDashboard(){
       let changed = false;
       if (spData?.dates?.length > 0)  { _sp500Data = spData;  changed = true; }
       if (qqqData?.dates?.length > 0) { _qqqData   = qqqData; changed = true; }
-      if (changed) {
-        // Persist today's index points to Firestore so history survives device changes
-        window.saveToFirebase && window.saveToFirebase(false);
-      }
       if (changed && currentTab === 'dashboard') {
         if (chartInstances.chartEvo) { chartInstances.chartEvo.destroy(); delete chartInstances.chartEvo; }
         renderDashboard();
@@ -6278,15 +6274,13 @@ let _ignoreSnapCount=0,_saveTimeout=null,_unsub=null,_unsubRegistro=null;
 
 async function loadSubcollections(uid){
   const { collection, getDocs: _getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-  let platSnap, invSnap, gasSnap, snapSnap, sp5Snap, qqqSnap;
+  let platSnap, invSnap, gasSnap, snapSnap;
   try {
-    [platSnap, invSnap, gasSnap, snapSnap, sp5Snap, qqqSnap] = await Promise.all([
+    [platSnap, invSnap, gasSnap, snapSnap] = await Promise.all([
       _getDocs(collection(db, 'usuarios', uid, 'movimientos_plataformas')),
       _getDocs(collection(db, 'usuarios', uid, 'movimientos_inversiones')),
       _getDocs(collection(db, 'usuarios', uid, 'movimientos_gastos')),
       _getDocs(collection(db, 'usuarios', uid, 'snapshots')),
-      _getDocs(collection(db, 'usuarios', uid, 'sp500_history')),
-      _getDocs(collection(db, 'usuarios', uid, 'qqq_history')),
     ]);
   } catch(e) {
     setFbStatus('error');
@@ -6302,39 +6296,6 @@ async function loadSubcollections(uid){
   patrimonioHistory = patrimonioHistory.slice(-3650);
   LS.set('movements', movements);
   LS.set('patrimonioHistory', patrimonioHistory);
-  // Restore SP500 history: merge Firestore points WITH existing localStorage
-  // (localStorage may have Alpha Vantage monthly history — never discard it)
-  if(sp5Snap && !sp5Snap.empty){
-    const sp5Docs = [];
-    sp5Snap.forEach(d => sp5Docs.push(d.data()));
-    const sp5Incoming = { dates: sp5Docs.map(d=>d.date), closes: sp5Docs.map(d=>d.close) };
-    const sp5Existing = LS.get('sp500_history')?.data;
-    const sp5Merged = sp5Existing?.dates?.length
-      ? _mergeIndexHistory(sp5Existing, sp5Incoming)
-      : sp5Incoming;
-    _sp500Data = sp5Merged;
-    LS.set('sp500_history', { data: sp5Merged, ts: Date.now() });
-  } else {
-    // Firestore empty — keep whatever is in localStorage (Alpha Vantage history)
-    const sp5Local = LS.get('sp500_history')?.data;
-    if(sp5Local?.dates?.length) _sp500Data = sp5Local;
-  }
-  // Restore QQQ history: merge Firestore points WITH existing localStorage
-  if(qqqSnap && !qqqSnap.empty){
-    const qqqDocs = [];
-    qqqSnap.forEach(d => qqqDocs.push(d.data()));
-    const qqqIncoming = { dates: qqqDocs.map(d=>d.date), closes: qqqDocs.map(d=>d.close) };
-    const qqqExisting = LS.get('qqq_history')?.data;
-    const qqqMerged = qqqExisting?.dates?.length
-      ? _mergeIndexHistory(qqqExisting, qqqIncoming)
-      : qqqIncoming;
-    _qqqData = qqqMerged;
-    LS.set('qqq_history', { data: qqqMerged, ts: Date.now() });
-  } else {
-    // Firestore empty — keep whatever is in localStorage
-    const qqqLocal = LS.get('qqq_history')?.data;
-    if(qqqLocal?.dates?.length) _qqqData = qqqLocal;
-  }
   _recalcAndSaveSnapshot();
   buildHistoricalSnapshots();
   // Pre-cargar SP500+QQQ en paralelo antes del primer render del dashboard,
@@ -6389,7 +6350,7 @@ window.saveAllMovementsToFirebase = async function(){
     await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
   setFbStatus('syncing');
   try{
-    for(const subcol of ['movimientos_plataformas','movimientos_inversiones','movimientos_gastos','snapshots','sp500_history','qqq_history']){
+    for(const subcol of ['movimientos_plataformas','movimientos_inversiones','movimientos_gastos','snapshots']){
       const snap = await _getDocs(collection(db,'usuarios',uid,subcol));
       await Promise.all(snap.docs.map(d => _deleteDoc(d.ref)));
     }
@@ -6402,13 +6363,7 @@ window.saveAllMovementsToFirebase = async function(){
     const snapSaves = patrimonioHistory.map(s =>
       _setDoc(_doc(db,'usuarios',uid,'snapshots',s.date), s)
     );
-    const sp5Saves = (_sp500Data?.dates||[]).map((date,i) =>
-      _setDoc(_doc(db,'usuarios',uid,'sp500_history',date), { date, close: _sp500Data.closes[i] })
-    );
-    const qqqSaves = (_qqqData?.dates||[]).map((date,i) =>
-      _setDoc(_doc(db,'usuarios',uid,'qqq_history',date), { date, close: _qqqData.closes[i] })
-    );
-    await Promise.all([...saves, ...snapSaves, ...sp5Saves, ...qqqSaves]);
+    await Promise.all([...saves, ...snapSaves]);
     setFbStatus('ok');
     LS.set('lastFirebaseSync', Date.now()); // para cola offline
   }catch(e){ setFbStatus('error'); }
@@ -6460,24 +6415,6 @@ window.saveToFirebase=async(forceImmediate=false, changedMovIds='', deletedMovId
 
       if(_todaySnap){
         await _setDoc(_doc(db,'usuarios',uid,'snapshots',_todaySnap.date), _todaySnap);
-      }
-
-      // Save today's SP500 / QQQ point to Firestore (same pattern as snapshots)
-      if(_sp500Data?.dates?.length){
-        const _todayStr = today();
-        const _sp5idx = _sp500Data.dates.lastIndexOf(_todayStr);
-        if(_sp5idx >= 0){
-          await _setDoc(_doc(db,'usuarios',uid,'sp500_history',_todayStr),
-            { date: _todayStr, close: _sp500Data.closes[_sp5idx] });
-        }
-      }
-      if(_qqqData?.dates?.length){
-        const _todayStr2 = today();
-        const _qqqidx = _qqqData.dates.lastIndexOf(_todayStr2);
-        if(_qqqidx >= 0){
-          await _setDoc(_doc(db,'usuarios',uid,'qqq_history',_todayStr2),
-            { date: _todayStr2, close: _qqqData.closes[_qqqidx] });
-        }
       }
 
       setFbStatus('ok');
