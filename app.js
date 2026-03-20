@@ -2182,7 +2182,7 @@ function renderDashboard(){
   const pctAhorro=ingReferenciaBalance>0?balMes/ingReferenciaBalance:0;
   const salud=pctAhorro>=0.2?'🟢 '+t('optimal'):pctAhorro>=0.1?'🟡 '+t('acceptable'):pctAhorro>=0?'🟠 '+t('tight'):t('deficit');
   const byCat={};mesG.forEach(m=>{byCat[m.categoria]=(byCat[m.categoria]||0)+toDisplayCur(m);});
-  const topCats=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const topCats=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
   const totalInvMXN=tickerListUSD.reduce((s,tk)=>s+(tk.valorActual||tk.costoPosicion||0)*tc,0)+totalMXNCurrent;
   const patrimonio=totalMXN+totalInvMXN;
   const budgets=settings.budgets||{};
@@ -2883,35 +2883,52 @@ function renderDashboard(){
 
     const at={};plats.forEach(p=>{at[p.type]=(at[p.type]||0)+platSaldoToMXN(p);});
     tickerList.forEach(tk=>{if(tk.cantActual>0){const v=(tk.valorActual||tk.costoPosicion)*(tk.moneda==='MXN'?1:tc);at[tk.type]=(at[tk.type]||0)+v;}});
-    const de=Object.entries(at).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,5);
-    // Altura dinámica: 28px por barra + 16px padding top/bottom
-    const deH = Math.max(80, de.length * 28 + 16);
+    const de=Object.entries(at).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+    // Altura = todos los items, máximo 5 visibles (resto con scroll)
+    const deVisible = Math.min(de.length, 5);
+    const deH = Math.max(80, deVisible * 28 + 16);
     const ctxDWrap = document.getElementById('chartDistro')?.parentElement;
-    if(ctxDWrap) ctxDWrap.style.height = deH + 'px';
+    if(ctxDWrap){
+      ctxDWrap.style.height = deH + 'px';
+      ctxDWrap.style.overflowY = de.length > 5 ? 'auto' : 'hidden';
+      ctxDWrap.style.scrollbarWidth = 'thin';
+    }
     const ctxD=document.getElementById('chartDistro');
     if(ctxD&&de.length>0){
+      // Canvas altura total para TODOS los items
+      ctxD.style.height = (de.length * 28 + 16) + 'px';
       chartInstances.chartDistro=new Chart(ctxD,{type:'bar',data:{labels:de.map(([k])=>k),datasets:[{data:de.map(([,v])=>v),backgroundColor:de.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]),borderRadius:8,borderSkipped:false,barThickness:18}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:{duration:600,easing:'easeOutQuart'},plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(28,28,30,0.96)':'rgba(29,29,31,0.92)',cornerRadius:10,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>' '+ctx.label+': '+((ctx.parsed.x/de.reduce((s,[,v])=>s+v,0)*100)).toFixed(1)+'%'}},pctLabels:{display:true}},scales:{x:{display:false,grid:{display:false},ticks:{display:false},max:de.reduce((s,[,v])=>s+v,0)*1.22},y:{grid:{display:false},border:{display:false},ticks:{color:isDark?'rgba(235,235,245,0.55)':'rgba(60,60,67,0.55)',font:{family:'DM Sans',size:11,weight:'500'},padding:6}}}}});
     }
 
     const inv={};
     tickerList.forEach(tk=>{if(tk.cantActual>0){const v=(tk.valorActual||tk.costoPosicion)*(tk.moneda==='MXN'?1:tc);inv[tk.type]=(inv[tk.type]||0)+v;}});
     if(totalMXN>0) inv['Platforms']=totalMXN;
-    const invE=Object.entries(inv).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,5);
-    // Altura dinámica
-    const invH = Math.max(80, invE.length * 28 + 16);
+    const invE=Object.entries(inv).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+    const invVisible = Math.min(invE.length, 5);
+    const invH = Math.max(80, invVisible * 28 + 16);
     const ctxIWrap = document.getElementById('chartInvTipo')?.parentElement;
-    if(ctxIWrap) ctxIWrap.style.height = invH + 'px';
+    if(ctxIWrap){
+      ctxIWrap.style.height = invH + 'px';
+      ctxIWrap.style.overflowY = invE.length > 5 ? 'auto' : 'hidden';
+      ctxIWrap.style.scrollbarWidth = 'thin';
+    }
     const ctxI=document.getElementById('chartInvTipo');
     if(ctxI&&invE.length>0){
+      ctxI.style.height = (invE.length * 28 + 16) + 'px';
       chartInstances.chartInvTipo=new Chart(ctxI,{type:'bar',data:{labels:invE.map(([k])=>k),datasets:[{data:invE.map(([,v])=>v),backgroundColor:invE.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]),borderRadius:8,borderSkipped:false,barThickness:18}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:{duration:600,easing:'easeOutQuart'},plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(28,28,30,0.96)':'rgba(29,29,31,0.92)',cornerRadius:10,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>{const total=invE.reduce((s,[,v])=>s+v,0);return ' '+ctx.label+': '+((ctx.parsed.x/total)*100).toFixed(1)+'% ('+fmt(ctx.parsed.x)+')';}}}},scales:{x:{display:false,grid:{display:false},ticks:{display:false},max:invE.reduce((s,[,v])=>s+v,0)*1.22},y:{grid:{display:false},border:{display:false},ticks:{color:isDark?'rgba(235,235,245,0.55)':'rgba(60,60,67,0.55)',font:{family:'DM Sans',size:11,weight:'500'},padding:6}}}}});
     }
 
     const ctxGC = document.getElementById('chartGastosCat');
     if(ctxGC && topCats.length > 0) {
-      // Altura dinámica
-      const gcH = Math.max(80, topCats.length * 28 + 16);
+      const gcVisible = Math.min(topCats.length, 5);
+      const gcH = Math.max(80, gcVisible * 28 + 16);
       const ctxGCWrap = ctxGC.parentElement;
-      if(ctxGCWrap) ctxGCWrap.style.height = gcH + 'px';
+      if(ctxGCWrap){
+        ctxGCWrap.style.height = gcH + 'px';
+        ctxGCWrap.style.overflowY = topCats.length > 5 ? 'auto' : 'hidden';
+        ctxGCWrap.style.scrollbarWidth = 'thin';
+      }
+      ctxGC.style.height = (topCats.length * 28 + 16) + 'px';
       chartInstances.chartGastosCat = new Chart(ctxGC, {
         type:'bar',
         data:{
