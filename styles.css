@@ -383,12 +383,12 @@ tr:hover td { background: var(--table-row-hover); }
 .chart-toggle-btn:hover { border-color: var(--blue); color: var(--blue); }
 .chart-toggle-btn.open-state { color: var(--blue); border-color: var(--blue); background: rgba(10,132,255,0.06); }
 /* ── Stat card color variants — fondos muy sutiles ── */
-.stat-blue   { border-top: 3px solid var(--blue)   !important; background: linear-gradient(155deg, #ffffff 0%, #eef3ff 100%) !important; }
-.stat-green  { border-top: 3px solid var(--green)  !important; background: linear-gradient(155deg, #ffffff 0%, #edfff6 100%) !important; }
-.stat-purple { border-top: 3px solid var(--purple) !important; background: linear-gradient(155deg, #ffffff 0%, #f6f0ff 100%) !important; }
-.stat-orange { border-top: 3px solid var(--orange) !important; background: linear-gradient(155deg, #ffffff 0%, #fff8ee 100%) !important; }
-.stat-teal   { border-top: 3px solid var(--teal)   !important; background: linear-gradient(155deg, #ffffff 0%, #edfcfc 100%) !important; }
-.stat-red    { border-top: 3px solid var(--red)    !important; background: linear-gradient(155deg, #ffffff 0%, #fff4f4 100%) !important; }
+.stat-blue   { background: linear-gradient(155deg, #ffffff 0%, #eef3ff 100%) !important; }
+.stat-green  { background: linear-gradient(155deg, #ffffff 0%, #edfff6 100%) !important; }
+.stat-purple { background: linear-gradient(155deg, #ffffff 0%, #f6f0ff 100%) !important; }
+.stat-orange { background: linear-gradient(155deg, #ffffff 0%, #fff8ee 100%) !important; }
+.stat-teal   { background: linear-gradient(155deg, #ffffff 0%, #edfcfc 100%) !important; }
+.stat-red    { background: linear-gradient(155deg, #ffffff 0%, #fff4f4 100%) !important; }
 
 /* Label tintado con el color de su sección */
 .stat-blue   .stat-label { color: #0060CC; }
@@ -414,11 +414,11 @@ tr:hover td { background: var(--table-row-hover); }
 [data-theme="dark"] .stat-red    .stat-label { color: #FF7A72; }
 
 /* ── Card accent borders — subtly color cards by section ── */
-.card-accent-blue   { border-top: 2px solid rgba(10,132,255,0.35)  !important; }
-.card-accent-green  { border-top: 2px solid rgba(48,209,88,0.35)   !important; }
-.card-accent-purple { border-top: 2px solid rgba(191,90,242,0.35)  !important; }
-.card-accent-orange { border-top: 2px solid rgba(255,159,10,0.35)  !important; }
-.card-accent-teal   { border-top: 2px solid rgba(0,199,190,0.35)   !important; }
+.card-accent-blue   {  }
+.card-accent-green  {  }
+.card-accent-purple {  }
+.card-accent-orange {  }
+.card-accent-teal   {  }
 
 /* ── Colored card-title variants ── */
 .card-title-blue   { color: var(--blue)   !important; }
