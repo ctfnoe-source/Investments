@@ -6302,23 +6302,38 @@ async function loadSubcollections(uid){
   patrimonioHistory = patrimonioHistory.slice(-3650);
   LS.set('movements', movements);
   LS.set('patrimonioHistory', patrimonioHistory);
-  // Restore SP500 history from Firestore into in-memory cache + localStorage
+  // Restore SP500 history: merge Firestore points WITH existing localStorage
+  // (localStorage may have Alpha Vantage monthly history — never discard it)
   if(sp5Snap && !sp5Snap.empty){
     const sp5Docs = [];
     sp5Snap.forEach(d => sp5Docs.push(d.data()));
-    sp5Docs.sort((a,b) => a.date < b.date ? -1 : 1);
-    const sp5Data = { dates: sp5Docs.map(d=>d.date), closes: sp5Docs.map(d=>d.close) };
-    _sp500Data = sp5Data;
-    LS.set('sp500_history', { data: sp5Data, ts: Date.now() });
+    const sp5Incoming = { dates: sp5Docs.map(d=>d.date), closes: sp5Docs.map(d=>d.close) };
+    const sp5Existing = LS.get('sp500_history')?.data;
+    const sp5Merged = sp5Existing?.dates?.length
+      ? _mergeIndexHistory(sp5Existing, sp5Incoming)
+      : sp5Incoming;
+    _sp500Data = sp5Merged;
+    LS.set('sp500_history', { data: sp5Merged, ts: Date.now() });
+  } else {
+    // Firestore empty — keep whatever is in localStorage (Alpha Vantage history)
+    const sp5Local = LS.get('sp500_history')?.data;
+    if(sp5Local?.dates?.length) _sp500Data = sp5Local;
   }
-  // Restore QQQ history from Firestore into in-memory cache + localStorage
+  // Restore QQQ history: merge Firestore points WITH existing localStorage
   if(qqqSnap && !qqqSnap.empty){
     const qqqDocs = [];
     qqqSnap.forEach(d => qqqDocs.push(d.data()));
-    qqqDocs.sort((a,b) => a.date < b.date ? -1 : 1);
-    const qqqData = { dates: qqqDocs.map(d=>d.date), closes: qqqDocs.map(d=>d.close) };
-    _qqqData = qqqData;
-    LS.set('qqq_history', { data: qqqData, ts: Date.now() });
+    const qqqIncoming = { dates: qqqDocs.map(d=>d.date), closes: qqqDocs.map(d=>d.close) };
+    const qqqExisting = LS.get('qqq_history')?.data;
+    const qqqMerged = qqqExisting?.dates?.length
+      ? _mergeIndexHistory(qqqExisting, qqqIncoming)
+      : qqqIncoming;
+    _qqqData = qqqMerged;
+    LS.set('qqq_history', { data: qqqMerged, ts: Date.now() });
+  } else {
+    // Firestore empty — keep whatever is in localStorage
+    const qqqLocal = LS.get('qqq_history')?.data;
+    if(qqqLocal?.dates?.length) _qqqData = qqqLocal;
   }
   _recalcAndSaveSnapshot();
   buildHistoricalSnapshots();
