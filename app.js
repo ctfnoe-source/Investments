@@ -2463,8 +2463,8 @@ function renderDashboard(){
       if(chartInstances.chartEvo){chartInstances.chartEvo.destroy();delete chartInstances.chartEvo;}
       const ctx2d = ctxE.getContext('2d');
       const gradReal = ctx2d.createLinearGradient(0, 0, 0, ctxE.offsetHeight || 240);
-      gradReal.addColorStop(0, isDark ? 'rgba(48,209,88,0.18)' : 'rgba(48,209,88,0.13)');
-      gradReal.addColorStop(0.7, isDark ? 'rgba(48,209,88,0.04)' : 'rgba(48,209,88,0.02)');
+      gradReal.addColorStop(0, isDark ? 'rgba(48,209,88,0.28)' : 'rgba(48,209,88,0.22)');
+      gradReal.addColorStop(0.7, isDark ? 'rgba(48,209,88,0.07)' : 'rgba(48,209,88,0.04)');
       gradReal.addColorStop(1, 'rgba(48,209,88,0)');
 
       const dynRadius = 0;
@@ -4795,9 +4795,24 @@ function updateNav(patrimonio,totalMXN,totalUSD,tc,totalRend,deltaHoy,deltaHoyPc
   const _dmSym={MXN:'$',USD:'US$',EUR:'€',GBP:'£',CAD:'CA$',JPY:'¥',CHF:'CHF '}[_dm]||'$';
   const _dmDec=_dm==='MXN'?0:_dm==='JPY'?0:2;
   const _fmtNav=(v)=>{const abs=Math.abs(_mxnTo(v));const sign=_mxnTo(v)<0?'-':'';return sign+_dmSym+abs.toLocaleString('es-MX',{minimumFractionDigits:_dmDec,maximumFractionDigits:_dmDec});};
+  const _fmtNavRaw=(v)=>_mxnTo(v);
   // Mostrar total + delta hoy inline; las sub-monedas se ocultan por CSS (#navSub display:none)
   const deltaStr=deltaHoy!==0&&deltaHoy!=null?`<span style="font-size:11px;font-weight:700;color:${pctCol(deltaHoy)};background:${deltaHoy>=0?'rgba(48,209,88,0.12)':'rgba(255,69,58,0.10)'};padding:1px 7px;border-radius:8px;margin-left:6px;vertical-align:middle">${deltaHoy>=0?'▲':'▼'} ${_fmtNav(Math.abs(deltaHoy))}</span>`:'';
-  if(el1)el1.innerHTML=_fmtNav(patrimonio)+deltaStr;
+  if(el1){
+    const _newVal=_fmtNavRaw(patrimonio);
+    const _prevRaw=parseFloat(el1.dataset.rawVal||'0');
+    const _diff=Math.abs(_newVal-_prevRaw);
+    const _shouldAnimate=_diff>1&&_prevRaw!==0;
+    el1.dataset.rawVal=_newVal;
+    if(_shouldAnimate){
+      const _start=_prevRaw,_end=_newVal,_dur=350,_t0=performance.now();
+      const _fmt=(v)=>{const abs=Math.abs(_mxnTo(v));const sign=_mxnTo(v)<0?'-':'';return sign+_dmSym+abs.toLocaleString('es-MX',{minimumFractionDigits:_dmDec,maximumFractionDigits:_dmDec});};
+      const _tick=(now)=>{const p=Math.min((now-_t0)/_dur,1);const ease=p<0.5?2*p*p:-1+(4-2*p)*p;const cur=_start+(_end-_start)*ease;el1.innerHTML=_fmt(cur)+deltaStr;if(p<1)requestAnimationFrame(_tick);else el1.innerHTML=_fmtNav(patrimonio)+deltaStr;};
+      requestAnimationFrame(_tick);
+    } else {
+      el1.innerHTML=_fmtNav(patrimonio)+deltaStr;
+    }
+  }
   if(el2)el2.innerHTML='';
   const _ps=getPriceSummary();
   const _nps=document.getElementById('navPriceStatus');
