@@ -1198,6 +1198,59 @@ function getPriceSummary() {
 }
 
 const COLORS=['#6E9EF5','#4DC78A','#F5A54A','#A97DD1','#F07070','#52BED8','#D4A843','#8A9BB0','#7B79D4','#E87FA0','#45C27A','#35B5B0','#E8705A','#6F6DC9','#C47AC0','#E05577','#9A8A7A','#4AA8C0'];
+
+// ── Empty state con SVG ilustrado ─────────────────────────────────────────
+function emptyState(type, btnLabel, btnAction){
+  const svgs = {
+    inversiones: `<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="8" y="44" width="12" height="24" rx="3" fill="var(--blue)" opacity="0.25"/>
+      <rect x="24" y="30" width="12" height="38" rx="3" fill="var(--blue)" opacity="0.45"/>
+      <rect x="40" y="18" width="12" height="50" rx="3" fill="var(--blue)" opacity="0.65"/>
+      <rect x="56" y="8" width="12" height="60" rx="3" fill="var(--blue)" opacity="0.85"/>
+      <polyline points="14,40 30,26 46,14 62,4" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <circle cx="62" cy="4" r="3.5" fill="var(--green)"/>
+    </svg>`,
+    plataformas: `<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="10" y="20" width="60" height="42" rx="8" fill="var(--blue)" opacity="0.12"/>
+      <rect x="10" y="20" width="60" height="14" rx="8" fill="var(--blue)" opacity="0.25"/>
+      <circle cx="22" cy="27" r="4" fill="var(--blue)" opacity="0.6"/>
+      <rect x="32" y="24" width="20" height="6" rx="3" fill="var(--blue)" opacity="0.4"/>
+      <rect x="18" y="42" width="16" height="10" rx="3" fill="var(--teal)" opacity="0.5"/>
+      <rect x="40" y="42" width="22" height="4" rx="2" fill="var(--border2)"/>
+      <rect x="40" y="50" width="16" height="4" rx="2" fill="var(--border2)"/>
+    </svg>`,
+    metas: `<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="40" cy="40" r="28" stroke="var(--border2)" stroke-width="3" fill="none"/>
+      <circle cx="40" cy="40" r="18" stroke="var(--orange)" stroke-width="3" fill="none" opacity="0.4"/>
+      <circle cx="40" cy="40" r="8" fill="var(--orange)" opacity="0.7"/>
+      <line x1="40" y1="4" x2="40" y2="14" stroke="var(--border2)" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="40" y1="66" x2="40" y2="76" stroke="var(--border2)" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="4" y1="40" x2="14" y2="40" stroke="var(--border2)" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="66" y1="40" x2="76" y2="40" stroke="var(--border2)" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>`,
+    movimientos: `<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="12" y="16" width="56" height="12" rx="4" fill="var(--border2)"/>
+      <rect x="12" y="34" width="40" height="10" rx="4" fill="var(--border2)" opacity="0.7"/>
+      <rect x="12" y="50" width="48" height="10" rx="4" fill="var(--border2)" opacity="0.5"/>
+      <circle cx="62" cy="56" r="12" fill="var(--green)" opacity="0.2"/>
+      <path d="M56 56l4 4 8-8" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </svg>`,
+  };
+  const msgs = {
+    inversiones: { title: t('sinPosicionesAbiertas'), sub: t('registraPrimeraCompra') },
+    plataformas: { title: t('sinPlataformas'), sub: '' },
+    metas:       { title: t('sinMetas').split('.')[0], sub: '' },
+    movimientos: { title: t('sinMovs'), sub: '' },
+  };
+  const svg = svgs[type] || svgs.movimientos;
+  const msg = msgs[type] || { title: '', sub: '' };
+  return `<div style="text-align:center;padding:40px 24px;color:var(--text2)">
+    <div style="display:flex;justify-content:center;margin-bottom:16px;opacity:0.9">${svg}</div>
+    <div style="font-size:15px;font-weight:700;margin-bottom:6px;color:var(--text)">${msg.title}</div>
+    ${msg.sub?`<div style="font-size:13px;margin-bottom:20px">${msg.sub}</div>`:''}
+    ${btnLabel?`<button class="btn btn-primary" onclick="${btnAction}">+ ${btnLabel}</button>`:''}
+  </div>`;
+}
 const COLORS_BAR=['rgba(99,130,201,0.82)','rgba(72,185,132,0.82)','rgba(228,152,72,0.82)','rgba(160,110,195,0.82)','rgba(220,100,100,0.82)','rgba(72,175,200,0.82)','rgba(195,163,68,0.82)','rgba(130,148,170,0.82)','rgba(115,112,200,0.82)','rgba(210,115,145,0.82)','rgba(68,185,115,0.82)','rgba(55,172,165,0.82)','rgba(215,108,88,0.82)','rgba(105,102,192,0.82)','rgba(180,115,180,0.82)'];
 const MONTHS_ES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const MONTHS_EN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -2388,15 +2441,15 @@ function renderDashboard(){
 
   updateNav(patrimonio,totalMXN,totalUSDCurrent,tc,totalRend,deltaHoy,deltaHoyPct);
 
-  // Animación de conteo en el número de patrimonio del chart header
+  // Animación de conteo en el número grande de patrimonio del dashboard
   (function(){
     const el = document.getElementById('dashPatrimonioNum');
     if(!el) return;
     const _prev = parseFloat(el.dataset.rawVal||'0');
     const _end = patrimonio;
     el.dataset.rawVal = _end;
-    if(Math.abs(_end - _prev) < 1 || _prev === 0) return;
-    const _dur = 400, _t0 = performance.now();
+    if(Math.abs(_end - _prev) < 1 || _prev === 0){ el.textContent = fmtDash(_end); return; }
+    const _dur = 700, _t0 = performance.now();
     const _tick = (now) => {
       const p = Math.min((now - _t0) / _dur, 1);
       const ease = p < 0.5 ? 2*p*p : -1+(4-2*p)*p;
@@ -3867,6 +3920,26 @@ function renderInversiones(){
           const _invGpT=(pos.gpNoRealizada||0)+(pos.dividendoTotal||0);
           const _invGpPct=pos.costoPosicion>0?_invGpT/pos.costoPosicion:null;
           const _cur=pos.moneda==='MXN'?'$':'US$';
+          if(isMobile()){
+            return `<div style="padding:12px 4px;border-bottom:0.5px solid var(--border)">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span class="badge ${tipoClass}">${pos.ticker}</span>
+                  <span style="font-size:11px;color:var(--text2)">×${pos.cantActual%1===0?pos.cantActual:parseFloat(pos.cantActual.toFixed(4))}</span>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:14px;font-weight:800;color:${pctCol(_invGpT)}">${pos.gpNoRealizada!==null?(_invGpT>=0?'+':'')+fmtFull(_invGpT):t('sinPrecio')}</div>
+                  <div style="font-size:11px;color:${pctCol(_invGpPct)}">${_invGpPct!==null?fmtPct(_invGpPct):''}</div>
+                </div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2)">
+                <span>${t('costoPosicion').replace('💰 ','')}: <strong style="color:var(--text)">${_cur}${pos.precioCostoPromedio.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></span>
+                <span class="${pos.priceCssClass}">${pos.priceLabel}</span>
+                <span style="color:var(--text3)">${(pctPort*100).toFixed(1)}% port.</span>
+              </div>
+              ${pos.dividendoTotal>0?`<div style="margin-top:4px;font-size:11px;color:var(--blue)">Div: +${fmtFull(pos.dividendoTotal)}</div>`:''}
+            </div>`;
+          }
           return `<div style="display:grid;grid-template-columns:1.4fr 0.7fr 0.9fr 0.9fr 1fr;gap:0;padding:10px 4px;border-bottom:0.5px solid var(--border)">
             <div style="display:flex;align-items:center;gap:6px;min-width:0">
               <span class="badge ${tipoClass}">${pos.ticker}</span>
@@ -3889,7 +3962,7 @@ function renderInversiones(){
               <div style="font-size:10px;font-weight:600;color:${pctCol(_invGpPct)}">${_invGpPct!==null?fmtPct(_invGpPct):''}</div>
             </div>
           </div>`;
-        }).join('') : `<div style="text-align:center;color:var(--text2);padding:48px 24px"><div style="font-size:40px;margin-bottom:12px">📈</div><div style="font-size:15px;font-weight:700;margin-bottom:8px;color:var(--text)">${t('sinPosicionesAbiertas')}</div><div style="font-size:13px;margin-bottom:20px">${t('registraPrimeraCompra')}</div><button class="btn btn-primary" onclick="openMovModal('inversiones')">+ ${t('primerMovimiento')}</button></div>`}
+        }).join('') : emptyState('inversiones', t('primerMovimiento'), "openMovModal('inversiones')")}
         </div>
       </div>
 
@@ -3987,12 +4060,7 @@ function renderMetas(){
       ${statCard('💳 '+t('ingresoMensual'),fmtEUR(ingresoMensualEUR),t('sueldoExtras'),'','var(--orange)')}
     </div>
 
-    ${goals.length===0?`<div class="card" style="text-align:center;padding:48px;color:var(--text2)">
-      <div style="font-size:40px;margin-bottom:12px">🎯</div>
-      <div style="font-size:16px;font-weight:700;margin-bottom:8px">${t('sinMetas')}</div>
-      <div style="font-size:13px;margin-bottom:20px">${t('defineMetas')}</div>
-      <button class="btn btn-primary" onclick="openGoalModal()">${t('crearPrimeraMeta')}</button>
-    </div>` : `
+    ${goals.length===0?`<div class="card" style="padding:48px 24px">${emptyState('metas', t('crearPrimeraMeta'), 'openGoalModal()')}</div>` : `
 
     <div class="card card-accent-purple" style="margin-bottom:16px">
       <div class="card-title card-title-purple">📅 ${t('lineaDeTiempo')}</div>
@@ -4825,7 +4893,7 @@ function updateNav(patrimonio,totalMXN,totalUSD,tc,totalRend,deltaHoy,deltaHoyPc
     const _shouldAnimate=_diff>1&&_prevRaw!==0;
     el1.dataset.rawVal=_newVal;
     if(_shouldAnimate){
-      const _start=_prevRaw,_end=_newVal,_dur=350,_t0=performance.now();
+      const _start=_prevRaw,_end=_newVal,_dur=700,_t0=performance.now();
       const _fmt=(v)=>{const abs=Math.abs(_mxnTo(v));const sign=_mxnTo(v)<0?'-':'';return sign+_dmSym+abs.toLocaleString('es-MX',{minimumFractionDigits:_dmDec,maximumFractionDigits:_dmDec});};
       const _tick=(now)=>{const p=Math.min((now-_t0)/_dur,1);const ease=p<0.5?2*p*p:-1+(4-2*p)*p;const cur=_start+(_end-_start)*ease;el1.innerHTML=_fmt(cur)+deltaStr;if(p<1)requestAnimationFrame(_tick);else el1.innerHTML=_fmtNav(patrimonio)+deltaStr;};
       requestAnimationFrame(_tick);
