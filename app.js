@@ -1307,16 +1307,50 @@ function _mergeIndexHistory(existing, incoming) {
   return { dates: trimmed.map(e => e[0]), closes: trimmed.map(e => e[1]) };
 }
 
+// ── Firebase persistence para historial de índices ────────────────────────
+// Guarda/carga SP500 y QQQ en usuarios/{uid}/index_history/{sp500|qqq}
+// para acumular historial largo sin depender de localStorage.
+
+async function saveIndexToFirebase(symbol, data) {
+  const uid = window._currentUser?.uid;
+  if (!uid || !data?.dates?.length) return;
+  try {
+    const { doc: _doc, setDoc: _setDoc } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    // Merge con lo que ya hay en Firebase antes de guardar
+    const { doc: __doc, getDoc: _getDoc } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const ref = _doc(db, 'usuarios', uid, 'index_history', symbol);
+    const snap = await _getDoc(ref);
+    const merged = snap.exists() && snap.data()?.dates?.length >= 3
+      ? _mergeIndexHistory(snap.data(), data)
+      : data;
+    await _setDoc(ref, { dates: merged.dates, closes: merged.closes, ts: Date.now() });
+  } catch(e) { /* silencioso — no crítico */ }
+}
+
+async function loadIndexFromFirebase(symbol) {
+  const uid = window._currentUser?.uid;
+  if (!uid) return null;
+  try {
+    const { doc: _doc, getDoc: _getDoc } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const snap = await _getDoc(_doc(db, 'usuarios', uid, 'index_history', symbol));
+    if (snap.exists() && snap.data()?.dates?.length >= 2) return snap.data();
+  } catch(e) { /* silencioso */ }
+  return null;
+}
+
 function getSP500Cache() { return LS.get(SP500_CACHE_KEY) || null; }
 function setSP500Cache(data) {
   // Merge with existing historical cache instead of replacing it
   const existing = LS.get(SP500_CACHE_KEY);
-  if (existing?.data?.dates?.length >= 3) {
-    const merged = _mergeIndexHistory(existing.data, data);
-    LS.set(SP500_CACHE_KEY, { data: merged, ts: Date.now() });
-  } else {
-    LS.set(SP500_CACHE_KEY, { data, ts: Date.now() });
-  }
+  const merged = (existing?.data?.dates?.length >= 3)
+    ? _mergeIndexHistory(existing.data, data)
+    : data;
+  LS.set(SP500_CACHE_KEY, { data: merged, ts: Date.now() });
+  // Persist asíncrono en Firebase (fire-and-forget)
+  saveIndexToFirebase('sp500', merged).catch(() => {});
 }
 function isSP500CacheFresh(cached) {
   if (!cached || !cached.ts) return false;
@@ -1468,12 +1502,12 @@ function getQQQCache() { return LS.get(QQQ_CACHE_KEY) || null; }
 function setQQQCache(data) {
   // Merge with existing historical cache instead of replacing it
   const existing = LS.get(QQQ_CACHE_KEY);
-  if (existing?.data?.dates?.length >= 3) {
-    const merged = _mergeIndexHistory(existing.data, data);
-    LS.set(QQQ_CACHE_KEY, { data: merged, ts: Date.now() });
-  } else {
-    LS.set(QQQ_CACHE_KEY, { data, ts: Date.now() });
-  }
+  const merged = (existing?.data?.dates?.length >= 3)
+    ? _mergeIndexHistory(existing.data, data)
+    : data;
+  LS.set(QQQ_CACHE_KEY, { data: merged, ts: Date.now() });
+  // Persist asíncrono en Firebase (fire-and-forget)
+  saveIndexToFirebase('qqq', merged).catch(() => {});
 }
 function isQQQCacheFresh(cached) {
   if (!cached || !cached.ts) return false;
@@ -6298,23 +6332,47 @@ async function loadSubcollections(uid){
   LS.set('patrimonioHistory', patrimonioHistory);
   _recalcAndSaveSnapshot();
   buildHistoricalSnapshots();
-  // Pre-cargar SP500+QQQ en paralelo antes del primer render del dashboard,
-  // para que la gráfica de evolución aparezca completa desde el primer intento
-  // y no dispare un segundo renderDashboard() al llegar los datos del índice.
+
+  // Cargar historial de índices desde Firebase y hacer merge con localStorage,
+  // para acumular una línea larga aunque se limpie el caché local.
   const _hasApiKey = settings.alphaVantageKey || settings.finnhubKey;
-  const _missingSP  = !_sp500Data && _hasApiKey;
-  const _missingQQQ = !_qqqData   && _hasApiKey;
-  if (currentTab === 'dashboard' && (_missingSP || _missingQQQ)) {
-    const _spP  = _missingSP  ? fetchSP500History().catch(() => null) : Promise.resolve(null);
-    const _qqqP = _missingQQQ ? fetchQQQHistory().catch(() => null)   : Promise.resolve(null);
-    Promise.all([_spP, _qqqP]).then(([spData, qqqData]) => {
-      if (spData?.dates?.length > 0)  _sp500Data = spData;
-      if (qqqData?.dates?.length > 0) _qqqData   = qqqData;
+  const _fbSpP  = loadIndexFromFirebase('sp500').catch(() => null);
+  const _fbQqqP = loadIndexFromFirebase('qqq').catch(() => null);
+  Promise.all([_fbSpP, _fbQqqP]).then(([fbSp, fbQqq]) => {
+    // Merge Firebase → localStorage para SP500
+    if (fbSp?.dates?.length >= 2) {
+      const lsSp = LS.get(SP500_CACHE_KEY);
+      const mergedSp = lsSp?.data?.dates?.length >= 2
+        ? _mergeIndexHistory(fbSp, lsSp.data)
+        : fbSp;
+      LS.set(SP500_CACHE_KEY, { data: mergedSp, ts: lsSp?.ts || Date.now() });
+    }
+    // Merge Firebase → localStorage para QQQ
+    if (fbQqq?.dates?.length >= 2) {
+      const lsQqq = LS.get(QQQ_CACHE_KEY);
+      const mergedQqq = lsQqq?.data?.dates?.length >= 2
+        ? _mergeIndexHistory(fbQqq, lsQqq.data)
+        : fbQqq;
+      LS.set(QQQ_CACHE_KEY, { data: mergedQqq, ts: lsQqq?.ts || Date.now() });
+    }
+
+    // Pre-cargar SP500+QQQ en paralelo antes del primer render del dashboard,
+    // para que la gráfica de evolución aparezca completa desde el primer intento
+    // y no dispare un segundo renderDashboard() al llegar los datos del índice.
+    const _missingSP  = !_sp500Data && _hasApiKey;
+    const _missingQQQ = !_qqqData   && _hasApiKey;
+    if (currentTab === 'dashboard' && (_missingSP || _missingQQQ)) {
+      const _spP  = _missingSP  ? fetchSP500History().catch(() => null) : Promise.resolve(null);
+      const _qqqP = _missingQQQ ? fetchQQQHistory().catch(() => null)   : Promise.resolve(null);
+      Promise.all([_spP, _qqqP]).then(([spData, qqqData]) => {
+        if (spData?.dates?.length > 0)  _sp500Data = spData;
+        if (qqqData?.dates?.length > 0) _qqqData   = qqqData;
+        renderPageInternal(currentTab);
+      });
+    } else {
       renderPageInternal(currentTab);
-    });
-  } else {
-    renderPageInternal(currentTab);
-  }
+    }
+  });
 }
 
 function setupFirestore(uid){
