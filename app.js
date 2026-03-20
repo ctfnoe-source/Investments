@@ -2785,13 +2785,13 @@ function renderDashboard(){
       <div class="card card-accent-blue">
         <div class="card-title card-title-blue">📊 ${t('distribucionPorTipo')}</div>
         ${de.length>0
-          ? `<div class="chart-container" style="height:150px;width:100%;overflow-y:auto;scrollbar-width:thin"><canvas id="chartDistro"></canvas></div>`
+          ? `<div class="chart-container" style="height:150px;width:100%;overflow-y:auto;scrollbar-width:none"><canvas id="chartDistro"></canvas></div>`
           : `<div class="chart-empty-state"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="20" width="8" height="16" rx="2" fill="var(--blue)" opacity="0.25"/><rect x="16" y="12" width="8" height="24" rx="2" fill="var(--blue)" opacity="0.35"/><rect x="28" y="6" width="8" height="30" rx="2" fill="var(--blue)" opacity="0.18"/></svg><div class="chart-empty-text">${t('sinPlataformas')}</div><button class="btn btn-sm btn-primary" style="margin-top:8px;font-size:11px" onclick="switchTab('plataformas')">${t('agregarPrimera')}</button></div>`}
       </div>
       <div class="card card-accent-green">
         <div class="card-title card-title-green">💼 ${t('inversionesPorTipo')}</div>
         ${invE.length>0
-          ? `<div class="chart-container" style="height:150px;width:100%;overflow-y:auto;scrollbar-width:thin"><canvas id="chartInvTipo"></canvas></div>`
+          ? `<div class="chart-container" style="height:150px;width:100%;overflow-y:auto;scrollbar-width:none"><canvas id="chartInvTipo"></canvas></div>`
           : `<div class="chart-empty-state"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><polyline points="4,32 14,18 22,24 32,10 38,14" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.4"/><circle cx="32" cy="10" r="3" fill="var(--green)" opacity="0.5"/></svg><div class="chart-empty-text">${t('sinInversiones')}</div><button class="btn btn-sm btn-primary" style="margin-top:8px;font-size:11px" onclick="switchTab('inversiones')">${t('agregarInversion')}</button></div>`}
       </div>
       <div class="card card-accent-orange">
@@ -2800,7 +2800,7 @@ function renderDashboard(){
           <button class="btn btn-sm" style="font-size:11px;background:none;border:1px solid var(--border);color:var(--text2);cursor:pointer" onclick="switchTab('gastos')">${t('verDetalle')} →</button>
         </div>
         ${topCats.length>0
-          ? `<div class="chart-container" style="height:150px;width:100%;overflow-y:auto;scrollbar-width:thin"><canvas id="chartGastosCat"></canvas></div>`
+          ? `<div class="chart-container" style="height:150px;width:100%;overflow-y:auto;scrollbar-width:none"><canvas id="chartGastosCat"></canvas></div>`
           : `<div class="chart-empty-state"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="14" stroke="var(--orange)" stroke-width="2.2" fill="none" opacity="0.3"/><path d="M20 6 A14 14 0 0 1 34 20" stroke="var(--orange)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.7"/><circle cx="20" cy="20" r="3" fill="var(--orange)" opacity="0.5"/></svg><div class="chart-empty-text">${t('sinGastosEsteMes')}</div><button class="btn btn-sm" style="margin-top:8px;font-size:11px;background:none;border:1px solid var(--border);color:var(--text2)" onclick="switchTab('gastos')">${t('registraMovimientos')} →</button></div>`}
       </div>
     </div>

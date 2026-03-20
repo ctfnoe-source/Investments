@@ -305,6 +305,9 @@ tr:hover td { background: var(--table-row-hover); }
 .tasa-badge.media { background:rgba(255,159,10,0.12);color:var(--orange); }
 .rend-auto-cell { color:var(--teal);font-weight:700; }
 .chart-container { position:relative;width:100%; }
+/* Ocultar scrollbar de las mini-gráficas del dashboard manteniendo scroll funcional */
+.chart-container::-webkit-scrollbar { display: none; }
+.chart-container { -ms-overflow-style: none; scrollbar-width: none; }
 /* Chart period delta badge */
 #chartPeriodChange { font-size:13px; padding:3px 10px; border-radius:20px; background:var(--card2); border:1px solid var(--border); gap:5px; }
 /* Chart card no-hover on chart area */
