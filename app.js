@@ -6299,9 +6299,13 @@ onAuthStateChanged(auth,async user=>{
 
     hidePending();
     DOC_REF = getDocRef(uid);
-    resetToEmpty();
     if(typeof updateNavUser==='function') updateNavUser(user);
-    showApp(); setupFirestore(uid);
+    // Renderizar con datos de localStorage inmediatamente (sin esperar Firebase)
+    const _hasLocalData = LS.get('platforms') || LS.get('movements');
+    if(!_hasLocalData) resetToEmpty();
+    showApp();
+    renderPageInternal(currentTab);
+    setupFirestore(uid);
     if(window._trialStart) startTrialBanner(); // mostrar contador si está en prueba
 
     if(_unsubRegistro){_unsubRegistro();_unsubRegistro=null;}
