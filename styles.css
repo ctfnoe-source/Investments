@@ -222,7 +222,7 @@ body {
   box-shadow: 0 4px 20px rgba(0,0,0,0.30) !important;
 }
 .stat:hover {
-  transform: none !important;
+  transform: translateY(-2px) !important;
   box-shadow: 0 10px 30px rgba(0,0,0,0.14) !important;
 }
 .stat::before { display:none; }
