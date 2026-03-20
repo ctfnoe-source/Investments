@@ -2706,7 +2706,7 @@ function renderDashboard(){
           <div class="stat-value">${fmtDash(totalInvMXN)}</div>
           ${deltaHoy!==0?`<span style="font-size:11px;font-weight:700;color:${pctCol(deltaHoy)};background:${deltaHoy>=0?'rgba(48,209,88,0.10)':'rgba(255,69,58,0.10)'};padding:2px 7px;border-radius:20px;white-space:nowrap">${deltaHoy>=0?'▲':'▼'} ${fmtPct(Math.abs(deltaHoyPct))} hoy</span>`:''}
         </div>
-        <div class="stat-sub">${tickerList.length} ${t('posiciones2')} · ${priceSummary.live>0?t('preciosHoy'):t('costoPosicion')}</div>
+        <div class="stat-sub">${tickerList.filter(tk=>tk.cantActual>0).length} ${t('posiciones2')}${priceSummary.live>0?` · <span style="color:var(--green);font-weight:600">●</span>`:''}</div>
         <div class="stat-tooltip">${tickerList.filter(tk=>tk.cantActual>0).sort((a,b)=>((b.valorActual||b.costoPosicion)*( b.moneda==='MXN'?1:tc))-(( a.valorActual||a.costoPosicion)*(a.moneda==='MXN'?1:tc))).slice(0,5).map(tk=>{const v=(tk.valorActual||tk.costoPosicion)*(tk.moneda==='MXN'?1:tc);return`<div style="display:flex;justify-content:space-between;gap:12px"><span style="color:var(--text2)">${tk.ticker}</span><span style="font-weight:700">${fmtDash(v)}</span></div>`}).join('')}</div>
       </div>
       <div class="card stat stat-green stat-tooltip-wrap">
@@ -2808,7 +2808,7 @@ function renderDashboard(){
     <div class="grid-2" style="margin-bottom:16px;align-items:stretch">
       <div class="card card-accent-blue" style="display:flex;flex-direction:column">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div class="card-title card-title-blue" style="margin:0">🏆 ${t('topPlataformas')}</div></div>
-        <div style="max-height:380px;overflow-y:auto;margin:0 -4px;padding:0 4px">
+        <div style="max-height:380px;overflow-y:auto;scrollbar-width:none;margin:0 -4px;padding:0 4px" class="dash-list-scroll">
         ${[...plats].sort((a,b)=>platSaldoToMXN(b)-platSaldoToMXN(a)).slice(0,10).map((p,i)=>`
           <div class="list-item">
             <div style="display:flex;align-items:center;gap:8px">
@@ -2832,7 +2832,7 @@ function renderDashboard(){
           <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;text-align:right">${t('precioActual')}</div>
           <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;text-align:right">${t('gpTotal2')}</div>
         </div>
-        <div style="max-height:340px;overflow-y:auto;margin:0 -4px;padding:0 4px">
+        <div style="max-height:340px;overflow-y:auto;scrollbar-width:none;margin:0 -4px;padding:0 4px" class="dash-list-scroll">
         ${tickerList.filter(tk=>tk.cantActual>0).sort((a,b)=>b.costoTotal-a.costoTotal).map(tk=>{
           const tipoClass=tk.type==='Acción'?'badge-green':tk.type==='ETF'?'badge-blue':tk.type==='Crypto'?'badge-orange':'badge-gray';
           const cur=tk.moneda==='MXN'?'$':'US$';
@@ -5779,13 +5779,13 @@ function showTutorial(){
   const steps=[
     {
       tab:'dashboard',
-      selector:'.stat-grid, .card.stat, #page-dashboard .card',
+      selector:'.grid-8',
       selectorFallback:'#page-dashboard',
       position:'below',
-      title:es?'📊 Tu Dashboard':'📊 Your Dashboard',
+      title:es?'📊 Tu Dashboard — Centro de Control':'📊 Your Dashboard — Control Center',
       desc:es
-        ?'Tu centro de control financiero. De un vistazo tienes: <strong>patrimonio total, rendimiento de plataformas, valor de inversiones, gastos del mes y capital sobrante</strong>. Todo se recalcula automáticamente cada vez que añades un dato — sin hojas de cálculo ni fórmulas manuales.'
-        :'Your financial control center. At a glance: <strong>net worth, platform returns, investment value, monthly expenses and surplus capital</strong>. Everything recalculates automatically whenever you add data — no spreadsheets or manual formulas.',
+        ?'Todo tu dinero en una sola pantalla. Las <strong>8 tarjetas superiores</strong> resumen lo más importante:<br><br>🏦 <strong>Valor Plataformas</strong> — saldo total en cuentas, fondos y CETEs.<br>📈 <strong>Valor Inversiones</strong> — acciones, ETFs y crypto a precio de mercado.<br>📊 <strong>Rentabilidad Total</strong> — rendimiento real sobre capital invertido.<br>💳 <strong>Gastos y Balance</strong> — cómo vas este mes frente a tu ingreso.<br><br>Pasa el cursor por cualquier tarjeta para ver el detalle. Más abajo tienes la <strong>evolución del patrimonio</strong>, tus <strong>top plataformas</strong>, <strong>posiciones abiertas</strong> y el <strong>progreso de tus metas</strong>. Todo se actualiza automáticamente.'
+        :'All your money on one screen. The <strong>8 top cards</strong> summarize what matters most:<br><br>🏦 <strong>Platform Value</strong> — total balance across accounts, funds and bonds.<br>📈 <strong>Investment Value</strong> — stocks, ETFs and crypto at market price.<br>📊 <strong>Total Return</strong> — real yield on invested capital.<br>💳 <strong>Expenses & Balance</strong> — how you're doing this month vs your income.<br><br>Hover any card to see a breakdown. Below you'll find your <strong>net worth chart</strong>, <strong>top platforms</strong>, <strong>open positions</strong> and <strong>goal progress</strong>. Everything updates automatically.',
     },
     {
       tab:'plataformas',
