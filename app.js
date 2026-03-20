@@ -2742,7 +2742,7 @@ function renderDashboard(){
           <div class="stat-value">${fmtDash(totalInvMXN)}</div>
           ${deltaHoy!==0?`<span style="font-size:11px;font-weight:700;color:${pctCol(deltaHoy)};background:${deltaHoy>=0?'rgba(48,209,88,0.10)':'rgba(255,69,58,0.10)'};padding:2px 7px;border-radius:20px;white-space:nowrap">${deltaHoy>=0?'▲':'▼'} ${fmtPct(Math.abs(deltaHoyPct))} hoy</span>`:''}
         </div>
-        <div class="stat-sub">${priceSummary.live>0?`<span style="color:var(--green);font-weight:600;font-size:10px">● ${t('preciosHoy')}</span>`:t('costoPosicion')}</div>
+
         <div class="stat-tooltip">${tickerList.filter(tk=>tk.cantActual>0).sort((a,b)=>((b.valorActual||b.costoPosicion)*( b.moneda==='MXN'?1:tc))-(( a.valorActual||a.costoPosicion)*(a.moneda==='MXN'?1:tc))).slice(0,5).map(tk=>{const v=(tk.valorActual||tk.costoPosicion)*(tk.moneda==='MXN'?1:tc);return`<div style="display:flex;justify-content:space-between;gap:12px"><span style="color:var(--text2)">${tk.ticker}</span><span style="font-weight:700">${fmtDash(v)}</span></div>`}).join('')}</div>
       </div>
       <div class="card stat stat-green stat-tooltip-wrap">
