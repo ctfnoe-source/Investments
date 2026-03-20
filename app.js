@@ -1371,6 +1371,7 @@ let chartInstances = {};
 let _lastLocalSave = 0;
 let _chartRange = 'all';
 let _chartRange2 = 'all';
+let _lastPatrimonioRaw = 0; // persiste entre re-renders para el odómetro del dashboard
 
 const CHART_INTERVALS = [
   { key:'1m',  label:'1 month',   months:1  },
@@ -2481,14 +2482,15 @@ function renderDashboard(){
 
   updateNav(patrimonio,totalMXN,totalUSDCurrent,tc,totalRend,deltaHoy,deltaHoyPct);
 
-  // Odómetro en el número de patrimonio del dashboard
+  // Odómetro en el número de patrimonio del dashboard — usa variable global para sobrevivir re-renders
   (function(){
     const el = document.getElementById('dashPatrimonioNum');
     if(!el) return;
-    const _prev = parseFloat(el.dataset.rawVal||'0');
+    const _prev = _lastPatrimonioRaw;
     const _end = patrimonio;
-    el.dataset.rawVal = _end;
-    if(Math.abs(_end - _prev) < 1 || _prev === 0){ el.textContent = fmtDash(_end); return; }
+    const _shouldAnimate = Math.abs(_end - _prev) > 1 && _prev !== 0;
+    _lastPatrimonioRaw = _end;
+    if(!_shouldAnimate){ el.textContent = fmtDash(_end); return; }
     const _prevStr = fmtDash(_prev);
     const _endStr = fmtDash(_end);
     el.innerHTML = _buildOdometer(_prevStr, _endStr);
