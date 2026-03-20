@@ -2885,7 +2885,9 @@ function renderDashboard(){
     const de=Object.entries(at).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,5);
     const ctxD=document.getElementById('chartDistro');
     if(ctxD&&de.length>0){
-      chartInstances.chartDistro=new Chart(ctxD,{type:'bar',data:{labels:de.map(([k])=>k),datasets:[{data:de.map(([,v])=>v),backgroundColor:de.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]),borderRadius:8,borderSkipped:false,barThickness:18}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:{duration:600,easing:'easeOutQuart'},plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(28,28,30,0.96)':'rgba(29,29,31,0.92)',cornerRadius:10,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>' '+ctx.label+': '+((ctx.parsed.x/de.reduce((s,[,v])=>s+v,0)*100)).toFixed(1)+'%'}},pctLabels:{display:true}},scales:{x:{display:false,grid:{display:false},ticks:{display:false},max:de.reduce((s,[,v])=>s+v,0)*1.22},y:{grid:{display:false},border:{display:false},ticks:{color:isDark?'rgba(235,235,245,0.55)':'rgba(60,60,67,0.55)',font:{family:'DM Sans',size:11,weight:'500'},padding:6}}}}});
+      const _hD=Math.max(150,de.length*36); ctxD.style.height=_hD+'px'; ctxD.style.width='100%'; ctxD.parentElement.style.height='150px'; ctxD.parentElement.style.overflowY=_hD>150?'auto':'hidden';
+      chartInstances.chartDistro=new Chart(ctxD,{type:'bar',data:{labels:de.map(([k])=>k),datasets:[{data:de.map(([,v])=>v),backgroundColor:de.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]),borderRadius:8,borderSkipped:false,barThickness:18}]},options:{indexAxis:'y',responsive:false,maintainAspectRatio:false,animation:{duration:600,easing:'easeOutQuart'},plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(28,28,30,0.96)':'rgba(29,29,31,0.92)',cornerRadius:10,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>' '+ctx.label+': '+((ctx.parsed.x/de.reduce((s,[,v])=>s+v,0)*100)).toFixed(1)+'%'}},pctLabels:{display:true}},scales:{x:{display:false,grid:{display:false},ticks:{display:false},max:de.reduce((s,[,v])=>s+v,0)*1.22},y:{grid:{display:false},border:{display:false},ticks:{color:isDark?'rgba(235,235,245,0.55)':'rgba(60,60,67,0.55)',font:{family:'DM Sans',size:11,weight:'500'},padding:6}}}}});
+      ctxD.style.width='100%';
     }
 
     const inv={};
@@ -2894,11 +2896,14 @@ function renderDashboard(){
     const invE=Object.entries(inv).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,5);
     const ctxI=document.getElementById('chartInvTipo');
     if(ctxI&&invE.length>0){
-      chartInstances.chartInvTipo=new Chart(ctxI,{type:'bar',data:{labels:invE.map(([k])=>k),datasets:[{data:invE.map(([,v])=>v),backgroundColor:invE.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]),borderRadius:8,borderSkipped:false,barThickness:18}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:{duration:600,easing:'easeOutQuart'},plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(28,28,30,0.96)':'rgba(29,29,31,0.92)',cornerRadius:10,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>{const total=invE.reduce((s,[,v])=>s+v,0);return ' '+ctx.label+': '+((ctx.parsed.x/total)*100).toFixed(1)+'% ('+fmt(ctx.parsed.x)+')';}}}},scales:{x:{display:false,grid:{display:false},ticks:{display:false},max:invE.reduce((s,[,v])=>s+v,0)*1.22},y:{grid:{display:false},border:{display:false},ticks:{color:isDark?'rgba(235,235,245,0.55)':'rgba(60,60,67,0.55)',font:{family:'DM Sans',size:11,weight:'500'},padding:6}}}}});
+      const _hI=Math.max(150,invE.length*36); ctxI.style.height=_hI+'px'; ctxI.style.width='100%'; ctxI.parentElement.style.height='150px'; ctxI.parentElement.style.overflowY=_hI>150?'auto':'hidden';
+      chartInstances.chartInvTipo=new Chart(ctxI,{type:'bar',data:{labels:invE.map(([k])=>k),datasets:[{data:invE.map(([,v])=>v),backgroundColor:invE.map((_,i)=>COLORS_BAR[i%COLORS_BAR.length]),borderRadius:8,borderSkipped:false,barThickness:18}]},options:{indexAxis:'y',responsive:false,maintainAspectRatio:false,animation:{duration:600,easing:'easeOutQuart'},plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'rgba(28,28,30,0.96)':'rgba(29,29,31,0.92)',cornerRadius:10,padding:10,bodyFont:{family:'DM Sans',size:12},callbacks:{label:ctx=>{const total=invE.reduce((s,[,v])=>s+v,0);return ' '+ctx.label+': '+((ctx.parsed.x/total)*100).toFixed(1)+'% ('+fmt(ctx.parsed.x)+')';}}}},scales:{x:{display:false,grid:{display:false},ticks:{display:false},max:invE.reduce((s,[,v])=>s+v,0)*1.22},y:{grid:{display:false},border:{display:false},ticks:{color:isDark?'rgba(235,235,245,0.55)':'rgba(60,60,67,0.55)',font:{family:'DM Sans',size:11,weight:'500'},padding:6}}}}});
+      ctxI.style.width='100%';
     }
 
     const ctxGC = document.getElementById('chartGastosCat');
     if(ctxGC && topCats.length > 0) {
+      const _hGC=Math.max(150,topCats.length*36); ctxGC.style.height=_hGC+'px'; ctxGC.style.width='100%'; ctxGC.parentElement.style.height='150px'; ctxGC.parentElement.style.overflowY=_hGC>150?'auto':'hidden';
       chartInstances.chartGastosCat = new Chart(ctxGC, {
         type:'bar',
         data:{
@@ -2913,7 +2918,7 @@ function renderDashboard(){
         },
         options:{
           indexAxis:'y',
-          responsive:true, maintainAspectRatio:false,
+          responsive:false, maintainAspectRatio:false,
           animation:{duration:600,easing:'easeOutQuart'},
           plugins:{
             legend:{display:false},
@@ -2934,6 +2939,7 @@ function renderDashboard(){
           }
         },
       });
+      ctxGC.style.width='100%';
     }
   }, 100); }); // fin requestAnimationFrame + setTimeout
 }
@@ -6477,7 +6483,6 @@ onAuthStateChanged(auth,async user=>{
         signOut(auth).then(()=>window.location.reload());
       }
     }, (err) => { console.error('[registro listener]', err); });
-    if(window.renderPage) window.renderPage(window.currentTab||'dashboard');
     setTimeout(()=>{ _runProactiveAiAlert(); }, 4000);
     setTimeout(()=>{
       if(typeof updateFX==='function') updateFX();
