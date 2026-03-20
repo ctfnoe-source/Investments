@@ -2259,7 +2259,7 @@ function renderDashboard(){
       <div style="padding:8px 20px 8px;display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;border-bottom:0.5px solid var(--border)">
         <div style="display:flex;align-items:baseline;gap:7px">
           <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgba(245,166,35,0.85)">📈 ${t('patrimonioTotal')}</span>
-          <span style="font-size:14px;font-weight:800;letter-spacing:-0.02em;color:rgba(245,166,35,0.95)">${fmtDash(patrimonio)}</span>
+          <span id="dashPatrimonioNum" style="font-size:14px;font-weight:800;letter-spacing:-0.02em;color:rgba(245,166,35,0.95)">${fmtDash(patrimonio)}</span>
         </div>
         <div style="display:flex;align-items:baseline;gap:6px;justify-content:center">
           <span style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:600;letter-spacing:0.04em">${t('gananciaNetaTotal')}</span>
@@ -2387,6 +2387,26 @@ function renderDashboard(){
   `;
 
   updateNav(patrimonio,totalMXN,totalUSDCurrent,tc,totalRend,deltaHoy,deltaHoyPct);
+
+  // Animación de conteo en el número de patrimonio del chart header
+  (function(){
+    const el = document.getElementById('dashPatrimonioNum');
+    if(!el) return;
+    const _prev = parseFloat(el.dataset.rawVal||'0');
+    const _end = patrimonio;
+    el.dataset.rawVal = _end;
+    if(Math.abs(_end - _prev) < 1 || _prev === 0) return;
+    const _dur = 400, _t0 = performance.now();
+    const _tick = (now) => {
+      const p = Math.min((now - _t0) / _dur, 1);
+      const ease = p < 0.5 ? 2*p*p : -1+(4-2*p)*p;
+      const cur = _prev + (_end - _prev) * ease;
+      el.textContent = fmtDash(cur);
+      if(p < 1) requestAnimationFrame(_tick);
+      else el.textContent = fmtDash(_end);
+    };
+    requestAnimationFrame(_tick);
+  })();
 
   // Limpiar cache en memoria si el último valor es 0 (mercado cerrado previo fetch)
   if (_sp500Data?.closes?.[_sp500Data.closes.length-1] === 0) { _sp500Data = null; }
