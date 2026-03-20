@@ -6300,7 +6300,7 @@ onAuthStateChanged(auth,async user=>{
     hidePending();
     DOC_REF = getDocRef(uid);
     if(typeof updateNavUser==='function') updateNavUser(user);
-    // Renderizar con datos de localStorage inmediatamente (sin esperar Firebase)
+    // Mostrar datos de localStorage inmediatamente sin esperar Firebase
     const _hasLocalData = LS.get('platforms') || LS.get('movements');
     if(!_hasLocalData) resetToEmpty();
     showApp();

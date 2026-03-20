@@ -7,8 +7,8 @@
   --cyan: #64D2FF; --yellow: #FFD60A; --teal: #00C7BE;
   --nav-bg: rgba(242,242,247,0.88);
   --input-bg: #fff; --input-border: #E5E5EA;
-  --shadow: none;
-  --shadow-hover: none;
+  --shadow: 0 2px 16px rgba(0,0,0,0.22);
+  --shadow-hover: 0 6px 24px rgba(0,0,0,0.28);
   --shadow-modal: none;
   --radius: 16px; --radius-sm: 10px;
   --font: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -24,8 +24,8 @@
   --orange: #FF9F0A; --purple: #BF5AF2; --teal: #00C7BE;
   --nav-bg: rgba(13,13,15,0.90);
   --input-bg: #2C2C2E; --input-border: #3A3A3C;
-  --shadow: none;
-  --shadow-hover: none;
+  --shadow: 0 2px 16px rgba(0,0,0,0.22);
+  --shadow-hover: 0 6px 24px rgba(0,0,0,0.28);
   --shadow-modal: none;
   --table-head-bg: #1C1C1E; --table-row-hover: #2C2C2E;
   --progress-bg: #2C2C2E;
@@ -92,47 +92,47 @@ body {
   box-shadow: none;
 }
 .nav-tab:hover {
-  background: rgba(10,132,255,0.10);
-  border-color: rgba(10,132,255,0.30);
-  color: var(--blue);
-  transform: translateY(-2px) scale(1.05);
+  background: rgba(0,0,0,0.06);
+  border-color: rgba(0,0,0,0.10);
+  color: var(--text);
+  transform: translateY(-1px);
   box-shadow: none;
 }
 .nav-tab.active {
   font-weight: 700; color: #fff;
-  background: var(--blue);
-  border-color: var(--blue);
+  background: #4A4A55;
+  border-color: #4A4A55;
   box-shadow: none;
 }
 /* Ocultar sub-monedas (MXN/USD/EUR/tc) de la nav — liberan espacio para los 7 tabs */
 #navSub { display: none !important; }
 
 /* ── Color único por tab — burbuja sutil, texto negro ── */
-.nav-tab[data-tab="dashboard"]   { color: var(--text); border-color: rgba(10,132,255,0.20);  background: rgba(10,132,255,0.07); }
-.nav-tab[data-tab="movimientos"] { color: var(--text); border-color: rgba(0,199,190,0.20);   background: rgba(0,199,190,0.07); }
-.nav-tab[data-tab="plataformas"] { color: var(--text); border-color: rgba(191,90,242,0.20);  background: rgba(191,90,242,0.07); }
-.nav-tab[data-tab="inversiones"] { color: var(--text); border-color: rgba(48,209,88,0.20);   background: rgba(48,209,88,0.07); }
-.nav-tab[data-tab="gastos"]      { color: var(--text); border-color: rgba(255,159,10,0.20);  background: rgba(255,159,10,0.07); }
-.nav-tab[data-tab="metas"]       { color: var(--text); border-color: rgba(255,55,95,0.20);   background: rgba(255,55,95,0.07); }
-.nav-tab[data-tab="ajustes"]     { color: var(--text); border-color: rgba(128,128,128,0.20); background: rgba(128,128,128,0.07); }
+
+
+
+
+
+
+
 
 /* hover — mismo color un poco más intenso, texto negro */
-.nav-tab[data-tab="dashboard"]:hover   { background: rgba(10,132,255,0.13);  border-color: rgba(10,132,255,0.32);  color: var(--text); box-shadow: none; }
-.nav-tab[data-tab="movimientos"]:hover { background: rgba(0,199,190,0.13);   border-color: rgba(0,199,190,0.32);   color: var(--text); box-shadow: none; }
-.nav-tab[data-tab="plataformas"]:hover { background: rgba(191,90,242,0.13);  border-color: rgba(191,90,242,0.32);  color: var(--text); box-shadow: none; }
-.nav-tab[data-tab="inversiones"]:hover { background: rgba(48,209,88,0.13);   border-color: rgba(48,209,88,0.32);   color: var(--text); box-shadow: none; }
-.nav-tab[data-tab="gastos"]:hover      { background: rgba(255,159,10,0.13);  border-color: rgba(255,159,10,0.32);  color: var(--text); box-shadow: none; }
-.nav-tab[data-tab="metas"]:hover       { background: rgba(255,55,95,0.13);   border-color: rgba(255,55,95,0.32);   color: var(--text); box-shadow: none; }
-.nav-tab[data-tab="ajustes"]:hover     { background: rgba(128,128,128,0.13); border-color: rgba(128,128,128,0.32); color: var(--text); box-shadow: none; }
+
+
+
+
+
+
+
 
 /* active — burbuja más opaca del mismo color, texto negro, sin sombra */
-.nav-tab[data-tab="dashboard"].active   { background: rgba(10,132,255,0.20); border-color: rgba(10,132,255,0.42); color: var(--text); font-weight: 700; box-shadow: none; }
-.nav-tab[data-tab="movimientos"].active { background: rgba(0,199,190,0.20);  border-color: rgba(0,199,190,0.42);  color: var(--text); font-weight: 700; box-shadow: none; }
-.nav-tab[data-tab="plataformas"].active { background: rgba(191,90,242,0.20); border-color: rgba(191,90,242,0.42); color: var(--text); font-weight: 700; box-shadow: none; }
-.nav-tab[data-tab="inversiones"].active { background: rgba(48,209,88,0.20);  border-color: rgba(48,209,88,0.42);  color: var(--text); font-weight: 700; box-shadow: none; }
-.nav-tab[data-tab="gastos"].active      { background: rgba(255,159,10,0.20); border-color: rgba(255,159,10,0.42); color: var(--text); font-weight: 700; box-shadow: none; }
-.nav-tab[data-tab="metas"].active       { background: rgba(255,55,95,0.20);  border-color: rgba(255,55,95,0.42);  color: var(--text); font-weight: 700; box-shadow: none; }
-.nav-tab[data-tab="ajustes"].active     { background: rgba(128,128,128,0.20);border-color: rgba(128,128,128,0.42);color: var(--text); font-weight: 700; box-shadow: none; }
+
+
+
+
+
+
+
 
 /* ── Encabezados de tabla: fondo sutil de color + texto más oscuro ── */
 /* Colores únicos para tablas simples */
@@ -174,12 +174,12 @@ body {
 .page.active { display: block; }
 .card {
   background: var(--card); border-radius: var(--radius); padding: 20px 24px;
-  box-shadow: none; border: none;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: none;
   transition: transform 0.2s, box-shadow 0.2s, background 0.3s;
 }
-.card:hover { transform: translateY(-1px); box-shadow: none; }
+.card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.09); }
 .card-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text2); margin-bottom: 8px; }
-.card-flat { background: var(--card); border-radius: var(--radius); box-shadow: none; border: none; overflow: hidden; transition: background 0.3s; }
+.card-flat { background: var(--card); border-radius: var(--radius); box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: none; overflow: hidden; transition: background 0.3s; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
 .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
@@ -212,16 +212,16 @@ body {
 .stat {
   padding: 20px 20px 16px; position: relative; overflow: hidden;
   background: var(--stat-bg); border-radius: 18px !important; border: none !important;
-  box-shadow: none !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
   transition: transform 0.18s cubic-bezier(.34,1.56,.64,1), background 0.3s !important;
   cursor: default;
 }
 [data-theme="dark"] .stat {
-  box-shadow: none !important;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.20) !important;
 }
 .stat:hover {
   transform: translateY(-2px) scale(1.01) !important;
-  box-shadow: none !important;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.10) !important;
 }
 .stat::before { display:none; }
 .stat::after { display:none; }
