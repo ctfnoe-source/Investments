@@ -466,7 +466,33 @@ tr:hover td { background: var(--table-row-hover); }
   }
 }
 
-/* ==================== SKELETON LOADERS ==================== */
+/* ==================== ODÓMETRO — animación estilo Robinhood ==================== */
+.odo-wrap {
+  display: inline-flex;
+  align-items: baseline;
+  overflow: hidden;
+  vertical-align: baseline;
+  line-height: inherit;
+}
+.odo-char {
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+  line-height: inherit;
+  height: 1.15em;
+  vertical-align: bottom;
+}
+.odo-inner {
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.55s cubic-bezier(0.23, 1, 0.32, 1);
+  will-change: transform;
+}
+.odo-digit {
+  display: block;
+  line-height: 1.15em;
+  text-align: center;
+} */
 @keyframes shimmer {
   0%   { background-position: -600px 0; }
   100% { background-position:  600px 0; }

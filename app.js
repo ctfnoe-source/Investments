@@ -1199,7 +1199,47 @@ function getPriceSummary() {
 
 const COLORS=['#6E9EF5','#4DC78A','#F5A54A','#A97DD1','#F07070','#52BED8','#D4A843','#8A9BB0','#7B79D4','#E87FA0','#45C27A','#35B5B0','#E8705A','#6F6DC9','#C47AC0','#E05577','#9A8A7A','#4AA8C0'];
 
-// ── Empty state con SVG ilustrado ─────────────────────────────────────────
+// ── Odómetro — genera HTML con dígitos animables estilo Robinhood ─────────────
+function _buildOdometer(fromStr, toStr) {
+  // Alinear ambas strings a la misma longitud con espacios al inicio
+  const maxLen = Math.max(fromStr.length, toStr.length);
+  const from = fromStr.padStart(maxLen, ' ');
+  const to   = toStr.padStart(maxLen, ' ');
+  const DIGITS = '0123456789';
+  let html = '<span class="odo-wrap">';
+  for(let i = 0; i < maxLen; i++){
+    const cf = from[i];
+    const ct = to[i];
+    if(cf === ct){
+      // Carácter estático — símbolo, coma, punto, espacio
+      html += `<span>${ct === ' ' ? '' : ct}</span>`;
+    } else if(DIGITS.includes(ct) && DIGITS.includes(cf)){
+      const df = parseInt(cf);
+      const dt = parseInt(ct);
+      // Construir columna: dígitos desde el valor inicial hasta el final
+      // Si sube: columna de df→9 + 0→dt (rueda hacia arriba)
+      // Si baja: columna de df→0 + 9→dt (rueda hacia abajo)
+      const goingUp = dt > df;
+      let col = '';
+      let steps = 0;
+      if(goingUp){
+        for(let d = df; d <= 9; d++){ col += `<span class="odo-digit">${d}</span>`; steps++; }
+        for(let d = 0; d <= dt; d++){ col += `<span class="odo-digit">${d}</span>`; steps++; }
+        steps = steps - 1; // target index = last item
+      } else {
+        for(let d = df; d >= 0; d--){ col += `<span class="odo-digit">${d}</span>`; steps++; }
+        for(let d = 9; d >= dt; d--){ col += `<span class="odo-digit">${d}</span>`; steps++; }
+        steps = steps - 1;
+      }
+      html += `<span class="odo-char"><span class="odo-inner" data-target="${steps}">${col}</span></span>`;
+    } else {
+      // Cambio de símbolo a dígito o viceversa — fade simple
+      html += `<span>${ct}</span>`;
+    }
+  }
+  html += '</span>';
+  return html;
+}
 function emptyState(type, btnLabel, btnAction){
   const svgs = {
     inversiones: `<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -2441,7 +2481,7 @@ function renderDashboard(){
 
   updateNav(patrimonio,totalMXN,totalUSDCurrent,tc,totalRend,deltaHoy,deltaHoyPct);
 
-  // Animación de conteo en el número grande de patrimonio del dashboard
+  // Odómetro en el número de patrimonio del dashboard
   (function(){
     const el = document.getElementById('dashPatrimonioNum');
     if(!el) return;
@@ -2449,16 +2489,15 @@ function renderDashboard(){
     const _end = patrimonio;
     el.dataset.rawVal = _end;
     if(Math.abs(_end - _prev) < 1 || _prev === 0){ el.textContent = fmtDash(_end); return; }
-    const _dur = 700, _t0 = performance.now();
-    const _tick = (now) => {
-      const p = Math.min((now - _t0) / _dur, 1);
-      const ease = p < 0.5 ? 2*p*p : -1+(4-2*p)*p;
-      const cur = _prev + (_end - _prev) * ease;
-      el.textContent = fmtDash(cur);
-      if(p < 1) requestAnimationFrame(_tick);
-      else el.textContent = fmtDash(_end);
-    };
-    requestAnimationFrame(_tick);
+    const _prevStr = fmtDash(_prev);
+    const _endStr = fmtDash(_end);
+    el.innerHTML = _buildOdometer(_prevStr, _endStr);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      el.querySelectorAll('.odo-inner[data-target]').forEach(inner=>{
+        const target = parseInt(inner.dataset.target);
+        inner.style.transform = `translateY(-${target * 1.15}em)`;
+      });
+    }));
   })();
 
   // Limpiar cache en memoria si el último valor es 0 (mercado cerrado previo fetch)
@@ -4893,10 +4932,16 @@ function updateNav(patrimonio,totalMXN,totalUSD,tc,totalRend,deltaHoy,deltaHoyPc
     const _shouldAnimate=_diff>1&&_prevRaw!==0;
     el1.dataset.rawVal=_newVal;
     if(_shouldAnimate){
-      const _start=_prevRaw,_end=_newVal,_dur=700,_t0=performance.now();
-      const _fmt=(v)=>{const abs=Math.abs(_mxnTo(v));const sign=_mxnTo(v)<0?'-':'';return sign+_dmSym+abs.toLocaleString('es-MX',{minimumFractionDigits:_dmDec,maximumFractionDigits:_dmDec});};
-      const _tick=(now)=>{const p=Math.min((now-_t0)/_dur,1);const ease=p<0.5?2*p*p:-1+(4-2*p)*p;const cur=_start+(_end-_start)*ease;el1.innerHTML=_fmt(cur)+deltaStr;if(p<1)requestAnimationFrame(_tick);else el1.innerHTML=_fmtNav(patrimonio)+deltaStr;};
-      requestAnimationFrame(_tick);
+      // Odómetro: construir HTML con dígitos animables
+      const _fmtStr = _fmtNav(patrimonio);
+      const _prevStr = _fmtNav(_prevRaw);
+      el1.innerHTML = _buildOdometer(_prevStr, _fmtStr) + deltaStr;
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        el1.querySelectorAll('.odo-inner[data-target]').forEach(inner=>{
+          const target = parseInt(inner.dataset.target);
+          inner.style.transform = `translateY(-${target * 1.15}em)`;
+        });
+      }));
     } else {
       el1.innerHTML=_fmtNav(patrimonio)+deltaStr;
     }
