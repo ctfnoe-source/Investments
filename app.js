@@ -230,6 +230,188 @@ const I18N = {
     iaPlaceholder:'Pregúntame algo sobre tus finanzas...',
     configureApiKeyFirst:'Configura una API key en Ajustes para usar la IA',
     iaAskMe:'Pregúntame sobre tus inversiones, gastos o metas.',
+    // ── Claves i18n añadidas ──
+    return:'rendimiento',
+    surplus:'Sobrante',
+    crear:'Crear',
+    nombre:'Nombre',
+    saldoTotal:'Saldo Total',
+    nuevaMeta:'Nueva Meta',
+    plataformasConTasa:'plataformas con tasa',
+    rendimientoAutoTotal:'Rendimiento auto total',
+    exchange:'Tipo de cambio',
+    saldoInicial:'Saldo Inicial',
+    tasa:'Tasa',
+    editar:'Editar',
+    clase:'Clase',
+    // Riesgo concentración
+    riesgoAlto:'ALTO',
+    riesgoMedio:'MEDIO',
+    riesgoBajo:'BAJO',
+    // Encabezados tabla posiciones dashboard
+    activo:'Activo',
+    dividendo:'Div.',
+    precioCompra:'P. Compra',
+    precioActual:'P. Actual',
+    gpTotal2:'G/P',
+    // Budget / income labels
+    budget:'del presupuesto',
+    income:'de ingreso',
+    // Misc
+    optimal:'Óptimo',
+    acceptable:'Aceptable',
+    tight:'Justo',
+    noTrades:'Sin posiciones registradas',
+    sinMovimientos:'Sin movimientos',
+    sinMovimientosSeccion:'Sin movimientos en esta sección',
+    sinResultados:'Sin resultados',
+    verMovimientos:'Ver movimientos',
+    // Form labels
+    descripcion:'Descripción',
+    fecha:'Fecha',
+    tipo:'Tipo',
+    tipoActivo:'Tipo de activo',
+    moneda:'Moneda',
+    monto:'Monto',
+    cantidad:'Cantidad',
+    comision:'Comisión',
+    costo:'Costo',
+    costoCompra:'Costo compra',
+    precioUnitario:'Precio unitario',
+    precioMedio:'Precio medio',
+    broker:'Broker',
+    ticker:'Ticker',
+    origen:'Origen',
+    destino:'Destino',
+    grupo:'Grupo',
+    frecuencia:'Frecuencia',
+    tasaAnual:'Tasa anual',
+    fechaInicio:'Fecha inicio',
+    fechaLimite:'Fecha límite',
+    // Actions
+    delete:'Eliminar',
+    select:'Seleccionar',
+    seleccionar:'Seleccionar',
+    clear:'Limpiar',
+    // Confirmations
+    deleteMovementConfirm:'¿Eliminar este movimiento?',
+    deletePlatformConfirm:'¿Eliminar esta plataforma?',
+    deleteGoalConfirm:'¿Eliminar esta meta?',
+    deleteRecurrenteConfirm:'¿Eliminar este gasto recurrente?',
+    deleteUserConfirm:'¿Eliminar este usuario?',
+    deleteEntireTransfer:'Eliminar toda la transferencia',
+    // Status / errors
+    error:'Error',
+    offline:'Sin conexión',
+    connected:'Conectado',
+    ready:'Listo',
+    testing:'Probando…',
+    testingWith:'Probando con',
+    noApiKey:'Sin clave API',
+    noApiKeys:'Sin claves API configuradas',
+    noConnection:'Sin conexión',
+    noContributions:'Sin aportaciones',
+    allProvidersFailed:'Todos los proveedores fallaron',
+    couldNotConnect:'No se pudo conectar',
+    unexpectedResponse:'Respuesta inesperada',
+    requestLimitReached:'Límite de peticiones alcanzado',
+    providersFailed:'proveedores fallaron',
+    fallbackAuto:'Auto fallback',
+    invalidDate:'Fecha inválida',
+    invalidAmount:'Importe inválido',
+    invalidFile:'Archivo inválido',
+    emptyFile:'Archivo vacío',
+    missingColumns:'Columnas faltantes',
+    rowsSkipped:'filas omitidas',
+    errorProcessing:'Error al procesar',
+    importedUnlinked:'importados sin vincular',
+    platformNotFound:'Plataforma no encontrada',
+    amountMustBePositive:'El importe debe ser positivo',
+    origenDestinoDiferentes:'El origen y destino deben ser distintos',
+    notConfigured:'Sin configurar',
+    notStored:'No almacenado',
+    pasteApiKey:'Pega tu API key aquí',
+    enterApiKey:'Introduce tu API key',
+    // Data / sync
+    sync:'Sincronizar',
+    synced:'Sincronizado',
+    updateLive:'Actualizar en vivo',
+    lastFirebaseSync:'Última sync Firebase',
+    dataImported:'Datos importados',
+    movementsImported:'movimientos importados',
+    noMovementsImported:'Sin movimientos importados',
+    dataSentTo:'Datos enviados a',
+    exportarPrimero:'Exporta antes de importar',
+    exportarAntes:'Exportar antes',
+    // History / archive
+    historicalArchive:'Archivo histórico',
+    queSeArchivara:'Que se archivará',
+    archivarAhora:'Archivar ahora',
+    archivarDesc:'Mover movimientos antiguos al archivo',
+    patrimonioHistory:'Historial de patrimonio',
+    snapshots:'Capturas',
+    aiHistory:'Historial IA',
+    // Import / CSV
+    importarExcel:'Importar Excel',
+    descargarPlantilla:'Descargar plantilla',
+    seleccionarCSV:'Seleccionar CSV',
+    csvInstrucciones:'Instrucciones CSV',
+    csvCategoriaExplicacion:'Columna Categoría',
+    csvImporteExplicacion:'Columna Importe',
+    csvMonedaExplicacion:'Columna Moneda',
+    csvNotasExplicacion:'Columna Notas',
+    csvPlataformaExplicacion:'Columna Plataforma',
+    csvTipoExplicacion:'Columna Tipo',
+    formatoFecha:'Formato fecha',
+    // LS keys (these appear in t() but are LS keys, not UI strings — safe to define as empty)
+    sp500_history:'', qqq_history:'', fxCache:'', offlineQueue:'', lastProactiveAlert:'',
+    tutorialDone:'', patrimonioHistory:'', aiHistory:'', settings:'', movements:'', platforms:'',
+    goals:'', snapshots:'', users:'', providers:'', portfolio:'', 2:'',
+    // Misc misc
+    opcional:'Opcional',
+    recomendado:'Recomendado',
+    hoy:'Hoy',
+    esteMes:'este mes',
+    registraMovimientos:'Registra tus movimientos',
+    recurrentesAplicadas:'recurrentes aplicados',
+    sueldoExtras:'Sueldo + extras',
+    todoIncluido:'Todo incluido',
+    movimientosPlataforma:'Movimientos de plataforma',
+    totalOperacion:'Total operación',
+    venderTodo:'Vender todo',
+    contributionDetails:'Detalle de aportaciones',
+    aPreciosActuales:'a precios actuales',
+    acumulado:'Acumulado',
+    liberados:'liberados',
+    withBalance:'con saldo',
+    youHave:'Tienes',
+    ejAhorro:'Ej: Ahorro',
+    ejTransferencia:'Ej: Transferencia',
+    asignarPresupuestos:'Asignar presupuestos',
+    inversionesGastosNoAfectados:'Inversiones y gastos no afectados',
+    nuevoRecurrente:'Nuevo recurrente',
+    buscar:'Buscar',
+    nuevaPlataforma:'Nueva plataforma',
+    movimiento:'Movimiento',
+    rendimiento:'Rendimiento',
+    rendimientoExplicacion:'Rendimiento sobre capital invertido',
+    sinPosicionesAbiertas:'Sin posiciones abiertas',
+    realizada:'Realizada',
+    inactivo:'Inactivo',
+    darkMode:'Modo oscuro',
+    lang:'Idioma',
+    user:'Usuario',
+    users:'Usuarios',
+    loadingUsers:'Cargando usuarios…',
+    noUsers:'Sin usuarios',
+    signinError:'Error al iniciar sesión',
+    financialAssistant:'Asistente financiero',
+    iaDesc:'Analiza tus datos con IA',
+    showControls:'Mostrar controles',
+    hideControls:'Ocultar controles',
+    valuesHidden:'Valores ocultos',
+    hideValues:'Ocultar valores',
+    showValues:'Mostrar valores',
   },
   en: {
     tabDashboard:'📊 Dashboard', tabMovimientos:'📋 Transactions', tabPlataformas:'🏦 Platforms',
@@ -424,6 +606,165 @@ const I18N = {
     iaPlaceholder:'Ask me anything about your finances...',
     configureApiKeyFirst:'Set up an API key in Settings to use the AI',
     iaAskMe:'Ask me about your investments, expenses or goals.',
+    // ── Added i18n keys ──
+    return:'return',
+    surplus:'Surplus',
+    crear:'Create',
+    nombre:'Name',
+    saldoTotal:'Total Balance',
+    nuevaMeta:'New Goal',
+    plataformasConTasa:'platforms with rate',
+    rendimientoAutoTotal:'Auto yield total',
+    exchange:'Exchange rate',
+    saldoInicial:'Initial Balance',
+    tasa:'Rate',
+    editar:'Edit',
+    clase:'Class',
+    riesgoAlto:'HIGH',
+    riesgoMedio:'MEDIUM',
+    riesgoBajo:'LOW',
+    activo:'Asset',
+    dividendo:'Div.',
+    precioCompra:'Buy Price',
+    precioActual:'Cur. Price',
+    gpTotal2:'G/L',
+    budget:'of budget',
+    income:'of income',
+    optimal:'Optimal',
+    acceptable:'Acceptable',
+    tight:'Tight',
+    noTrades:'No positions registered',
+    sinMovimientos:'No movements',
+    sinMovimientosSeccion:'No movements in this section',
+    sinResultados:'No results',
+    verMovimientos:'View movements',
+    descripcion:'Description',
+    tipoActivo:'Asset type',
+    cantidad:'Quantity',
+    comision:'Commission',
+    costo:'Cost',
+    costoCompra:'Buy cost',
+    precioUnitario:'Unit price',
+    precioMedio:'Average price',
+    broker:'Broker',
+    ticker:'Ticker',
+    origen:'Origin',
+    destino:'Destination',
+    grupo:'Group',
+    frecuencia:'Frequency',
+    tasaAnual:'Annual rate',
+    fechaInicio:'Start date',
+    fechaLimite:'Deadline',
+    delete:'Delete',
+    select:'Select',
+    seleccionar:'Select',
+    clear:'Clear',
+    deleteMovementConfirm:'Delete this movement?',
+    deletePlatformConfirm:'Delete this platform?',
+    deleteGoalConfirm:'Delete this goal?',
+    deleteRecurrenteConfirm:'Delete this recurring expense?',
+    deleteUserConfirm:'Delete this user?',
+    deleteEntireTransfer:'Delete entire transfer',
+    error:'Error',
+    offline:'Offline',
+    connected:'Connected',
+    ready:'Ready',
+    testing:'Testing…',
+    testingWith:'Testing with',
+    noApiKey:'No API key',
+    noApiKeys:'No API keys configured',
+    noConnection:'No connection',
+    noContributions:'No contributions',
+    allProvidersFailed:'All providers failed',
+    couldNotConnect:'Could not connect',
+    unexpectedResponse:'Unexpected response',
+    requestLimitReached:'Request limit reached',
+    providersFailed:'providers failed',
+    fallbackAuto:'Auto fallback',
+    invalidDate:'Invalid date',
+    invalidAmount:'Invalid amount',
+    invalidFile:'Invalid file',
+    emptyFile:'Empty file',
+    missingColumns:'Missing columns',
+    rowsSkipped:'rows skipped',
+    errorProcessing:'Error processing',
+    importedUnlinked:'imported unlinked',
+    platformNotFound:'Platform not found',
+    amountMustBePositive:'Amount must be positive',
+    origenDestinoDiferentes:'Origin and destination must be different',
+    notConfigured:'Not configured',
+    notStored:'Not stored',
+    pasteApiKey:'Paste your API key here',
+    enterApiKey:'Enter your API key',
+    sync:'Sync',
+    synced:'Synced',
+    updateLive:'Update live',
+    lastFirebaseSync:'Last Firebase sync',
+    dataImported:'Data imported',
+    movementsImported:'movements imported',
+    noMovementsImported:'No movements imported',
+    dataSentTo:'Data sent to',
+    exportarPrimero:'Export before importing',
+    exportarAntes:'Export first',
+    historicalArchive:'Historical archive',
+    queSeArchivara:'To be archived',
+    archivarAhora:'Archive now',
+    archivarDesc:'Move old movements to archive',
+    importarExcel:'Import Excel',
+    descargarPlantilla:'Download template',
+    seleccionarCSV:'Select CSV',
+    csvInstrucciones:'CSV instructions',
+    csvCategoriaExplicacion:'Category column',
+    csvImporteExplicacion:'Amount column',
+    csvMonedaExplicacion:'Currency column',
+    csvNotasExplicacion:'Notes column',
+    csvPlataformaExplicacion:'Platform column',
+    csvTipoExplicacion:'Type column',
+    formatoFecha:'Date format',
+    sp500_history:'', qqq_history:'', fxCache:'', offlineQueue:'', lastProactiveAlert:'',
+    tutorialDone:'', patrimonioHistory:'', aiHistory:'', settings:'', movements:'', platforms:'',
+    goals:'', snapshots:'', users:'', providers:'', portfolio:'',
+    opcional:'Optional',
+    recomendado:'Recommended',
+    hoy:'Today',
+    esteMes:'this month',
+    registraMovimientos:'Log your movements',
+    recurrentesAplicadas:'recurring applied',
+    sueldoExtras:'Salary + extras',
+    todoIncluido:'All included',
+    movimientosPlataforma:'Platform movements',
+    totalOperacion:'Total operation',
+    venderTodo:'Sell all',
+    contributionDetails:'Contribution details',
+    aPreciosActuales:'at current prices',
+    acumulado:'Accumulated',
+    liberados:'released',
+    withBalance:'with balance',
+    youHave:'You have',
+    ejAhorro:'Ex: Savings',
+    ejTransferencia:'Ex: Transfer',
+    asignarPresupuestos:'Assign budgets',
+    inversionesGastosNoAfectados:'Investments and expenses not affected',
+    nuevoRecurrente:'New recurring',
+    buscar:'Search',
+    nuevaPlataforma:'New platform',
+    movimiento:'Movement',
+    rendimiento:'Return',
+    rendimientoExplicacion:'Return on invested capital',
+    sinPosicionesAbiertas:'No open positions',
+    realizada:'Realized',
+    inactivo:'Inactive',
+    darkMode:'Dark mode',
+    lang:'Language',
+    user:'User',
+    loadingUsers:'Loading users…',
+    noUsers:'No users',
+    signinError:'Sign-in error',
+    financialAssistant:'Financial assistant',
+    iaDesc:'Analyze your data with AI',
+    showControls:'Show controls',
+    hideControls:'Hide controls',
+    valuesHidden:'Values hidden',
   }
 };
 let _lang = (typeof window.__initLang !== 'undefined' ? window.__initLang : null) || LS.get('lang') || 'es';
@@ -1784,9 +2125,9 @@ const _skeletonFor = (tab) => {
 
   const skeletons = {
     dashboard: `<div class="skeleton-page">
-      ${statRow(4)}
-      ${chartCard(200)}
-      <div class="skeleton-grid-2">${chartCard(160)}${chartCard(160)}</div>
+      ${statRow(8)}
+      ${chartCard(260)}
+      <div class="skeleton-grid-3">${chartCard(160)}${chartCard(160)}${chartCard(160)}</div>
       <div class="skeleton-grid-2">${listCard(5)}${listCard(4)}</div>
     </div>`,
     plataformas: `<div class="skeleton-page">
@@ -2126,7 +2467,7 @@ function renderDashboard(){
   const invInicial=plats.reduce((s,p)=>s+(p.saldoInicial||0),0);
   const topPlat=[...plats].sort((a,b)=>platSaldoToMXN(b)-platSaldoToMXN(a))[0];
   const maxConc=topPlat?platSaldoToMXN(topPlat)/totalMXN:0;
-  const riskLvl=maxConc>0.4?'🔴 HIGH':maxConc>0.25?'🟡 MEDIUM':'🟢 LOW';
+  const riskLvl=maxConc>0.4?'🔴 '+t('riesgoAlto'):maxConc>0.25?'🟡 '+t('riesgoMedio'):'🟢 '+t('riesgoBajo');
   const platsConTasa=plats.filter(p=>(p.tasaAnual||0)>0).length;
   const todayIso = today();
   const platsSinActualizar = plats.filter(p => {
@@ -2333,20 +2674,71 @@ function renderDashboard(){
     if(chartInstances[k]){ chartInstances[k].destroy(); delete chartInstances[k]; }
   });
 
+  // Pre-calcular de e invE para usar en el template HTML (empty states)
+  const _at={};plats.forEach(p=>{_at[p.type]=(_at[p.type]||0)+platSaldoToMXN(p);});
+  tickerList.forEach(tk=>{if(tk.cantActual>0){const v=(tk.valorActual||tk.costoPosicion)*(tk.moneda==='MXN'?1:tc);_at[tk.type]=(_at[tk.type]||0)+v;}});
+  const de=Object.entries(_at).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  const _inv={};tickerList.forEach(tk=>{if(tk.cantActual>0){const v=(tk.valorActual||tk.costoPosicion)*(tk.moneda==='MXN'?1:tc);_inv[tk.type]=(_inv[tk.type]||0)+v;}});
+  if(totalMXN>0) _inv[t('seccionPlataformas')]=totalMXN;
+  const invE=Object.entries(_inv).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+
   document.getElementById('page-dashboard').innerHTML=`
     ${applied>0?`<div class="snapshot-banner" style="background:rgba(191,90,242,0.06);border-color:rgba(191,90,242,0.2);margin-bottom:16px"><span class="snap-dot" style="background:var(--purple)"></span><span style="color:var(--purple)">✅ <strong>${applied} ${t('recurrentesAplicadas')}</strong> ${t('esteMes')}</span></div>`:''}
     ${alertsHtml}
     ${platsSinActualizarHtml}
 
     <div class="grid-8" style="margin-bottom:16px">
-      <div class="card stat stat-blue"><div class="stat-label">${t('valorPlataformas')}</div><div class="stat-value">${fmtDash(totalMXN)}</div><div class="stat-sub"><span style="color:${pctCol(totalRend)};font-weight:700">${fmtPct(invInicial?totalRend/invInicial:0)}</span> ${t('return')}</div></div>
-      <div class="card stat stat-blue"><div class="stat-label">${t('rendPlataformas')}</div><div class="stat-value" style="color:${pctCol(totalRend)}">${fmtDash(totalRend)}</div><div class="stat-sub">${platsConTasa>0?`<span style="color:var(--teal)">⚡${fmtDash(totalRendAuto)} ${t('auto')}</span>`:t('rendimientoSobre')}</div></div>
-      <div class="card stat stat-green"><div class="stat-label">${t('valorInversiones')}</div><div class="stat-value">${fmtDash(totalInvMXN)}</div><div class="stat-sub">${tickerList.length} ${t('posiciones2')} · ${priceSummary.live>0?t('preciosHoy'):t('costoPosicion')}</div></div>
-      <div class="card stat stat-green"><div class="stat-label">${t('gpTotal')}</div><div class="stat-value" style="color:${pctCol(gpNoRealizadaTotal+gpRealizadaTotal)}">${fmtDashSign(gpNoRealizadaTotal+gpRealizadaTotal)}</div><div class="stat-sub" style="display:flex;flex-direction:column;gap:1px"><span style="color:var(--text2)">No real.: <span style="color:${pctCol(gpNoRealizadaTotal)};font-weight:600">${fmtDashSign(gpNoRealizadaTotal)}</span></span><span style="color:var(--text2)">Realiz.: <span style="color:${pctCol(gpRealizadaTotal)};font-weight:600">${fmtDashSign(gpRealizadaTotal)}</span></span></div></div>
-      <div class="card stat stat-teal"><div class="stat-label">${t('rentabilidadTotal')}</div><div class="stat-value" style="color:${rentabilidadTotal!==null?pctCol(rentabilidadTotal):'var(--text2)'}">${rentabilidadTotal!==null?(rentabilidadTotal>=0?'+':'')+(rentabilidadTotal*100).toFixed(2)+'%':'—'}</div><div class="stat-sub">${rentabilidadTotal!==null?t('sobreCapital'):t('sinHistorial')}</div></div>
-      <div class="card stat stat-teal"><div class="stat-label">${t('concentracion')}</div><div class="stat-value" style="font-size:14px">${topPlat?.name||'—'}</div><div class="stat-sub"><span style="color:var(--orange);font-weight:700">${(maxConc*100).toFixed(1)}%</span> · ${riskLvl}</div></div>
-      <div class="card stat stat-orange"><div class="stat-label">${t('gastosMes')} ${curLabel}</div><div class="stat-value" style="color:${totGastoMes>0?'var(--red)':'var(--text)'}">${fmtD(totGastoMes)}</div><div class="stat-sub">${totalPresupuesto>0?(pctPresUsado*100).toFixed(0)+'% '+t('budget'):totIngMes>0||ingresoMensualEUR>0?fmtD(totIngMes>0?totIngMes:ingresoMensualEUR)+' '+t('income'):''}</div></div>
-      <div class="card stat stat-orange"><div class="stat-label">${t('balanceMes')} ${curLabel}</div><div class="stat-value" style="color:${pctCol(balMes)}">${fmtD(balMes)}</div><div class="stat-sub">${(pctAhorro*100).toFixed(0)}% ${t('ahorro')}${totIngMes===0&&ingresoMensualEUR>0?` (${t('est')})`:''}</div></div>
+      <div class="card stat stat-blue stat-tooltip-wrap" title="">
+        <div class="stat-label">${t('valorPlataformas')}</div>
+        <div class="stat-value">${fmtDash(totalMXN)}</div>
+        <div class="stat-sub"><span style="color:${pctCol(totalRend)};font-weight:700">${fmtPct(invInicial?totalRend/invInicial:0)}</span> ${t('return')}</div>
+        <div class="stat-tooltip">${plats.slice(0,5).map(p=>`<div style="display:flex;justify-content:space-between;gap:12px"><span style="color:var(--text2)">${p.name}</span><span style="font-weight:700">${fmtDash(platSaldoToMXN(p))}</span></div>`).join('')}${plats.length>5?`<div style="color:var(--text3);font-size:10px;margin-top:2px">+${plats.length-5} más</div>`:''}</div>
+      </div>
+      <div class="card stat stat-blue stat-tooltip-wrap">
+        <div class="stat-label">${t('rendPlataformas')}</div>
+        <div class="stat-value" style="color:${pctCol(totalRend)}">${fmtDash(totalRend)}</div>
+        <div class="stat-sub">${platsConTasa>0?`<span style="color:var(--teal)">⚡${fmtDash(totalRendAuto)} ${t('auto')}</span>`:t('rendimientoSobre')}</div>
+        <div class="stat-tooltip"><div style="display:flex;justify-content:space-between;gap:12px"><span style="color:var(--text2)">${t('auto')} (tasa)</span><span style="font-weight:700;color:var(--teal)">${fmtDash(totalRendAuto)}</span></div><div style="display:flex;justify-content:space-between;gap:12px"><span style="color:var(--text2)">Aportaciones</span><span style="font-weight:700">${fmtDash(totalAport)}</span></div><div style="display:flex;justify-content:space-between;gap:12px"><span style="color:var(--text2)">Retiros</span><span style="font-weight:700;color:var(--red)">${fmtDash(totalRetiros)}</span></div></div>
+      </div>
+      <div class="card stat stat-green stat-tooltip-wrap">
+        <div class="stat-label">${t('valorInversiones')}</div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <div class="stat-value">${fmtDash(totalInvMXN)}</div>
+          ${deltaHoy!==0?`<span style="font-size:11px;font-weight:700;color:${pctCol(deltaHoy)};background:${deltaHoy>=0?'rgba(48,209,88,0.10)':'rgba(255,69,58,0.10)'};padding:2px 7px;border-radius:20px;white-space:nowrap">${deltaHoy>=0?'▲':'▼'} ${fmtPct(Math.abs(deltaHoyPct))} hoy</span>`:''}
+        </div>
+        <div class="stat-sub">${tickerList.length} ${t('posiciones2')} · ${priceSummary.live>0?t('preciosHoy'):t('costoPosicion')}</div>
+        <div class="stat-tooltip">${tickerList.filter(tk=>tk.cantActual>0).sort((a,b)=>((b.valorActual||b.costoPosicion)*( b.moneda==='MXN'?1:tc))-(( a.valorActual||a.costoPosicion)*(a.moneda==='MXN'?1:tc))).slice(0,5).map(tk=>{const v=(tk.valorActual||tk.costoPosicion)*(tk.moneda==='MXN'?1:tc);return`<div style="display:flex;justify-content:space-between;gap:12px"><span style="color:var(--text2)">${tk.ticker}</span><span style="font-weight:700">${fmtDash(v)}</span></div>`}).join('')}</div>
+      </div>
+      <div class="card stat stat-green stat-tooltip-wrap">
+        <div class="stat-label">${t('gpTotal')}</div>
+        <div class="stat-value" style="color:${pctCol(gpNoRealizadaTotal+gpRealizadaTotal)}">${fmtDashSign(gpNoRealizadaTotal+gpRealizadaTotal)}</div>
+        <div class="stat-sub" style="display:flex;flex-direction:column;gap:1px"><span style="color:var(--text2)">No real.: <span style="color:${pctCol(gpNoRealizadaTotal)};font-weight:600">${fmtDashSign(gpNoRealizadaTotal)}</span></span><span style="color:var(--text2)">Realiz.: <span style="color:${pctCol(gpRealizadaTotal)};font-weight:600">${fmtDashSign(gpRealizadaTotal)}</span></span></div>
+        <div class="stat-tooltip">${tickerList.filter(tk=>tk.cantActual>0&&tk.gpNoRealizada!==null).sort((a,b)=>(b.gpNoRealizada||0)-(a.gpNoRealizada||0)).slice(0,5).map(tk=>`<div style="display:flex;justify-content:space-between;gap:12px"><span style="color:var(--text2)">${tk.ticker}</span><span style="font-weight:700;color:${pctCol(tk.gpNoRealizada)}">${tk.gpNoRealizada>=0?'+':''}${fmtDash(tk.gpNoRealizada*(tk.moneda==='MXN'?1:tc))}</span></div>`).join('')}</div>
+      </div>
+      <div class="card stat stat-teal stat-tooltip-wrap">
+        <div class="stat-label">${t('rentabilidadTotal')}</div>
+        <div class="stat-value" style="color:${rentabilidadTotal!==null?pctCol(rentabilidadTotal):'var(--text2)'}">${rentabilidadTotal!==null?(rentabilidadTotal>=0?'+':'')+(rentabilidadTotal*100).toFixed(2)+'%':'—'}</div>
+        <div class="stat-sub">${rentabilidadTotal!==null?t('sobreCapital'):t('sinHistorial')}</div>
+        <div class="stat-tooltip">${rendAnualReal!==null?`<div style="display:flex;justify-content:space-between;gap:12px"><span style="color:var(--text2)">${t('cagrReal')}</span><span style="font-weight:700;color:${pctCol(rendAnualReal)}">${rendAnualReal>=0?'+':''}${(rendAnualReal*100).toFixed(1)}%</span></div>`:''}<div style="display:flex;justify-content:space-between;gap:12px"><span style="color:var(--text2)">${t('patrimonioRendPuro')||'Ganancia neta'}</span><span style="font-weight:700;color:${pctCol(patrimonioRendPuro)}">${fmtDashSign(patrimonioRendPuro)}</span></div></div>
+      </div>
+      <div class="card stat stat-teal stat-tooltip-wrap">
+        <div class="stat-label">${t('concentracion')}</div>
+        <div class="stat-value" style="font-size:14px">${topPlat?.name||'—'}</div>
+        <div class="stat-sub"><span style="color:var(--orange);font-weight:700">${(maxConc*100).toFixed(1)}%</span> · ${riskLvl}</div>
+        <div class="stat-tooltip">${[...plats].sort((a,b)=>platSaldoToMXN(b)-platSaldoToMXN(a)).slice(0,4).map(p=>{const pct=totalMXN>0?platSaldoToMXN(p)/totalMXN:0;return`<div style="display:flex;justify-content:space-between;gap:12px"><span style="color:var(--text2)">${p.name}</span><span style="font-weight:700;color:${pct>0.4?'var(--red)':pct>0.25?'var(--orange)':'var(--text)'}">${(pct*100).toFixed(1)}%</span></div>`;}).join('')}</div>
+      </div>
+      <div class="card stat stat-orange stat-tooltip-wrap">
+        <div class="stat-label">${t('gastosMes')} ${curLabel}</div>
+        <div class="stat-value" style="color:${totGastoMes>0?'var(--red)':'var(--text)'}">${fmtD(totGastoMes)}</div>
+        <div class="stat-sub">${totalPresupuesto>0?(pctPresUsado*100).toFixed(0)+'% '+t('budget'):totIngMes>0||ingresoMensualEUR>0?fmtD(totIngMes>0?totIngMes:ingresoMensualEUR)+' '+t('income'):''}</div>
+        <div class="stat-tooltip">${topCats.slice(0,5).map(([id,v])=>`<div style="display:flex;justify-content:space-between;gap:12px"><span style="color:var(--text2)">${catName(id)}</span><span style="font-weight:700">${fmtD(v)}</span></div>`).join('')}${topCats.length===0?`<div style="color:var(--text3)">${t('sinGastosEsteMes')}</div>`:''}</div>
+      </div>
+      <div class="card stat stat-orange stat-tooltip-wrap">
+        <div class="stat-label">${t('balanceMes')} ${curLabel}</div>
+        <div class="stat-value" style="color:${pctCol(balMes)}">${fmtD(balMes)}</div>
+        <div class="stat-sub">${(pctAhorro*100).toFixed(0)}% ${t('ahorro')}${totIngMes===0&&ingresoMensualEUR>0?` (${t('est')})`:''}</div>
+        <div class="stat-tooltip"><div style="display:flex;justify-content:space-between;gap:12px"><span style="color:var(--text2)">${t('ingreso')}</span><span style="font-weight:700;color:var(--green)">${fmtD(totIngMes>0?totIngMes:ingresoMensualEUR)}</span></div><div style="display:flex;justify-content:space-between;gap:12px"><span style="color:var(--text2)">${t('gastosMes')}</span><span style="font-weight:700;color:var(--red)">${fmtD(totGastoMes)}</span></div><div style="display:flex;justify-content:space-between;gap:12px;border-top:0.5px solid var(--border);padding-top:4px;margin-top:2px"><span style="color:var(--text2)">Balance</span><span style="font-weight:700;color:${pctCol(balMes)}">${fmtD(balMes)}</span></div></div>
+      </div>
     </div>
 
     <div class="card card-accent-blue" style="margin-bottom:16px;padding:0;overflow:hidden">
@@ -2392,11 +2784,15 @@ function renderDashboard(){
     <div class="grid-1-1-1" style="margin-bottom:16px">
       <div class="card card-accent-blue">
         <div class="card-title card-title-blue">📊 ${t('distribucionPorTipo')}</div>
-        <div class="chart-container" style="height:150px;width:100%;overflow-y:auto;scrollbar-width:thin"><canvas id="chartDistro"></canvas></div>
+        ${de.length>0
+          ? `<div class="chart-container" style="height:150px;width:100%;overflow-y:auto;scrollbar-width:thin"><canvas id="chartDistro"></canvas></div>`
+          : `<div class="chart-empty-state"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="20" width="8" height="16" rx="2" fill="var(--blue)" opacity="0.25"/><rect x="16" y="12" width="8" height="24" rx="2" fill="var(--blue)" opacity="0.35"/><rect x="28" y="6" width="8" height="30" rx="2" fill="var(--blue)" opacity="0.18"/></svg><div class="chart-empty-text">${t('sinPlataformas')}</div><button class="btn btn-sm btn-primary" style="margin-top:8px;font-size:11px" onclick="switchTab('plataformas')">${t('agregarPrimera')}</button></div>`}
       </div>
       <div class="card card-accent-green">
         <div class="card-title card-title-green">💼 ${t('inversionesPorTipo')}</div>
-        <div class="chart-container" style="height:150px;width:100%;overflow-y:auto;scrollbar-width:thin"><canvas id="chartInvTipo"></canvas></div>
+        ${invE.length>0
+          ? `<div class="chart-container" style="height:150px;width:100%;overflow-y:auto;scrollbar-width:thin"><canvas id="chartInvTipo"></canvas></div>`
+          : `<div class="chart-empty-state"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><polyline points="4,32 14,18 22,24 32,10 38,14" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.4"/><circle cx="32" cy="10" r="3" fill="var(--green)" opacity="0.5"/></svg><div class="chart-empty-text">${t('sinInversiones')}</div><button class="btn btn-sm btn-primary" style="margin-top:8px;font-size:11px" onclick="switchTab('inversiones')">${t('agregarInversion')}</button></div>`}
       </div>
       <div class="card card-accent-orange">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
@@ -2405,7 +2801,7 @@ function renderDashboard(){
         </div>
         ${topCats.length>0
           ? `<div class="chart-container" style="height:150px;width:100%;overflow-y:auto;scrollbar-width:thin"><canvas id="chartGastosCat"></canvas></div>`
-          : `<div style="text-align:center;color:var(--text2);padding:24px;font-size:13px">${t('sinGastosEsteMes')}</div>`}
+          : `<div class="chart-empty-state"><svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="14" stroke="var(--orange)" stroke-width="2.2" fill="none" opacity="0.3"/><path d="M20 6 A14 14 0 0 1 34 20" stroke="var(--orange)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.7"/><circle cx="20" cy="20" r="3" fill="var(--orange)" opacity="0.5"/></svg><div class="chart-empty-text">${t('sinGastosEsteMes')}</div><button class="btn btn-sm" style="margin-top:8px;font-size:11px;background:none;border:1px solid var(--border);color:var(--text2)" onclick="switchTab('gastos')">${t('registraMovimientos')} →</button></div>`}
       </div>
     </div>
 
@@ -2430,11 +2826,11 @@ function renderDashboard(){
         </div>
         ${tickerList.filter(tk=>tk.cantActual>0).length>0?`
         <div style="display:grid;grid-template-columns:1.1fr 0.6fr 0.9fr 0.9fr 0.9fr;gap:0;margin-bottom:6px;padding:0 4px">
-          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em">Activo</div>
-          <div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.05em;text-align:right">Div.</div>
-          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;text-align:right">P. Compra</div>
-          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;text-align:right">P. Actual</div>
-          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;text-align:right">G/P</div>
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em">${t('activo')}</div>
+          <div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.05em;text-align:right">${t('dividendo')}</div>
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;text-align:right">${t('precioCompra')}</div>
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;text-align:right">${t('precioActual')}</div>
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;text-align:right">${t('gpTotal2')}</div>
         </div>
         <div style="max-height:340px;overflow-y:auto;margin:0 -4px;padding:0 4px">
         ${tickerList.filter(tk=>tk.cantActual>0).sort((a,b)=>b.costoTotal-a.costoTotal).map(tk=>{
@@ -2880,9 +3276,7 @@ function renderDashboard(){
 
 
 
-    const at={};plats.forEach(p=>{at[p.type]=(at[p.type]||0)+platSaldoToMXN(p);});
-    tickerList.forEach(tk=>{if(tk.cantActual>0){const v=(tk.valorActual||tk.costoPosicion)*(tk.moneda==='MXN'?1:tc);at[tk.type]=(at[tk.type]||0)+v;}});
-    const de=Object.entries(at).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+    // de already calculated before innerHTML — reuse it
     const ctxD=document.getElementById('chartDistro');
     if(ctxD&&de.length>0){
       const _hD=Math.max(150,de.length*36); ctxD.style.height=_hD+'px'; ctxD.style.width='100%'; ctxD.parentElement.style.height='150px'; ctxD.parentElement.style.overflowY=_hD>150?'auto':'hidden';
@@ -2890,10 +3284,7 @@ function renderDashboard(){
       ctxD.style.width='100%';
     }
 
-    const inv={};
-    tickerList.forEach(tk=>{if(tk.cantActual>0){const v=(tk.valorActual||tk.costoPosicion)*(tk.moneda==='MXN'?1:tc);inv[tk.type]=(inv[tk.type]||0)+v;}});
-    if(totalMXN>0) inv['Platforms']=totalMXN;
-    const invE=Object.entries(inv).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+    // invE already calculated before innerHTML — reuse it
     const ctxI=document.getElementById('chartInvTipo');
     if(ctxI&&invE.length>0){
       const _hI=Math.max(150,invE.length*36); ctxI.style.height=_hI+'px'; ctxI.style.width='100%'; ctxI.parentElement.style.height='150px'; ctxI.parentElement.style.overflowY=_hI>150?'auto':'hidden';

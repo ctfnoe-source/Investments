@@ -405,6 +405,52 @@ tr:hover td { background: var(--table-row-hover); }
 .stat-teal:hover   { box-shadow: 0 10px 30px rgba(0,199,190,0.18) !important; }
 .stat-red:hover    { box-shadow: 0 10px 30px rgba(255,69,58,0.18) !important; }
 
+/* ==================== STAT CARD TOOLTIPS ==================== */
+.stat-tooltip-wrap { position: relative; overflow: visible; }
+.stat-tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.18);
+  min-width: 180px;
+  max-width: 240px;
+  z-index: 200;
+  font-size: 12px;
+  line-height: 1.7;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.stat-tooltip-wrap:hover .stat-tooltip { display: block; }
+/* Push last 2 cards tooltip to the left so it doesn't clip */
+.grid-8 > :nth-last-child(-n+2) .stat-tooltip {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+/* ==================== EMPTY STATE CHARTS ==================== */
+.chart-empty-state {
+  height: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--text2);
+}
+.chart-empty-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text2);
+  text-align: center;
+}
+
 /* Label tintado con el color de su sección */
 .stat-blue   .stat-label { color: #0060CC; }
 .stat-green  .stat-label { color: #1A8A3A; }
@@ -529,6 +575,11 @@ tr:hover td { background: var(--table-row-hover); }
   grid-template-columns: 1fr 1fr;
   gap: 14px;
 }
+.skeleton-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+}
 .skeleton-card {
   background: var(--card);
   border-radius: var(--radius);
@@ -551,6 +602,7 @@ tr:hover td { background: var(--table-row-hover); }
 @media(max-width:768px) {
   .skeleton-grid { grid-template-columns: 1fr 1fr; }
   .skeleton-grid-2 { grid-template-columns: 1fr; }
+  .skeleton-grid-3 { grid-template-columns: 1fr; }
 }
 
 /* ==================== TOAST ==================== */
