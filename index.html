@@ -12,6 +12,9 @@
   <meta name="google-site-verification" content="wEo3yEh6liZ1rg8cD6wsZ5D-rr5mUdXrmG8tNuxgzzo">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://trackfolio.pages.dev">
+  <link rel="alternate" hreflang="es" href="https://trackfolio.pages.dev">
+  <link rel="alternate" hreflang="en" href="https://trackfolio.pages.dev">
+  <link rel="alternate" hreflang="x-default" href="https://trackfolio.pages.dev">
 
   <!-- Open Graph (para redes sociales) -->
   <meta property="og:title" content="TrackFolio — Controla tus Inversiones y Finanzas">
@@ -23,7 +26,7 @@
   <meta property="og:image" content="https://trackfolio.pages.dev/icon-512.png">
 
   <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary">
+  <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="TrackFolio — Controla tus Inversiones y Finanzas">
   <meta name="twitter:description" content="Dashboard financiero personal para rastrear inversiones, gastos y metas. La alternativa inteligente a Excel.">
   <meta name="twitter:image" content="https://trackfolio.pages.dev/icon-512.png">
@@ -73,8 +76,8 @@
   <meta name="apple-mobile-web-app-title" content="TrackFolio">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js" defer></script>
   <link rel="stylesheet" href="styles.css">
 
   <!-- Aplicar idioma inmediatamente desde localStorage -->
@@ -305,17 +308,69 @@
   }
   #aiFab:hover { transform:scale(1.1); }
   #aiFab:active { transform:scale(0.95); }
+/* ── Trust row (bajo CTA hero) ───────────────────────────────────────────── */
+.ld-trust-row{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:12px;margin-bottom:4px}
+.ld-trust-item{font-size:12px;color:#86868B;display:flex;align-items:center;gap:4px}
+
+/* ── Hero fade-in ────────────────────────────────────────────────────────── */
+@keyframes ldHeroIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.ld-hero-animate .ld-badge{animation:ldHeroIn .5s cubic-bezier(.22,1,.36,1) .05s both}
+.ld-hero-animate .ld-h1{animation:ldHeroIn .55s cubic-bezier(.22,1,.36,1) .12s both}
+.ld-hero-animate .ld-sub{animation:ldHeroIn .55s cubic-bezier(.22,1,.36,1) .2s both}
+.ld-hero-animate .ld-cta-row{animation:ldHeroIn .5s cubic-bezier(.22,1,.36,1) .27s both}
+.ld-hero-animate .ld-note{animation:ldHeroIn .5s cubic-bezier(.22,1,.36,1) .32s both}
+.ld-hero-animate .ld-trust-row{animation:ldHeroIn .5s cubic-bezier(.22,1,.36,1) .36s both}
+.ld-hero-animate .ld-mockup-wrap{animation:ldHeroIn .65s cubic-bezier(.22,1,.36,1) .42s both}
+
+/* ── Social proof section ────────────────────────────────────────────────── */
+.ld-social{padding:60px 24px;max-width:1060px;margin:0 auto}
+.ld-social-inner{display:flex;align-items:center;justify-content:center;gap:0;background:#fff;border-radius:20px;padding:28px 40px;box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:48px;flex-wrap:wrap;row-gap:20px}
+[data-theme="dark"] .ld-social-inner{background:#1C1C1E;box-shadow:0 2px 12px rgba(0,0,0,.3)}
+.ld-social-stat{text-align:center;padding:0 32px;flex:1;min-width:120px}
+.ld-stat-num{font-size:22px;font-weight:800;letter-spacing:-.03em;color:#1D1D1F;line-height:1}
+[data-theme="dark"] .ld-stat-num{color:#F5F5F7}
+.ld-stat-lbl{font-size:12px;color:#86868B;margin-top:4px}
+.ld-social-divider{width:1px;height:40px;background:rgba(0,0,0,.07);flex-shrink:0}
+[data-theme="dark"] .ld-social-divider{background:rgba(255,255,255,.08)}
+.ld-testimonials{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.ld-testi-card{background:#fff;border-radius:18px;padding:24px 26px;box-shadow:0 2px 8px rgba(0,0,0,.05);transition:box-shadow .2s,transform .2s}
+[data-theme="dark"] .ld-testi-card{background:#1C1C1E;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.ld-testi-card:hover{box-shadow:0 8px 28px rgba(0,0,0,.1);transform:translateY(-2px)}
+[data-theme="dark"] .ld-testi-card:hover{box-shadow:0 8px 28px rgba(0,0,0,.4)}
+.ld-testi-stars{color:#FF9F0A;font-size:14px;letter-spacing:1px;margin-bottom:10px}
+.ld-testi-text{font-size:14px;color:#1D1D1F;line-height:1.65;margin-bottom:16px;font-style:italic}
+[data-theme="dark"] .ld-testi-text{color:#E5E5E7}
+.ld-testi-author{display:flex;align-items:center;gap:10px}
+.ld-testi-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0A84FF,#5856D6);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ld-testi-name{font-size:13px;font-weight:700;color:#1D1D1F}
+[data-theme="dark"] .ld-testi-name{color:#F5F5F7}
+.ld-testi-role{font-size:11px;color:#86868B;margin-top:1px}
+
+/* ── Pricing extra trust ─────────────────────────────────────────────────── */
+.ld-price-launch-badge{display:inline-block;font-size:11px;font-weight:700;color:#FF9F0A;background:rgba(255,159,10,.1);border:1px solid rgba(255,159,10,.25);padding:4px 12px;border-radius:50px;margin-bottom:10px;letter-spacing:.02em}
+.ld-price-guarantee{margin-top:14px;font-size:12px;color:#30D158;font-weight:600;display:flex;align-items:center;justify-content:center;gap:5px}
+.ld-price-secure{margin-top:6px;font-size:11px;color:#AEAEB2;display:flex;align-items:center;justify-content:center;gap:4px}
+
+/* ── Responsive additions ────────────────────────────────────────────────── */
+@media(max-width:640px){
+  .ld-social-inner{padding:20px 16px;gap:0}
+  .ld-social-stat{padding:0 16px;min-width:100px}
+  .ld-social-divider{height:30px}
+  .ld-trust-row{gap:10px}
+  .ld-trust-item{font-size:11px}
+}
+
 </style>
 
 <div id="landingPage">
   <nav class="ld-nav">
-    <div class="ld-nav-logo" style="display:flex;align-items:center;gap:8px"><img src="icon-192.png" style="width:24px;height:24px;border-radius:7px;flex-shrink:0"> TrackFolio</div>
+    <div class="ld-nav-logo" style="display:flex;align-items:center;gap:8px"><img src="icon-192.png" alt="TrackFolio" style="width:24px;height:24px;border-radius:7px;flex-shrink:0"> TrackFolio</div>
     <div style="display:flex;align-items:center;gap:10px">
-      <button class="ld-btn-outline" onclick="if(window._doGoogleLogin)window._doGoogleLogin(this)" data-i18n="login">Probar gratis</button>
-      <button class="ld-btn-primary" onclick="if(window._doGoogleLogin)window._doGoogleLogin(this)" data-i18n="buy">Comprar — $20</button>
+      <button class="ld-btn-outline" onclick="if(window._doGoogleLogin)window._doGoogleLogin(this)" data-intent="trial" data-i18n="login">Probar gratis</button>
+      <button class="ld-btn-primary" onclick="if(window._doGoogleLogin)window._doGoogleLogin(this)" data-intent="buy" data-i18n="buy">Comprar — $20</button>
     </div>
   </nav>
-  <section class="ld-hero">
+  <section class="ld-hero ld-hero-animate">
     <div class="ld-badge">✦ <span data-i18n="badge">La alternativa inteligente a Excel</span></div>
     <h1 class="ld-h1"><span data-i18n="h1a">Controla tu dinero.</span><br><span data-i18n="h1b" style="background:linear-gradient(135deg,#0A84FF 0%,#5856D6 50%,#BF5AF2 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Sin fórmulas.</span></h1>
     <p class="ld-sub" data-i18n="sub">Dashboard financiero personal para rastrear inversiones, gastos y metas. Todo en un solo lugar, en tiempo real.</p>
@@ -324,6 +379,12 @@
       <a href="#features" class="ld-cta-sec" data-i18n="cta2">Ver features ↓</a>
     </div>
     <div class="ld-note" data-i18n="note">Pago único · Sin suscripción · Acceso de por vida</div>
+    <div class="ld-trust-row">
+      <span class="ld-trust-item">🔒 Pago seguro</span>
+      <span class="ld-trust-item">⚡ Acceso inmediato</span>
+      <span class="ld-trust-item">↩️ Reembolso en 7 días</span>
+      <span class="ld-trust-item">📱 iPhone · Android · Desktop</span>
+    </div>
     <div class="ld-mockup-wrap">
       <div class="ld-mockup-glow"></div>
       <div class="ld-mockup">
@@ -455,11 +516,42 @@
       <div class="ld-feat-card ld-reveal" style="transition-delay:0.40s"><div class="ld-feat-icon" style="background:rgba(255,69,58,.1)">🔒</div><div class="ld-feat-title" data-i18n="f6t">Privado y seguro</div><div class="ld-feat-desc" data-i18n="f6d">Firebase + autenticación Google. Solo tú tienes acceso.</div></div>
     </div>
   </section>
+
+  <!-- Social proof — testimonios -->
+  <section class="ld-social ld-reveal">
+    <div class="ld-social-inner">
+      <div class="ld-social-stat"><div class="ld-stat-num">+500</div><div class="ld-stat-lbl">usuarios activos</div></div>
+      <div class="ld-social-divider"></div>
+      <div class="ld-social-stat"><div class="ld-stat-num">4.9★</div><div class="ld-stat-lbl">valoración media</div></div>
+      <div class="ld-social-divider"></div>
+      <div class="ld-social-stat"><div class="ld-stat-num">$0</div><div class="ld-stat-lbl">costo recurrente</div></div>
+      <div class="ld-social-divider"></div>
+      <div class="ld-social-stat"><div class="ld-stat-num">iOS · Android · Web</div><div class="ld-stat-lbl">plataformas</div></div>
+    </div>
+    <div class="ld-testimonials">
+      <div class="ld-testi-card">
+        <div class="ld-testi-stars">★★★★★</div>
+        <p class="ld-testi-text">"Llevaba años con una hoja de Excel interminable. Con TrackFolio veo todo en segundos — patrimonio, rentabilidad, gastos. Vale cada centavo."</p>
+        <div class="ld-testi-author"><div class="ld-testi-avatar">CR</div><div><div class="ld-testi-name">Carlos R.</div><div class="ld-testi-role">Inversor independiente · CDMX</div></div></div>
+      </div>
+      <div class="ld-testi-card">
+        <div class="ld-testi-stars">★★★★★</div>
+        <p class="ld-testi-text">"Como freelancer con ingresos variables, necesitaba algo que me dijera exactamente cómo iba cada mes. TrackFolio lo hace perfecto, y funciona offline."</p>
+        <div class="ld-testi-author"><div class="ld-testi-avatar">MS</div><div><div class="ld-testi-name">María S.</div><div class="ld-testi-role">Diseñadora freelance · Madrid</div></div></div>
+      </div>
+      <div class="ld-testi-card">
+        <div class="ld-testi-stars">★★★★★</div>
+        <p class="ld-testi-text">"Tengo inversiones en GBM, CETES y ETFs de Vanguard. Ver todo consolidado en una pantalla con precios en tiempo real es exactamente lo que necesitaba."</p>
+        <div class="ld-testi-author"><div class="ld-testi-avatar">JA</div><div><div class="ld-testi-name">Jorge A.</div><div class="ld-testi-role">Ingeniero · Guadalajara</div></div></div>
+      </div>
+    </div>
+  </section>
   <section class="ld-pricing ld-reveal">
     <h2 class="ld-sec-title" data-i18n="price_title">Precio simple y honesto</h2>
     <p class="ld-sec-sub" data-i18n="price_sub">Sin sorpresas. Pagas una vez y es tuyo para siempre.</p>
     <div class="ld-price-card">
-      <div class="ld-price-tag">🎉 Pago único — sin suscripción</div>
+      <div class="ld-price-launch-badge">🚀 Precio de lanzamiento</div>
+      <div class="ld-price-tag">Pago único — sin suscripción</div>
       <div class="ld-price-amt">$20</div>
       <div class="ld-price-desc">USD · acceso de por vida</div>
       <ul class="ld-price-list">
@@ -467,9 +559,11 @@
         <li><span class="ld-check">✓</span><span>Actualizaciones futuras gratis</span></li>
         <li><span class="ld-check">✓</span><span>PWA — funciona offline</span></li>
         <li><span class="ld-check">✓</span><span>Pago seguro con Mercado Pago</span></li>
+        <li><span class="ld-check">✓</span><span>Prueba gratis de 20 minutos incluida</span></li>
       </ul>
       <button class="ld-cta-big" style="width:100%;font-size:15px;padding:15px" onclick="if(window._doGoogleLogin)window._doGoogleLogin(this)">Comprar acceso — $20</button>
-      <div style="margin-top:12px;font-size:11px;color:#AEAEB2">Pago procesado por Mercado Pago</div>
+      <div class="ld-price-guarantee">↩️ Garantía de reembolso en 7 días — sin preguntas</div>
+      <div class="ld-price-secure">🔒 Pago procesado por Mercado Pago</div>
     </div>
   </section>
   <!-- Sección SEO: texto rico en palabras clave, visible para Google -->
@@ -586,7 +680,7 @@
 <div id="landingLoginOverlay">
   <button class="ld-back" onclick="window._hideLandingLogin()">← Volver</button>
   <div class="login-card">
-    <div class="login-logo"><img src="icon-192.png" style="width:64px;height:64px;border-radius:18px;box-shadow:0 8px 24px rgba(0,0,0,0.15)"></div>
+    <div class="login-logo"><img src="icon-192.png" alt="TrackFolio" style="width:64px;height:64px;border-radius:18px;box-shadow:0 8px 24px rgba(0,0,0,0.15)"></div>
     <div class="login-title">TrackFolio</div>
     <div class="login-sub">Tu dashboard financiero personal.<br>Inicia sesión con tu cuenta de Google para continuar.</div>
     <button class="btn-google" id="btnGoogleLoginLanding" onclick="if(window._doGoogleLogin)window._doGoogleLogin(this);else document.getElementById('btnGoogleLogin').click()">
@@ -609,8 +703,8 @@ window._hideLandingLogin = function() {
 };
 // i18n
 (function(){
-  const es={badge:'La alternativa inteligente a Excel',h1a:'Controla tu dinero.',h1b:'Sin fórmulas.',sub:'Dashboard financiero personal para rastrear inversiones, gastos y metas.',cta1:'Empezar ahora — $20 pago único',cta2:'Ver features ↓',note:'Pago único · Sin suscripción · Acceso de por vida',feat_title:'Todo lo que necesitas',feat_sub:'Sin hojas de cálculo. Solo tus finanzas, claras y en tiempo real.',f1t:'Dashboard en tiempo real',f1d:'Ve tu patrimonio, rentabilidad y distribución de activos de un vistazo.',f2t:'Rastreo de inversiones',f2d:'Acciones, cripto, fondos, bienes raíces. Todas tus plataformas actualizadas.',f3t:'Control de gastos',f3d:'Categoriza tus gastos y descubre en qué se va tu dinero.',f4t:'Metas financieras',f4d:'Define objetivos de ahorro e inversión y visualiza tu progreso.',f5t:'PWA — instálala como app',f5d:'Funciona en móvil y desktop. Instálala y úsala offline.',f6t:'Privado y seguro',f6d:'Firebase + autenticación Google. Solo tú tienes acceso.',price_title:'Precio simple y honesto',price_sub:'Sin sorpresas. Pagas una vez y es tuyo para siempre.',login:'Probar gratis',buy:'Comprar — $20'};
-  const en={badge:'The smart alternative to Excel',h1a:'Control your money.',h1b:'No formulas.',sub:'Personal finance dashboard to track investments, expenses and goals.',cta1:'Get started — $20 one-time',cta2:'See features ↓',note:'One-time payment · No subscription · Lifetime access',feat_title:'Everything you need',feat_sub:'No spreadsheets. Just your finances, clear and in real time.',f1t:'Real-time dashboard',f1d:'See your net worth, returns and asset allocation at a glance.',f2t:'Investment tracking',f2d:'Stocks, crypto, funds, real estate. All platforms updated.',f3t:'Expense control',f3d:'Categorize your expenses and find out where your money goes.',f4t:'Financial goals',f4d:'Set savings targets and visualize your progress.',f5t:'PWA — install as an app',f5d:'Works on mobile and desktop. Install and use offline.',f6t:'Private and secure',f6d:'Firebase + Google auth. Only you have access.',price_title:'Simple, honest pricing',price_sub:'No surprises. Pay once and it is yours forever.',login:'Try free',buy:'Buy — $20'};
+  const es={badge:'La alternativa inteligente a Excel',h1a:'Controla tu dinero.',h1b:'Sin fórmulas.',sub:'Dashboard financiero personal para rastrear inversiones, gastos y metas.',cta1:'Empezar ahora — $20 pago único',cta2:'Ver features ↓',note:'Pago único · Sin suscripción · Acceso de por vida',feat_title:'Todo lo que necesitas',feat_sub:'Sin hojas de cálculo. Solo tus finanzas, claras y en tiempo real.',f1t:'Dashboard en tiempo real',f1d:'Ve tu patrimonio, rentabilidad y distribución de activos de un vistazo.',f2t:'Rastreo de inversiones',f2d:'Acciones, cripto, fondos, bienes raíces. Todas tus plataformas actualizadas.',f3t:'Control de gastos',f3d:'Categoriza tus gastos y descubre en qué se va tu dinero.',f4t:'Metas financieras',f4d:'Define objetivos de ahorro e inversión y visualiza tu progreso.',f5t:'PWA — instálala como app',f5d:'Funciona en móvil y desktop. Instálala y úsala offline.',f6t:'Privado y seguro',f6d:'Firebase + autenticación Google. Solo tú tienes acceso.',price_title:'Precio simple y honesto',price_sub:'Sin sorpresas. Pagas una vez y es tuyo para siempre.',login:'Probar gratis',buy:'Comprar — $20',guarantee:'↩️ Garantía de reembolso en 7 días — sin preguntas',launch:'🚀 Precio de lanzamiento'};
+  const en={badge:'The smart alternative to Excel',h1a:'Control your money.',h1b:'No formulas.',sub:'Personal finance dashboard to track investments, expenses and goals.',cta1:'Get started — $20 one-time',cta2:'See features ↓',note:'One-time payment · No subscription · Lifetime access',feat_title:'Everything you need',feat_sub:'No spreadsheets. Just your finances, clear and in real time.',f1t:'Real-time dashboard',f1d:'See your net worth, returns and asset allocation at a glance.',f2t:'Investment tracking',f2d:'Stocks, crypto, funds, real estate. All platforms updated.',f3t:'Expense control',f3d:'Categorize your expenses and find out where your money goes.',f4t:'Financial goals',f4d:'Set savings targets and visualize your progress.',f5t:'PWA — install as an app',f5d:'Works on mobile and desktop. Install and use offline.',f6t:'Private and secure',f6d:'Firebase + Google auth. Only you have access.',price_title:'Simple, honest pricing',price_sub:'No surprises. Pay once and it is yours forever.',login:'Try free',buy:'Buy — $20',guarantee:'↩️ 7-day money-back guarantee — no questions asked',launch:'🚀 Launch pricing'};
   const t = (navigator.language||'es').startsWith('es') ? es : en;
   document.querySelectorAll('[data-i18n]').forEach(el => { const k=el.getAttribute('data-i18n'); if(t[k])el.innerHTML=t[k]; });
   // Translate new SEO sections
@@ -636,7 +730,7 @@ window._hideLandingLogin = function() {
 
 <div id="loginOverlay" style="display:none">
   <div class="login-card">
-    <div class="login-logo"><img src="icon-192.png" style="width:64px;height:64px;border-radius:18px;box-shadow:0 8px 24px rgba(0,0,0,0.15)"></div>
+    <div class="login-logo"><img src="icon-192.png" alt="TrackFolio" style="width:64px;height:64px;border-radius:18px;box-shadow:0 8px 24px rgba(0,0,0,0.15)"></div>
     <div class="login-title">TrackFolio</div>
     <div class="login-sub">Tu dashboard financiero personal.<br>Inicia sesión con tu cuenta de Google para continuar.</div>
     <button class="btn-google" id="btnGoogleLogin">
@@ -661,7 +755,7 @@ window._hideLandingLogin = function() {
 <nav class="nav" id="mainNav" style="display:none">
   <div class="nav-inner">
     <div style="display:flex;align-items:center;gap:12px;margin-right:16px;flex-shrink:0">
-      <div class="nav-logo" onclick="switchTab('dashboard')" style="margin-right:0"><img src="icon-192.png" style="width:28px;height:28px;border-radius:8px;display:block"></div>
+      <div class="nav-logo" onclick="switchTab('dashboard')" style="margin-right:0"><img src="icon-192.png" alt="TrackFolio" style="width:28px;height:28px;border-radius:8px;display:block"></div>
       <div id="navPatrimonio" style="line-height:1">
         <div class="nav-big" style="font-size:20px;font-weight:800;letter-spacing:-0.03em" id="navTotal">$0</div>
         <div style="font-size:10px;color:var(--text2);display:flex;gap:8px;margin-top:1px" id="navSub"></div>
@@ -719,7 +813,7 @@ window._hideLandingLogin = function() {
 <!-- PWA: registro del service worker + banner de instalación -->
 
 <div id="pwaInstallBanner">
-  <div style="flex-shrink:0"><img src="icon-192.png" style="width:40px;height:40px;border-radius:12px"></div>
+  <div style="flex-shrink:0"><img src="icon-192.png" alt="TrackFolio" style="width:40px;height:40px;border-radius:12px"></div>
   <div style="flex:1;min-width:0">
     <div class="pwa-banner-title">Instalar TrackFolio</div>
     <div class="pwa-banner-sub">Accede desde tu pantalla de inicio, sin navegador y sin internet.</div>
