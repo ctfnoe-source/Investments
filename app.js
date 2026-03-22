@@ -6215,7 +6215,7 @@ window.showTutorial=showTutorial;
 
 function showApp(){
   document.getElementById('loginOverlay').classList.add('hidden');
-  const lp=document.getElementById('landingPage'); if(lp) lp.style.display='none';
+  const lp=document.getElementById('landingPage'); if(lp) lp.style.display='none'; if(window._hideAnnoBar) window._hideAnnoBar();
   document.getElementById('mainNav').style.display='';
   document.getElementById('mainContainer').style.display='';
   document.getElementById('mobileNav').style.display='';
@@ -6258,7 +6258,7 @@ window._log('_redirectPending=true, localStorage._authRedirect='+localStorage.ge
 if(localStorage.getItem('_authRedirect') === '1'){
   localStorage.removeItem('_authRedirect');
   // Ocultar landing, mostrar spinner mientras Firebase procesa
-  const lp = document.getElementById('landingPage'); if(lp) lp.style.display='none';
+  const lp = document.getElementById('landingPage'); if(lp) lp.style.display='none'; if(window._hideAnnoBar) window._hideAnnoBar();
   const lo = document.getElementById('loginOverlay');
   const card = lo && lo.querySelector('.login-card');
   if(lo){ lo.classList.remove('hidden'); }
