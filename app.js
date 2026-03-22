@@ -1335,8 +1335,22 @@ async function loadIndexFromFirebase(symbol) {
   try {
     const { doc: _doc, getDoc: _getDoc } =
       await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    const snap = await _getDoc(_doc(db, 'usuarios', uid, 'index_history', symbol));
-    if (snap.exists() && snap.data()?.dates?.length >= 2) return snap.data();
+
+    // Leer en paralelo: documento global (Worker) + documento del usuario
+    const [snapGlobal, snapUser] = await Promise.all([
+      _getDoc(_doc(db, 'index_history_global', symbol)),
+      _getDoc(_doc(db, 'usuarios', uid, 'index_history', symbol)),
+    ]);
+
+    const globalData = (snapGlobal.exists() && snapGlobal.data()?.dates?.length >= 2)
+      ? snapGlobal.data() : null;
+    const userData = (snapUser.exists() && snapUser.data()?.dates?.length >= 2)
+      ? snapUser.data() : null;
+
+    // Mergear ambos para tener el historial más completo posible
+    if (globalData && userData) return _mergeIndexHistory(globalData, userData);
+    if (globalData) return globalData;
+    if (userData)   return userData;
   } catch(e) { /* silencioso */ }
   return null;
 }
@@ -1366,12 +1380,33 @@ async function fetchSP500History() {
 
   const avKey = settings.alphaVantageKey || '';
   const fhKey = settings.finnhubKey || '';
+
+  // Intentar cargar historial global del Worker antes de llamar APIs externas
+  const globalData = await loadIndexFromFirebase('sp500').catch(() => null);
+  if (globalData?.dates?.length >= 2) {
+    // Mergear con caché local si existe, luego guardar y retornar
+    const merged = (cached?.data?.dates?.length >= 2)
+      ? _mergeIndexHistory(cached.data, globalData)
+      : globalData;
+    // Si el último punto es de hoy ya tenemos todo — no llamar APIs
+    const today = new Date().toISOString().split('T')[0];
+    const lastDate = merged.dates[merged.dates.length - 1];
+    if (lastDate === today) {
+      setSP500Cache(merged);
+      return merged;
+    }
+    // Si no es de hoy pero tenemos buena data, seed desde aquí
+    if (!avKey && !fhKey) { setSP500Cache(merged); return merged; }
+  }
+
   if (!avKey && !fhKey) return null;
 
-  // Seed result from existing cache so accumulated history is preserved
-  let result = (cached?.data?.dates?.length >= 2)
-    ? { dates: [...cached.data.dates], closes: [...cached.data.closes] }
-    : { dates: [], closes: [] };
+  // Seed result: prioridad → global Firebase → caché local
+  let result = globalData?.dates?.length >= 2
+    ? { dates: [...globalData.dates], closes: [...globalData.closes] }
+    : (cached?.data?.dates?.length >= 2)
+      ? { dates: [...cached.data.dates], closes: [...cached.data.closes] }
+      : { dates: [], closes: [] };
 
   // 1a) Histórico mensual via Alpha Vantage
   if (avKey) {
@@ -1521,11 +1556,30 @@ async function fetchQQQHistory() {
   if (isQQQCacheFresh(cached) && _qlastClose && _qlastClose > 0 && _qcacheHasHistory) return cached.data;
   const avKey = settings.alphaVantageKey || '';
   const fhKey = settings.finnhubKey || '';
+
+  // Intentar cargar historial global del Worker antes de llamar APIs externas
+  const globalDataQ = await loadIndexFromFirebase('qqq').catch(() => null);
+  if (globalDataQ?.dates?.length >= 2) {
+    const mergedQ = (cached?.data?.dates?.length >= 2)
+      ? _mergeIndexHistory(cached.data, globalDataQ)
+      : globalDataQ;
+    const today = new Date().toISOString().split('T')[0];
+    const lastDateQ = mergedQ.dates[mergedQ.dates.length - 1];
+    if (lastDateQ === today) {
+      setQQQCache(mergedQ);
+      return mergedQ;
+    }
+    if (!avKey && !fhKey) { setQQQCache(mergedQ); return mergedQ; }
+  }
+
   if (!avKey && !fhKey) return null;
-  // Seed result from existing cache so accumulated history is preserved
-  let result = (cached?.data?.dates?.length >= 2)
-    ? { dates: [...cached.data.dates], closes: [...cached.data.closes] }
-    : { dates: [], closes: [] };
+
+  // Seed result: prioridad → global Firebase → caché local
+  let result = globalDataQ?.dates?.length >= 2
+    ? { dates: [...globalDataQ.dates], closes: [...globalDataQ.closes] }
+    : (cached?.data?.dates?.length >= 2)
+      ? { dates: [...cached.data.dates], closes: [...cached.data.closes] }
+      : { dates: [], closes: [] };
   if (avKey) {
     try {
       const r = await fetchWithTimeout(`https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY&symbol=QQQ&apikey=${avKey}`);
