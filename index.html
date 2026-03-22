@@ -365,36 +365,42 @@
   position:fixed;top:0;left:0;right:0;z-index:201;
   height:36px;
   background:linear-gradient(90deg,#0A84FF 0%,#5856D6 50%,#BF5AF2 100%);
-  display:flex;align-items:center;justify-content:center;gap:10px;
+  display:flex;align-items:center;justify-content:center;
   font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:#fff;
-  cursor:pointer;
+  cursor:pointer;padding:0 12px;
   transition:transform .3s ease;
 }
 #ldAnnoBar:hover{filter:brightness(1.08)}
-.ldAnno-text{display:flex;align-items:center;gap:8px;white-space:nowrap;flex-wrap:wrap;justify-content:center}
+/* Una sola línea compacta siempre */
+.ldAnno-text{display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden}
 .ldAnno-cd{
-  display:inline-flex;align-items:center;gap:2px;
-  background:rgba(255,255,255,.18);
-  border-radius:6px;padding:2px 8px;
-  font-variant-numeric:tabular-nums;font-weight:800;letter-spacing:.02em;
-  font-size:13px;
+  display:inline-flex;align-items:center;gap:1px;
+  background:rgba(255,255,255,.2);
+  border-radius:5px;padding:1px 7px;
+  font-variant-numeric:tabular-nums;font-weight:800;letter-spacing:.01em;
+  font-size:13px;flex-shrink:0;
 }
-.ldAnno-cd span{min-width:18px;text-align:center}
-.ldAnno-sep{opacity:.6;font-weight:300}
+.ldAnno-cd span{min-width:16px;text-align:center}
+.ldAnno-sep{opacity:.5;font-weight:300}
 .ldAnno-cta{
   background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.35);
-  border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700;
-  white-space:nowrap;transition:background .15s;
+  border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;
+  white-space:nowrap;transition:background .15s;flex-shrink:0;
 }
 #ldAnnoBar:hover .ldAnno-cta{background:rgba(255,255,255,.32)}
-/* Empujar nav y hero hacia abajo cuando la barra está visible */
 body.has-anno-bar .ld-nav{top:36px}
 body.has-anno-bar .ld-hero{padding-top:126px}
 @media(max-width:640px){
-  #ldAnnoBar{font-size:11px;gap:6px;height:32px}
-  .ldAnno-cd{font-size:11px;padding:2px 6px}
-  body.has-anno-bar .ld-nav{top:32px}
-  body.has-anno-bar .ld-hero{padding-top:122px}
+  #ldAnnoBar{font-size:11px;height:36px;padding:0 10px}
+  .ldAnno-cd{font-size:12px;padding:1px 6px}
+  .ldAnno-label-long{display:none}
+  .ldAnno-label-short{display:inline}
+  .ldAnno-cta{display:none}
+  body.has-anno-bar .ld-nav{top:36px}
+  body.has-anno-bar .ld-hero{padding-top:126px}
+}
+@media(min-width:641px){
+  .ldAnno-label-short{display:none}
 }
 
 </style>
@@ -402,12 +408,14 @@ body.has-anno-bar .ld-hero{padding-top:126px}
 <!-- Announcement bar con countdown evergreen -->
 <div id="ldAnnoBar" onclick="document.querySelector('.ld-pricing').scrollIntoView({behavior:'smooth'})">
   <div class="ldAnno-text">
-    <span>🔥 Precio de lanzamiento</span>
+    <span>🔥</span>
+    <span class="ldAnno-label-long">Precio de lanzamiento $20 — expira en</span>
+    <span class="ldAnno-label-short">$20 expira en</span>
     <div class="ldAnno-cd">
       <span id="annoH">23</span><span class="ldAnno-sep">:</span><span id="annoM">47</span><span class="ldAnno-sep">:</span><span id="annoS">33</span>
     </div>
-    <span>restantes a $20 USD</span>
-    <span class="ldAnno-cta">Comprar ahora →</span>
+    <span class="ldAnno-label-long">— luego sube a $35</span>
+    <span class="ldAnno-cta">Comprar →</span>
   </div>
 </div>
 <div id="landingPage">
