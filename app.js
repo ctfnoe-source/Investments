@@ -3456,6 +3456,25 @@ function renderDashboard(){
       });
       ctxGC.style.width='100%';
     }
+
+    // ── iOS Safari: redibujar charts cuando vuelven al viewport ──────────
+    // Safari vacía los canvas al salir del viewport durante el scroll.
+    // IntersectionObserver los redibuja al volver a entrar.
+    if (window._dashChartObserver) { window._dashChartObserver.disconnect(); window._dashChartObserver = null; }
+    const _chartCanvasIds = ['chartEvo', 'chartDistro', 'chartInvTipo', 'chartGastosCat'];
+    window._dashChartObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        const id = entry.target.id;
+        const instance = chartInstances[id];
+        if (instance) { instance.resize(); instance.update('none'); }
+      });
+    }, { threshold: 0.01 });
+    _chartCanvasIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) window._dashChartObserver.observe(el);
+    });
+
   }, 100); }); // fin requestAnimationFrame + setTimeout
 }
 
