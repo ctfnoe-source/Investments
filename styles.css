@@ -673,3 +673,12 @@ tr:hover td { background: var(--table-row-hover); }
   .nav-tab .tab-label { display: none; }
   .nav-tab { padding: 7px 10px; font-size: 15px; }
 }
+
+/* ── Desactivar hover-transform en dispositivos touch (móvil) ── */
+@media (hover: none) {
+  .card:hover { transform: none; box-shadow: none; }
+  .stat:hover { transform: none; box-shadow: none; }
+  .recurrente-card:hover { transform: none; box-shadow: none; }
+  .stat-blue:hover, .stat-green:hover, .stat-purple:hover,
+  .stat-orange:hover, .stat-teal:hover, .stat-red:hover { box-shadow: none !important; }
+}
